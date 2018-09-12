@@ -10,7 +10,7 @@ import scala.util.Random
   */
 trait GridGenerator {
 
-  def generateGrid[N](size: RasterDim)(implicit rng: Random): RasterLayerData[N]
+  def generateGrid[N](implicit rng: Random): RasterLayerData[N]
 
 }
 

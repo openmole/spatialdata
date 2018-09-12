@@ -18,15 +18,15 @@ case class RandomGridGenerator(
                               layers : Int = 1
                               ) extends GridGenerator {
 
-  override def generateGrid[Double](size: RasterDim)(implicit rng: Random): RasterLayerData[Double] = RandomGridGenerator.randomGrid(size,rng).asInstanceOf[RasterLayerData[Double]]
+  override def generateGrid[Double](implicit rng: Random): RasterLayerData[Double] = RandomGridGenerator.randomGrid(size,rng).asInstanceOf[RasterLayerData[Double]]
 
 }
 
 
 object RandomGridGenerator {
 
+  def apply(size: Int): RandomGridGenerator = new RandomGridGenerator(size)
 
-  implicit def rng: Random = new Random
 
   /**
     * Random layer

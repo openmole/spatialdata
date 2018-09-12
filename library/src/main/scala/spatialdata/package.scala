@@ -6,7 +6,7 @@ package object spatialdata {
     * RasterLayerData are two dimensional arrays of Numeric values
     * TODO keep the name RasterLayer for a wrapper with more properties
     */
-  type RasterLayerData[N: Numeric] = Array[Array[N]]
+  type RasterLayerData[N] = Array[Array[N]]
 
 
   /**

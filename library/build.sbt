@@ -1,9 +1,16 @@
+//scalaVersion := "2.12.6"
+scalaVersion := "2.11.8"
 
-scalaVersion := "2.12.6"
 name := "spatialdata"
+
+organization := "org.openmole"
+
+version := "0.1-SNAPSHOT"
 
 resolvers += Resolver.sonatypeRepo("snapshots")
 resolvers += Resolver.sonatypeRepo("staging")
 
 libraryDependencies += "org.apache.commons" % "commons-math3" % "3.6.1"
 libraryDependencies += "com.github.pathikrit" %% "better-files" % "3.5.0"
+libraryDependencies += "org.diana-hep" %% "histogrammar" % "1.0.4"
+

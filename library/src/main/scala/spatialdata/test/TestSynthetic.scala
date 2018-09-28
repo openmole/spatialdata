@@ -9,6 +9,9 @@ import scala.util.Random
 object TestSynthetic {
 
 
+  /**
+    * Test : stat distribution of Moran for random grids
+    */
   def testRandomGrids(): Unit = {
 
     implicit val rng = new Random

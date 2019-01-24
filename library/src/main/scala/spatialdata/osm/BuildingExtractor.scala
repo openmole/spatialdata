@@ -1,6 +1,6 @@
 package spatialdata.osm
 
-import com.vividsolutions.jts.geom.Polygon
+import com.vividsolutions.jts.geom.{Coordinate, GeometryFactory, Polygon}
 import se.kodapan.osm.domain.Way
 import se.kodapan.osm.domain.root.Root.Enumerator
 import se.kodapan.osm.jts.JtsGeometryFactory
@@ -27,5 +27,20 @@ object BuildingExtractor {
     val password = sys.env("OSM_PASSWORD")
     api.authenticate(login, password)
     asPolygonSeq(root.enumerateWays())
+  }
+  def getBuildingIntersection(south: Double, west: Double, north: Double, east: Double) = {
+    val buildings = getBuildings(south, west, north, east)
+    val fact = new GeometryFactory()
+    val env = fact.createPolygon(fact.createLinearRing(Array(new Coordinate(west, north),new Coordinate(east, north),new Coordinate(east, south),new Coordinate(west, south),new Coordinate(west, north))),Array())
+    buildings.map(_.intersection(env))
+  }
+  def getNegativeBuildingIntersection(south: Double, west: Double, north: Double, east: Double) = {
+    val buildings = getBuildings(south, west, north, east)
+    val fact = new GeometryFactory()
+    val env = fact.createPolygon(fact.createLinearRing(Array(new Coordinate(west, north),new Coordinate(east, north),new Coordinate(east, south),new Coordinate(west, south),new Coordinate(west, north))),Array())
+    val union = fact.createMultiPolygon(buildings.toArray).union()
+    var result = scala.collection.mutable.Buffer[Polygon]()
+    for (i <- 0 until union.getNumGeometries) result += fact.createPolygon(fact.createLinearRing(union.getGeometryN(i).asInstanceOf[Polygon].getExteriorRing.getCoordinateSequence),Array())
+    env.difference(fact.createMultiPolygon(result.toArray).union)
   }
 }

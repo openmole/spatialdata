@@ -13,6 +13,9 @@ import scala.math._
   * Morphological indicators for spatial density grids
   *
   * (see Raimbault, J. (2018). Calibration of a density-based model of urban morphogenesis. PloS one, 13(9), e0203516.)
+  *
+  * FIXME See https://github.com/locationtech/geotrellis if implemented in raster operations
+  *
   */
 object Morphology {
 

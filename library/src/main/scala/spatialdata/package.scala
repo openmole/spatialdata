@@ -20,5 +20,10 @@ package object spatialdata {
   implicit def rasterDimConversion(c:(Int,Int)): RasterDim = Right(c)
 
 
+  /**
+    * Point in 2D
+    */
+  type Point2D = (Double,Double)
+
 
 }

@@ -1,6 +1,6 @@
 package spatialdata.osm
 
-import com.vividsolutions.jts.geom.{Coordinate, GeometryFactory, Polygon}
+import com.vividsolutions.jts.geom._
 import se.kodapan.osm.domain.Way
 import se.kodapan.osm.domain.root.Root.Enumerator
 import se.kodapan.osm.jts.JtsGeometryFactory
@@ -9,6 +9,42 @@ import se.kodapan.osm.services.api.v_0_6.ApiConnection
 import scala.collection.JavaConverters
 
 object BuildingExtractor {
+  /**
+    * Convert WGS84 coordinates to EPSG:3857 - WGS 84 / Pseudo-Mercator -- Spherical Mercator.
+    * @param lon longitude
+    * @param lat latitude
+    * @return Pseudo-Mercator coordinates
+    */
+  def WGS84ToPseudoMercator(lon: Double, lat: Double) = {
+    val x = lon * 20037508.34 / 180
+    val y = (Math.log(Math.tan((90 + lat) * Math.PI / 360)) / (Math.PI / 180) ) * 20037508.34 / 180
+    (x, y)
+  }
+  /**
+    * Convert EPSG:3857 - WGS 84 / Pseudo-Mercator -- Spherical Mercator coordinates to WGS84 - EPSG:4326.
+    * @param x x
+    * @param y y
+    * @return WGS84 - EPSG:4326 (lon, lat)
+    */
+  def PseudoMercatorToWGS84Mercator(x: Double, y: Double) = {
+    val lon = (x / 20037508.34) * 180
+    val lat = (y / 20037508.34) * 180
+    (lon, 180 / Math.PI * (2 * Math.atan(Math.exp(lat * Math.PI / 180)) - Math.PI / 2))
+  }
+  /**
+    * CoordinateSequenceFilter to convert WGS84 coordinate sequences to WGS 84 / Pseudo-Mercator (EPSG:3857).
+    */
+  class WGS84toPseudoMercatorFilter extends CoordinateSequenceFilter {
+    def filter(seq: CoordinateSequence, i: Int) = {
+      if ((i != seq.size - 1) || (seq.getCoordinate(i) != seq.getCoordinate(0))) {
+        val coord = seq.getCoordinate(i)
+        val t = WGS84ToPseudoMercator(coord.x, coord.y)
+        coord.setCoordinate(new Coordinate(t._1, t._2))
+      }
+    }
+    def isDone = false
+    def isGeometryChanged = true
+  }
   def asPolygonSeq(e: Enumerator[Way]) = {
     var result = scala.collection.mutable.Buffer[Polygon]()
     val fact = new JtsGeometryFactory()
@@ -41,6 +77,8 @@ object BuildingExtractor {
     val union = fact.createMultiPolygon(buildings.toArray).union()
     var result = scala.collection.mutable.Buffer[Polygon]()
     for (i <- 0 until union.getNumGeometries) result += fact.createPolygon(fact.createLinearRing(union.getGeometryN(i).asInstanceOf[Polygon].getExteriorRing.getCoordinateSequence),Array())
-    env.difference(fact.createMultiPolygon(result.toArray).union)
+    var res = env.difference(fact.createMultiPolygon(result.toArray).union)
+    res.apply(new WGS84toPseudoMercatorFilter)
+    res
   }
 }

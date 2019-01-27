@@ -6,6 +6,8 @@ import spatialdata.osm.BuildingExtractor
 
 object Test extends App {
 
+
+  //TestIndicators.testMoran
 //  TestSynthetic.testRandomGrids()
 //  BuildingExtractor.getBuildingIntersection(48.82864, 2.36238, 48.83040, 2.36752).foreach(println)
   val lon = 2.36238

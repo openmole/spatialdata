@@ -43,7 +43,7 @@ case class ReactionDiffusionGridGenerator(
                                 layers : Int = 1
                               ) extends GridGenerator {
 
-  override def generateGrid[Double](implicit rng: Random): RasterLayerData[Double] =
+  override def generateGrid(implicit rng: Random): RasterLayerData[Double] =
     ReactionDiffusionGridGenerator.reactionDiffusionGrid(size,growthRate,totalPopulation,alpha,beta,diffusionSteps,rng)
       .asInstanceOf[RasterLayerData[Double]]
 

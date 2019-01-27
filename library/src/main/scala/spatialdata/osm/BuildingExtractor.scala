@@ -1,5 +1,7 @@
 package spatialdata.osm
 
+import java.util.Locale
+
 import com.vividsolutions.jts.geom._
 import se.kodapan.osm.domain.Way
 import se.kodapan.osm.domain.root.Root.Enumerator
@@ -57,6 +59,7 @@ object BuildingExtractor {
     Seq(result:_*)
   }
   def getBuildings(south: Double, west: Double, north: Double, east: Double) = {
+    Locale.setDefault(Locale.ENGLISH)
     val api = new ApiConnection()
     val root = api.get(south, west, north, east)
 //    val login = sys.env("OSM_LOGIN")

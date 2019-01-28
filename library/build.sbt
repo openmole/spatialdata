@@ -7,13 +7,30 @@ organization := "org.openmole"
 
 version := "0.1-SNAPSHOT"
 
-resolvers += Resolver.sonatypeRepo("snapshots")
-resolvers += Resolver.sonatypeRepo("staging")
-resolvers += Resolver.mavenLocal
-
-libraryDependencies += "org.apache.commons" % "commons-math3" % "3.6.1"
-libraryDependencies += "com.github.pathikrit" %% "better-files" % "3.5.0"
-libraryDependencies += "org.diana-hep" %% "histogrammar" % "1.0.4"
+resolvers ++= Seq(
+  "osgeo" at "http://download.osgeo.org/webdav/geotools",
+  "geosolutions" at "http://maven.geo-solutions.it",
+  "geotoolkit" at "http://maven.geotoolkit.org",
+  "apache" at "http://repo.maven.apache.org/maven2",
+  Resolver.sonatypeRepo("snapshots"),
+  Resolver.sonatypeRepo("staging"),
+  Resolver.mavenLocal,
+  Resolver.mavenCentral
+)
 
 val osmCommonVersion = "0.0.3-SNAPSHOT"
-libraryDependencies += "se.kodapan.osm.common" % "jts" % osmCommonVersion
+val geotoolsVersion = "18.4"
+
+libraryDependencies ++= Seq(
+  "org.apache.commons" % "commons-math3" % "3.6.1",
+  "com.github.pathikrit" %% "better-files" % "3.5.0",
+  "org.diana-hep" %% "histogrammar" % "1.0.4",
+  "com.vividsolutions" % "jts" % "1.13",
+  "org.scala-graph" %% "graph-core" % "1.12.5",
+  "se.kodapan.osm.common" % "core" % osmCommonVersion,
+  "se.kodapan.osm.common" % "java" % osmCommonVersion,
+  "se.kodapan.osm.common" % "jts" % osmCommonVersion,
+  "org.geotools" % "geotools" % geotoolsVersion exclude("javax.media", "jai_core"),
+  "org.geotools" % "gt-shapefile" % geotoolsVersion exclude("javax.media", "jai_core")
+  //"javax.media" % "jai_core" % "1.1.3" //from "http://download.osgeo.org/webdav/geotools/javax/media/jai_core/1.1.3/jai_core-1.1.3.jar"
+)

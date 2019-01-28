@@ -25,5 +25,10 @@ package object spatialdata {
     */
   type Point2D = (Double,Double)
 
+  /**
+    * Geographical coordinate (lon,lat)
+    */
+  type Coordinate = (Double,Double)
+
 
 }

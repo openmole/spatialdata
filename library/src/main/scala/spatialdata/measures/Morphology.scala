@@ -2,11 +2,18 @@
 package spatialdata.measures
 
 import spatialdata.utils.math.Convolution
-
 import org.apache.commons.math3.stat.regression.SimpleRegression
 import org.apache.commons.math3.util.MathArrays
+import spatialdata.RasterLayerData
 
 import scala.math._
+
+
+case class Morphology(
+                       moran: Double,
+                       fullDilationSteps: Double
+                     )
+
 
 
 /**
@@ -18,6 +25,9 @@ import scala.math._
   *
   */
 object Morphology {
+
+
+  def apply(grid: RasterLayerData[Double]): Morphology = Morphology(moranDirect(grid),fullDilationSteps(grid))
 
 
   /**
@@ -184,6 +194,65 @@ object Morphology {
   def decay(p1:(Int,Int),p2:(Int,Int)) = {
     if (p1==p2) 0.0
     else 1/distance(p1,p2)
+  }
+
+
+
+  /**
+    * Naive two dimensional convolution for morpho math - default operator is average (dilation) - replace by product for erosion
+    *   (not efficient at all but no math commons to work in the gui)
+    * @param matrix
+    * @param mask should be of uneven size
+    * @return
+    */
+  def convolution(matrix: Array[Array[Double]],mask: Array[Array[Double]],operator: Array[Double]=>Double = {case a => if(a.filter(_>0.0).size>0)1.0 else 0.0}): Array[Array[Double]] = {
+    assert(mask.length%2==1&&mask(0).length%2==1,"mask should be of uneven size")
+    val sizes = matrix.map(_.length);assert(sizes.max==sizes.min,"array should be rectangular")
+    val masksizes = mask.map(_.length);assert(masksizes.max==masksizes.min,"mask should be rectangular")
+    val (paddingx,paddingy) = ((mask.length-1)/2,(mask(0).length-1)/2)
+    val res = Array.fill(matrix.length+2*paddingx,matrix(0).length+2*paddingy)(0.0)
+    for(i <- paddingx until res.length - paddingx;j <- paddingy until res(0).length-paddingy){
+      val masked = Array.fill(mask.size,mask(0).size)(0.0)
+      for(k <- - paddingx until paddingx;l <- - paddingy until paddingy){
+        masked(k+paddingx)(l+paddingy)=matrix(i+k)(j+l)*mask(k+paddingx)(l+paddingy)
+      }
+      res(i)(j) = operator(masked.flatten)
+    }
+    res
+  }
+
+  /**
+    * Dilation with default cross mask
+    * @param matrix
+    * @return
+    */
+  def dilation(matrix: Array[Array[Double]]): Array[Array[Double]] = convolution(matrix,Array(Array(0.0,1.0,0.0),Array(1.0,1.0,1.0),Array(0.0,1.0,0.0)))
+
+  def erosion(matrix: Array[Array[Double]]): Array[Array[Double]] = {
+    val mask = Array(Array(0.0, 1.0, 0.0), Array(1.0, 1.0, 1.0), Array(0.0, 1.0, 0.0))
+    convolution(matrix,
+      mask,
+      { case a => if (a.filter(_ > 0.0).sum == mask.flatten.sum) 1.0 else 0.0 }
+    )
+  }
+
+  /**
+    * Number of steps to fully close the image (morpho maths)
+    *
+    * @param matrix
+    * @return
+    */
+  def fullDilationSteps(matrix: Array[Array[Double]]): Double = {
+    var steps = 0
+    var complete = false
+    var currentworld = matrix
+    while(!complete){
+      println("dilating "+steps)
+      currentworld = dilation(currentworld)
+      complete = currentworld.flatten.sum == currentworld.flatten.length
+      steps = steps + 1
+    }
+    steps
   }
 
 

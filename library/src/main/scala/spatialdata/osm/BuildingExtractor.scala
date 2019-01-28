@@ -6,6 +6,7 @@ import se.kodapan.osm.domain.root.Root.Enumerator
 import se.kodapan.osm.jts.JtsGeometryFactory
 import se.kodapan.osm.services.api.v_0_6.ApiConnection
 
+
 import scala.collection.JavaConverters
 
 object BuildingExtractor {

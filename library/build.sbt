@@ -34,3 +34,16 @@ libraryDependencies ++= Seq(
   "org.geotools" % "gt-shapefile" % geotoolsVersion exclude("javax.media", "jai_core")
   //"javax.media" % "jai_core" % "1.1.3" //from "http://download.osgeo.org/webdav/geotools/javax/media/jai_core/1.1.3/jai_core-1.1.3.jar"
 )
+
+
+
+enablePlugins(SbtOsgi)
+
+//lazy val omlplugin = Project("omlplugin", file("src")) settings(
+  OsgiKeys.exportPackage := Seq("spatialdata.*;-split-package:=merge-first")
+  OsgiKeys.importPackage := Seq("*;resolution:=optional")
+  OsgiKeys.privatePackage := Seq("!scala.*,!java.*,!monocle.*,!META-INF.*.RSA,!META-INF.*.SF,!META-INF.*.DSA,META-INF.services.*,META-INF.*,*")
+  OsgiKeys.requireCapability := """osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))""""
+//)
+
+

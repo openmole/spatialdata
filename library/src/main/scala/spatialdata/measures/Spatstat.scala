@@ -11,8 +11,11 @@ import org.apache.commons.math3.linear._
 object Spatstat {
 
 
+
+
+
   /**
-    * Moran index
+    * Moran index for 2d points
     *
     * @param pi set of points
     * @param xi values of field X
@@ -29,6 +32,13 @@ object Spatstat {
     val variance = xx.map{case xi => xi*xi}.sum
     (n*cov) / (weights.sum*variance)
   }
+
+  /**
+    * wrapper for simplified external use
+    * @param pi
+    * @param x
+    */
+  def moran(pi: Array[Array[Double]],x: Array[Double]): Double = moran(pi.map{case a => (a(0),a(1)).asInstanceOf[Point2D]},x)
 
 
   /**

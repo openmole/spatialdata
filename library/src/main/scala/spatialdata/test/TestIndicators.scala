@@ -1,12 +1,17 @@
 
 package spatialdata.test
 
-import spatialdata.measures.Morphology
+import spatialdata.measures.{Morphology, Statistics}
 import spatialdata.synthetic.grid.ExpMixtureGenerator
 
 import scala.util.Random
 
 object TestIndicators {
+
+  def testStats(): Unit = {
+    val rng = new util.Random
+    println(Statistics.histogram(Array.fill(1000000){rng.nextDouble()},20).toSeq)//.map{case c => Array(c._1,c._2)})
+  }
 
   def testMoran(): Unit = {
 

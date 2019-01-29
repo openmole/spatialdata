@@ -61,7 +61,7 @@ object BuildingExtractor {
   }
   def getBuildings(south: Double, west: Double, north: Double, east: Double) = {
     Locale.setDefault(Locale.ENGLISH)
-    val api = new ApiConnection("http://master.apis.dev.openstreetmap.org/api")
+    val api = new ApiConnection()//"http://master.apis.dev.openstreetmap.org/api"
     val root = api.get(south, west, north, east)
 //    val login = sys.env("OSM_LOGIN")
 //    val password = sys.env("OSM_PASSWORD")

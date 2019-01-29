@@ -8,12 +8,16 @@ object Test extends App {
   TestOSM.testBuildingExtractor
 //  TestOSM.testOSMGridSampling
 
-  // indicators
+  // Indicators
+//  TestIndicators.testSpatialIndics
   //TestIndicators.testMoran
-//  TestIndicators.testStats
+  //TestIndicators.testStats
 
-  // synthetic grids
+  // Synthetic grids
   //TestSynthetic.testRandomGrids
+
+  // Utils
+  //TestUtils.testCSV
 
 
 }

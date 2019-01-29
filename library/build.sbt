@@ -27,9 +27,9 @@ libraryDependencies ++= Seq(
   "org.diana-hep" %% "histogrammar" % "1.0.4",
   "com.vividsolutions" % "jts" % "1.13",
   "org.scala-graph" %% "graph-core" % "1.12.5",
-//  "se.kodapan.osm.common" % "core" % osmCommonVersion,
-//  "se.kodapan.osm.common" % "java" % osmCommonVersion,
-//  "se.kodapan.osm.common" % "jts" % osmCommonVersion,
+  "se.kodapan.osm.common" % "core" % osmCommonVersion,
+  "se.kodapan.osm.common" % "java" % osmCommonVersion,
+  "se.kodapan.osm.common" % "jts" % osmCommonVersion,
   "org.geotools" % "geotools" % geotoolsVersion exclude("javax.media", "jai_core"),
   "org.geotools" % "gt-shapefile" % geotoolsVersion exclude("javax.media", "jai_core"),
   "com.github.tototoshi" %% "scala-csv" % "1.3.4"
@@ -47,10 +47,8 @@ enablePlugins(SbtOsgi)
   OsgiKeys.requireCapability := """osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))""""
 //)
 
+excludeFilter in unmanagedSources := HiddenFileFilter || "*kodapan*"
 
-//val osmCommonVersion = "0.0.3-SNAPSHOT"
-//libraryDependencies += "se.kodapan.osm.common" % "jts" % osmCommonVersion
-
-libraryDependencies += "org.apache.httpcomponents" % "httpclient" % "4.3.5"
-libraryDependencies += "commons-io" % "commons-io" % "2.3"
-libraryDependencies += "org.apache.commons" % "commons-lang3" % "3.1"
+//libraryDependencies += "org.apache.httpcomponents" % "httpclient" % "4.3.5"
+//libraryDependencies += "commons-io" % "commons-io" % "2.3"
+//libraryDependencies += "org.apache.commons" % "commons-lang3" % "3.1"

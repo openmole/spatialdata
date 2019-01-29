@@ -11,6 +11,27 @@ import org.apache.commons.math3.linear._
 object Spatstat {
 
 
+  /**
+    * Spatial moment at any order (centered for coordinates) ; normalized by total sum (weights)
+    *
+    * @param pi
+    * @param x
+    * @param p
+    * @param q
+    * @return
+    */
+  def spatialMoment(pi: Array[Point2D],x: Array[Double],p: Int = 0,q: Int = 0): Double = {
+    val xcor = pi.map{_._1}
+    val sx = Statistics.std(xcor)
+    val mx = Statistics.moment(xcor)
+    val xnorm = pi.map{case p => (p._1 - mx) / sx}
+    val ycor = pi.map{_._2}
+    val sy = Statistics.std(ycor)
+    val my = Statistics.moment(ycor)
+    val ynorm = pi.map{case p => (p._2 - my) / sy}
+    xnorm.zip(ynorm).zip(x).map{case((xx,yy),f)=>math.pow(xx,p)*math.pow(yy,q)*f}.sum/x.sum
+  }
+
 
 
 
@@ -19,13 +40,15 @@ object Spatstat {
     *
     * @param pi set of points
     * @param xi values of field X
+    * @param filter optional filter function
     * @return
     */
-  def moran(pi: Array[Point2D],x: Array[Double],weightFunction: Array[Point2D]=> Array[Array[Double]] = spatialWeights): Double = {
-    val n = pi.length
-    val weights: Array[Double] = weightFunction(pi).flatten
-    val xavg = x.sum / x.length
-    val xx = x.map{_ - xavg}
+  def moran(pi: Array[Point2D],x: Array[Double],weightFunction: Array[Point2D]=> Array[Array[Double]] = spatialWeights,filter: Double => Boolean = _ => true): Double = {
+    val (pf,xf) = pi.zip(x).filter{case (p,xx)=>filter(xx)}.unzip
+    val n = pf.length
+    val weights: Array[Double] = weightFunction(pf).flatten
+    val xavg = xf.sum / xf.length
+    val xx = xf.map{_ - xavg}
     val xm: Array[Double] = MatrixUtils.createRealMatrix(Array.fill(n)(xx)).transpose().getData.flatten
     val ym: Array[Double] = Array.fill(n)(xx).flatten
     val cov =  xm.zip(ym).zip(weights).map{case ((xi,xj),wij)=> wij*xi*xj}.sum

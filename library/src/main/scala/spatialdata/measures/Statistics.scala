@@ -21,13 +21,29 @@ object Statistics {
     * @param breaks
     * @return
     */
-  def histogram(x: Array[Double],breaks: Int): Array[(Double,Double)] = {
-    val hist = Bin(breaks,x.min,x.max,{d: Double=>d})
-    for (d <- x) hist.fill(d)
-    val xstep = (x.max - x.min) / breaks
+  def histogram(x: Array[Double],breaks: Int,filter: Double => Boolean = _ => true,display:Boolean = false): Array[(Double,Double)] = {
+    val xx = x.filter(filter)
+    val hist = Bin(breaks,xx.min,xx.max,{d: Double=>d})
+    for (d <- xx) hist.fill(d)
+
+    if(display) {
+      import org.dianahep.histogrammar.ascii._
+      println(hist.ascii)
+    }
+
+    val xstep = (xx.max - xx.min) / breaks
     Array.tabulate(breaks){case i => xstep / 2 + i*xstep}.zip(hist.values.map{_.asInstanceOf[Counting].entries})
   }
 
+  /**
+    * biased estimator of the std
+    * @param x
+    * @return
+    */
+  def std(x: Array[Double]): Double = {
+    val ex = moment(x)
+    math.sqrt(moment(x,2) - ex*ex)
+  }
 
 
 

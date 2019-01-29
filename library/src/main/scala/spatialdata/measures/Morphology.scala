@@ -214,6 +214,7 @@ object Morphology {
     for(i <- paddingx until res.length - paddingx;j <- paddingy until res(0).length-paddingy){
       val masked = Array.fill(mask.size,mask(0).size)(0.0)
       for(k <- - paddingx until paddingx;l <- - paddingy until paddingy){
+        assert(i+k<matrix.length&j+l<matrix(0).length,"size : "+i+" "+j+" "+k+" "+" "+l)
         masked(k+paddingx)(l+paddingy)=matrix(i+k)(j+l)*mask(k+paddingx)(l+paddingy)
       }
       res(i)(j) = operator(masked.flatten)

@@ -31,7 +31,8 @@ libraryDependencies ++= Seq(
   "se.kodapan.osm.common" % "java" % osmCommonVersion,
   "se.kodapan.osm.common" % "jts" % osmCommonVersion,
   "org.geotools" % "geotools" % geotoolsVersion exclude("javax.media", "jai_core"),
-  "org.geotools" % "gt-shapefile" % geotoolsVersion exclude("javax.media", "jai_core")
+  "org.geotools" % "gt-shapefile" % geotoolsVersion exclude("javax.media", "jai_core"),
+  "com.github.tototoshi" %% "scala-csv" % "1.3.4"
   //"javax.media" % "jai_core" % "1.1.3" //from "http://download.osgeo.org/webdav/geotools/javax/media/jai_core/1.1.3/jai_core-1.1.3.jar"
 )
 

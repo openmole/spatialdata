@@ -51,22 +51,22 @@ object BuildingExtractor {
   def asPolygonSeq(e: Enumerator[Way]) = {
     var result = scala.collection.mutable.Buffer[Polygon]()
     val fact = new JtsGeometryFactory()
-    var way = e.next()
+    var way: Way = e.next
     while (way != null) {
       val building = way.getTag("building")
       if (building != null /* && building.equals("yes")*/ ) result += fact.createPolygon(way)
-      way = e.next()
+      way = e.next
     }
     Seq(result:_*)
   }
   def getBuildings(south: Double, west: Double, north: Double, east: Double) = {
     Locale.setDefault(Locale.ENGLISH)
-    val api = new ApiConnection()
+    val api = new ApiConnection("http://master.apis.dev.openstreetmap.org/api")
     val root = api.get(south, west, north, east)
 //    val login = sys.env("OSM_LOGIN")
 //    val password = sys.env("OSM_PASSWORD")
 //    api.authenticate(login, password)
-    asPolygonSeq(root.enumerateWays())
+    asPolygonSeq(root.enumerateWays)
   }
   def getBuildingIntersection(south: Double, west: Double, north: Double, east: Double) = {
     val buildings = getBuildings(south, west, north, east)

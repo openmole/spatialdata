@@ -52,8 +52,8 @@ object TestOSM {
     val (east, north) = BuildingExtractor.PseudoMercatorToWGS84Mercator(x + shift, y + shift)
     val g = BuildingExtractor.getNegativeBuildingIntersection(south, west, north, east)
     println(g)
-    if (g.isInstanceOf[MultiPolygon]) println(asInstanceOf[MultiPolygon].getNumGeometries)
-*/
+    if (g.isInstanceOf[MultiPolygon]) println(g.asInstanceOf[MultiPolygon].getNumGeometries)
+    */
 
   }
 

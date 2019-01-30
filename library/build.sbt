@@ -47,4 +47,8 @@ enablePlugins(SbtOsgi)
   OsgiKeys.requireCapability := """osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))""""
 //)
 
+excludeFilter in unmanagedSources := HiddenFileFilter || "*kodapan*"
 
+//libraryDependencies += "org.apache.httpcomponents" % "httpclient" % "4.3.5"
+//libraryDependencies += "commons-io" % "commons-io" % "2.3"
+//libraryDependencies += "org.apache.commons" % "commons-lang3" % "3.1"

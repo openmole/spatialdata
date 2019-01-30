@@ -20,16 +20,20 @@ object Spatstat {
     * @param q
     * @return
     */
-  def spatialMoment(pi: Array[Point2D],x: Array[Double],p: Int = 0,q: Int = 0): Double = {
-    val xcor = pi.map{_._1}
+  def spatialMoment(pi: Array[Point2D],x: Array[Double],p: Int = 0,q: Int = 0,filter: Double => Boolean = _ => true): Double = {
+    val (pf,xf) = pi.zip(x).filter{case (p,xx)=>filter(xx)}.unzip
+    val xcor = pf.map{_._1}
     val sx = Statistics.std(xcor)
     val mx = Statistics.moment(xcor)
-    val xnorm = pi.map{case p => (p._1 - mx) / sx}
-    val ycor = pi.map{_._2}
+    val xnorm = pf.map{case p => (p._1 - mx) / sx}
+    //println(xnorm.toSeq)
+    val ycor = pf.map{_._2}
     val sy = Statistics.std(ycor)
     val my = Statistics.moment(ycor)
-    val ynorm = pi.map{case p => (p._2 - my) / sy}
-    xnorm.zip(ynorm).zip(x).map{case((xx,yy),f)=>math.pow(xx,p)*math.pow(yy,q)*f}.sum/x.sum
+    val ynorm = pf.map{case p => (p._2 - my) / sy}
+    //println(ynorm.toSeq.map{math.pow(_,q)})
+    //println(xf.sum)
+    xnorm.zip(ynorm).zip(xf).map{case((xx,yy),f)=>math.pow(xx,p)*math.pow(yy,q)*f}.sum/xf.sum
   }
 
 

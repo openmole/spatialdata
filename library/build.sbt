@@ -1,5 +1,5 @@
-//scalaVersion := "2.12.6"
-scalaVersion := "2.11.8"
+scalaVersion := "2.12.6"
+//scalaVersion := "2.11.8"
 
 name := "spatialdata"
 
@@ -14,8 +14,9 @@ resolvers ++= Seq(
   "apache" at "http://repo.maven.apache.org/maven2",
   Resolver.sonatypeRepo("snapshots"),
   Resolver.sonatypeRepo("staging"),
-  Resolver.mavenLocal,
-  Resolver.mavenCentral
+  //Resolver.mavenLocal, // remove constraint of locally publishing librairies => copies in lib
+  Resolver.mavenCentral,
+  "Local Maven Repository" at "file:"+(new java.io.File(".")).getAbsolutePath+"/lib" 
 )
 
 val osmCommonVersion = "0.0.3-SNAPSHOT"
@@ -24,7 +25,7 @@ val geotoolsVersion = "18.4"
 libraryDependencies ++= Seq(
   "org.apache.commons" % "commons-math3" % "3.6.1",
   "com.github.pathikrit" %% "better-files" % "3.5.0",
-  "org.diana-hep" %% "histogrammar" % "1.0.4",
+  "org.diana-hep" %% "histogrammar" % "1.0.4",// to publish locally as 2.12: pull from https://github.com/histogrammar/histogrammar-scala, add scala-2.12 in core/pom.xml and mvn install locally
   "com.vividsolutions" % "jts" % "1.13",
   "org.scala-graph" %% "graph-core" % "1.12.5",
   "se.kodapan.osm.common" % "core" % osmCommonVersion,

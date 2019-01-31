@@ -58,7 +58,7 @@ package object measures {
       println("Spatial moment 2 0 = "+Spatstat.spatialMoment(points,values,2,0,filter = !_.isNaN))
       println("Spatial moment 0 2 = "+Spatstat.spatialMoment(points,values,0,2,filter = !_.isNaN))
       */
-      val condhist = Statistics.histogram(values.filter{modeCondition},histBreaks,filter = !_.isNaN, display=false)
+      val condhist = Statistics.histogram(values.filter{!modeCondition(_)},histBreaks,filter = !_.isNaN, display=true)
 
       SummarySpatialStatistics(
         Statistics.moment(values,1,filter = !_.isNaN),

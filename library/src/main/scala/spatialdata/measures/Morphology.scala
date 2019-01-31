@@ -4,7 +4,7 @@ package spatialdata.measures
 import spatialdata.utils.math.Convolution
 import org.apache.commons.math3.stat.regression.SimpleRegression
 import org.apache.commons.math3.util.MathArrays
-import spatialdata.RasterLayerData
+import spatialdata.{RasterLayerData, measures}
 
 import scala.math._
 
@@ -13,7 +13,6 @@ case class Morphology(
                        moran: Double,
                        fullDilationSteps: Double
                      )
-
 
 
 /**
@@ -26,44 +25,12 @@ case class Morphology(
   */
 object Morphology {
 
-
   def apply(grid: RasterLayerData[Double]): Morphology = Morphology(moranDirect(grid),fullDilationSteps(grid))
 
 
-  /**
-    * Rank-size slope
-    * Simply estimated by a log-log linear regression
-    *
-    * TODO add option to better estimate the power law (see Clauset, A., Shalizi, C. R., & Newman, M. E. (2009). Power-law distributions in empirical data. SIAM review, 51(4), 661-703.)
-    *
-    * @param matrix
-    * @return (estimated slope, R2 of the regression)
-    */
-  def slope(matrix: Array[Array[Double]]): (Double,Double) = {
-    def distribution: Array[Double] = matrix.flatten.sorted(Ordering.Double.reverse).filter(_ > 0)
-    def distributionLog: Array[Array[Double]] = distribution.zipWithIndex.map { case (q, i) => Array(log(i + 1), log(q)) }
-    val simpleRegression = new SimpleRegression(true)
-    simpleRegression.addData(distributionLog)
-    (simpleRegression.getSlope(), simpleRegression.getRSquare())
-  }
 
-  /**
-    * Entropy of the distribution
-    *
-    * @param matrix
-    * @return
-    */
-  def entropy(matrix: Seq[Seq[Double]]) = {
-    val totalQuantity = matrix.flatten.sum
-    assert(totalQuantity > 0)
-    matrix.flatten.map {
-      p =>
-        val quantityRatio = p/ totalQuantity
-        val localEntropy = if (quantityRatio == 0.0) 0.0 else quantityRatio * math.log(quantityRatio)
-        //assert(!localEntropy.isNaN, s"${quantityRatio} ${math.log(quantityRatio)}")
-        localEntropy
-    }.sum * (-1 / math.log(matrix.flatten.length))
-  }
+
+
 
   /**
     * Mean distance using fast convolution.

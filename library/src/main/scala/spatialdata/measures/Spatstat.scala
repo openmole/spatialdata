@@ -5,7 +5,7 @@ package spatialdata.measures
 import spatialdata._
 import org.apache.commons.math3.linear._
 
-
+import com.vividsolutions.jts.geom._
 
 
 object Spatstat {
@@ -22,14 +22,21 @@ object Spatstat {
     */
   def spatialMoment(pi: Array[Point2D],x: Array[Double],p: Int = 0,q: Int = 0,filter: Double => Boolean = _ => true): Double = {
     val (pf,xf) = pi.zip(x).filter{case (p,xx)=>filter(xx)}.unzip
+    val centroid = convexHullCentroid(pi)
+
     val xcor = pf.map{_._1}
-    val sx = Statistics.std(xcor)
-    val mx = Statistics.moment(xcor)
+    //val sx = Statistics.std(xcor)
+    val sx = xcor.max - xcor.min
+    //val mx = Statistics.moment(xcor)
+    val mx = centroid._1
     val xnorm = pf.map{case p => (p._1 - mx) / sx}
     //println(xnorm.toSeq)
+
     val ycor = pf.map{_._2}
-    val sy = Statistics.std(ycor)
-    val my = Statistics.moment(ycor)
+    //val sy = Statistics.std(ycor)
+    val sy = ycor.max - ycor.min
+    //val my = Statistics.moment(ycor)
+    val my = centroid._1
     val ynorm = pf.map{case p => (p._2 - my) / sy}
     //println(ynorm.toSeq.map{math.pow(_,q)})
     //println(xf.sum)
@@ -69,6 +76,29 @@ object Spatstat {
 
 
   /**
+    * Average distance between individuals for a set of points
+    *  - contrary to a grid, difficult to have a typical radius (points can have a weird ditribution)
+    *   -> use the maximal distance
+    * @param pi
+    * @param x
+    * @param weightFunction
+    * @param filter
+    * @return
+    */
+  def averageDistance(pi: Array[Point2D],x: Array[Double],filter: Double => Boolean = _ => true): Double = {
+    val (pf,xf): (Array[Point2D],Array[Double]) = pi.zip(x).filter{case (p,xx)=>filter(xx)}.unzip
+    val n = pf.length
+    val dmat = euclidianDistanceMatrix(pf)
+    val dmax = dmat.flatten.max
+    val xtot = xf.sum
+    val xi = MatrixUtils.createRealMatrix(Array.fill(n)(xf)).transpose().getData.flatten.toSeq
+    val xj = Array.fill(n)(xf).flatten.toSeq
+    xi.zip(xj).zip(dmat.flatten.toSeq).map{case ((xi,xj),dij)=>xi*xj*dij}.sum / (xtot*xtot*dmax)
+  }
+
+
+
+  /**
     * Default spatial weights as w_ij = 1/d_{ij}
     * @param pi
     * @return
@@ -90,6 +120,18 @@ object Spatstat {
     val xcoords = MatrixUtils.createRealMatrix(Array.fill(n)(pi.map(_._1)))
     val ycoords = MatrixUtils.createRealMatrix(Array.fill(n)(pi.map(_._2)))
     MatrixUtils.createRealMatrix(xcoords.subtract(xcoords.transpose()).getData.map(_.map{case x => x*x})).add(MatrixUtils.createRealMatrix(xcoords.subtract(ycoords.transpose()).getData.map(_.map{case x => x*x}))).getData.map{_.map{math.sqrt(_)}}
+  }
+
+
+  /**
+    * Get the centroid of the convex hull of a point cloud
+    * @param pi
+    * @return
+    */
+  def convexHullCentroid(pi: Array[Point2D]): Point2D = {
+    val geomFactory = new GeometryFactory
+    val convexHullCentroid = geomFactory.createMultiPoint(pi.map{case (x,y)=>geomFactory.createPoint(new com.vividsolutions.jts.geom.Coordinate(x,y))}).convexHull.getCentroid
+    (convexHullCentroid.getX,convexHullCentroid.getY)
   }
 
 

@@ -42,11 +42,12 @@ object OSMGridGenerator {
       (x,i) <- (xmin to (xmax - xstep) by xstep).zipWithIndex
       (y,j) <- (ymin to (ymax - ystep) by ystep).zipWithIndex
     } yield{
-      ((i,j), if(new GeometryFactory(g.getPrecisionModel,g.getSRID).createPolygon(Array(new Coordinate(x,y),new Coordinate(x+xstep,y),new Coordinate(x+xstep,y+ystep),new Coordinate(x,y+ystep),new Coordinate(x,y))).coveredBy(g)) 1.0 else 0.0
+      // note : g is Negative of buildings -> inversed !
+      ((i,j), if(new GeometryFactory(g.getPrecisionModel,g.getSRID).createPolygon(Array(new Coordinate(x,y),new Coordinate(x+xstep,y),new Coordinate(x+xstep,y+ystep),new Coordinate(x,y+ystep),new Coordinate(x,y))).coveredBy(g)) 0.0 else 1.0
         )
     }
     val values = cells.toMap
-    println(values.keys.size)
+    //println(values.keys.size)
     Array.tabulate(worldWidth,worldWidth){case k=> values(k)}
   }
 

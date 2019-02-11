@@ -6,10 +6,10 @@ object Test extends App {
 
   // OSM
   //TestOSM.testBuildingExtractor
-  //TestOSM.testOSMGridSampling
+  TestOSM.testOSMGridSampling
 
   // Indicators
-  TestIndicators.testSpatialIndics
+  //TestIndicators.testSpatialIndics
   //TestIndicators.testMoran
   //TestIndicators.testStats
 

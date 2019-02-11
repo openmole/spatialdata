@@ -4,14 +4,25 @@ package spatialdata.measures
 import spatialdata.utils.math.Convolution
 import org.apache.commons.math3.stat.regression.SimpleRegression
 import org.apache.commons.math3.util.MathArrays
+import spatialdata.grid.Grid
 import spatialdata.{RasterLayerData, measures}
+
+import spatialdata.network.Network
 
 import scala.math._
 
 
 case class Morphology(
                        moran: Double,
-                       fullDilationSteps: Double
+                       avgDistance: Double,
+                       density: Double,
+                       components: Double,
+                       avgDetour: Double,
+                       avgBlockArea: Double,
+                       fullDilationSteps: Double,
+                       fullErosionSteps: Double,
+                       fullClosingSteps: Double,
+                       fullOpeningSteps: Double
                      )
 
 
@@ -25,9 +36,84 @@ case class Morphology(
   */
 object Morphology {
 
-  def apply(grid: RasterLayerData[Double]): Morphology = Morphology(moranDirect(grid),fullDilationSteps(grid))
+  def apply(grid: RasterLayerData[Double]): Morphology = {
+    val cachedNetwork = Network.gridToNetwork(grid)
+    Morphology(
+      moranDirect(grid),
+      distanceMeanDirect(grid),
+      density(grid),
+      components(grid,Some(cachedNetwork)),
+      avgDetour(grid,Some(cachedNetwork)),
+      avgBlockArea(grid),
+      fullDilationSteps(grid),
+      fullErosionSteps(grid),
+      fullClosingSteps(grid),
+      fullOpeningSteps(grid)
+    )
+  }
 
 
+
+
+  /**
+    * Number of connected components
+    * @param world
+    * @param cachedNetwork
+    * @return
+    */
+  def components(world: Array[Array[Double]],cachedNetwork: Option[Network] = None): Double = {
+    val network = cachedNetwork match {case None => Network.gridToNetwork(world);case n => n.get}
+    val components = Network.connectedComponents(network)
+    //println("components = "+components.size)
+    components.size
+  }
+
+  /**
+    * average block area
+    * @param world
+    * @return
+    */
+  def avgBlockArea(world: Array[Array[Double]]): Double = {
+    val inversedNetwork = Network.gridToNetwork(world.map{_.map{case x => 1.0 - x}})
+    val components = Network.connectedComponents(inversedNetwork)
+    val avgblockarea = components.map{_.nodes.size}.sum/components.size
+    //println("avgblockarea = "+avgblockarea)
+    avgblockarea
+  }
+
+  /**
+    * average detour compared to euclidian
+    * @param world
+    * @param cachedNetwork
+    * @param sampledPoints
+    * @return
+    */
+  def avgDetour(world: Array[Array[Double]],cachedNetwork: Option[Network] = None,sampledPoints: Int=50): Double = {
+    val network = cachedNetwork match {case None => Network.gridToNetwork(world);case n => n.get}
+    // too costly to do all shortest paths => sample
+    //val shortestPaths = Network.allPairsShortestPath(network)
+    //val avgdetour = shortestPaths.values.map{_.map{_.weight}.sum}.zip(shortestPaths.keys.map{case (n1,n2)=> math.sqrt((n1.x-n2.x)*(n1.x-n2.x)+(n1.y-n2.y)*(n1.y-n2.y))}).map{case (dn,de)=>dn/de}.sum/shortestPaths.size
+    //println("avgdetour = "+avgdetour)
+    val sampled = network.nodes.toSeq.take(sampledPoints)
+    val paths = Network.shortestPathsScalagraph(network,sampled)
+    val avgdetour = paths.map{
+      case (_,(nodes,d))=>
+        val (n1,n2) = (nodes(0),nodes.last)
+        val de = math.sqrt((n1.x-n2.x)*(n1.x-n2.x)+(n1.y-n2.y)*(n1.y-n2.y))
+        //println(d,de)
+        d/de
+    }.filter{!_.isNaN}.filter{!_.isInfinite}.sum / paths.size
+    avgdetour
+  }
+
+
+
+  /**
+    * Global density
+    * @param world
+    * @return
+    */
+  def density(world: Array[Array[Double]]): Double = world.flatten.map{x => if(x>0.0)1.0 else 0.0}.sum / world.flatten.size
 
 
 
@@ -106,6 +192,8 @@ object Morphology {
 
     def normalisation = matrix.length / math.sqrt(math.Pi)
 
+    if(totalQuantity==0.0||normalisation==0.0) return(0.0)
+
     (numerator / (totalQuantity * totalQuantity)) / normalisation
   }
 
@@ -177,16 +265,21 @@ object Morphology {
     val sizes = matrix.map(_.length);assert(sizes.max==sizes.min,"array should be rectangular")
     val masksizes = mask.map(_.length);assert(masksizes.max==masksizes.min,"mask should be rectangular")
     val (paddingx,paddingy) = ((mask.length-1)/2,(mask(0).length-1)/2)
+    val padded = Array.tabulate(matrix.length+2*paddingx,matrix(0).length+2*paddingy){
+      case (i,j) if i<paddingx||i>=(matrix.length+paddingx)||j<paddingy||j>=(matrix(0).length+paddingy) => 0.0
+      case (i,j) => matrix(i-paddingx)(j-paddingy)
+    }
     val res = Array.fill(matrix.length+2*paddingx,matrix(0).length+2*paddingy)(0.0)
-    for(i <- paddingx until res.length - paddingx;j <- paddingy until res(0).length-paddingy){
+    for(i <- paddingx until (res.length - paddingx);j <- paddingy until (res(0).length-paddingy)){
       val masked = Array.fill(mask.size,mask(0).size)(0.0)
-      for(k <- - paddingx until paddingx;l <- - paddingy until paddingy){
-        assert(i+k<matrix.length&j+l<matrix(0).length,"size : "+i+" "+j+" "+k+" "+" "+l)
-        masked(k+paddingx)(l+paddingy)=matrix(i+k)(j+l)*mask(k+paddingx)(l+paddingy)
+      for(k <- - paddingx to paddingx;l <- - paddingy to paddingy){
+        //assert(i+k<matrix.length&j+l<matrix(0).length,"size : "+i+" "+j+" "+k+" "+" "+l+" for a matrix of size "+matrix.length+";"+matrix(0).length)
+        masked(k+paddingx)(l+paddingy)=padded(i+k)(j+l)*mask(k+paddingx)(l+paddingy)
       }
       res(i)(j) = operator(masked.flatten)
     }
-    res
+    //res.zip(matrix).map{case (row,initrow) => row.take(initrow.length + paddingy).takeRight(initrow.length)}.take(matrix.length+paddingx).takeRight(matrix.length)
+    res.map{case row => row.slice(paddingy,row.length-paddingy)}.slice(paddingx,res.length-paddingx)
   }
 
   /**
@@ -214,8 +307,10 @@ object Morphology {
     var steps = 0
     var complete = false
     var currentworld = matrix
+    if(matrix.flatten.sum==0){return(Double.PositiveInfinity)}
     while(!complete){
-      println("dilating "+steps)
+      //println("dilating "+steps+" ; "+currentworld.flatten.sum+"/"+currentworld.flatten.length+" ; "+currentworld.length+" - "+currentworld(0).length)
+      //println(Grid.gridToString(currentworld)+"\n\n")
       currentworld = dilation(currentworld)
       complete = currentworld.flatten.sum == currentworld.flatten.length
       steps = steps + 1
@@ -223,6 +318,74 @@ object Morphology {
     steps
   }
 
+  /**
+    * Number of steps to fully erode the image
+    * @param matrix
+    * @return
+    */
+  def fullErosionSteps(matrix: Array[Array[Double]]): Double = {
+    var steps = 0
+    var complete = false
+    var currentworld = matrix
+    if(matrix.flatten.sum==matrix.flatten.length){return(Double.PositiveInfinity)}
+    while(!complete){
+      //println("eroding "+steps+" ; "+currentworld.flatten.sum+"/"+currentworld.flatten.length)
+      //println(Grid.gridToString(currentworld)+"\n\n")
+      currentworld = erosion(currentworld)
+      complete = currentworld.flatten.sum == 0
+      steps = steps + 1
+    }
+    steps
+  }
+
+
+  /**
+    * Closing is the erosion of the dilation
+    *
+    * @param matrix
+    * @return
+    */
+  def fullClosingSteps(matrix: Array[Array[Double]]): Double = {
+    var steps = 0
+    var complete = false
+    var currentworld = matrix
+    if(matrix.flatten.sum==0.0){return(Double.PositiveInfinity)}
+    while(!complete){
+      //println("closing "+steps+" ; "+currentworld.flatten.sum+"/"+currentworld.flatten.length)
+      //println(Grid.gridToString(currentworld)+"\n\n")
+      val prevworld = currentworld.map{_.clone()}
+      currentworld = erosion(dilation(currentworld))
+      val diff = prevworld.zip(currentworld).map{case (d1,d2) => d1.zip(d2).map{case (dd1,dd2)=> math.abs(dd1-dd2)}.sum}.sum
+      //println("diff = "+diff)
+      complete = (diff==0.0)
+      steps = steps + 1
+    }
+    steps
+  }
+
+
+  /**
+    * Opening is dilating the erosion
+    * @param matrix
+    * @return
+    */
+  def fullOpeningSteps(matrix: Array[Array[Double]]): Double = {
+    var steps = 0
+    var complete = false
+    var currentworld = matrix
+    if(matrix.flatten.sum==matrix.flatten.length){return(Double.PositiveInfinity)}
+    while(!complete){
+      //println("opening "+steps+" ; "+currentworld.flatten.sum+"/"+currentworld.flatten.length)
+      //println(Grid.gridToString(currentworld)+"\n\n")
+      val prevworld = currentworld.map{_.clone()}
+      currentworld = dilation(erosion(currentworld))
+      val diff = prevworld.zip(currentworld).map{case (d1,d2) => d1.zip(d2).map{case (dd1,dd2)=> math.abs(dd1-dd2)}.sum}.sum
+      //println("diff = "+diff)
+      complete = (diff==0.0)
+      steps = steps + 1
+    }
+    steps
+  }
 
 
 

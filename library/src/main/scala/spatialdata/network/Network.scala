@@ -141,6 +141,32 @@ object Network {
 
 
   /**
+    *
+    * @param network
+    * @param vertices
+    * @return
+    */
+  def shortestPathsScalagraph(network: Network, vertices: Seq[Node]): Map[(Node,Node),(Seq[Node],Double)] = {
+    //println("Computing shortest paths between vertices : "+vertices)
+    val gg = networkToGraph(network)
+    val g = gg._1
+    val nodeMap = gg._2
+    (for {
+      i <- vertices
+      j <- vertices
+    } yield ((i,j),if(i==j) {(Seq(i),0.0)}
+      else {
+        val path = g.get(i.id).shortestPathTo(g.get(j.id))
+        if(path.nonEmpty){
+          (path.get.nodes.map{nodeMap(_)}.toSeq,path.get.edges.map{_.weight}.sum)
+        }
+        else {(Seq.empty[Node],Double.PositiveInfinity)}
+      })).toMap
+  }
+
+
+
+  /**
     * extract connected components
     *  using scala-graph component traverser
     * @param network

@@ -19,8 +19,8 @@ object TestOSM {
     val grids = OSMGridSampling.sampleGridsInLayer("data/cities_europe.shp",2,500,50)
 
     for (grid <- grids) {
-      println(Grid.gridToString(grid)+"\n\n")
-      println(Morphology(grid))
+      //println(Grid.gridToString(grid)+"\n\n")
+      println(Morphology(grid._2))
     }
 
     //println(SpatialSampling.samplePointsInLayer("data/cities_europe.shp",10))

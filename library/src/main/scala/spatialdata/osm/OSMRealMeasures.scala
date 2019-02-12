@@ -22,7 +22,11 @@ object OSMRealMeasures extends App {
   val morphologies = grids.map{case g => Morphology(g._2)}
   val coordinates = grids.map{_._1}
 
-  CSV.writeCSV(morphologies.zip(coordinates).map{case (m,c)=>Array(c._1,c._2,m.avgBlockArea,m.avgDetour,m.avgDistance,m.components,m.density,m.fullClosingSteps,m.fullDilationSteps,m.fullErosionSteps,m.fullOpeningSteps,m.moran)}.toArray,resdir+"/morpho_npoints"+npoints+"_windowSize"+windowSize+"_worldWidth"+worldWidth+"_seed"+seed+".csv",";")
+  val data = morphologies.zip(coordinates).map{case (m,c)=>Array(c._1,c._2,m.avgBlockArea,m.avgDetour,m.avgDistance,m.components,m.density,m.fullClosingSteps,m.fullDilationSteps,m.fullErosionSteps,m.fullOpeningSteps,m.moran)}.toArray
+  val header = Array("lon","lat","avgBlockArea","avgDetour","avgDistance","components","density","fullClosingSteps","fullDilationSteps","fullErosionSteps","fullOpeningSteps","moran")
+  val resfile = resdir+"/morpho_npoints"+npoints+"_windowSize"+windowSize+"_worldWidth"+worldWidth+"_seed"+seed+".csv"
+
+  CSV.writeCSV(data,resfile,";",header)
 
 }
 

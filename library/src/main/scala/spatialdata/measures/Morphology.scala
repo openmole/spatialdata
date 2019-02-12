@@ -13,12 +13,16 @@ import scala.math._
 
 
 case class Morphology(
+                       height: Double,
+                       width: Double,
+                       area: Double,
                        moran: Double,
                        avgDistance: Double,
                        density: Double,
                        components: Double,
                        avgDetour: Double,
                        avgBlockArea: Double,
+                       avgComponentArea: Double,
                        fullDilationSteps: Double,
                        fullErosionSteps: Double,
                        fullClosingSteps: Double,
@@ -39,12 +43,15 @@ object Morphology {
   def apply(grid: RasterLayerData[Double]): Morphology = {
     val cachedNetwork = Network.gridToNetwork(grid)
     Morphology(
+      grid.size,grid(0).size,
+      grid.flatten.sum,
       moranDirect(grid),
       distanceMeanDirect(grid),
       density(grid),
       components(grid,Some(cachedNetwork)),
       avgDetour(grid,Some(cachedNetwork)),
-      avgBlockArea(grid),
+      avgBlockArea(grid,Some(cachedNetwork)),
+      avgComponentArea(grid),
       fullDilationSteps(grid),
       fullErosionSteps(grid),
       fullClosingSteps(grid),
@@ -73,13 +80,28 @@ object Morphology {
     * @param world
     * @return
     */
-  def avgBlockArea(world: Array[Array[Double]]): Double = {
+  def avgBlockArea(world: Array[Array[Double]],cachedNetwork: Option[Network] = None): Double = {
+    //val inversedNetwork = Network.gridToNetwork(world.map{_.map{case x => 1.0 - x}})
+    val network = cachedNetwork match {case None => Network.gridToNetwork(world);case n => n.get}
+    val components = Network.connectedComponents(network)
+    val avgblockarea = components.size match {case n if n == 0 => 0.0;case n => components.map{_.nodes.size}.sum/components.size}
+    //println("avgblockarea = "+avgblockarea)
+    avgblockarea
+  }
+
+  /**
+    * avg component area
+    * @param world
+    * @return
+    */
+  def avgComponentArea(world: Array[Array[Double]]): Double = {
     val inversedNetwork = Network.gridToNetwork(world.map{_.map{case x => 1.0 - x}})
     val components = Network.connectedComponents(inversedNetwork)
     val avgblockarea = components.map{_.nodes.size}.sum/components.size
     //println("avgblockarea = "+avgblockarea)
     avgblockarea
   }
+
 
   /**
     * average detour compared to euclidian
@@ -89,6 +111,7 @@ object Morphology {
     * @return
     */
   def avgDetour(world: Array[Array[Double]],cachedNetwork: Option[Network] = None,sampledPoints: Int=50): Double = {
+    if(world.flatten.sum==0.0){return(0.0)}
     val network = cachedNetwork match {case None => Network.gridToNetwork(world);case n => n.get}
     // too costly to do all shortest paths => sample
     //val shortestPaths = Network.allPairsShortestPath(network)
@@ -309,7 +332,8 @@ object Morphology {
     var steps = 0
     var complete = false
     var currentworld = matrix
-    if(matrix.flatten.sum==0){return(Double.PositiveInfinity)}
+    //if(matrix.flatten.sum==0){return(Double.PositiveInfinity)}
+    if(matrix.flatten.sum==0){return(0.0)}
     while(!complete){
       //println("dilating "+steps+" ; "+currentworld.flatten.sum+"/"+currentworld.flatten.length+" ; "+currentworld.length+" - "+currentworld(0).length)
       //println(Grid.gridToString(currentworld)+"\n\n")
@@ -329,7 +353,8 @@ object Morphology {
     var steps = 0
     var complete = false
     var currentworld = matrix
-    if(matrix.flatten.sum==matrix.flatten.length){return(Double.PositiveInfinity)}
+    //if(matrix.flatten.sum==matrix.flatten.length){return(Double.PositiveInfinity)}
+    if(matrix.flatten.sum==matrix.flatten.length){return(0.0)}
     while(!complete){
       //println("eroding "+steps+" ; "+currentworld.flatten.sum+"/"+currentworld.flatten.length)
       //println(Grid.gridToString(currentworld)+"\n\n")
@@ -351,7 +376,8 @@ object Morphology {
     var steps = 0
     var complete = false
     var currentworld = matrix
-    if(matrix.flatten.sum==0.0){return(Double.PositiveInfinity)}
+    //if(matrix.flatten.sum==0.0){return(Double.PositiveInfinity)}
+    if(matrix.flatten.sum==0.0){return(0.0)} // by convention return 0 instead of infty for easier reading of csv files
     while(!complete){
       //println("closing "+steps+" ; "+currentworld.flatten.sum+"/"+currentworld.flatten.length)
       //println(Grid.gridToString(currentworld)+"\n\n")
@@ -375,7 +401,8 @@ object Morphology {
     var steps = 0
     var complete = false
     var currentworld = matrix
-    if(matrix.flatten.sum==matrix.flatten.length){return(Double.PositiveInfinity)}
+    //if(matrix.flatten.sum==matrix.flatten.length){return(Double.PositiveInfinity)}
+    if(matrix.flatten.sum==matrix.flatten.length){return(0.0)}
     while(!complete){
       //println("opening "+steps+" ; "+currentworld.flatten.sum+"/"+currentworld.flatten.length)
       //println(Grid.gridToString(currentworld)+"\n\n")

@@ -28,11 +28,11 @@ libraryDependencies ++= Seq(
   "org.diana-hep" %% "histogrammar" % "1.0.4",// to publish locally as 2.12: pull from https://github.com/histogrammar/histogrammar-scala, add scala-2.12 in core/pom.xml and mvn install locally
   "com.vividsolutions" % "jts" % "1.13",
   "org.scala-graph" %% "graph-core" % "1.12.5",
-  "se.kodapan.osm.common" % "core" % osmCommonVersion,
-  "se.kodapan.osm.common" % "java" % osmCommonVersion,
-  "se.kodapan.osm.common" % "jts" % osmCommonVersion,
-  "org.geotools" % "geotools" % geotoolsVersion exclude("javax.media", "jai_core"),
-  "org.geotools" % "gt-shapefile" % geotoolsVersion exclude("javax.media", "jai_core"),
+  "se.kodapan.osm.common" % "core" % osmCommonVersion exclude("com.vividsolutions","jts"),
+  "se.kodapan.osm.common" % "java" % osmCommonVersion exclude("com.vividsolutions","jts"),
+  "se.kodapan.osm.common" % "jts" % osmCommonVersion exclude("com.vividsolutions","jts"),
+  "org.geotools" % "geotools" % geotoolsVersion exclude("javax.media", "jai_core") exclude("com.vividsolutions", "jts-core"),
+  "org.geotools" % "gt-shapefile" % geotoolsVersion exclude("javax.media", "jai_core") exclude("com.vividsolutions", "jts-core"),
   "com.github.tototoshi" %% "scala-csv" % "1.3.4"
   //"javax.media" % "jai_core" % "1.1.3" //from "http://download.osgeo.org/webdav/geotools/javax/media/jai_core/1.1.3/jai_core-1.1.3.jar"
 )
@@ -56,3 +56,10 @@ excludeFilter in unmanagedSources := HiddenFileFilter || "*kodapan*"
 
 
 mainClass in (Compile, packageBin) := Some("spatialdata.osm.OSMRealMeasures")
+
+/*
+assemblyMergeStrategy in assembly := {
+  case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+  case x => MergeStrategy.last
+}
+*/

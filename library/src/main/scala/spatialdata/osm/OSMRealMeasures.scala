@@ -1,6 +1,7 @@
-package spatialdata.measures
+package spatialdata.osm
 
 
+import spatialdata.measures.Morphology
 import spatialdata.sampling.OSMGridSampling
 import spatialdata.utils.io.CSV
 
@@ -21,7 +22,7 @@ object OSMRealMeasures extends App {
   val morphologies = grids.map{case g => Morphology(g._2)}
   val coordinates = grids.map{_._1}
 
-  CSV.writeCSV(morphologies.zip(coordinates).map{case (m,c)=>Array(c._1,c._2,m.avgBlockArea,m.avgDetour,m.avgDistance,m.components,m.density,m.fullClosingSteps,m.fullDilationSteps,m.fullErosionSteps,m.fullOpeningSteps)}.toArray,resdir+"/morpho_npoints"+npoints+"_windowSize"+windowSize+"_worldWidth"+worldWidth+"_seed"+seed+".csv",";")
+  CSV.writeCSV(morphologies.zip(coordinates).map{case (m,c)=>Array(c._1,c._2,m.avgBlockArea,m.avgDetour,m.avgDistance,m.components,m.density,m.fullClosingSteps,m.fullDilationSteps,m.fullErosionSteps,m.fullOpeningSteps,m.moran)}.toArray,resdir+"/morpho_npoints"+npoints+"_windowSize"+windowSize+"_worldWidth"+worldWidth+"_seed"+seed+".csv",";")
 
 }
 

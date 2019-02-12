@@ -94,9 +94,11 @@ object Morphology {
     //val shortestPaths = Network.allPairsShortestPath(network)
     //val avgdetour = shortestPaths.values.map{_.map{_.weight}.sum}.zip(shortestPaths.keys.map{case (n1,n2)=> math.sqrt((n1.x-n2.x)*(n1.x-n2.x)+(n1.y-n2.y)*(n1.y-n2.y))}).map{case (dn,de)=>dn/de}.sum/shortestPaths.size
     //println("avgdetour = "+avgdetour)
+    // FIXME should sample points within connected components
     val sampled = network.nodes.toSeq.take(sampledPoints)
     val paths = Network.shortestPathsScalagraph(network,sampled)
-    val avgdetour = paths.map{
+
+    val avgdetour = paths.filter{!_._2._2.isInfinite}.map{
       case (_,(nodes,d))=>
         val (n1,n2) = (nodes(0),nodes.last)
         val de = math.sqrt((n1.x-n2.x)*(n1.x-n2.x)+(n1.y-n2.y)*(n1.y-n2.y))

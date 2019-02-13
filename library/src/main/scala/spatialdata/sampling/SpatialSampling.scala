@@ -1,13 +1,13 @@
 
 package spatialdata.sampling
 
-import spatialdata._
+import spatialdata.Coordinate
 import spatialdata.utils.io.Shapefile
 import com.vividsolutions.jts.geom._
 import com.vividsolutions.jts.triangulate.ConformingDelaunayTriangulationBuilder
 
 import scala.collection.mutable.ArrayBuffer
-import scala.util.Random
+import scala.util.{Random, Try}
 
 object SpatialSampling {
 
@@ -19,7 +19,7 @@ object SpatialSampling {
     * @param weightAttribute
     * @return
     */
-  def samplePointsInLayer(layer: String,nPoints: Int,weightAttribute: String = "")(implicit rng: Random): Seq[spatialdata.Coordinate] = {
+  def samplePointsInLayer(layer: String,nPoints: Int,weightAttribute: String = "")(implicit rng: Random): Seq[Coordinate] = {
     val polygons = weightAttribute match {
       case s if s.length > 0 => Shapefile.readGeometry(layer,Array(weightAttribute))
       case _ => Shapefile.readGeometry(layer).map{case (g,_)=>(g,Array(1.0))}
@@ -28,12 +28,14 @@ object SpatialSampling {
     val s = attrs.sum
     val weights = attrs.map{_/s}
 
-    for{_ <- 1 to nPoints } yield {
+    val pointTries: Seq[Try[Coordinate]] = for{_ <- 1 to nPoints } yield {
       val r = rng.nextDouble()
       var ss=0.0
-      PolygonSampler(polygons(weights.map{case w => {ss = ss + w ; ss > r} }.zipWithIndex.filter{_._1}.head._2)._1.asInstanceOf[MultiPolygon]).
-        sample
+      // Delaunay triangulation sometimes fails when enforcing constraints (too fine geometries ?) => wrap in Try
+      Try[Coordinate]{PolygonSampler(polygons(weights.map{case w => {ss = ss + w ; ss > r} }.zipWithIndex.filter{_._1}.head._2)._1.asInstanceOf[MultiPolygon]).
+        sample}
     }
+    pointTries.flatMap(_.toOption)
   }
 
 

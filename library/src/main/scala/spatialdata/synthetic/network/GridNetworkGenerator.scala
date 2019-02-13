@@ -7,10 +7,13 @@ import scala.collection.mutable.ArrayBuffer
 
 
 case class GridNetworkGenerator(
-                               size: Int
+                               size: Int,
+                               xstep: Int = 1,
+                               ystep: Int = 1,
+                               withDiagLinks: Boolean = false
                                ) extends NetworkGenerator {
 
-  override def generateNetwork: Network = GridNetworkGenerator.gridNetwork(1,1,size)
+  override def generateNetwork: Network = GridNetworkGenerator.gridNetwork(xstep=xstep,ystep=ystep,size=size,diagLinks = withDiagLinks)
 
 }
 

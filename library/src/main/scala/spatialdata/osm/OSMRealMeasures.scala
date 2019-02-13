@@ -10,6 +10,8 @@ import scala.util.Random
 
 object OSMRealMeasures extends App {
 
+  if(args.length!=5) println("Usage : $NPOINTS $WINDOWSIZE(m) $WORLDWIDTH(cells) $SEED(0 = random Int) $RESDIR")
+
   val npoints = args(0).toInt // 10
   val windowSize = args(1).toInt // 500
   val worldWidth = args(2).toInt // 50

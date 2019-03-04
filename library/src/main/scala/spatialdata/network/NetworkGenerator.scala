@@ -1,6 +1,9 @@
 package spatialdata.network
 
-// FIXME idem than for GridGenerator
+
+/**
+  * A trait to produce networks
+  */
 trait NetworkGenerator {
 
   def generateNetwork: Network

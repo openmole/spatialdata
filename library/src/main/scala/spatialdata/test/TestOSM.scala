@@ -4,7 +4,7 @@ package spatialdata.test
 import com.vividsolutions.jts.geom.MultiPolygon
 import spatialdata.grid.Grid
 import spatialdata.measures.Morphology
-import spatialdata.osm.{BuildingExtractor, OSMGridGenerator}
+import spatialdata.osm.{APIExtractor, OSMGridGenerator}
 import spatialdata.sampling.OSMGridSampling
 
 import scala.util.Random

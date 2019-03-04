@@ -4,7 +4,7 @@ package spatialdata.grid
 import spatialdata._
 
 
-object Grid {
+package object grid {
 
   /**
     * String representation of a grid

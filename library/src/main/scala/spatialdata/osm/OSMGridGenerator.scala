@@ -4,7 +4,7 @@ package spatialdata.osm
 import com.vividsolutions.jts.geom._
 import com.vividsolutions.jts.geom.impl.CoordinateArraySequenceFactory
 import spatialdata.RasterLayerData
-import spatialdata.synthetic.grid.GridGenerator
+import spatialdata.grid.GridGenerator
 import spatialdata.utils.gis.GISUtils
 
 import scala.util.Random
@@ -31,7 +31,7 @@ object OSMGridGenerator {
   def OSMBuildingsGrid(lon: Double, lat: Double,windowSize: Double, worldWidth: Int): RasterLayerData[Double] = {
     // get polygons
     val (west,south,east,north)=GISUtils.wgs84window(lon,lat,windowSize)
-    val g: Geometry = BuildingExtractor.getNegativeBuildingIntersection(south, west, north, east)
+    val g: Geometry = APIExtractor.Buildings.getNegativeBuildingIntersection(south, west, north, east)
     // rescale [0,worldwidth]x[0,worldwidth] to [xmin,xmax]x[ymin,ymax]
     val (xcoords, ycoords) = (g.getCoordinates.map {_.x}, g.getCoordinates.map {_.y})
     val (xmin, xmax) = (xcoords.min, xcoords.max)

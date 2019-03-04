@@ -1,6 +1,7 @@
 
 package spatialdata.synthetic.grid
 
+import spatialdata.grid.GridGenerator
 import spatialdata.{RasterDim, RasterLayerData}
 
 import scala.util.Random

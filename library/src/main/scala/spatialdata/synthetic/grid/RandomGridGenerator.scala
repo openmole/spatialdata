@@ -2,6 +2,7 @@
 package spatialdata.synthetic.grid
 
 import spatialdata._
+import spatialdata.grid.GridGenerator
 
 import scala.util.Random
 

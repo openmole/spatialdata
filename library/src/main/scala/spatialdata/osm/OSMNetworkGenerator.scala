@@ -25,7 +25,7 @@ object OSMNetworkGenerator {
   def OSMWayNetwork(lon: Double,lat: Double,windowSize: Double,tags: Map[String,Seq[String]],simplifySnapping: Double): Network = {
     val (west,south,east,north)=GISUtils.wgs84window(lon,lat,windowSize)
     val lines = APIExtractor.Highways.getHighways(south,west,east,north,tags)
-    SpatialNetwork.fromGISLines(lines)
+    SpatialNetwork.fromGISLines(lines,simplifySnapping)
   }
 
 

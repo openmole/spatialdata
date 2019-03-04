@@ -2,7 +2,7 @@
 package spatialdata.test
 
 import com.vividsolutions.jts.geom.MultiPolygon
-import spatialdata.grid.Grid
+import spatialdata.grid.grid._
 import spatialdata.measures.Morphology
 import spatialdata.osm.{APIExtractor, OSMGridGenerator}
 import spatialdata.sampling.OSMGridSampling
@@ -40,7 +40,7 @@ object TestOSM {
 
 
     val grid = OSMGridGenerator(lon,lat,shift,50).generateGrid
-    println(Grid.gridToString(grid))
+    println(gridToString(grid))
     println(Morphology(grid))
 
     /*

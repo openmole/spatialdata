@@ -4,7 +4,6 @@ package spatialdata.measures
 import spatialdata.utils.math.Convolution
 import org.apache.commons.math3.stat.regression.SimpleRegression
 import org.apache.commons.math3.util.MathArrays
-import spatialdata.grid.Grid
 import spatialdata.{RasterLayerData, measures}
 
 import spatialdata.network.Network

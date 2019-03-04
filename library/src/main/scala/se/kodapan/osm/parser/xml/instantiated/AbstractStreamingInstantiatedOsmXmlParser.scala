@@ -89,7 +89,7 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
   override def parse(xml: Reader) = {
     val started = System.currentTimeMillis
 //    AbstractStreamingInstantiatedOsmXmlParser.log.debug("Begin parsing...")
-    println("Begin parsing...")
+//    println("Begin parsing...")
     val delta = new InstantiatedOsmXmlParserDelta
     try {
       val xmlr: AbstractStreamingInstantiatedOsmXmlParser.Stream = readerFactory(xml)
@@ -462,8 +462,8 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
     }
 //    AbstractStreamingInstantiatedOsmXmlParser.log.debug("Done parsing.")
 //    AbstractStreamingInstantiatedOsmXmlParser.log.debug("Delta " + delta.getCreatedNodes.size + "/" + delta.getModifiedNodes.size + "/" + delta.getDeletedNodes.size + " nodes, " + delta.getCreatedWays.size + "/" + delta.getModifiedWays.size + "/" + delta.getDeletedWays.size + " ways, " + delta.getCreatedRelations.size + "/" + delta.getModifiedRelations.size + "/" + delta.getDeletedRelations.size + " relations created/modified/deleted.")
-    println("Done parsing.")
-    println("Delta " + delta.getCreatedNodes.size + "/" + delta.getModifiedNodes.size + "/" + delta.getDeletedNodes.size + " nodes, " + delta.getCreatedWays.size + "/" + delta.getModifiedWays.size + "/" + delta.getDeletedWays.size + " ways, " + delta.getCreatedRelations.size + "/" + delta.getModifiedRelations.size + "/" + delta.getDeletedRelations.size + " relations created/modified/deleted.")
+//    println("Done parsing.")
+//    println("Delta " + delta.getCreatedNodes.size + "/" + delta.getModifiedNodes.size + "/" + delta.getDeletedNodes.size + " nodes, " + delta.getCreatedWays.size + "/" + delta.getModifiedWays.size + "/" + delta.getDeletedWays.size + " ways, " + delta.getCreatedRelations.size + "/" + delta.getModifiedRelations.size + "/" + delta.getDeletedRelations.size + " relations created/modified/deleted.")
     val timespent = System.currentTimeMillis - started
 //    AbstractStreamingInstantiatedOsmXmlParser.log.info("Parsed in " + timespent + " milliseconds.")
     delta

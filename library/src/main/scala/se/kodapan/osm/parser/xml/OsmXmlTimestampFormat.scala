@@ -17,15 +17,14 @@ object OsmXmlTimestampFormat {
 }
 
 class OsmXmlTimestampFormat() extends DateFormat {
-  implementation1 = new SimpleDateFormat(OsmXmlTimestampFormat.format1)
-  implementation2 = new SimpleDateFormat(OsmXmlTimestampFormat.format2)
-  private var implementation1:SimpleDateFormat = null
-  private var implementation2:SimpleDateFormat = null
+  private val implementation1 = new SimpleDateFormat(OsmXmlTimestampFormat.format1)
+  private val implementation2 = new SimpleDateFormat(OsmXmlTimestampFormat.format2)
 
   override def format(date: Date, stringBuffer: StringBuffer, fieldPosition: FieldPosition) = implementation1.format(date, stringBuffer, fieldPosition)
 
   override def parse(s: String, parsePosition: ParsePosition): Date = {
-    if (s.length - parsePosition.getIndex == OsmXmlTimestampFormat.format1.length) return implementation1.parse(s, parsePosition)
+    if (s.length - parsePosition.getIndex == OsmXmlTimestampFormat.format1.length)
+      return implementation1.parse(s, parsePosition)
     implementation2.parse(s, parsePosition)
   }
 }

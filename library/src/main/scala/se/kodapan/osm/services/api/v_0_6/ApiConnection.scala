@@ -58,14 +58,8 @@ class ApiConnection(var serverURL: String = ApiConnection.defaultServerURL) {
   private var displayName: String = ""
   private val getApiType = new OsmObjectVisitor[String]() {
     override def visit(node: Node) = "node"
-
-    override
-
-    def visit(way: Way) = "way"
-
-    override
-
-    def visit(relation: Relation) = "relation"
+    override def visit(way: Way) = "way"
+    override def visit(relation: Relation) = "relation"
   }
 
   @throws[Exception]

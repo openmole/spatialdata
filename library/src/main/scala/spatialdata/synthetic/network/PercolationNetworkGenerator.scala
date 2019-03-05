@@ -6,9 +6,12 @@ import spatialdata.network._
 import scala.util.Random
 
 case class PercolationNetworkGenerator(
-
+                                        worldSize: Int,
+                                        percolationProba: Double,
+                                        bordPoints: Int,
+                                        linkwidth: Double
                                       ) extends NetworkGenerator {
-  override def generateNetwork: Network = Network.empty
+  override def generateNetwork(implicit rng: Random): Network = PercolationNetworkGenerator.bondPercolatedNetwork(worldSize,percolationProba,bordPoints,linkwidth)
 }
 
 
@@ -38,14 +41,16 @@ object PercolationNetworkGenerator {
           )
       })
       val giantcomp =  Network.largestConnectedComponent(Network(network.nodes,network.links.filter{_.weight>0}))
-      println("giantcomp size = "+giantcomp.links.size)
+
+      //println("giantcomp size = "+giantcomp.links.size)
+
       val nodesOnBord = giantcomp.nodes.filter{case n => n.x==xmin||n.x==xmax||n.y==ymin||n.y==ymax}
       bordConnected =nodesOnBord.size
-      println("Percolated links prop : "+(network.links.toSeq.map{_.weight}.sum/network.links.toSeq.size))
-      println("bordConnected = "+bordConnected)
+
+      //println("Percolated links prop : "+(network.links.toSeq.map{_.weight}.sum/network.links.toSeq.size))
+      //println("bordConnected = "+bordConnected)
       //println("nodesOnBord="+nodesOnBord)
     }
-    //Network.networkToGrid(network,linkwidth=linkwidth)
     network
   }
 

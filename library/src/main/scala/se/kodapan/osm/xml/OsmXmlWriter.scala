@@ -27,11 +27,12 @@ class OsmXmlWriter @throws[IOException]
     xml.write("<?xml version='1.0' encoding='UTF-8'?>\n")
     xml.write("<osm version='")
     xml.write(version)
-    if (upload != null) {
-      xml.write("' upload='")
-      xml.write(if (upload) "true"
-      else "false")
-      xml.write("'")
+    Option(upload) match {
+      case Some(up) =>
+        xml.write("' upload='")
+        xml.write(if (up) "true" else "false")
+        xml.write("'")
+      case None =>
     }
     xml.write(" generator='")
     xml.write(generator)
@@ -178,35 +179,47 @@ class OsmXmlWriter @throws[IOException]
   private def writeObjectHead(osmObject: OsmObject) = {
     xml.write("\t<")
     xml.append(osmObject.accept(getOsmObjectTypeName))
-    if (osmObject.getId != null) {
-      xml.write(" id='")
-      xml.write(String.valueOf(osmObject.getId))
-      xml.write("'")
+    Option(osmObject.getId) match {
+      case Some(id) =>
+        xml.write(" id='")
+        xml.write(String.valueOf(id))
+        xml.write("'")
+      case None =>
     }
-    if (osmObject.getTimestamp != null) {
-      xml.write(" timestamp='")
-      xml.write(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(new Date(osmObject.getTimestamp)))
-      xml.write("'")
+    Option(osmObject.getTimestamp) match {
+      case Some(timestamp) =>
+        xml.write(" timestamp='")
+        xml.write(new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(new Date(timestamp)))
+        xml.write("'")
+      case None =>
     }
-    if (osmObject.getUid != null) {
-      xml.write(" uid='")
-      xml.write(String.valueOf(osmObject.getUid))
-      xml.write("'")
+    Option(osmObject.getUid) match {
+      case Some(uid) =>
+        xml.write(" uid='")
+        xml.write(String.valueOf(uid))
+        xml.write("'")
+      case None =>
     }
-    if (osmObject.getUser != null) {
-      xml.write(" user='")
-      xml.write(String.valueOf(osmObject.getUser))
-      xml.write("'")
+    Option(osmObject.getUser) match {
+      case Some(user) =>
+        xml.write(" user='")
+        xml.write(String.valueOf(user))
+        xml.write("'")
+      case None =>
     }
-    if (osmObject.getVersion != null) {
-      xml.write(" version='")
-      xml.write(String.valueOf(osmObject.getVersion))
-      xml.write("'")
+    Option(osmObject.getVersion) match {
+      case Some(version) =>
+        xml.write(" version='")
+        xml.write(String.valueOf(version))
+        xml.write("'")
+      case None =>
     }
-    if (osmObject.getChangeset != null) {
-      xml.write(" changeset='")
-      xml.write(String.valueOf(osmObject.getChangeset))
-      xml.write("'")
+    Option(osmObject.getChangeset) match {
+      case Some(changeSet) =>
+        xml.write(" changeset='")
+        xml.write(String.valueOf(changeSet))
+        xml.write("'")
+      case None =>
     }
   }
 

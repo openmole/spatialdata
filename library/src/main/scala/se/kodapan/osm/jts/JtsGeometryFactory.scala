@@ -3,7 +3,6 @@ package se.kodapan.osm.jts
 import com.vividsolutions.jts.geom._
 import com.vividsolutions.jts.geom.impl.CoordinateArraySequence
 import se.kodapan.osm.domain._
-import java._
 
 import scala.util.control.Breaks
 
@@ -66,7 +65,6 @@ class JtsGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
       if (!"outer".equalsIgnoreCase(member.getRole)) throw new RuntimeException
       val way = member.getObject.asInstanceOf[Way]
       val line = new java.util.ArrayList[Coordinate](way.getNodes.size)
-      import scala.collection.JavaConversions._
       for (node <- way.getNodes) {
         line.add(new Coordinate(node.getX, node.getY))
       }
@@ -88,7 +86,6 @@ class JtsGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
       }) {
         val line = lineIterator.next
         var stop = false
-        import scala.collection.JavaConversions._
         val loop = new Breaks;
         loop.breakable {
           for (testLine <- new java.util.ArrayList[java.util.List[Coordinate]](sorted)) {
@@ -108,15 +105,12 @@ class JtsGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
       }
     }
     var coordinatesCount = 0
-    import scala.collection.JavaConversions._
     for (line <- sorted) {
       coordinatesCount += line.size
     }
     var position = 0
     val coordinates = new Array[Coordinate](coordinatesCount)
-    import scala.collection.JavaConversions._
     for (line <- sorted) {
-      import scala.collection.JavaConversions._
       for (coordinate <- line) {
         coordinates({
           position += 1; position - 1
@@ -226,12 +220,10 @@ class JtsGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
       }
       java.util.Collections.sort(lines, linesComparator)
       var nodesCount = 0
-      import scala.collection.JavaConversions._
       for (line <- lines) {
         nodesCount += line.size
       }
       val nodes = new java.util.ArrayList[Node](nodesCount)
-      import scala.collection.JavaConversions._
       for (line <- lines) {
         nodes.addAll(line)
       }

@@ -26,7 +26,12 @@ case class Morphology(
                        fullErosionSteps: Double,
                        fullClosingSteps: Double,
                        fullOpeningSteps: Double
-                     )
+                     ) {
+
+  def toTuple: (Double,Double,Double,Double,Double,Double,Double,Double,Double,Double,Double,Double,Double,Double) =
+    (height,width,area,moran,avgDistance,density,components,avgDetour,avgBlockArea,avgComponentArea,fullDilationSteps,fullErosionSteps,fullClosingSteps,fullOpeningSteps)
+
+}
 
 
 /**

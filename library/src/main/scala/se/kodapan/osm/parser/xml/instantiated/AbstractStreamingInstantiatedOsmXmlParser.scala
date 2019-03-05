@@ -89,6 +89,7 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
   override def parse(xml: Reader) = {
     val started = System.currentTimeMillis
 //    AbstractStreamingInstantiatedOsmXmlParser.log.debug("Begin parsing...")
+//    println("Begin parsing...")
     val delta = new InstantiatedOsmXmlParserDelta
     try {
       val xmlr: AbstractStreamingInstantiatedOsmXmlParser.Stream = readerFactory(xml)
@@ -99,7 +100,8 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
       var skipCurrentObject = false
       var state: State.Value = State.none
       var eventType = xmlr.getEventType // START_DOCUMENT
-      while (!xmlr.isEndDocument(eventType = xmlr.next)) {
+      eventType = xmlr.next
+      while (!xmlr.isEndDocument(eventType)) {
         import util.control.Breaks._
         breakable {
           if (xmlr.isStartElement(eventType)) {
@@ -116,7 +118,7 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
                 * NN  NN   OOOO   DDDDD  EEEEE
                 */
               val identity = xmlr.getAttributeValue(null, "id").toLong
-              if ((state eq State.none) || (state eq State.create)) {
+              if ((state == State.none) || (state == State.create)) {
                 currentNode = root.getNode(identity)
                 if (currentNode != null && currentNode.isLoaded && currentNode.getVersion != null) {
                   val version = Integer.valueOf(xmlr.getAttributeValue(null, "version"))
@@ -141,12 +143,13 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
                 delta.getCreatedNodes.add(currentNode)
                 root.add(currentNode)
               }
-              else if (state eq State.modify) {
+              else if (state == State.modify) {
                 currentNode = root.getNode(identity)
                 if (currentNode == null) throw new OsmXmlParserException("Inconsistency, node " + identity + " does not exists.")
                 val version = Integer.valueOf(xmlr.getAttributeValue(null, "version"))
                 if (version <= currentNode.getVersion) {
                   //            AbstractStreamingInstantiatedOsmXmlParser.log.warn("Inconsistency, old version detected during modify node.")
+                  println("Inconsistency, old version detected during modify node.")
                   skipCurrentObject = true
                   break //was:continue
                 }
@@ -161,16 +164,18 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
                 delta.getModifiedNodes.add(currentNode)
                 root.add(currentNode)
               }
-              else if (state eq State.delete) {
+              else if (state == State.delete) {
                 val nodeToRemove = root.getNode(identity)
                 if (nodeToRemove == null) {
                   //            AbstractStreamingInstantiatedOsmXmlParser.log.warn("Inconsistency, node " + identity + " does not exists.")
+                  println("Inconsistency, node " + identity + " does not exists.")
                   skipCurrentObject = true
                   break //was:continue
                 }
                 val version = Integer.valueOf(xmlr.getAttributeValue(null, "version"))
                 if (version < nodeToRemove.getVersion) {
                   //            AbstractStreamingInstantiatedOsmXmlParser.log.warn("Inconsistency, old version detected during delete node.")
+                  println("Inconsistency, old version detected during delete node.")
                   skipCurrentObject = true
                   break //was:continue
                 }
@@ -189,12 +194,13 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
                 * WW  WW   AA  AA   YY
                 */
               val identity = xmlr.getAttributeValue(null, "id").toLong
-              if ((state eq State.none) || (state eq State.create)) {
+              if ((state == State.none) || (state == State.create)) {
                 currentWay = root.getWay(identity)
                 if (currentWay != null && currentWay.isLoaded && currentWay.getVersion != null) {
                   val version = Integer.valueOf(xmlr.getAttributeValue(null, "version"))
                   if (version <= currentWay.getVersion) {
                     //              AbstractStreamingInstantiatedOsmXmlParser.log.warn("Inconsistency, old version detected during create way.")
+                    println("Inconsistency, old version detected during create way.")
                     skipCurrentObject = true
                     break //was:continue
                     //              } else if (version > currentWay.getVersion() + 1) {
@@ -210,19 +216,21 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
                 currentWay.setLoaded(true)
                 current = currentWay
                 delta.getCreatedWays.add(currentWay)
+                root.add(currentWay)//FIXME: added line
               }
-              else if (state eq State.modify) {
+              else if (state == State.modify) {
                 currentWay = root.getWay(identity)
                 if (currentWay == null) throw new OsmXmlParserException("Inconsistency, way " + identity + " does not exists.")
                 val version = Integer.valueOf(xmlr.getAttributeValue(null, "version"))
                 if (version <= currentWay.getVersion) {
                   //            AbstractStreamingInstantiatedOsmXmlParser.log.warn("Inconsistency, old version detected during modify way.")
+                  println("Inconsistency, old version detected during modify way.")
                   skipCurrentObject = true
                   break //was:continue
                 }
                 else if (version > currentWay.getVersion + 1 && !isAllowingMissingVersions) throw new OsmXmlParserException("Inconsistency, found too great version in new data during modify way.")
                 else if (version == currentWay.getVersion) throw new OsmXmlParserException("Inconsistency, found same version in new data during modify way.")
-                currentWay.setTags(null)
+//                currentWay.setTags(null)
                 currentWay.setAttributes(null)
                 if (currentWay.getNodes != null) {
                   import scala.collection.JavaConversions._
@@ -236,16 +244,18 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
                 current = currentWay
                 delta.getModifiedWays.add(currentWay)
               }
-              else if (state eq State.delete) {
+              else if (state == State.delete) {
                 val wayToRemove = root.getWay(identity)
                 if (wayToRemove == null) {
                   //            AbstractStreamingInstantiatedOsmXmlParser.log.warn("Inconsistency, way " + identity + " does not exists.")
+                  println("Inconsistency, way \" + identity + \" does not exists.")
                   skipCurrentObject = true
                   break //was:continue
                 }
                 val version = Integer.valueOf(xmlr.getAttributeValue(null, "version"))
                 if (version < wayToRemove.getVersion) {
                   //            AbstractStreamingInstantiatedOsmXmlParser.log.warn("Inconsistency, old version detected during delete way.")
+                  println("Inconsistency, old version detected during delete way.")
                   skipCurrentObject = true
                   break //was:continue
                 }
@@ -258,7 +268,7 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
               if (skipCurrentObject) break //was:continue
               //todo: continue is not supported
               val identity = xmlr.getAttributeValue(null, "ref").toLong
-              if ((state eq State.none) || (state eq State.create) || (state eq State.modify)) {
+              if ((state == State.none) || (state == State.create) || (state == State.modify)) {
                 var node = root.getNode(identity)
                 if (node == null) {
                   node = new Node
@@ -268,7 +278,7 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
                 node.addWayMembership(currentWay)
                 currentWay.addNode(node)
               }
-              else if (state eq State.delete) {
+              else if (state == State.delete) {
                 //throw new OsmXmlParserException("Lexical error, delete way should not contain <nd> elements.");
               }
             }
@@ -283,12 +293,13 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
                 */
               // multi polygon, etc
               val identity = xmlr.getAttributeValue(null, "id").toLong
-              if ((state eq State.none) || (state eq State.create)) {
+              if ((state == State.none) || (state == State.create)) {
                 currentRelation = root.getRelation(identity)
                 if (currentRelation != null && currentRelation.isLoaded && currentRelation.getVersion != null) {
                   val version = Integer.valueOf(xmlr.getAttributeValue(null, "version"))
                   if (version <= currentRelation.getVersion) {
                     //              AbstractStreamingInstantiatedOsmXmlParser.log.warn("Inconsistency, old version detected during create relation.")
+                    println("Inconsistency, old version detected during create relation.")
                     skipCurrentObject = true
                     break //was:continue
                     //              } else if (version > currentRelation.getVersion() + 1) {
@@ -305,12 +316,13 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
                 current = currentRelation
                 delta.getCreatedRelations.add(currentRelation)
               }
-              else if (state eq State.modify) {
+              else if (state == State.modify) {
                 currentRelation = root.getRelation(identity)
                 if (currentRelation == null) throw new OsmXmlParserException("Inconsistency, relation " + identity + " does not exists.")
                 val version = Integer.valueOf(xmlr.getAttributeValue(null, "version"))
                 if (version < currentRelation.getVersion) {
                   //            AbstractStreamingInstantiatedOsmXmlParser.log.warn("Inconsistency, old version detected during modify relation.")
+                  println("Inconsistency, old version detected during modify relation.")
                   skipCurrentObject = true
                   break //was:continue
                 }
@@ -330,16 +342,18 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
                 parseObjectAttributes(xmlr, currentRelation, "id")
                 delta.getModifiedRelations.add(currentRelation)
               }
-              else if (state eq State.delete) {
+              else if (state == State.delete) {
                 val relationToRemove = root.getRelation(identity)
                 if (relationToRemove == null) {
                   //            AbstractStreamingInstantiatedOsmXmlParser.log.warn("Inconsistency, relation " + identity + " does not exist.")
+                  println("Inconsistency, relation \" + identity + \" does not exist.")
                   skipCurrentObject = true
                   break //was:continue
                 }
                 val version = Integer.valueOf(xmlr.getAttributeValue(null, "version"))
                 if (version < relationToRemove.getVersion) {
                   //            AbstractStreamingInstantiatedOsmXmlParser.log.warn("Inconsistency, old version detected during delete relation.")
+                  println("Inconsistency, old version detected during delete relation.")
                   skipCurrentObject = true
                   break //was:continue
                 }
@@ -358,7 +372,7 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
             }
             else if ("member" == xmlr.getLocalName) { // multi polygon member
               if (skipCurrentObject) break //was:continue
-              if ((state eq State.none) || (state eq State.create) || (state eq State.modify)) {
+              if ((state == State.none) || (state == State.create) || (state == State.modify)) {
                 val member = new RelationMembership
                 member.setRelation(currentRelation)
                 member.setRole(roleIntern.intern(xmlr.getAttributeValue(null, "role")))
@@ -395,18 +409,18 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
                 member.getObject.addRelationMembership(member)
                 currentRelation.addMember(member)
               }
-              else if (state eq State.delete) {
+              else if (state == State.delete) {
                 //throw new OsmXmlParserException("Lexical error, delete relation should not contain <member> elements.");
               }
             }
             else if ("tag" == xmlr.getLocalName) { // tag of any object type
               if (skipCurrentObject) break //was:continue
-              if ((state eq State.none) || (state eq State.create) || (state eq State.modify)) {
+              if ((state == State.none) || (state == State.create) || (state == State.modify)) {
                 val key = tagKeyIntern.intern(xmlr.getAttributeValue(null, "k"))
                 val value = tagValueIntern.intern(xmlr.getAttributeValue(null, "v"))
                 current.setTag(key, value)
               }
-              else if (state eq State.delete) {
+              else if (state == State.delete) {
                 //throw new OsmXmlParserException("Lexical error, delete object should not contain <tag> elements.");
               }
             }
@@ -414,21 +428,21 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
             else if ("modify" == xmlr.getLocalName) state = State.none
             else if ("delete" == xmlr.getLocalName) state = State.none
             else if ("node" == xmlr.getLocalName) {
-              if ((state eq State.none) || (state eq State.create) || (state eq State.modify)) root.add(currentNode)
+              if ((state == State.none) || (state == State.create) || (state == State.modify)) root.add(currentNode)
               processParsedNode(currentNode, state)
               currentNode = null
               current = null
               skipCurrentObject = false
             }
             else if ("way" == xmlr.getLocalName) {
-              if ((state eq State.none) || (state eq State.create) || (state eq State.modify)) root.add(currentWay)
+              if ((state == State.none) || (state == State.create) || (state == State.modify)) root.add(currentWay)
               processParsedWay(currentWay, state)
               currentWay = null
               current = null
               skipCurrentObject = false
             }
             else if ("relation" == xmlr.getLocalName) {
-              if ((state eq State.none) || (state eq State.create) || (state eq State.modify)) root.add(currentRelation)
+              if ((state == State.none) || (state == State.create) || (state == State.modify)) root.add(currentRelation)
               processParsedRelation(currentRelation, state)
               currentRelation = null
               current = null
@@ -439,6 +453,7 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
             }
           }
         }
+        eventType = xmlr.next
       }
       xmlr.close()
     } catch {
@@ -447,6 +462,8 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
     }
 //    AbstractStreamingInstantiatedOsmXmlParser.log.debug("Done parsing.")
 //    AbstractStreamingInstantiatedOsmXmlParser.log.debug("Delta " + delta.getCreatedNodes.size + "/" + delta.getModifiedNodes.size + "/" + delta.getDeletedNodes.size + " nodes, " + delta.getCreatedWays.size + "/" + delta.getModifiedWays.size + "/" + delta.getDeletedWays.size + " ways, " + delta.getCreatedRelations.size + "/" + delta.getModifiedRelations.size + "/" + delta.getDeletedRelations.size + " relations created/modified/deleted.")
+//    println("Done parsing.")
+//    println("Delta " + delta.getCreatedNodes.size + "/" + delta.getModifiedNodes.size + "/" + delta.getDeletedNodes.size + " nodes, " + delta.getCreatedWays.size + "/" + delta.getModifiedWays.size + "/" + delta.getDeletedWays.size + " ways, " + delta.getCreatedRelations.size + "/" + delta.getModifiedRelations.size + "/" + delta.getDeletedRelations.size + " relations created/modified/deleted.")
     val timespent = System.currentTimeMillis - started
 //    AbstractStreamingInstantiatedOsmXmlParser.log.info("Parsed in " + timespent + " milliseconds.")
     delta
@@ -465,9 +482,9 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
       else if ("uid" == key) `object`.setUid(value.toLong)
       else if ("user" == key) `object`.setUser(userIntern.intern(value))
       else if ("visible" == key) `object`.setVisible(value.toBoolean)
-      else if ("timestamp" == key) try
+      else if ("timestamp" == key) try {
         `object`.setTimestamp(timestampFormat.parse(value).getTime)
-      catch {
+      } catch {
         case pe: ParseException =>
           throw new RuntimeException(pe)
       }

@@ -1,12 +1,40 @@
 
 package spatialdata.test
 
-import spatialdata.synthetic.grid.RandomGridGenerator
+import spatialdata.grid.GridGeneratorLauncher
+import spatialdata.synthetic.grid.{BlocksGridGenerator, RandomGridGenerator}
 import spatialdata.measures.Morphology
 
 import scala.util.Random
 
 object TestSynthetic {
+
+
+  def testGeneratorLauncher(): Unit = {
+
+    implicit val rng = new Random
+
+    val launchers = Seq("random","expMixture","blocks","percolation").map{
+      GridGeneratorLauncher(_,
+        50,0.5,5,10.0,0.5,5,10,15,0.2,20,3.0
+      )
+    }
+
+    launchers.foreach{case g => for(_ <- 0 until 10) {println(g.getMorphology)}}
+
+  }
+
+
+  def testBlocksGrid(): Unit = {
+
+    implicit val rng = new Random
+
+    val grid = BlocksGridGenerator(Left(50),5,10,15).generateGrid
+
+    println(spatialdata.grid.grid.gridToString(grid))
+
+  }
+
 
 
   /**

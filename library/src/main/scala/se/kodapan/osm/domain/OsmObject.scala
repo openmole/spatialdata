@@ -54,7 +54,7 @@ abstract class OsmObject extends Serializable {
   }
 
   def setAttribute(key: String, value: String) = {
-    if (attributes == null) attributes = new java.util.HashMap[String, String](5)
+    if (attributes == null) attributes = new java.util.HashMap[String, String]()
     attributes.put(key, value)
   }
 
@@ -64,7 +64,9 @@ abstract class OsmObject extends Serializable {
   }
 
   def setTag(key: String, value: String) = {
-    if (tags == null) tags = new java.util.LinkedHashMap[String, String](5)
+    if (tags == null) {
+      tags = new java.util.HashMap[String, String]()
+    }
     tags.put(key, value)
   }
 

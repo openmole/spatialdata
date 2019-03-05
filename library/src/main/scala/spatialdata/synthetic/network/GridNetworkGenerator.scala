@@ -5,6 +5,7 @@ import spatialdata.network._
 
 import scala.collection.mutable.ArrayBuffer
 
+import scala.util.Random
 
 case class GridNetworkGenerator(
                                size: Int,
@@ -13,7 +14,7 @@ case class GridNetworkGenerator(
                                withDiagLinks: Boolean = false
                                ) extends NetworkGenerator {
 
-  override def generateNetwork: Network = GridNetworkGenerator.gridNetwork(xstep=xstep,ystep=ystep,size=size,diagLinks = withDiagLinks)
+  override def generateNetwork(implicit rng: Random): Network = GridNetworkGenerator.gridNetwork(xstep=xstep,ystep=ystep,size=size,diagLinks = withDiagLinks)
 
 }
 

@@ -9,9 +9,9 @@ import java.io.Serializable
   */
 @SerialVersionUID(1l)
 class PojoRoot extends AbstractRoot with Serializable {
-  private var nodes:java.util.Map[Long, Node] = new java.util.HashMap[Long, Node]
-  private var ways:java.util.Map[Long, Way] = new java.util.HashMap[Long, Way]
-  private var relations:java.util.Map[Long, Relation] = new java.util.HashMap[Long, Relation]
+  private var nodes:java.util.Map[Long, Node] = new java.util.HashMap[Long, Node]()
+  private var ways:java.util.Map[Long, Way] = new java.util.HashMap[Long, Way]()
+  private var relations:java.util.Map[Long, Relation] = new java.util.HashMap[Long, Relation]()
 
   override def enumerateNodes = new Root.Enumerator[Node]() {
     private[root] val iterator = getNodes.entrySet.iterator
@@ -23,10 +23,8 @@ class PojoRoot extends AbstractRoot with Serializable {
 
   override def enumerateWays = new Root.Enumerator[Way]() {
     private[root] val iterator = getWays.entrySet.iterator
-    override
-
-    def next: Way = return if (iterator.hasNext) iterator.next.getValue
-    else null
+    override def next: Way =
+      return if (iterator.hasNext) iterator.next.getValue else null
   }
 
   override def enumerateRelations = new Root.Enumerator[Relation]() {

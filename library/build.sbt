@@ -1,4 +1,4 @@
-scalaVersion := "2.12.6"
+scalaVersion := "2.12.7"
 //scalaVersion := "2.11.8"
 
 name := "spatialdata"
@@ -16,7 +16,10 @@ resolvers ++= Seq(
   Resolver.sonatypeRepo("staging"),
   //Resolver.mavenLocal, // remove constraint of locally publishing librairies => copies in lib
   Resolver.mavenCentral,
-  "Local Maven Repository" at "file:"+(new java.io.File(".")).getAbsolutePath+"/lib" 
+  "Local Maven Repository" at "file:"+(new java.io.File(".")).getAbsolutePath+"/lib/maven",
+  //Resolver.sbtIvyRepo("file:"+(new java.io.File(".")).getAbsolutePath+"/lib/ivy")
+    Resolver.file("Local ivy", file( (new java.io.File(".")).getAbsolutePath+"/lib/ivy"))(Resolver.ivyStylePatterns)
+
 )
 
 val osmCommonVersion = "0.0.3-SNAPSHOT"
@@ -27,7 +30,7 @@ libraryDependencies ++= Seq(
   "com.github.pathikrit" %% "better-files" % "3.5.0",
   "org.diana-hep" %% "histogrammar" % "1.0.4",// to publish locally as 2.12: pull from https://github.com/histogrammar/histogrammar-scala, add scala-2.12 in core/pom.xml and mvn install locally
   "com.vividsolutions" % "jts" % "1.13",
-  "org.scala-graph" %% "graph-core" % "1.12.5",
+  "org.scala-graph" %% "graph-core" % "1.12.6-SNAPSHOT",
 //  "se.kodapan.osm.common" % "core" % osmCommonVersion exclude("com.vividsolutions","jts"),
 //  "se.kodapan.osm.common" % "java" % osmCommonVersion exclude("com.vividsolutions","jts"),
 //  "se.kodapan.osm.common" % "jts" % osmCommonVersion exclude("com.vividsolutions","jts"),
@@ -45,6 +48,8 @@ enablePlugins(SbtOsgi)
   OsgiKeys.exportPackage := Seq("spatialdata.*;-split-package:=merge-first")
   OsgiKeys.importPackage := Seq("*;resolution:=optional")
   OsgiKeys.privatePackage := Seq("!scala.*,!java.*,!monocle.*,!META-INF.*.RSA,!META-INF.*.SF,!META-INF.*.DSA,META-INF.services.*,META-INF.*,*")
+// FilteredSet,scala.collection.FilterableSet,scala.collection.EqSetFacade
+//OsgiKeys.embeddedJars := Seq(new java.io.File("/Users/juste/.ivy2/cache/org.scala-graph/graph-core_2.12/jars/graph-core_2.12-1.12.5.jar"))
   OsgiKeys.requireCapability := """osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))""""
 //)
 

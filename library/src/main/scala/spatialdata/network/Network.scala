@@ -169,16 +169,21 @@ object Network {
   /**
     * extract connected components
     *  using scala-graph component traverser
+    *
+    *
+    *
     * @param network
     * @return
     */
-  def connectedComponentsScalagraph(network: Network): Seq[Network] = {
+  // FIXME does not work with latest scala-graph version
+  /*def connectedComponentsScalagraph(network: Network): Seq[Network] = {
     val (graph,nodeMap) = networkToGraph(network)
     //val components: Seq[graph.Component] = graph.componentTraverser().toSeq
     val components: Seq[graph.Component] = (for (component <- graph.componentTraverser()) yield component).toSeq
     //println("components : "+components.size)
-    components.map{case c => graphToNetwork(c.toGraph,nodeMap)}
-  }
+    components.map{case c => graphToNetwork(Graph.from(c.nodes,c.edges),nodeMap)}
+
+  }*/
 
   /**
     * dirty component traverser (not appropriate network data structure)

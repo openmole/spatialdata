@@ -79,16 +79,24 @@ object APIExtractor {
       buildings.map(_.intersection(env))
     }
 
-    def getNegativeBuildingIntersection(south: Double, west: Double, north: Double, east: Double, useOverpass: Boolean = true) = {
+
+    def getNegativeBuildingIntersection(south: Double, west: Double, north: Double, east: Double, useOverpass: Boolean = true): Geometry = {
       val buildings = getBuildings(south, west, north, east, useOverpass)
       val fact = new GeometryFactory()
       val env = fact.createPolygon(fact.createLinearRing(Array(new Coordinate(west, north), new Coordinate(east, north), new Coordinate(east, south), new Coordinate(west, south), new Coordinate(west, north))), Array())
-      val union = fact.createMultiPolygon(buildings.toArray).union()
-      var result = scala.collection.mutable.Buffer[Polygon]()
-      for (i <- 0 until union.getNumGeometries) result += fact.createPolygon(fact.createLinearRing(union.getGeometryN(i).asInstanceOf[Polygon].getExteriorRing.getCoordinateSequence), Array())
-      var res = env.difference(fact.createMultiPolygon(result.toArray).union)
-      res.apply(new WGS84toPseudoMercatorFilter)
-      res
+
+      var res = Try {
+        val union = fact.createMultiPolygon(buildings.toArray).union()
+        var result = scala.collection.mutable.Buffer[Polygon]()
+        for (i <- 0 until union.getNumGeometries) result += fact.createPolygon(fact.createLinearRing(union.getGeometryN(i).asInstanceOf[Polygon].getExteriorRing.getCoordinateSequence), Array())
+        env.difference(fact.createMultiPolygon(result.toArray).union)
+      }
+      if (res.isSuccess) {
+        res.get.apply(new WGS84toPseudoMercatorFilter)
+        res.get
+      }else{
+        env
+      }
     }
 
   }

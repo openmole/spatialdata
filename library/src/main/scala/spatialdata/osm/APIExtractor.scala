@@ -14,7 +14,6 @@ import se.kodapan.osm.services.api.v_0_6.ApiConnection
 import se.kodapan.osm.services.overpass.Overpass
 import spatialdata.utils.gis.GISUtils._
 
-import scala.collection.JavaConverters
 import scala.util.Try
 
 object APIExtractor {
@@ -52,7 +51,11 @@ object APIExtractor {
           s"""
             |<union>
             |  <bbox-query s="$south" w="$west" n="$north" e="$east"/>
-            |  <recurse type="up"/>
+            |<recurse type="node-way"/>
+            |<query type="way">
+            |  <item/>
+            |  <has-kv k="building" v="yes"/>
+            |</query>
             |</union>
             |<print mode="meta"/>
           """.stripMargin)))
@@ -62,14 +65,13 @@ object APIExtractor {
         api.get(south, west, north, east)
       }
       def simplify(polygon: Polygon) = {
-        val g = GeometryPrecisionReducer.reduce(polygon, new PrecisionModel(10000)) //FIXME: This is arbitrary
-        if (g.isInstanceOf[Polygon]) Seq(g.asInstanceOf[Polygon])
-        else if (g.isInstanceOf[MultiPolygon]) {
-          val mp = g.asInstanceOf[MultiPolygon]
-          (for (i <- 0 until mp.getNumGeometries) yield mp.getGeometryN(i).asInstanceOf[Polygon]).toSeq
-        } else Seq()
+        GeometryPrecisionReducer.reduce(polygon, new PrecisionModel(10000)) match {//FIXME: This is arbitrary
+          case p: Polygon => Seq(p)
+          case mp: MultiPolygon => for (i <- 0 until mp.getNumGeometries) yield mp.getGeometryN(i).asInstanceOf[Polygon]
+          case _ => Seq()
+        }
       }
-      asPolygonSeq(root.enumerateWays).flatMap(simplify(_))
+      asPolygonSeq(root.enumerateWays).flatMap(simplify)
     }
 
     def getBuildingIntersection(south: Double, west: Double, north: Double, east: Double, useOverpass: Boolean = true): Seq[Geometry] = {
@@ -111,13 +113,12 @@ object APIExtractor {
       var way: Way = e.next
       while (way != null) {
         val validway = tags.map{
-          case (tag,values) => {
+          case (tag,values) =>
             val waytag = way.getTag(tag)
             if(tag == null) false
             else {
               values.contains(waytag)
             }
-          }
         }.reduce(_&_)
         if (validway) {
           val potentialLine = Try(fact.createLineString(way))

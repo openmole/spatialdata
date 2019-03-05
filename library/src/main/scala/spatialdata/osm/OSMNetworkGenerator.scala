@@ -4,6 +4,7 @@ package spatialdata.osm
 import spatialdata.network.{Network, SpatialNetwork, NetworkGenerator}
 import spatialdata.utils.gis.GISUtils
 
+import scala.util.Random
 
 case class OSMNetworkGenerator(
                               lon: Double,
@@ -13,7 +14,7 @@ case class OSMNetworkGenerator(
                               simplifySnapping: Double = 1e-6
                               ) extends NetworkGenerator {
 
-  override def generateNetwork: Network = OSMNetworkGenerator.OSMWayNetwork(lon,lat,windowSize,tags,simplifySnapping)
+  override def generateNetwork(implicit rng: Random): Network = OSMNetworkGenerator.OSMWayNetwork(lon,lat,windowSize,tags,simplifySnapping)
 
 }
 

@@ -6,7 +6,7 @@ object Test extends App {
 
   // OSM
   //TestOSM.testBuildingExtractor
-  TestOSM.testOSMGridSampling
+  //TestOSM.testOSMGridSampling
 
   // Indicators
   //TestIndicators.testSpatialIndics
@@ -15,6 +15,8 @@ object Test extends App {
 
   // Synthetic grids
   //TestSynthetic.testRandomGrids
+  //TestSynthetic.testBlocksGrid
+  TestSynthetic.testGeneratorLauncher
 
   // Utils
   //TestUtils.testCSV

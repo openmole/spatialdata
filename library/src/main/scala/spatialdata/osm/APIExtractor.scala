@@ -13,6 +13,7 @@ import se.kodapan.osm.parser.xml.instantiated.InstantiatedOsmXmlParser
 import se.kodapan.osm.services.api.v_0_6.ApiConnection
 import se.kodapan.osm.services.overpass.Overpass
 import spatialdata.utils.gis.GISUtils._
+import spatialdata.utils.gis.PoligonizerUtils
 
 import scala.util.Try
 
@@ -49,16 +50,16 @@ object APIExtractor {
         parser.setRoot(root)
         parser.parse(new StringReader(overpass.execute(
           s"""
-            |<union>
-            |  <bbox-query s="$south" w="$west" n="$north" e="$east"/>
-            |<recurse type="node-way"/>
-            |<query type="way">
-            |  <item/>
-            |  <has-kv k="building" v="yes"/>
-            |</query>
-            |</union>
-            |<print mode="meta"/>
-          """.stripMargin)))
+             |  <query type="way">
+             |    <has-kv k="building" v="yes"/>
+             |    <bbox-query e="$east" n="$north" s="$south" w="$west"/>
+             |  </query>
+             |  <union>
+             |    <item />
+             |    <recurse type="way-node"/>
+             |  </union>
+             |  <print/>
+           """.stripMargin)))
         root
       } else {
         val api = new ApiConnection()
@@ -71,14 +72,16 @@ object APIExtractor {
           case _ => Seq()
         }
       }
-      asPolygonSeq(root.enumerateWays).flatMap(simplify)
+      asPolygonSeq(root.enumerateWays)//.flatMap(simplify)
     }
 
     def getBuildingIntersection(south: Double, west: Double, north: Double, east: Double, useOverpass: Boolean = true): Seq[Geometry] = {
       val buildings = getBuildings(south, west, north, east, useOverpass)
       val fact = new GeometryFactory()
       val env = fact.createPolygon(fact.createLinearRing(Array(new Coordinate(west, north), new Coordinate(east, north), new Coordinate(east, south), new Coordinate(west, south), new Coordinate(west, north))), Array())
-      buildings.map(_.intersection(env))
+      //buildings.map(_.intersection(env))
+      (buildings :+ env).foreach(_.apply(new WGS84toPseudoMercatorFilter))
+      PoligonizerUtils.getPolygonIntersection(buildings, env)
     }
 
 
@@ -86,21 +89,22 @@ object APIExtractor {
       val buildings = getBuildings(south, west, north, east, useOverpass)
       val fact = new GeometryFactory()
       val env = fact.createPolygon(fact.createLinearRing(Array(new Coordinate(west, north), new Coordinate(east, north), new Coordinate(east, south), new Coordinate(west, south), new Coordinate(west, north))), Array())
-
-      var res = Try {
-        val union = fact.createMultiPolygon(buildings.toArray).union()
-        var result = scala.collection.mutable.Buffer[Polygon]()
-        for (i <- 0 until union.getNumGeometries) result += fact.createPolygon(fact.createLinearRing(union.getGeometryN(i).asInstanceOf[Polygon].getExteriorRing.getCoordinateSequence), Array())
-        env.difference(fact.createMultiPolygon(result.toArray).union)
-      }
-      if (res.isSuccess) {
-        res.get.apply(new WGS84toPseudoMercatorFilter)
-        res.get
-      }else{
-        env
-      }
+//      var res = Try {
+//        val union = fact.createMultiPolygon(buildings.toArray).union()
+//        var result = scala.collection.mutable.Buffer[Polygon]()
+//        for (i <- 0 until union.getNumGeometries) result += fact.createPolygon(fact.createLinearRing(union.getGeometryN(i).asInstanceOf[Polygon].getExteriorRing.getCoordinateSequence), Array())
+//        env.difference(fact.createMultiPolygon(result.toArray).union)
+//      }
+//      if (res.isSuccess) {
+//        res.get.apply(new WGS84toPseudoMercatorFilter)
+//        res.get
+//      }else{
+//        env
+//      }
+      (buildings :+ env).foreach(_.apply(new WGS84toPseudoMercatorFilter))
+      val res = fact.createMultiPolygon(PoligonizerUtils.getPolygonDifference(buildings, env).toArray)
+      res
     }
-
   }
 
 

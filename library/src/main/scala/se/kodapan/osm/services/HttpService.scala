@@ -2,11 +2,12 @@ package se.kodapan.osm.services
 
 import org.apache.http.HttpRequest
 import org.apache.http.client.HttpClient
+import org.apache.http.client.config.RequestConfig
 import org.apache.http.conn.ClientConnectionManager
 import org.apache.http.conn.scheme.PlainSocketFactory
 import org.apache.http.conn.scheme.Scheme
 import org.apache.http.conn.scheme.SchemeRegistry
-import org.apache.http.impl.client.DefaultHttpClient
+import org.apache.http.impl.client.{DefaultHttpClient, HttpClientBuilder}
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager
 import org.apache.http.params.BasicHttpParams
 
@@ -27,17 +28,22 @@ class HttpService {
   private var userAgent = defaultUserAgent
 
   @throws[Exception]
-  def open() = {
+  def open(timeout: Int=1000) = {
     val schemeRegistry = new SchemeRegistry
     schemeRegistry.register(new Scheme("http", PlainSocketFactory.getSocketFactory, 80))
     cm = new ThreadSafeClientConnManager(new BasicHttpParams, schemeRegistry)
-    httpClient = new DefaultHttpClient(cm, new BasicHttpParams)
+    //httpClient = new DefaultHttpClient(cm, new BasicHttpParams)
+    var requestBuilder = RequestConfig.custom()
+    requestBuilder.setConnectTimeout(timeout)
+    requestBuilder.setConnectionRequestTimeout(timeout)
+    httpClient = HttpClientBuilder.create.setDefaultRequestConfig(requestBuilder.build()).build
   }
 
   def setUserAgent(httpRequest: HttpRequest) = {
     if (defaultUserAgent == userAgent) throw new NullPointerException("HTTP header User-Agent not set! See se.kodapan.osm.services.HttpService#setUserAgent")
     httpRequest.setHeader("User-Agent", userAgent)
   }
+
 
   @throws[Exception]
   def close() = {

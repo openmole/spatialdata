@@ -38,7 +38,9 @@ object Network {
     //println("percolate : "+network.links.toSeq.map(_.weight).sum)
     val emptyLinks = network.links.toSeq.filter(linkFilter)
     val fullLinks = network.links.toSeq.filter{l => !linkFilter(l)}
-    println("percolating nw with "+emptyLinks.size+" empty links ; "+fullLinks.size+" full links")
+
+    //println("percolating nw with "+emptyLinks.size+" empty links ; "+fullLinks.size+" full links")
+
     val percolated = emptyLinks.map{case l => if(rng.nextDouble()<percolationProba){Link(l.e1,l.e2,1.0)}else{Link(l.e1,l.e2,0.0)}}
     //println("rem empty links : "+percolated.filter((_.weight==0.0)).size)
     val newlinks=fullLinks++percolated

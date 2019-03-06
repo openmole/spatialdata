@@ -32,8 +32,10 @@ object TestOSM {
 
     implicit val rng = new Random
 
-    val lon = 2.3396859//2.3646
-    val lat = 48.8552569 //48.8295
+    // -4.247058 48.45855
+    //
+    val lon = 4.215393//2.3396859//2.3646
+    val lat = 51.95148//48.8552569 //48.8295
     val shift = 500 // in meters
 
     //

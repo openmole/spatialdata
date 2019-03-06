@@ -116,13 +116,13 @@ object Morphology {
     * @return
     */
   def avgDetour(world: Array[Array[Double]],cachedNetwork: Option[Network] = None,sampledPoints: Int=50): Double = {
-    if(world.flatten.sum==0.0){return(0.0)}
+    if(world.flatten.sum==world.map{_.length}.sum){return(0.0)}
     val network = cachedNetwork match {case None => Network.gridToNetwork(world);case n => n.get}
     // too costly to do all shortest paths => sample
     //val shortestPaths = Network.allPairsShortestPath(network)
     //val avgdetour = shortestPaths.values.map{_.map{_.weight}.sum}.zip(shortestPaths.keys.map{case (n1,n2)=> math.sqrt((n1.x-n2.x)*(n1.x-n2.x)+(n1.y-n2.y)*(n1.y-n2.y))}).map{case (dn,de)=>dn/de}.sum/shortestPaths.size
     //println("avgdetour = "+avgdetour)
-    // FIXME should sample points within connected components
+    // should sample points within connected components
     val sampled = network.nodes.toSeq.take(sampledPoints)
     val paths = Network.shortestPathsScalagraph(network,sampled)
 

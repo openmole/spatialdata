@@ -101,9 +101,10 @@ object Morphology {
   def avgComponentArea(world: Array[Array[Double]]): Double = {
     val inversedNetwork = Network.gridToNetwork(world.map{_.map{case x => 1.0 - x}})
     val components = Network.connectedComponents(inversedNetwork)
-    val avgblockarea = components.map{_.nodes.size}.sum/components.size
     //println("avgblockarea = "+avgblockarea)
-    avgblockarea
+    if(components.size > 0){
+      components.map{_.nodes.size}.sum/components.size
+    }else 0.0
   }
 
 

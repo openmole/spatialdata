@@ -6,6 +6,7 @@ import se.kodapan.osm.domain._
 
 import scala.util.control.Breaks
 
+import scala.collection.JavaConverters._
 
 /**
   * Creates JTS geometries out of OSM nodes, ways and relations.
@@ -35,19 +36,7 @@ class JtsGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
   }
 
   def createPolygon(way: Way) = {
-    val coordinates = new Array[Coordinate](way.getNodes.size)
-    val nodes = way.getNodes
-    var i = 0
-    while ( {
-      i < nodes.size
-    }) {
-      val node = nodes.get(i)
-      coordinates(i) = new Coordinate(node.getX, node.getY)
-
-      {
-        i += 1; i - 1
-      }
-    }
+    val coordinates = way.getNodes.asScala.map(node=>new Coordinate(node.getX, node.getY)).toArray
     if (!way.isPolygon) throw new RuntimeException("Way expected to be a polygon.")
     else geometryFactory.createPolygon(geometryFactory.createLinearRing(coordinates), null)
   }

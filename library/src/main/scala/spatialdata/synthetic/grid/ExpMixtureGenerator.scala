@@ -32,6 +32,7 @@ case class ExpMixtureGenerator(
                         ) extends GridGenerator {
 
   override def generateGrid(implicit rng: Random): RasterLayerData[Double] = {
+    println("Exp mixture grid of size "+size+" ; "+centers+" ; "+maxValue+" ; "+kernelRadius)
     def expKernel(x: Double, y: Double): Double = maxValue*exp(-sqrt(pow(x,2.0)+pow(y,2.0))/kernelRadius)
     KernelMixture.kernelMixture(size,Left(centers),expKernel,rng)
   }

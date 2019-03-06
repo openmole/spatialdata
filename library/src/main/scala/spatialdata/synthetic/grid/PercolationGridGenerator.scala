@@ -16,7 +16,10 @@ case class PercolationGridGenerator(
                                    linkwidth: Double
                                    ) extends GridGenerator {
 
-  override def generateGrid(implicit rng: Random): RasterLayerData[Double] = Network.networkToGrid(PercolationNetworkGenerator(size,percolationProba,bordPoints,linkwidth).generateNetwork(rng),linkwidth=linkwidth)
+  override def generateGrid(implicit rng: Random): RasterLayerData[Double] = {
+    println("Percolation grid of size "+size+" ; "+percolationProba+" ; "+bordPoints+" ; "+linkwidth)
+    Network.networkToGrid(PercolationNetworkGenerator(size,percolationProba,bordPoints,linkwidth).generateNetwork(rng),linkwidth=linkwidth)
+  }
 
 }
 

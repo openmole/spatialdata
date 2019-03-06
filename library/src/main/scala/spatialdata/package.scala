@@ -2,6 +2,9 @@
 
 package object spatialdata {
 
+  val DEBUG = true
+
+
   /**
     * RasterLayerData are two dimensional arrays of Numeric values
     * TODO keep the name RasterLayer for a wrapper with more properties

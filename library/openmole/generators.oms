@@ -65,21 +65,21 @@ val model = ScalaTask("""
 )
 
 
-//val purpose = "LHS_GRID"
-val purpose = "TEST"
+val purpose = "LHS_GRID"
+//val purpose = "TEST"
 
 
-//val env = EGIEnvironment("vo.complex-systems.eu")
-val env = LocalEnvironment(4)
+val env = EGIEnvironment("vo.complex-systems.eu")
+//val env = LocalEnvironment(4)
 
 val indics_hook = AppendToCSVFileHook(workDirectory / "exploration" / ((new SimpleDateFormat("yyyyMMdd_HHmmss")).format(new Date()))+"_"+purpose+".csv") set (arraysOnSingleRow := true)
 
 
 val exploration = DirectSampling(
-  //evaluation = ((model on env by 100) hook indics_hook),
-  evaluation = (model on env hook indics_hook),
+  evaluation = ((model on env by 20) hook indics_hook),
+  //evaluation = (model on env hook indics_hook),
   sampling = (
-    (LHS(1,//10000,
+    (LHS(1000,
       randomDensity in Range(0.0,1.0),
       expMixtureCenters in Range(1.0,10.0),
       expMixtureRadius in Range(1.0,20.0),
@@ -93,8 +93,8 @@ val exploration = DirectSampling(
     ) withIndex id)
     x (generator in Seq("random","expMixture","blocks","percolation"))
     x (size is 50)
-    //x (replication in (UniformDistribution[Int](10000) take 100))
-    x (replication in (UniformDistribution[Int](10000) take 1))
+    x (replication in (UniformDistribution[Int](10000) take 100))
+    //x (replication in (UniformDistribution[Int](10000) take 1))
 )
 )
 

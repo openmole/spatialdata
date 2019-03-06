@@ -6,10 +6,12 @@ import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.util.regex.Matcher
 import java.util.regex.Pattern
+
 import org.apache.commons.io.IOUtils
 import org.apache.http.auth.AuthScope
 import org.apache.http.auth.UsernamePasswordCredentials
 import org.apache.http.client.CredentialsProvider
+import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods.CloseableHttpResponse
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.client.methods.HttpPut
@@ -17,6 +19,7 @@ import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.BasicCredentialsProvider
 import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.impl.client.HttpClientBuilder
+import org.apache.http.params.BasicHttpParams
 import se.kodapan.osm.domain.Node
 import se.kodapan.osm.domain.OsmObject
 import se.kodapan.osm.domain.OsmObjectVisitor
@@ -42,13 +45,16 @@ object ApiConnection {
   val apiVersion = "0.6"
 }
 
-class ApiConnection(var serverURL: String = ApiConnection.defaultServerURL) {
+class ApiConnection(var serverURL: String = ApiConnection.defaultServerURL,val timeout: Int = 1000) {
   while ( {
     serverURL.endsWith("/")
   }) serverURL = serverURL.substring(0, serverURL.length - 1)
   this.serverURL = serverURL + "/"
   prefix = this.serverURL + ApiConnection.apiVersion + "/"
-  httpClient = HttpClientBuilder.create.setUserAgent("osm-common").build
+  var requestBuilder = RequestConfig.custom()
+  requestBuilder.setConnectTimeout(timeout)
+  requestBuilder.setConnectionRequestTimeout(timeout)
+  httpClient = HttpClientBuilder.create.setDefaultRequestConfig(requestBuilder.build()).build
 //  private var serverURL = null
 
   private var httpClient: CloseableHttpClient = _

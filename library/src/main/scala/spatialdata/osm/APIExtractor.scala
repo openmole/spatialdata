@@ -60,10 +60,13 @@ object APIExtractor {
              |  </union>
              |  <print/>
            """.stripMargin)))
+        if(spatialdata.DEBUG) println("retrieved via overpass "+east+" n="+north+" s="+south+"w="+west)
         root
       } else {
         val api = new ApiConnection()
-        api.get(south, west, north, east)
+        val res = api.get(south, west, north, east)
+        if(spatialdata.DEBUG) println("retrieved via standard api "+east+" n="+north+" s="+south+"w="+west)
+        res
       }
       def simplify(polygon: Polygon) = {
         GeometryPrecisionReducer.reduce(polygon, new PrecisionModel(10000)) match {//FIXME: This is arbitrary

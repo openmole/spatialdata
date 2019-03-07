@@ -21,7 +21,7 @@ import scala.collection.mutable.ArrayBuffer;
  * @author Raimbault Juste <br/> <a href="mailto:juste.raimbault@polytechnique.edu">juste.raimbault@polytechnique.edu</a>
  *
  */
-class TorPoolManager {
+object TorPoolManager {
 
 	/**
 	 * TODO : Concurrent access from diverse apps to a single pool ?
@@ -145,8 +145,8 @@ class TorPoolManager {
  		// set the new port
  		System.setProperty("socksProxyPort",newPort);
  		currentPort = Integer.parseInt(newPort);
- 		//Log.stdout("Current Port set to "+newPort);
- 		return(newPort);
+ 		println("Current Port set to "+newPort);
+ 		newPort
  	}
 
  	/**

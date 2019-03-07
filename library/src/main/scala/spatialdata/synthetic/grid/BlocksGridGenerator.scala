@@ -27,7 +27,13 @@ case class BlocksGridGenerator(
                                 /**
                                   * maximal width/height of blocks
                                   */
-                                blockMaxSize: Int
+                                blockMaxSize: Int,
+
+                                /**
+                                  * Maximal value of random rotation
+                                  */
+                              // TODO implement additional rotation ? -> pb as adds additional parameters
+                                rotationMax: Double = 0.0
 
                               ) extends GridGenerator {
 

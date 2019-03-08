@@ -20,7 +20,7 @@ object OSMRealMeasures extends App {
 
   implicit val rng: Random = new Random(seed)
 
-  val grids = OSMGridSampling.sampleGridsInLayer("data/cities_europe.shp",npoints,windowSize,worldWidth)
+  val grids = OSMGridSampling.sampleGridsInLayer("data/cities_europe.shp",npoints,windowSize,worldWidth,mode="postgresql")
   val morphologies = grids.map{case g => Morphology(g._2)}
   val coordinates = grids.map{_._1}
 

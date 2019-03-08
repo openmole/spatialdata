@@ -13,9 +13,10 @@ case class OSMGridGenerator(
                            lon: Double,
                            lat: Double,
                            windowSize: Double,
-                           worldWidth: Int
+                           worldWidth: Int,
+                           mode: String = "overpass"
                            ) extends GridGenerator {
-  override def generateGrid(implicit rng: Random): RasterLayerData[Double] = OSMGridGenerator.OSMBuildingsGrid(lon,lat,windowSize,worldWidth)
+  override def generateGrid(implicit rng: Random): RasterLayerData[Double] = OSMGridGenerator.OSMBuildingsGrid(lon,lat,windowSize,worldWidth,mode)
 }
 
 object OSMGridGenerator {
@@ -28,10 +29,10 @@ object OSMGridGenerator {
     * @param worldWidth
     * @return
     */
-  def OSMBuildingsGrid(lon: Double, lat: Double,windowSize: Double, worldWidth: Int): RasterLayerData[Double] = {
+  def OSMBuildingsGrid(lon: Double, lat: Double,windowSize: Double, worldWidth: Int,mode: String): RasterLayerData[Double] = {
     // get polygons
     val (west,south,east,north)=GISUtils.wgs84window(lon,lat,windowSize)
-    val g: Geometry = APIExtractor.Buildings.getNegativeBuildingIntersection(south, west, north, east)
+    val g: Geometry = APIExtractor.Buildings.getNegativeBuildingIntersection(south, west, north, east,mode)
     // rescale [0,worldwidth]x[0,worldwidth] to [xmin,xmax]x[ymin,ymax]
     val (xcoords, ycoords) = (g.getCoordinates.map {_.x}, g.getCoordinates.map {_.y})
     val (xmin, xmax) = (xcoords.min, xcoords.max)

@@ -10,7 +10,7 @@ object TestDatabase {
 
   def testPostgis(): Unit = {
     PostgisConnection.initPostgis("testbuildings")
-    val polygons = PostgisConnection.bboxRequest(1,44,2,45,"ways")
+    val polygons = PostgisConnection.bboxRequest(1,40,2,45,"ways")
     println(polygons)
     println(polygons.length)
   }

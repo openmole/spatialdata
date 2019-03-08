@@ -9,7 +9,7 @@ psql -p $DB_PORT -d postgres -c "CREATE DATABASE $DB_NAME;"
 
 echo "loading osm schemas..."
 psql -p $DB_PORT -d $DB_NAME -c 'CREATE EXTENSION postgis; CREATE EXTENSION hstore;'
-psql -p $DB_PORT -d $DB_NAME -f sql/pgsnapshot_schema_0.6.sql
-psql -p $DB_PORT -d $DB_NAME -f sql/pgsnapshot_schema_0.6_linestring.sql
+psql -p $DB_PORT -d $DB_NAME -f pgsnapshot_schema_0.6.sql
+psql -p $DB_PORT -d $DB_NAME -f pgsnapshot_schema_0.6_linestring.sql
 
 

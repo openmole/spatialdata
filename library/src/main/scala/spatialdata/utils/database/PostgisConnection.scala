@@ -73,7 +73,9 @@ object PostgisConnection {
     val geomfact = new GeometryFactory
 
     while (rs.next()){
-      res.append(geomfact.createPolygon(geomfact.createLinearRing(reader.read(rs.getString(1)).getCoordinates)))
+val coords = reader.read(rs.getString(1)).getCoordinates
+      println(coords)    
+  res.append(geomfact.createPolygon(geomfact.createLinearRing(reader.read(rs.getString(1)).getCoordinates)))
     }
 
     rs.close()

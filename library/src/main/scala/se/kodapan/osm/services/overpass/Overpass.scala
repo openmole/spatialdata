@@ -74,7 +74,7 @@ class Overpass extends HttpService {
 
     val buffer = new StringWriter
     IOUtils.copy(new InputStreamReader(content, "utf8"), buffer)
-    buffer
+    buffer.toString
   } catch {
     case e: Exception =>
       throw new OverpassException(e.getMessage, e)

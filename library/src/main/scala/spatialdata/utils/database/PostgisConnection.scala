@@ -2,6 +2,9 @@
 package spatialdata.utils.database
 
 
+import java.sql.{Connection, DriverManager}
+import java.util.Properties
+
 import com.vividsolutions.jts.geom.{Geometry, Polygon}
 import org.geotools.data.simple.{SimpleFeatureIterator, SimpleFeatureSource}
 import org.geotools.data.{DataStore, DataStoreFinder}
@@ -16,10 +19,10 @@ import scala.collection.mutable.ArrayBuffer
 
 object PostgisConnection {
 
-
-  var datastore: DataStore = null
+  var connection: Connection = null
 
   def initPostgis(database: String,port: Int = 5432): Unit = {
+    /*
     val params: java.util.Map[String,AnyRef] = new java.util.HashMap()
     params.put("dbtype", "postgis")
     params.put("host", "localhost") // always assumed on localhost
@@ -29,24 +32,16 @@ object PostgisConnection {
     //params.put("user", "postgres")
     //params.put("passwd", "postgres")
     datastore = DataStoreFinder.getDataStore(params)
+    */
+    val url = "jdbc:postgresql://localhost/"+database
+    val props = new Properties
+    props.setProperty("user","postgres")
+    connection = DriverManager.getConnection(url, props)
   }
 
-  def bboxRequest(xmin: Double,ymin: Double,xmax: Double,ymax: Double,table: String): Seq[Polygon] = {
+  def bboxRequest(xmin: Double,ymin: Double,xmax: Double,ymax: Double,table: String): Seq[String] = {
 
     /*
-    Statement st = conn.createStatement();
-ResultSet rs = st.executeQuery("SELECT * FROM mytable WHERE columnfoo = 500");
-while (rs.next())
-{
-    System.out.print("Column 1 returned ");
-    System.out.println(rs.getString(1));
-}
-rs.close();
-st.close();
-
-     */
-
-
     val ff: FilterFactory2  = CommonFactoryFinder.getFilterFactory2()
     val featuretype: SimpleFeatureType = datastore.getSchema(table)
     val source: SimpleFeatureSource = datastore.getFeatureSource(table)
@@ -65,6 +60,19 @@ st.close();
       val feature: SimpleFeature = featureiterator.next()
       res.append(feature.getDefaultGeometry.asInstanceOf[Polygon])
     }
+    res
+    */
+    val st = connection.createStatement()
+    val rs = st.executeQuery("select ST_AsText(linestring) from ways;")
+
+    val res = new ArrayBuffer[String]
+
+    while (rs.next()){
+      res.append(rs.getString(1))
+    }
+    rs.close();
+    st.close();
+
     res
   }
 

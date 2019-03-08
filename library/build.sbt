@@ -40,7 +40,7 @@ libraryDependencies ++= Seq(
   "com.github.tototoshi" %% "scala-csv" % "1.3.4",
   //"javax.media" % "jai_core" % "1.1.3" //from "http://download.osgeo.org/webdav/geotools/javax/media/jai_core/1.1.3/jai_core-1.1.3.jar"
   //"mysql" % "mysql-connector-java" % "8.0.14"
-  //"org.postgresql" % "postgresql" % "42.2.5"
+  "org.postgresql" % "postgresql" % "42.2.5"
 )
 
 

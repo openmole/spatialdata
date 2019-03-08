@@ -36,8 +36,11 @@ libraryDependencies ++= Seq(
 //  "se.kodapan.osm.common" % "jts" % osmCommonVersion exclude("com.vividsolutions","jts"),
   "org.geotools" % "geotools" % geotoolsVersion exclude("javax.media", "jai_core") exclude("com.vividsolutions", "jts-core"),
   "org.geotools" % "gt-shapefile" % geotoolsVersion exclude("javax.media", "jai_core") exclude("com.vividsolutions", "jts-core"),
-  "com.github.tototoshi" %% "scala-csv" % "1.3.4"
+//  "org.geotools" % "gt-postgis" % "2.7.5" exclude("javax.media", "jai_core") exclude("com.vividsolutions", "jts-core"), // does not exist
+  "com.github.tototoshi" %% "scala-csv" % "1.3.4",
   //"javax.media" % "jai_core" % "1.1.3" //from "http://download.osgeo.org/webdav/geotools/javax/media/jai_core/1.1.3/jai_core-1.1.3.jar"
+  //"mysql" % "mysql-connector-java" % "8.0.14"
+  //"org.postgresql" % "postgresql" % "42.2.5"
 )
 
 
@@ -60,7 +63,8 @@ libraryDependencies += "commons-io" % "commons-io" % "2.3"
 libraryDependencies += "org.apache.commons" % "commons-lang3" % "3.1"
 
 
-mainClass in (Compile, packageBin) := Some("spatialdata.osm.OSMRealMeasures")
+//mainClass in (Compile, packageBin) := Some("spatialdata.osm.OSMRealMeasures")
+mainClass in (Compile, packageBin) := Some("spatialdata.test.Test")
 
 /*
 assemblyMergeStrategy in assembly := {

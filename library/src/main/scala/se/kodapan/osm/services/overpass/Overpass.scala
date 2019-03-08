@@ -46,6 +46,8 @@ class Overpass extends HttpService {
 //    println("Executing overpass query: " + queryDescription + "\n" + overpassQuery)
     //val started = System.currentTimeMillis
 
+    var content = getHttpClient.execute(post).getEntity.getContent
+    /*
     val res = Try {
       var content = Try{getHttpClient.execute(post).getEntity.getContent}
       while(content.isFailure){
@@ -54,13 +56,14 @@ class Overpass extends HttpService {
         content = Try {
           getHttpClient.execute(post).getEntity.getContent
         }
-        if(content.isFailure){content.asInstanceOf[Failure].exception.printStackTrace()}
+        //if(content.isFailure){content.asInstanceOf[Failure].exception.printStackTrace()}
       }
 
       val buffer = new StringWriter
       IOUtils.copy(new InputStreamReader(content.get, "utf8"), buffer)
       buffer
     }
+    */
 
     //val ended = System.currentTimeMillis
 //    if (Overpass.log.isInfoEnabled) {
@@ -69,7 +72,9 @@ class Overpass extends HttpService {
 //      if (Overpass.log.isDebugEnabled) Overpass.log.debug(buffer.getBuffer.toString)
 //    }
 
-    res.toString
+    val buffer = new StringWriter
+    IOUtils.copy(new InputStreamReader(content, "utf8"), buffer)
+    buffer
   } catch {
     case e: Exception =>
       throw new OverpassException(e.getMessage, e)

@@ -5,7 +5,8 @@ package spatialdata.utils.database
 import java.sql.{Connection, DriverManager}
 import java.util.Properties
 
-import com.vividsolutions.jts.geom.{Geometry, Polygon}
+import com.vividsolutions.jts.io._
+import com.vividsolutions.jts.geom.{Geometry, GeometryFactory, Polygon}
 import org.geotools.data.simple.{SimpleFeatureIterator, SimpleFeatureSource}
 import org.geotools.data.{DataStore, DataStoreFinder}
 import org.geotools.factory.CommonFactoryFinder
@@ -39,7 +40,7 @@ object PostgisConnection {
     connection = DriverManager.getConnection(url, props)
   }
 
-  def bboxRequest(xmin: Double,ymin: Double,xmax: Double,ymax: Double,table: String): Seq[String] = {
+  def bboxRequest(xmin: Double,ymin: Double,xmax: Double,ymax: Double,table: String): Seq[Polygon] = {
 
     /*
     val ff: FilterFactory2  = CommonFactoryFinder.getFilterFactory2()
@@ -63,15 +64,20 @@ object PostgisConnection {
     res
     */
     val st = connection.createStatement()
-    val rs = st.executeQuery("select ST_AsText(linestring) from ways;")
+    val rs = st.executeQuery("select ST_AsText(linestring) from "+table+
+      " WHERE ST_Intersects(ST_MakeEnvelope("+xmin+","+ymin+","+xmax+","+ymax+",4326),linestring);")
 
-    val res = new ArrayBuffer[String]
+    val res = new ArrayBuffer[Polygon]
+
+    val reader = new WKTReader
+    val geomfact = new GeometryFactory
 
     while (rs.next()){
-      res.append(rs.getString(1))
+      res.append(geomfact.createPolygon(geomfact.createLinearRing(reader.read(rs.getString(1)).getCoordinates)))
     }
-    rs.close();
-    st.close();
+
+    rs.close()
+    st.close()
 
     res
   }

@@ -20,12 +20,12 @@ object Test extends App {
 //  TestSynthetic.testRandomGrids
   //TestSynthetic.testBlocksGrid
   //TestSynthetic.testPercolationGrid
-  TestSynthetic.testGeneratorLauncher
+//  TestSynthetic.testGeneratorLauncher
   //TestSynthetic.testGeneratorCalibration
 
 
   // Utils
   //TestUtils.testCSV
-//  TestPNG.testRandomPNG()
+  TestPNG.testPNG()
 
 }

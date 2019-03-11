@@ -9,8 +9,8 @@ import scala.util.Random
 
 case class GridNetworkGenerator(
                                size: Int,
-                               xstep: Int = 1,
-                               ystep: Int = 1,
+                               xstep: Int,
+                               ystep: Int,
                                withDiagLinks: Boolean = false
                                ) extends NetworkGenerator {
 
@@ -20,6 +20,15 @@ case class GridNetworkGenerator(
 
 
 object GridNetworkGenerator {
+
+
+
+  /**
+    *  by default, steps are at size / 10
+    * @param size
+    * @return
+    */
+  def apply(size: Int): GridNetworkGenerator = GridNetworkGenerator(size,size/10,size/10)
 
   /**
     * spatial grid network

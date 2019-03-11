@@ -12,13 +12,15 @@ object TestPNG {
 
     implicit val rng = new Random
     val launchers = Seq("random","expMixture","blocks","percolation").map{
-      GridGeneratorLauncher(_,50,0.5,5,10.0,0.5,5,10,15,0.3,10,4.0)
+      GridGeneratorLauncher(_,50,0.5,5,10.0,0.5,5,10,15,0.4,30,2.0)
     }
 
+    val directory = File("data") / "test"
+    directory.createDirectories()
     launchers.foreach{
       case g => {
         val grid = g.getGrid
-        PNG.write(grid, File(s"${g.generatorType}.png"))
+        PNG.write(grid, directory / s"${g.generatorType}.png")
       }
     }
   }

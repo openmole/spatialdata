@@ -5,7 +5,7 @@ object Test extends App {
 
 
   // OSM
-  TestOSM.testBuildingExtractor
+//  TestOSM.testBuildingExtractor
   //TestOSM.testOSMGridSampling
 
   // Indicators
@@ -14,12 +14,12 @@ object Test extends App {
   //TestIndicators.testStats
 
   // Synthetic grids
-  //TestSynthetic.testRandomGrids
+//  TestSynthetic.testRandomGrids
   //TestSynthetic.testBlocksGrid
-  //TestSynthetic.testGeneratorLauncher
+//  TestSynthetic.testGeneratorLauncher
 
   // Utils
   //TestUtils.testCSV
-
+  TestPNG.testRandomPNG()
 
 }

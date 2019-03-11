@@ -27,7 +27,13 @@ case class ExpMixtureGenerator(
                           /**
                             * Radius of the exp kernel
                             */
-                          kernelRadius: Double
+                          kernelRadius: Double,
+
+                          /**
+                            * Should the distribution be normalized
+                            */
+                              // TODO not really useful ?
+                          normalized: Boolean = false
 
                         ) extends GridGenerator {
 

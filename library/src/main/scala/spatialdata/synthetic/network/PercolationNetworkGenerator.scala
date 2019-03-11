@@ -27,7 +27,7 @@ object PercolationNetworkGenerator {
     * @return
     */
   def bondPercolatedNetwork(worldSize: Int,percolationProba: Double,bordPoints: Int,linkwidth: Double)(implicit rng: Random): Network = {
-    var network = GridNetworkGenerator(worldSize).generateNetwork//.gridNetwork(worldSize/10,worldSize/10,worldSize)
+    var network = GridNetworkGenerator(worldSize).generateNetwork
     var bordConnected = 0
     val xmin = network.nodes.map{_.x}.min;val xmax = network.nodes.map{_.x}.max
     val ymin = network.nodes.map{_.y}.min;val ymax = network.nodes.map{_.y}.max

@@ -17,10 +17,12 @@ object Test extends App {
   //TestIndicators.testStats
 
   // Synthetic grids
-//  TestSynthetic.testRandomGrids
+  //TestSynthetic.testRandomGrids
   //TestSynthetic.testBlocksGrid
   //TestSynthetic.testPercolationGrid
-//  TestSynthetic.testGeneratorLauncher
+  //  TestSynthetic.testGeneratorLauncher
+  //TestSynthetic.testPercolationGrid
+  //TestSynthetic.testGeneratorLauncher
   //TestSynthetic.testGeneratorCalibration
 
 

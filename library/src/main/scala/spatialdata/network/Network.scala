@@ -75,9 +75,17 @@ object Network {
       var x = l.e1.x;var y = l.e1.y
       (0.0 to nsteps by 1.0).foreach{_ =>
         //println("x = "+x+"; y = "+y)
-        ( - (linkwidth-1)/2 to (linkwidth-1)/2 by 1.0).toSeq.zip(( - (linkwidth-1)/2 to (linkwidth-1)/2 by 1.0)).foreach {case (k1,k2) =>
+        /*( - (linkwidth-1)/2 to (linkwidth-1)/2 by 1.0).toSeq.zip(( - (linkwidth-1)/2 to (linkwidth-1)/2 by 1.0)).foreach {
+          case (k1,k2) =>
+            res(xcor(x+k1))(ycor(y+k2)) = 1.0
+        }*/
+        for {
+          k1 <- - (linkwidth-1)/2 to (linkwidth-1)/2 by 1.0
+          k2 <-  - (linkwidth-1)/2 to (linkwidth-1)/2 by 1.0
+        } yield {
           res(xcor(x+k1))(ycor(y+k2)) = 1.0
         }
+
         x = x + istep;y = y+ jstep
       }
     }

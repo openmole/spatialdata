@@ -10,6 +10,7 @@ import org.apache.http.conn.scheme.SchemeRegistry
 import org.apache.http.impl.client.{DefaultHttpClient, HttpClientBuilder}
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager
 import org.apache.http.params.BasicHttpParams
+import spatialdata.utils.http.TorPoolManager
 
 /**
   * @author kalle
@@ -26,9 +27,10 @@ class HttpService {
   private var httpClient:HttpClient = _
   private val defaultUserAgent = "Unnamed instance of " + getClass.getName + ", https://github.com/karlwettin/osm-common/"
   private var userAgent = defaultUserAgent
+  private var withTorPool: Boolean = _
 
   @throws[Exception]
-  def open(timeout: Int=1000) = {
+  def open(timeout: Int=1000,torPool: Boolean=true) = {
     val schemeRegistry = new SchemeRegistry
     schemeRegistry.register(new Scheme("http", PlainSocketFactory.getSocketFactory, 80))
     cm = new ThreadSafeClientConnManager(new BasicHttpParams, schemeRegistry)
@@ -37,6 +39,8 @@ class HttpService {
     requestBuilder.setConnectTimeout(timeout)
     requestBuilder.setConnectionRequestTimeout(timeout)
     httpClient = HttpClientBuilder.create.setDefaultRequestConfig(requestBuilder.build()).build
+    withTorPool=torPool
+    if(withTorPool){TorPoolManager.setupTorPoolConnexion(true)}
   }
 
   def setUserAgent(httpRequest: HttpRequest) = {

@@ -11,6 +11,10 @@ import java.util
 
 import se.kodapan.osm.services.HttpService
 
+import scala.util.{Failure, Try}
+
+import spatialdata.utils.http.TorPoolManager
+
 /**
   * @author kalle
   * @since 2012-12-31 16:32
@@ -40,16 +44,36 @@ class Overpass extends HttpService {
     post.setEntity(new UrlEncodedFormEntity(nameValuePairs))
     leniency
 //    println("Executing overpass query: " + queryDescription + "\n" + overpassQuery)
-    val started = System.currentTimeMillis
-    val response = getHttpClient.execute(post)
-    val buffer = new StringWriter
-    IOUtils.copy(new InputStreamReader(response.getEntity.getContent, "utf8"), buffer)
-    val ended = System.currentTimeMillis
+    //val started = System.currentTimeMillis
+
+    var content = getHttpClient.execute(post).getEntity.getContent
+    /*
+    val res = Try {
+      var content = Try{getHttpClient.execute(post).getEntity.getContent}
+      while(content.isFailure){
+        // FIXME add a max number of tries ?
+        TorPoolManager.switchPort(true)
+        content = Try {
+          getHttpClient.execute(post).getEntity.getContent
+        }
+        //if(content.isFailure){content.asInstanceOf[Failure].exception.printStackTrace()}
+      }
+
+      val buffer = new StringWriter
+      IOUtils.copy(new InputStreamReader(content.get, "utf8"), buffer)
+      buffer
+    }
+    */
+
+    //val ended = System.currentTimeMillis
 //    if (Overpass.log.isInfoEnabled) {
 //    println("Overpass response for " + (if (queryDescription != null) queryDescription
 //      else "un named query") + " was " + buffer.getBuffer.length + " characters and received in " + (ended - started) + " ms.")
 //      if (Overpass.log.isDebugEnabled) Overpass.log.debug(buffer.getBuffer.toString)
 //    }
+
+    val buffer = new StringWriter
+    IOUtils.copy(new InputStreamReader(content, "utf8"), buffer)
     buffer.toString
   } catch {
     case e: Exception =>

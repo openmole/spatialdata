@@ -8,6 +8,9 @@ object Test extends App {
 //  TestOSM.testBuildingExtractor
   //TestOSM.testOSMGridSampling
 
+  // Database
+  TestDatabase.testPostgis
+
   // Indicators
   //TestIndicators.testSpatialIndics
   //TestIndicators.testMoran
@@ -20,6 +23,6 @@ object Test extends App {
 
   // Utils
   //TestUtils.testCSV
-  TestPNG.testRandomPNG()
+//  TestPNG.testRandomPNG()
 
 }

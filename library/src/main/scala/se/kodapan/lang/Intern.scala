@@ -8,7 +8,7 @@ import java.io.Serializable
   * @since 2013-05-04 17:37
   */
 trait Intern[T] extends Serializable {
-  def intern(`object`: T): T
+  def intern(obj: T): T
 }
 
 /**
@@ -19,11 +19,11 @@ trait Intern[T] extends Serializable {
 class InternImpl[T] extends Intern[T] with Serializable {
   private val map = new java.util.HashMap[T, T]()
 
-  override def intern(`object`: T) = {
-    var interned = map.get(`object`)
+  override def intern(obj: T) = {
+    var interned = map.get(obj)
     if (interned == null) {
-      map.put(`object`, `object`)
-      interned = `object`
+      map.put(obj, obj)
+      interned = obj
     }
     interned
   }

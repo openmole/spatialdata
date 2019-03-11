@@ -12,6 +12,7 @@ import se.kodapan.osm.jts.JtsGeometryFactory
 import se.kodapan.osm.parser.xml.instantiated.InstantiatedOsmXmlParser
 import se.kodapan.osm.services.api.v_0_6.ApiConnection
 import se.kodapan.osm.services.overpass.Overpass
+import spatialdata.utils.database.PostgisConnection
 import spatialdata.utils.gis.GISUtils._
 import spatialdata.utils.gis.PoligonizerUtils
 
@@ -39,47 +40,68 @@ object APIExtractor {
       Seq(result: _*)
     }
 
-    def getBuildings(south: Double, west: Double, north: Double, east: Double, useOverpass: Boolean = true): Seq[Polygon] = {
+
+    /**
+      *
+      * @param south
+      * @param west
+      * @param north
+      * @param east
+      * @param mode osm,overpass, postgresql
+      * @return
+      */
+    def getBuildings(south: Double, west: Double, north: Double, east: Double, mode: String = "overpass"): Seq[Polygon] = {
       Locale.setDefault(Locale.ENGLISH)
-      val root = if (useOverpass) {
-        val overpass = new Overpass
-        overpass.setUserAgent("Spatial Data extraction")
-        overpass.open()
-        val root = new PojoRoot
-        val parser = InstantiatedOsmXmlParser.newInstance
-        parser.setRoot(root)
-        parser.parse(new StringReader(overpass.execute(
-          s"""
-             |  <query type="way">
-             |    <has-kv k="building" v="yes"/>
-             |    <bbox-query e="$east" n="$north" s="$south" w="$west"/>
-             |  </query>
-             |  <union>
-             |    <item />
-             |    <recurse type="way-node"/>
-             |  </union>
-             |  <print/>
+      mode match {
+        case "overpass" => {
+          val overpass = new Overpass
+          overpass.setUserAgent("Spatial Data extraction")
+          overpass.open()
+          val root = new PojoRoot
+          val parser = InstantiatedOsmXmlParser.newInstance
+          parser.setRoot(root)
+          parser.parse(new StringReader(overpass.execute(
+            s"""
+               |  <query type="way">
+               |    <has-kv k="building" v="yes"/>
+               |    <bbox-query e="$east" n="$north" s="$south" w="$west"/>
+               |  </query>
+               |  <union>
+               |    <item />
+               |    <recurse type="way-node"/>
+               |  </union>
+               |  <print/>
            """.stripMargin)))
-        if(spatialdata.DEBUG) println("retrieved via overpass "+east+" n="+north+" s="+south+"w="+west)
-        root
-      } else {
-        val api = new ApiConnection()
-        val res = api.get(south, west, north, east)
-        if(spatialdata.DEBUG) println("retrieved via standard api "+east+" n="+north+" s="+south+"w="+west)
-        res
+          if (spatialdata.DEBUG) println("retrieved via overpass " + east + " n=" + north + " s=" + south + "w=" + west)
+          asPolygonSeq(root.enumerateWays)
+        }
+        case "osm" => {
+          val api = new ApiConnection()
+          val res = api.get(south, west, north, east)
+          if (spatialdata.DEBUG) println("retrieved via standard api " + east + " n=" + north + " s=" + south + "w=" + west)
+          asPolygonSeq(res.enumerateWays)
+        }
+        case "postgresql" => {
+          PostgisConnection.initPostgis("buildings")
+          val polygons = PostgisConnection.bboxRequest(west,south,east,north,"ways")
+          if (spatialdata.DEBUG) println("retrieved via postgresql " + east + " n=" + north + " s=" + south + "w=" + west)
+          polygons
+        }
       }
+      /*
+      // FIXME simplify is not used ?
       def simplify(polygon: Polygon) = {
         GeometryPrecisionReducer.reduce(polygon, new PrecisionModel(10000)) match {//FIXME: This is arbitrary
           case p: Polygon => Seq(p)
           case mp: MultiPolygon => for (i <- 0 until mp.getNumGeometries) yield mp.getGeometryN(i).asInstanceOf[Polygon]
           case _ => Seq()
         }
-      }
-      asPolygonSeq(root.enumerateWays)//.flatMap(simplify)
+      }*/
+      //.flatMap(simplify)
     }
 
-    def getBuildingIntersection(south: Double, west: Double, north: Double, east: Double, useOverpass: Boolean = true): Seq[Geometry] = {
-      val buildings = getBuildings(south, west, north, east, useOverpass)
+    def getBuildingIntersection(south: Double, west: Double, north: Double, east: Double, mode: String = "overpass"): Seq[Geometry] = {
+      val buildings = getBuildings(south, west, north, east, mode)
       val fact = new GeometryFactory()
       val env = fact.createPolygon(fact.createLinearRing(Array(new Coordinate(west, north), new Coordinate(east, north), new Coordinate(east, south), new Coordinate(west, south), new Coordinate(west, north))), Array())
       //buildings.map(_.intersection(env))
@@ -88,8 +110,8 @@ object APIExtractor {
     }
 
 
-    def getNegativeBuildingIntersection(south: Double, west: Double, north: Double, east: Double, useOverpass: Boolean = true): Geometry = {
-      val buildings = getBuildings(south, west, north, east, useOverpass)
+    def getNegativeBuildingIntersection(south: Double, west: Double, north: Double, east: Double, mode: String = "overpass"): Geometry = {
+      val buildings = getBuildings(south, west, north, east, mode)
       val fact = new GeometryFactory()
       val env = fact.createPolygon(fact.createLinearRing(Array(new Coordinate(west, north), new Coordinate(east, north), new Coordinate(east, south), new Coordinate(west, south), new Coordinate(west, north))), Array())
 //      var res = Try {

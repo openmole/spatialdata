@@ -5,8 +5,11 @@ object Test extends App {
 
 
   // OSM
-  TestOSM.testBuildingExtractor
+  //TestOSM.testBuildingExtractor
   //TestOSM.testOSMGridSampling
+
+  // Database
+  TestDatabase.testPostgis
 
   // Indicators
   //TestIndicators.testSpatialIndics

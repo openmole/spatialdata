@@ -63,8 +63,8 @@ libraryDependencies += "commons-io" % "commons-io" % "2.3"
 libraryDependencies += "org.apache.commons" % "commons-lang3" % "3.1"
 
 
-//mainClass in (Compile, packageBin) := Some("spatialdata.osm.OSMRealMeasures")
-mainClass in (Compile, packageBin) := Some("spatialdata.test.Test")
+mainClass in (Compile, packageBin) := Some("spatialdata.osm.OSMRealMeasures")
+//mainClass in (Compile, packageBin) := Some("spatialdata.test.Test")
 
 /*
 assemblyMergeStrategy in assembly := {

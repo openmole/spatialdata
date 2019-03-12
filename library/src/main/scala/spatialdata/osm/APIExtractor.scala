@@ -82,9 +82,10 @@ object APIExtractor {
           asPolygonSeq(res.enumerateWays)
         }
         case "postgresql" => {
-          PostgisConnection.initPostgis("buildings")
+	  // FIXME port shoudnt be hardcoded here
+          PostgisConnection.initPostgis("buildings",5433)
           val polygons = PostgisConnection.bboxRequest(west,south,east,north,"ways")
-          if (spatialdata.DEBUG) println("retrieved via postgresql " + east + " n=" + north + " s=" + south + "w=" + west)
+          if (spatialdata.DEBUG) println("retrieved via postgresql " + east + " n=" + north + " s=" + south + "w=" + west+" : "+polygons.size+" buildings")
           polygons
         }
       }

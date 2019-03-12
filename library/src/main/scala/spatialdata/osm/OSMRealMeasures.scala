@@ -10,19 +10,20 @@ import scala.util.Random
 
 object OSMRealMeasures extends App {
 
-  if(args.length!=5) println("Usage : $NPOINTS $WINDOWSIZE(m) $WORLDWIDTH(cells) $SEED(0 = random Int) $RESDIR")
+  if(args.length!=5) println("Usage : $NPOINTS $WINDOWSIZE(m) $WORLDWIDTH(cells) $SEED(0 = random Int) $RESDIR [$MODE = postgresql,osm,overpass]")
 
   val npoints = args(0).toInt // 10
   val windowSize = args(1).toInt // 500
   val worldWidth = args(2).toInt // 50
   val seed = args(3).toInt match {case s if s == 0.0 => {println("random seed");new Random().nextInt()};case s => s}
   val resdir = args(4)
+  val mode = if(args.length>=6) args(5) else "postgresql"
 
   implicit val rng: Random = new Random(seed)
 
   val start = System.currentTimeMillis()
 
-  val grids = OSMGridSampling.sampleGridsInLayer("data/cities_europe.shp",npoints,windowSize,worldWidth,mode="postgresql")
+  val grids = OSMGridSampling.sampleGridsInLayer("data/cities_europe.shp",npoints,windowSize,worldWidth,mode=mode)
   val morphologies = grids.map{case g => Morphology(g._2)}
   val coordinates = grids.map{_._1}
 

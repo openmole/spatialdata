@@ -10,7 +10,18 @@ setwd(paste0(Sys.getenv('CS_HOME'),'/SpatialData/library/data'))
 
 source(paste0(Sys.getenv('CS_HOME'),'/Organisation/Models/Utils/R/plots.R'))
 
-real <- as.tbl(read.csv('morpho/morpho_npoints10000_windowSize500_worldWidth50_seed-645997938.csv',sep=";"))
+realfiles = c(
+  'morpho/morpho_npoints10000_windowSize500_worldWidth50_seed-645997938.csv',
+  'morpho/morpho_npoints10000_windowSize500_worldWidth50_seed-1380889072.csv',
+  'morpho/morpho_npoints1000_windowSize500_worldWidth50_seed-191282179.csv',
+  'morpho/morpho_npoints1000_windowSize500_worldWidth50_seed1887024328.csv'
+)
+
+real=data.frame()
+for(realfile in realfiles){
+  real <- rbind(real,as.tbl(read.csv(realfile,sep=";")))
+}
+
 real = real[real$area>0,]
 # some points have a very low density (quasi empty : closing steps at 1 -> dichotomy point clouds)
 # -> a filter on density is necessary (idem for simulation results)
@@ -35,6 +46,8 @@ real=real[apply(real[,indics],1,function(r){length(which(is.na(r)))==0}),]
 cor(real[,indics])
 
 morph=real[,indics]
+maxs=apply(morph,2,max);mins=apply(morph,2,min)
+write.table(data.frame(maxs,mins),file="calib/norm.csv",quote = F,sep=',',col.names = F,row.names=F)
 for(j in 1:ncol(morph)){morph[,j]=(morph[,j]-min(morph[,j]))/(max(morph[,j])-min(morph[,j]))}
 pca = prcomp(morph)
 summary(pca)

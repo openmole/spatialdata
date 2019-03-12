@@ -67,8 +67,10 @@ object Morphology {
       avgComponentArea(grid),
       fullDilationSteps(grid),
       fullErosionSteps(grid),
-      fullClosingSteps(grid),
-      fullOpeningSteps(grid)
+      // FIXME opening and closing are interesting as profile of mask radius (always one or two with the smaller mask)
+      //  : too complicated/costly to compute
+      0.0,//fullClosingSteps(grid),
+      0.0//fullOpeningSteps(grid)
     )
   }
 
@@ -309,15 +311,44 @@ object Morphology {
   }
 
 
+  /**
+    * convolution using fft (pb: operator is sum by default)
+    *  - binary convol here operator is not applied during convol itself but linked to mask
+    * @param matrix
+    * @param mask
+    * @param operator
+    */
+  // FIXME DOES NOT WORK
+  /*def convolution(matrix: Array[Array[Double]],
+                  mask: Array[Array[Double]],
+                  filter: Double=>Double = {case d => if(d > 0.0)1.0 else 0.0}
+                 ): Array[Array[Double]] ={
+    // mask must be padded
+    val paddedMask: Array[Array[Double]] = Array.fill((matrix.length-mask.length)/2){Array.fill(matrix(0).length){0.0}}++
+      mask.map{case row=>Array.fill((matrix(0).length-mask(0).length)/2){0.0}++row++Array.fill((matrix(0).length-mask(0).length)/2){0.0}}++
+      Array.fill((matrix.length-mask.length)/2){Array.fill(matrix(0).length){0.0}}
+    val convol: Array[Array[Double]] = Convolution.convolution2D(matrix,paddedMask)
+    convol.map{
+      _.map{
+        case d => filter(d)
+      }
+    }
+  }
+  */
 
   /**
     * Naive two dimensional convolution for morpho math - default operator is average (dilation) - replace by product for erosion
     *   (not efficient at all but no math commons to work in the gui)
     * @param matrix
     * @param mask should be of uneven size
+    * @param operator sum by default
     * @return
     */
-  def convolution(matrix: Array[Array[Double]],mask: Array[Array[Double]],operator: Array[Double]=>Double = {case a => if(a.filter(_>0.0).size>0)1.0 else 0.0}): Array[Array[Double]] = {
+  def convolutionDirect(matrix: Array[Array[Double]],mask: Array[Array[Double]],
+                        //operator: Array[Double]=>Double = {case a => if(a.filter(_>0.0).size>0)1.0 else 0.0})
+                        filter: Double=>Double = {case d => if(d > 0.0)1.0 else 0.0}
+                       )
+     : Array[Array[Double]] = {
     assert(mask.length%2==1&&mask(0).length%2==1,"mask should be of uneven size")
     val sizes = matrix.map(_.length);assert(sizes.max==sizes.min,"array should be rectangular")
     val masksizes = mask.map(_.length);assert(masksizes.max==masksizes.min,"mask should be rectangular")
@@ -333,7 +364,7 @@ object Morphology {
         //assert(i+k<matrix.length&j+l<matrix(0).length,"size : "+i+" "+j+" "+k+" "+" "+l+" for a matrix of size "+matrix.length+";"+matrix(0).length)
         masked(k+paddingx)(l+paddingy)=padded(i+k)(j+l)*mask(k+paddingx)(l+paddingy)
       }
-      res(i)(j) = operator(masked.flatten)
+      res(i)(j) = filter(masked.flatten.sum)
     }
     //res.zip(matrix).map{case (row,initrow) => row.take(initrow.length + paddingy).takeRight(initrow.length)}.take(matrix.length+paddingx).takeRight(matrix.length)
     res.map{case row => row.slice(paddingy,row.length-paddingy)}.slice(paddingx,res.length-paddingx)
@@ -344,13 +375,16 @@ object Morphology {
     * @param matrix
     * @return
     */
-  def dilation(matrix: Array[Array[Double]]): Array[Array[Double]] = convolution(matrix,Array(Array(0.0,1.0,0.0),Array(1.0,1.0,1.0),Array(0.0,1.0,0.0)))
+  def dilation(matrix: Array[Array[Double]],
+               convol: (Array[Array[Double]],Array[Array[Double]],(Double=> Double))=> Array[Array[Double]] = convolutionDirect): Array[Array[Double]] =
+    convol(matrix,Array(Array(0.0,1.0,0.0),Array(1.0,1.0,1.0),Array(0.0,1.0,0.0)),{case d => if(d > 0.0)1.0 else 0.0})
 
-  def erosion(matrix: Array[Array[Double]]): Array[Array[Double]] = {
+  def erosion(matrix: Array[Array[Double]],
+              convol: (Array[Array[Double]],Array[Array[Double]],(Double=> Double))=> Array[Array[Double]] = convolutionDirect): Array[Array[Double]] = {
     val mask = Array(Array(0.0, 1.0, 0.0), Array(1.0, 1.0, 1.0), Array(0.0, 1.0, 0.0))
-    convolution(matrix,
+    convol(matrix,
       mask,
-      { case a => if (a.filter(_ > 0.0).sum == mask.flatten.sum) 1.0 else 0.0 }
+      { case d => if (d == mask.flatten.sum) 1.0 else 0.0 }
     )
   }
 
@@ -360,7 +394,9 @@ object Morphology {
     * @param matrix
     * @return
     */
-  def fullDilationSteps(matrix: Array[Array[Double]]): Double = {
+  def fullDilationSteps(matrix: Array[Array[Double]],
+                        convol: (Array[Array[Double]],Array[Array[Double]],(Double=> Double))=> Array[Array[Double]] = convolutionDirect
+                       ): Double = {
     var steps = 0
     var complete = false
     var currentworld = matrix
@@ -369,7 +405,7 @@ object Morphology {
     while(!complete){
       //println("dilating "+steps+" ; "+currentworld.flatten.sum+"/"+currentworld.flatten.length+" ; "+currentworld.length+" - "+currentworld(0).length)
       //println(Grid.gridToString(currentworld)+"\n\n")
-      currentworld = dilation(currentworld)
+      currentworld = dilation(currentworld,convol)
       complete = currentworld.flatten.sum == currentworld.flatten.length
       steps = steps + 1
     }
@@ -381,7 +417,9 @@ object Morphology {
     * @param matrix
     * @return
     */
-  def fullErosionSteps(matrix: Array[Array[Double]]): Double = {
+  def fullErosionSteps(matrix: Array[Array[Double]],
+                       convol: (Array[Array[Double]],Array[Array[Double]],(Double=> Double))=> Array[Array[Double]] = convolutionDirect
+                      ): Double = {
     var steps = 0
     var complete = false
     var currentworld = matrix
@@ -390,7 +428,7 @@ object Morphology {
     while(!complete){
       //println("eroding "+steps+" ; "+currentworld.flatten.sum+"/"+currentworld.flatten.length)
       //println(Grid.gridToString(currentworld)+"\n\n")
-      currentworld = erosion(currentworld)
+      currentworld = erosion(currentworld,convol)
       complete = currentworld.flatten.sum == 0
       steps = steps + 1
     }
@@ -404,7 +442,9 @@ object Morphology {
     * @param matrix
     * @return
     */
-  def fullClosingSteps(matrix: Array[Array[Double]]): Double = {
+  def fullClosingSteps(matrix: Array[Array[Double]],
+                       convol: (Array[Array[Double]],Array[Array[Double]],(Double=> Double))=> Array[Array[Double]] = convolutionDirect
+                      ): Double = {
     var steps = 0
     var complete = false
     var currentworld = matrix
@@ -414,7 +454,7 @@ object Morphology {
       //println("closing "+steps+" ; "+currentworld.flatten.sum+"/"+currentworld.flatten.length)
       //println(Grid.gridToString(currentworld)+"\n\n")
       val prevworld = currentworld.map{_.clone()}
-      currentworld = erosion(dilation(currentworld))
+      currentworld = erosion(dilation(currentworld,convol),convol)
       val diff = prevworld.zip(currentworld).map{case (d1,d2) => d1.zip(d2).map{case (dd1,dd2)=> math.abs(dd1-dd2)}.sum}.sum
       //println("diff = "+diff)
       complete = (diff==0.0)
@@ -429,7 +469,9 @@ object Morphology {
     * @param matrix
     * @return
     */
-  def fullOpeningSteps(matrix: Array[Array[Double]]): Double = {
+  def fullOpeningSteps(matrix: Array[Array[Double]],
+                       convol: (Array[Array[Double]],Array[Array[Double]],(Double=> Double))=> Array[Array[Double]] = convolutionDirect
+                      ): Double = {
     var steps = 0
     var complete = false
     var currentworld = matrix
@@ -439,7 +481,7 @@ object Morphology {
       //println("opening "+steps+" ; "+currentworld.flatten.sum+"/"+currentworld.flatten.length)
       //println(Grid.gridToString(currentworld)+"\n\n")
       val prevworld = currentworld.map{_.clone()}
-      currentworld = dilation(erosion(currentworld))
+      currentworld = dilation(erosion(currentworld,convol),convol)
       val diff = prevworld.zip(currentworld).map{case (d1,d2) => d1.zip(d2).map{case (dd1,dd2)=> math.abs(dd1-dd2)}.sum}.sum
       //println("diff = "+diff)
       complete = (diff==0.0)

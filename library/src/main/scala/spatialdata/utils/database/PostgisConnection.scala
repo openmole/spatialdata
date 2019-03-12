@@ -34,7 +34,7 @@ object PostgisConnection {
     //params.put("passwd", "postgres")
     datastore = DataStoreFinder.getDataStore(params)
     */
-    val url = "jdbc:postgresql://localhost/"+database
+    val url = "jdbc:postgresql://localhost:"+port+"/"+database
     val props = new Properties
     props.setProperty("user","postgres")
     connection = DriverManager.getConnection(url, props)

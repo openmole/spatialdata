@@ -15,6 +15,7 @@ object Test extends App {
   //TestIndicators.testSpatialIndics
   //TestIndicators.testMoran
   //TestIndicators.testStats
+  TestIndicators.testFFTConvolution
 
   // Synthetic grids
   //TestSynthetic.testRandomGrids
@@ -26,6 +27,6 @@ object Test extends App {
 
   // Utils
   //TestUtils.testCSV
-  TestPNG.testPNG()
+  //TestPNG.testPNG()
 
 }

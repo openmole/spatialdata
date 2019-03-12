@@ -1,14 +1,42 @@
 
 package spatialdata.test
 
+import better.files.File
 import spatialdata._
 import spatialdata.measures._
 import spatialdata.synthetic.grid.ExpMixtureGenerator
-import spatialdata.utils.io.CSV
+import spatialdata.utils.io.{CSV, PNG}
+import spatialdata.utils._
 
 import scala.util.Random
 
 object TestIndicators {
+
+
+  def testFFTConvolution(): Unit = {
+    implicit val rng = new Random
+
+
+    //(0 to 20).foreach{_ =>
+      val grid = ExpMixtureGenerator(50,3,1.0,10.0,true).generateGrid
+      val maxval = grid.flatten.max
+      val ngrid = grid.map{_.map{case d => if(d / maxval > 0.6) 1.0 else 0.0}}
+
+    PNG.write(ngrid, File("data") / "test/grid.png")
+    PNG.write(Morphology.erosion(ngrid), File("data") / "test/gridFFT.png")
+    PNG.write(Morphology.erosion(ngrid,Morphology.convolutionDirect), File("data") / "test/gridDirect.png")
+    // TODO fix the fft convolution
+    /*
+      time(_=>println("fft erosion steps = "+Morphology.fullErosionSteps(ngrid)))
+      time(_=>println("direct erosion steps = "+Morphology.fullErosionSteps(ngrid,Morphology.convolutionDirect)))
+      time(_=>println("fft dilation steps = "+Morphology.fullDilationSteps(ngrid)))
+      time(_=>println("direct dilation steps = "+Morphology.fullDilationSteps(ngrid,Morphology.convolutionDirect)))
+    */
+    //}
+
+  }
+
+
 
 
   def testSpatialIndics(): Unit = {

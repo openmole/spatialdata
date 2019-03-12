@@ -1,16 +1,14 @@
 package spatialdata.test
 
 import better.files.File
-import spatialdata.synthetic.grid.{BlocksGridGenerator, ExpMixtureGenerator, PercolationGridGenerator, RandomGridGenerator}
 import spatialdata.utils.io.PNG
-import spatialdata._
 import spatialdata.grid.GridGeneratorLauncher
 
 import scala.util.Random
 
 object TestPNG {
 
-  def testRandomPNG(): Unit = {
+  def testPNG(): Unit = {
 
     implicit val rng = new Random
     val launchers = Seq("random","expMixture","blocks","percolation").map{
@@ -21,10 +19,12 @@ object TestPNG {
         0.2,10,4.0)
     }
 
+    val directory = File("data") / "test"
+    directory.createDirectories()
     launchers.foreach{
       case g => {
         val grid = g.getGrid
-        PNG.write(grid, File(s"data/test/${g.generatorType}.png"))
+        PNG.write(grid, directory / s"${g.generatorType}.png")
       }
     }
   }

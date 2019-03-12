@@ -1,7 +1,7 @@
 FILE=$1
 DB=$2
 
-PORT=5432
+PORT=5433
 
 #TAG=highway
 TAG=building
@@ -26,7 +26,7 @@ psql -p $PORT -d $DB -f pgsnapshot_schema_0.6_linestring.sql
 
 # pbf to postgis
 #JAVACMD_OPTIONS="-Djava.io.tmpdir=/mnt/volume1/juste/tmp"
-sudo /home/juste/bin/osmosis --read-pbf $FILE --log-progress --tf accept-ways building=* --used-node --write-pgsql host=localhost:$PORT database=$DB user=juste #password=`cat sql/password`
-#osmosis --read-pbf $FILE --log-progress --tf accept-ways $TAG=* --used-node --write-pgsql host=localhost:$PORT database=$DB
+#sudo /home/juste/bin/osmosis --read-pbf $FILE --log-progress --tf accept-ways building=* --used-node --write-pgsql host=localhost:$PORT database=$DB user=juste #password=`cat sql/password`
+osmosis --read-pbf $FILE --log-progress --tf accept-ways building=* --used-node --write-pgsql host=localhost:$PORT database=$DB
 
 

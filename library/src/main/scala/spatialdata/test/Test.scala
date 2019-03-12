@@ -26,6 +26,6 @@ object Test extends App {
 
   // Utils
   //TestUtils.testCSV
-  TestPNG.testRandomPNG()
+  TestPNG.testPNG()
 
 }

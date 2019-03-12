@@ -89,7 +89,7 @@ val exploration = DirectSampling(
       blocksMaxSize in Range(2.0,30.0),
       percolationProba in Range(0.0,1.0),
       percolationBordPoints in Range(1.0,50.0),
-      percolationLinkWidth in Range(1.0,10.0)
+      percolationLinkWidth in Range(1.0,5.0)
     ) withIndex id)
     x (generator in Seq("random","expMixture","blocks","percolation"))
     x (size is 50)

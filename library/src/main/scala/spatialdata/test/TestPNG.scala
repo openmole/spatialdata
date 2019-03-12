@@ -14,7 +14,11 @@ object TestPNG {
 
     implicit val rng = new Random
     val launchers = Seq("random","expMixture","blocks","percolation").map{
-      GridGeneratorLauncher(_,50,0.5,5,10.0,0.5,5,10,15,0.4,30,2.0)
+      GridGeneratorLauncher(_,50,
+        0.5,
+        5,10.0,0.5,
+        5,10,15,
+        0.2,10,4.0)
     }
 
     launchers.foreach{

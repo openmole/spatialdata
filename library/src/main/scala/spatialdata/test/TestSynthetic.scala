@@ -2,12 +2,27 @@
 package spatialdata.test
 
 import spatialdata.grid.GridGeneratorLauncher
-import spatialdata.synthetic.grid.{BlocksGridGenerator, RandomGridGenerator}
+import spatialdata.synthetic.grid.{BlocksGridGenerator, PercolationGridGenerator, RandomGridGenerator}
 import spatialdata.measures.Morphology
 
 import scala.util.Random
 
 object TestSynthetic {
+
+  def testGeneratorCalibration: Unit = {
+
+    implicit val rng = new Random
+
+    import spatialdata.grid.GridGeneratorCalibration._
+
+    def projection(morphology: Morphology): Array[Double] = Morphology.rotation("data/calib/pca.csv","data/calib/norm.csv")(morphology)
+    def objective(pcs: Array[Double]): Double = math.sqrt(math.pow(pcs(0)-0.5,2)+math.pow(pcs(1),2))
+
+    (1 to 20).foreach { case blocknum =>
+      println("MSE on two first pcs = " + CalibrateBlocksGridGenerator(50, blocknum, 1, 10).calibrate(projection, objective))
+    }
+
+  }
 
 
   def testGeneratorLauncher(): Unit = {
@@ -22,6 +37,14 @@ object TestSynthetic {
 
     launchers.foreach{case g => for(_ <- 0 until 10) {println(g.getMorphology)}}
 
+  }
+
+
+  def testPercolationGrid(): Unit = {
+    implicit val rng = new Random
+    val grid = PercolationGridGenerator(50,0.5,20,3).generateGrid
+
+    println(spatialdata.grid.grid.gridToString(grid))
   }
 
 

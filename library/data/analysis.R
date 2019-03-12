@@ -22,7 +22,10 @@ real = real[real$density>0.05,]
 
 params = c("lon","lat")
 
-indics = c("avgBlockArea","avgComponentArea","avgDetour","avgDistance","components","density","fullClosingSteps","fullDilationSteps","fullErosionSteps","fullOpeningSteps","moran")
+#indics = c("avgBlockArea","avgComponentArea","avgDetour","avgDistance","components","density","fullClosingSteps","fullDilationSteps","fullErosionSteps","fullOpeningSteps","moran")
+# ! order for export : same as scala case class
+indics = c("moran","avgDistance","density","components","avgDetour","avgBlockArea",
+           "avgComponentArea","fullDilationSteps","fullErosionSteps") # fullClosingSteps,fullOpeningSteps
 # "area" = alpha*density
 
 # filter NAs
@@ -36,6 +39,8 @@ for(j in 1:ncol(morph)){morph[,j]=(morph[,j]-min(morph[,j]))/(max(morph[,j])-min
 pca = prcomp(morph)
 summary(pca)
 pcs = as.matrix(morph)%*%pca$rotation
+# export pc rotation
+write.table(pca$rotation,file="calib/pca.csv",quote = F,sep=',',col.names = F,row.names=F)
 
 real=cbind(real,pcs)
 
@@ -126,6 +131,7 @@ g+geom_point()
 all[all$PC1<0.4&all$PC2>0.75&all$generator=="real",]
 #-4.247058 48.45855
 
-all[all$PC1>1.25&all$generator=="real",]
 
+all[all$PC1>1.25&all$generator=="real",]
+#4.215393 51.95148
 

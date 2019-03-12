@@ -5,11 +5,11 @@ object Test extends App {
 
 
   // OSM
-  //TestOSM.testBuildingExtractor
+//  TestOSM.testBuildingExtractor
   //TestOSM.testOSMGridSampling
 
   // Database
-  TestDatabase.testPostgis
+  //TestDatabase.testPostgis
 
   // Indicators
   //TestIndicators.testSpatialIndics
@@ -19,10 +19,13 @@ object Test extends App {
   // Synthetic grids
   //TestSynthetic.testRandomGrids
   //TestSynthetic.testBlocksGrid
+  //TestSynthetic.testPercolationGrid
   //TestSynthetic.testGeneratorLauncher
+  //TestSynthetic.testGeneratorCalibration
+
 
   // Utils
   //TestUtils.testCSV
-
+  TestPNG.testPNG()
 
 }

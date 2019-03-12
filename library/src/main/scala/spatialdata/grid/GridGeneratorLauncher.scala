@@ -59,13 +59,26 @@ case class GridGeneratorLauncher(
     * @param rng
     * @return
     */
-  def getMorphology(implicit rng: Random): Morphology = {
-    val grid = generatorType match {
+  def getGrid(implicit rng: Random) = {
+    generatorType match {
       case "random" => RandomGridGenerator(gridSize).generateGrid(rng).map{_.map{case d => if(d < randomDensity) 1.0 else 0.0}}
-      case "expMixture" => ExpMixtureGenerator(gridSize,expMixtureCenters,1.0,expMixtureRadius).generateGrid(rng).map{_.map{case d => if(d> expMixtureThreshold) 1.0 else 0.0}}
+      case "expMixture" => {
+        val intgrid = ExpMixtureGenerator(gridSize,expMixtureCenters,1.0,expMixtureRadius).generateGrid(rng)
+        val maxval = intgrid.flatten.max
+        intgrid.map{_.map{case d => if(d / maxval > expMixtureThreshold) 1.0 else 0.0}}
+      }
       case "blocks" => BlocksGridGenerator(gridSize,blocksNumber,blocksMinSize,blocksMaxSize).generateGrid(rng).map{_.map{case d => if(d> 0.0) 1.0 else 0.0}}
       case "percolation" => PercolationGridGenerator(gridSize,percolationProba,percolationBordPoints,percolationLinkWidth).generateGrid(rng)
     }
+  }
+
+  /**
+    *
+    * @param rng
+    * @return
+    */
+  def getMorphology(implicit rng: Random): Morphology = {
+    val grid = getGrid
     Morphology(grid)
   }
 

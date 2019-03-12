@@ -40,7 +40,17 @@ object PostgisConnection {
     connection = DriverManager.getConnection(url, props)
   }
 
-  def bboxRequest(xmin: Double,ymin: Double,xmax: Double,ymax: Double,table: String): Seq[Polygon] = {
+  /**
+    * get polygons in a bbox
+    * @param xmin
+    * @param ymin
+    * @param xmax
+    * @param ymax
+    * @param table
+    * @return
+    */
+  // FIXME geotools postgis more performant ? for now via WKT
+  def bboxRequest(lonmin: Double,latmin: Double,lonmax: Double,latmax: Double,table: String): Seq[Polygon] = {
 
     /*
     val ff: FilterFactory2  = CommonFactoryFinder.getFilterFactory2()
@@ -65,7 +75,7 @@ object PostgisConnection {
     */
     val st = connection.createStatement()
     val rs = st.executeQuery("select ST_AsText(linestring) from "+table+
-      " WHERE ST_Intersects(ST_MakeEnvelope("+xmin+","+ymin+","+xmax+","+ymax+",4326),linestring);")
+      " WHERE ST_Intersects(ST_MakeEnvelope("+lonmin+","+latmin+","+lonmax+","+latmax+",4326),linestring);")
 
     val res = new ArrayBuffer[Polygon]
 
@@ -73,9 +83,9 @@ object PostgisConnection {
     val geomfact = new GeometryFactory
 
     while (rs.next()){
-val coords = reader.read(rs.getString(1)).getCoordinates
-      println(coords)    
-  res.append(geomfact.createPolygon(geomfact.createLinearRing(reader.read(rs.getString(1)).getCoordinates)))
+      val coords = reader.read(rs.getString(1)).getCoordinates
+      //println(coords)
+      res.append(geomfact.createPolygon(geomfact.createLinearRing(coords)))
     }
 
     rs.close()

@@ -1,12 +1,13 @@
 
 package spatialdata.measures
 
+import org.apache.commons.math3.linear.MatrixUtils
 import spatialdata.utils.math.Convolution
 import org.apache.commons.math3.stat.regression.SimpleRegression
 import org.apache.commons.math3.util.MathArrays
 import spatialdata.{RasterLayerData, measures}
-
 import spatialdata.network.Network
+import spatialdata.utils.io.CSV
 
 import scala.math._
 
@@ -30,6 +31,14 @@ case class Morphology(
 
   def toTuple: (Double,Double,Double,Double,Double,Double,Double,Double,Double,Double,Double,Double,Double,Double) =
     (height,width,area,moran,avgDistance,density,components,avgDetour,avgBlockArea,avgComponentArea,fullDilationSteps,fullErosionSteps,fullClosingSteps,fullOpeningSteps)
+
+  def toArray(n: Int = -1): Array[Double] = {
+    n match {
+      case -1 => toTuple.productIterator.toArray.map{_.asInstanceOf[Double]}
+      case 0 => Array.empty
+      case nn: Int if nn > 0 => toTuple.productIterator.toArray.map{_.asInstanceOf[Double]}.takeRight(nn+3).take(nn)
+    }
+  }
 
 }
 
@@ -61,6 +70,24 @@ object Morphology {
       fullClosingSteps(grid),
       fullOpeningSteps(grid)
     )
+  }
+
+  /**
+    * read a rotation from file and perform it on the normalized corresponding components
+    * (can be projected if not same number of arrows as number of elements in Morphology)
+    * @param rotFile
+    * @param morpho
+    * @return
+    */
+  def rotation(rotFile: String,normFile: String)(morpho: Morphology): Array[Double] = {
+    val rotation = MatrixUtils.createRealMatrix(CSV.readMat(rotFile))
+    val n = rotation.getRowDimension
+    val norms = CSV.readMat(normFile)
+    val morphonorm = morpho.toArray(n).zip(norms).map{case (m,a) => (a(0)-m)/(a(0)-a(1))}
+    println("normalized : "+morphonorm.toSeq)
+    val rotated = MatrixUtils.createRowRealMatrix(morphonorm).multiply(rotation).getRow(0)
+    println("rotated : "+rotated.toSeq)
+    rotated
   }
 
 

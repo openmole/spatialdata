@@ -20,6 +20,7 @@ import scala.collection.mutable.ArrayBuffer
 
 object PostgisConnection {
 
+  // FIXME hte way it is written allows only one simulatneous connection
   var connection: Connection = null
 
   def initPostgis(database: String,port: Int = 5432): Unit = {
@@ -39,6 +40,8 @@ object PostgisConnection {
     props.setProperty("user","postgres")
     connection = DriverManager.getConnection(url, props)
   }
+
+  def closeConnection(): Unit = connection.close()
 
   /**
     * get polygons in a bbox

@@ -64,9 +64,9 @@ for(indic in indics){
   #g=ggplot(real,aes_string(x='PC2',y='PC3',col=indic))
   #g+geom_point()
 }
-multiplot(plotlist = plots,cols = 4)
+multiplot(plotlist = plots,cols = 3)
 
-## TODO : clustering ?
+## TODO : clustering / typology
 
 
 

@@ -20,6 +20,8 @@ object OSMRealMeasures extends App {
 
   implicit val rng: Random = new Random(seed)
 
+  val start = System.currentTimeMillis()
+
   val grids = OSMGridSampling.sampleGridsInLayer("data/cities_europe.shp",npoints,windowSize,worldWidth,mode="postgresql")
   val morphologies = grids.map{case g => Morphology(g._2)}
   val coordinates = grids.map{_._1}
@@ -30,6 +32,8 @@ object OSMRealMeasures extends App {
   val resfile = resdir+"/morpho_npoints"+npoints+"_windowSize"+windowSize+"_worldWidth"+worldWidth+"_seed"+seed+".csv"
 
   CSV.writeCSV(data,resfile,";",header)
+
+  println("Computation time : "+(System.currentTimeMillis()-start)/1000+" s")
 
 }
 

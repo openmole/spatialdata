@@ -55,6 +55,8 @@ write.table(pca$rotation,file="calib/pca.csv",quote = F,sep=',',col.names = F,ro
 
 real=cbind(real,pcs)
 
+
+
 #plots=list()
 for(indic in indics){
   g=ggplot(real,aes_string(x='PC1',y='PC2',col=indic))
@@ -108,11 +110,14 @@ ggsave(file=paste0('res/real/clustPC1-PC2_k',k,'_points-colcluster.png'),width=2
 
 # export center coords : directly with models names
 objdata=data.frame()
-for(model in c("expMixture","blocks","calibration")){objdata=rbind(objdata,data.frame(num=1:nrow(km$centers),km$centers,rep(model,nrow(km$centers))))}
+for(model in c("expMixture","blocks","percolation")){objdata=rbind(objdata,data.frame(num=1:nrow(km$centers),km$centers,rep(model,nrow(km$centers))))}
 write.table(objdata,file='calib/objectives.csv',sep=" ",col.names = F,row.names = F,quote=F)
 
 
 real$cluster = km$cluster
+
+# save real
+write.table(real,file='morpho/realpoints.csv',row.names = F,sep=',')
 
 #####
 # maps
@@ -166,22 +171,35 @@ chisq.test(cut(umzprofiles$diversity,10),umzprofiles$Country)
 ####
 # Simu data
 
-res <- as.tbl(read.csv('exploration/20190306_103425_LHS_GRID.csv'))
+#res <- as.tbl(read.csv('exploration/20190306_103425_LHS_GRID.csv'))
+res <- as.tbl(read.csv('../openmole/exploration/20190311_181654_LHS_GRID.csv'))
+
+resdir = 'res/20190311_181654_LHS_GRID/';dir.create(resdir)
+
 # filter NAs
 res=res[apply(res[,indics],1,function(r){length(which(is.na(r)))==0}),]
-
+# filter as for real
+res = res[res$density>0.05&res$density<0.8,]
 
 params=c("blocksMaxSize","blocksMinSize","blocksNumber","expMixtureCenters","expMixtureRadius","expMixtureThreshold","generator","percolationBordPoints","percolationLinkWidth","percolationProba","randomDensity")
 
 summary(res)
+#summary(res[res$generator=="percolation",params]) # for boundaries of calibration
 
 morph=res[,indics]
 for(j in 1:ncol(morph)){morph[,j]=(morph[,j]-min(morph[,j]))/(max(morph[,j])-min(morph[,j]))}
 pca = prcomp(morph)
 summary(pca)
-pcs = as.matrix(morph)%*%pca$rotation
 
-res = cbind(res,pcs)
+# not useful
+#pcs = as.matrix(morph)%*%pca$rotation
+#res = cbind(res,pcs)
+
+
+###### TODO
+
+# intra-run variability
+
 
 
 
@@ -197,20 +215,53 @@ pcs = as.matrix(morph)%*%pca$rotation
 all = cbind(all,pcs)
 
 
-g=ggplot(all,aes(x=PC1,y=PC2,color=generator,size=ifelse(generator=="real",0.01,0.0005),alpha=ifelse(generator=="real",1,0.1)))
-g+geom_point()+stdtheme
-#ggsave()
+g=ggplot(all,aes(x=PC1,y=PC2,color=generator,#size=ifelse(generator=="real",0.01,0.00005),
+                 pch=ifelse(generator=="real",'+','.'),
+                 alpha=ifelse(generator=="real",0.5,0.01)))
+g+geom_point()+scale_shape_discrete(guide=FALSE)+scale_alpha_continuous(guide=FALSE)+stdtheme
+ggsave(file=paste0(resdir,'lhscalib.png'),width=32,height=30,units='cm')
 
 
 ## TODO : additional plots calibration objectives and fitted pops ; plus extreme points with close simulated.
 
 
 
+
+######
+# same plot with average on repetitions
+
+sres = res %>% group_by(id,generator) %>% summarise(moran=mean(moran),avgDistance=mean(avgDistance),avgDistance=mean(avgDistance),
+                                   density=mean(density),components=mean(components),avgDetour=mean(avgDetour),
+                                   avgBlockArea=mean(avgBlockArea),avgComponentArea=mean(avgComponentArea),
+                                   fullDilationSteps=mean(fullDilationSteps),fullErosionSteps=mean(fullErosionSteps),
+                                   count=n()
+                                   )
+sres=sres[sres$count>75,]
+
+all = rbind(cbind(real[,c(indics,"lon","lat")],generator=rep("real",nrow(real))),cbind(sres[,c(indics,"generator")],lon=rep(0,nrow(sres)),lat=rep(0,nrow(sres))))
+morph=all[,indics]
+for(j in 1:ncol(morph)){morph[,j]=(morph[,j]-min(morph[,j]))/(max(morph[,j])-min(morph[,j]))}
+pca = prcomp(morph)
+pcs = as.matrix(morph)%*%pca$rotation
+all = cbind(all,pcs)
+
+
+g=ggplot(all,aes(x=PC1,y=PC2,color=generator,size=ifelse(generator=="real",0.0001,0.00005),alpha=ifelse(generator=="real",0.1,0.01)))
+g+geom_point()+scale_size_continuous(guide=FALSE)+scale_alpha_continuous(guide=FALSE)+stdtheme
+ggsave(file=paste0(resdir,'lhscalib_averages.png'),width=32,height=30,units='cm')
+
+
+
+
+
+
+
+###########
+
 ## specific cases
-all[all$PC1<0.4&all$PC2>0.75&all$generator=="real",]
+#all[all$PC1<0.4&all$PC2>0.75&all$generator=="real",]
 #-4.247058 48.45855
 
-
-all[all$PC1>1.25&all$generator=="real",]
+#all[all$PC1>1.25&all$generator=="real",]
 #4.215393 51.95148
 

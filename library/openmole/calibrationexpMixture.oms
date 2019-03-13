@@ -34,7 +34,7 @@ val model = ScalaTask("""
     |
     | implicit val rng = new Random(replication)
     |
-    | def projection(morphology: Morphology): Array[Double] = Morphology.rotation("setup/pca.csv","setup/norm.csv")(morphology)
+    | def projection(morphology: Morphology): Array[Double] = Morphology.rotation(rotation,normalization)(morphology)
     | def objective(pcs: Array[Double]): Double = math.sqrt(math.pow(pcs(0)-pc1obj,2)+math.pow(pcs(1)-pc2obj,2))
     |
     | val mse = CalibrateExpMixtureGridGenerator(size,expMixtureCenters,expMixtureRadius,expMixtureThreshold).calibrate(projection,objective)(rng)
@@ -54,12 +54,12 @@ val model = ScalaTask("""
 
 val modelname = "expMixture"
 val datestr = (new SimpleDateFormat("yyyyMMdd")).format(new Date()).toString
-//val purpose = "CALIB_GRID"
-val purpose = "TEST_CALIB"
+val purpose = "CALIB_GRID"
+//val purpose = "TEST_CALIB"
 val resdir = purpose+"_"+modelname+"_"+objnum+"_"+datestr
 
-//val env = EGIEnvironment("vo.complex-systems.eu")
-val env = LocalEnvironment(4)
+val env = EGIEnvironment("vo.complex-systems.eu")
+//val env = LocalEnvironment(4)
 
 
 val evolution =
@@ -70,14 +70,13 @@ val evolution =
         expMixtureRadius in Range(1.0,20.0),
         expMixtureThreshold in Range(0.0,1.0)
       ),
-      mu = 30,
+      mu = 50,
       stochastic = Stochastic(seed = replication),
       objectives = Seq(mse),
       evaluation = model,
-      termination = 8
-      //termination = 100000,
-      //parallelism = 1000,
-      //distribution = Island(10 minutes)
+      termination = 2 hours,
+      parallelism = 1000,
+      distribution = Island(15 minutes)
 )
 
 val savePopulation = SavePopulationHook(evolution, workDirectory / "calib" / resdir)

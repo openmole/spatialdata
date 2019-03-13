@@ -1,4 +1,5 @@
 import pymongo,json,sys
+#import ijson
 
 jsonfile = sys.argv[1]
 database = sys.argv[2]
@@ -11,17 +12,23 @@ db = mongo[database]
 col = db['buildings']
 
 # FIXME should be as an option
-col.delete_many({})
+#col.delete_many({})
 
 # read the json file
 with open(jsonfile) as df:
+    print(jsonfile)
     data = json.load(df)
+
+#parser = ijson.parse(open(jsonfile))
+
 
 # reformat the data
 cldata=[]
 i=0
+
 for feature in data['features']:
-    if i%100000==0 : print(i)
+#for prefix, event, value in parser:
+    if i%1000==0 : print(i)
     currentrec = {}
     # flatten the record
     for prop in feature['properties'].keys():
@@ -33,9 +40,13 @@ for feature in data['features']:
         cldata.append(currentrec)
     i=i+1
 
-print("Inserting features...")
-col.insert_many(cldata)
+if len(cldata) > 0 :
+    print("Inserting "+str(len(cldata))+"features...")
+    col.insert_many(cldata)
 
 # create index
-print("Creating spatial index...")
-col.create_index([('geometry',pymongo.GEOSPHERE)])
+# -> done by hand in the end
+#print("Creating spatial index...")
+#col.create_index([('geometry',pymongo.GEOSPHERE)])
+
+

@@ -9,7 +9,7 @@ import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Filters._
 import com.vividsolutions.jts.geom.{Coordinate, GeometryFactory, Polygon}
 import com.vividsolutions.jts.io.WKTReader
-import org.bson.Document
+import org.bson.{BsonArray, Document}
 import org.bson.conversions.Bson
 
 import scala.collection.mutable.ArrayBuffer
@@ -48,21 +48,23 @@ object MongoConnection {
     * @param collection
     * @return
     */
-  def bboxRequest(lonmin: Double,latmin: Double,lonmax: Double,latmax: Double,collection: String): Seq[Polygon] = {
+  def bboxRequest(lonmin: Double,latmin: Double,lonmax: Double,latmax: Double,collection: String,limit: Int = -1): Seq[Polygon] = {
     val mongoCollection: MongoCollection[Document] = mongoDatabase.getCollection(collection)
     val filt: util.LinkedList[Bson] = new util.LinkedList[Bson]()
-    filt.add(Filters.geoWithinBox("geometry",lonmin,latmin,lonmax,latmax))
+    filt.add(Filters.geoWithinBox("geometry.coordinates",lonmin,latmin,lonmax,latmax))
     filt.add(Filters.eq("geometry.type","LineString"))
     val queryres = mongoCollection.find(and(filt))
 
     val res = new ArrayBuffer[Polygon]
     val geomfact = new GeometryFactory
 
-    while (queryres.iterator.hasNext){
+    while (queryres.iterator.hasNext&&(limit<0||res.length<limit)){
       val currentdoc: Document = queryres.iterator.next
-      val coords: util.List[util.LinkedList[Double]] = currentdoc.getList("geometry.coordinates",new util.LinkedList[Double]().getClass)
-      val coordarray = coords.toArray.map{case l: util.LinkedList[Double] => new Coordinate(l.getFirst,l.getLast)}
-      res.append(geomfact.createPolygon(geomfact.createLinearRing(coordarray)))
+      //println(currentdoc)
+      //println(currentdoc.get("geometry").asInstanceOf[Document].get("coordinates").asInstanceOf[util.ArrayList[AnyRef]].toArray.toSeq.map{_.asInstanceOf[util.ArrayList[Double]].toArray.toSeq})
+      val coords = currentdoc.get("geometry").asInstanceOf[Document].get("coordinates").asInstanceOf[util.ArrayList[AnyRef]].toArray.map{case l: util.ArrayList[Double] => new Coordinate(l.get(0),l.get(1))}
+      //println(coords)
+      res.append(geomfact.createPolygon(geomfact.createLinearRing(coords)))
     }
     res
   }

@@ -11,12 +11,15 @@ object TestSynthetic {
 
   def testGeneratorCalibration: Unit = {
 
+    val pc1obj = 0.5
+    val pc2obj = 0.0
+
     implicit val rng = new Random
 
     import spatialdata.grid.GridGeneratorCalibration._
 
     def projection(morphology: Morphology): Array[Double] = Morphology.rotation("data/calib/pca.csv","data/calib/norm.csv")(morphology)
-    def objective(pcs: Array[Double]): Double = math.sqrt(math.pow(pcs(0)-0.5,2)+math.pow(pcs(1),2))
+    def objective(pcs: Array[Double]): Double = math.sqrt(math.pow(pcs(0)-pc1obj,2)+math.pow(pcs(1)-pc2obj,2))
 
     (1 to 20).foreach { case blocknum =>
       println("MSE on two first pcs = " + CalibrateBlocksGridGenerator(50, blocknum, 1, 10).calibrate(projection, objective))

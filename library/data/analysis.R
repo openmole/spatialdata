@@ -10,23 +10,21 @@ setwd(paste0(Sys.getenv('CS_HOME'),'/SpatialData/library/data'))
 
 source(paste0(Sys.getenv('CS_HOME'),'/Organisation/Models/Utils/R/plots.R'))
 
-realfiles = c(
-  'morpho/morpho_npoints10000_windowSize500_worldWidth50_seed-645997938.csv',
-  'morpho/morpho_npoints10000_windowSize500_worldWidth50_seed-1380889072.csv',
-  'morpho/morpho_npoints1000_windowSize500_worldWidth50_seed-191282179.csv',
-  'morpho/morpho_npoints1000_windowSize500_worldWidth50_seed1887024328.csv'
-)
+realfiles = list.files('morpho/final')
 
 real=data.frame()
 for(realfile in realfiles){
-  real <- rbind(real,as.tbl(read.csv(realfile,sep=";")))
+  #show(realfile)
+  currentdata=as.tbl(read.csv(paste0('morpho/final/',realfile),sep=";"))
+  #show(summary(currentdata))
+  real <- rbind(real,currentdata)
 }
 
 real = real[real$area>0,]
 # some points have a very low density (quasi empty : closing steps at 1 -> dichotomy point clouds)
 # -> a filter on density is necessary (idem for simulation results)
-real = real[real$density>0.05,]
-
+real = real[real$density>0.05&real$density<0.8,]
+#real = real[real$moran<1,] # a strange point in Sicilia has a moran >1 -> ? - area seems full -> also remove too high density areas which make no sense
 
 # sampling distrib
 #plot(real$lon,real$lat)
@@ -43,7 +41,7 @@ indics = c("moran","avgDistance","density","components","avgDetour","avgBlockAre
 real=real[apply(real[,indics],1,function(r){length(which(is.na(r)))==0}),]
 
 # corrs / effective dim
-cor(real[,indics])
+#cor(real[,indics])
 
 morph=real[,indics]
 maxs=apply(morph,2,max);mins=apply(morph,2,min)
@@ -57,16 +55,49 @@ write.table(pca$rotation,file="calib/pca.csv",quote = F,sep=',',col.names = F,ro
 
 real=cbind(real,pcs)
 
-plots=list()
+#plots=list()
 for(indic in indics){
   g=ggplot(real,aes_string(x='PC1',y='PC2',col=indic))
-  plots[[indic]]=g+geom_point()
-  #g=ggplot(real,aes_string(x='PC2',y='PC3',col=indic))
-  #g+geom_point()
+  g+geom_point()+stdtheme
+  ggsave(file=paste0('res/real/pc1-pc2_col',indic,'.png'),width=22,height=20,units='cm')
+  #plots[[indic]]=g+geom_point()
+  g=ggplot(real,aes_string(x='PC2',y='PC3',col=indic))
+  g+geom_point()+stdtheme
+  ggsave(file=paste0('res/real/pc2-pc3_col',indic,'.png'),width=22,height=20,units='cm')
 }
-multiplot(plotlist = plots,cols = 3)
+#multiplot(plotlist = plots,cols = 3)
 
-## TODO : clustering / typology
+
+## clustering to have objective points for calibration
+
+knums = 2:10
+
+ccoef=c();cknums=c()
+for(k in knums){
+  show(k)
+  km = kmeans(real[,c('PC1','PC2')],k,iter.max = 1000,nstart=5000)
+  ccoef=append(ccoef,km$betweenss/km$totss);cknums=append(cknums,k)
+}
+
+# clustering coefficient
+g=ggplot(data.frame(ccoef=ccoef,knums=cknums),aes(x=knums,y=ccoef))
+g+geom_point()+geom_line()+xlab('Number of clusters')+ylab('Between-cluster variance proportion')
+ggsave(file='res/real/clustPC1-PC2_ccoef-knum.png',width=15,height=10,units = 'cm')
+
+cdcoef = diff(ccoef[(length(ccoef)-length(knums)+1):length(ccoef)]);cdknums=knums[2:length(knums)]
+
+# delta clustering coefficient
+g=ggplot(data.frame(cdcoef=cdcoef,knums=cdknums),aes(x=cdknums,y=cdcoef))
+g+geom_point()+geom_line()+xlab('Number of clusters')+ylab('Between-cluster variance proportion increase')
+ggsave(file='res/real/clustPC1-PC2_deltaccoef-knum.png',width=15,height=10,units = 'cm')
+
+
+# -> select k = 
+
+# export centers -> closest point to centroid / or centroid ?
+# closest to have representation in the point cloud
+
+
 
 
 
@@ -98,6 +129,8 @@ g+geom_sf(size=5)
 g=ggplot(st_bind_cols(st_as_sf(areas[areas$ID_UMZ%in%pcsds$ID_UMZ,]),as.data.frame(pcsds)),aes(fill=pc2sd,color=pc2sd))
 g+geom_sf(size=5)
 
+
+## TODO typology of urban areas ?
 
 
 

@@ -7,14 +7,14 @@ FILE=$1
 DB=$2
 CHUNKSIZE=$3
 
-rm -rf tmp
-mkdir tmp
+#rm -rf tmp
+#mkdir tmp
 
-tail -n +2 $FILE | head -n -1 > $FILE.tmp
-split -l $CHUNKSIZE $FILE.tmp --numeric-suffixes tmp/tmp
+#tail -n +2 $FILE | head -n -1 > $FILE.tmp
+#split -l $CHUNKSIZE $FILE.tmp --numeric-suffixes tmp/tmp
 
-head -n 1 $FILE > HEAD
-tail -n 1 $FILE > TAIL
+#head -n 1 $FILE > HEAD
+#tail -n 1 $FILE > TAIL
 
 mongo $2 --eval "printjson(db.dropDatabase())"
 

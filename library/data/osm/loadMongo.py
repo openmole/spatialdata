@@ -32,7 +32,7 @@ for feature in data['features']:
     currentrec = {}
     # flatten the record
     for prop in feature['properties'].keys():
-        currentrec[prop] = feature['properties'][prop]
+        currentrec[prop.replace(".","_")] = feature['properties'][prop]
     currentrec['geometry']=feature['geometry']
     # do not export points
     # FIXME should implement a generic filter

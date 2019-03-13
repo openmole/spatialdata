@@ -92,14 +92,24 @@ g+geom_point()+geom_line()+xlab('Number of clusters')+ylab('Between-cluster vari
 ggsave(file='res/real/clustPC1-PC2_deltaccoef-knum.png',width=15,height=10,units = 'cm')
 
 
-# -> select k = 
+# -> select k = 5 or 4
 
 # export centers -> closest point to centroid / or centroid ?
 # closest to have representation in the point cloud
 
+set.seed(0)
+#k=5
+k=4
+km = kmeans(real[,c('PC1','PC2')],k,iter.max = 1000,nstart=5000)
 
+g=ggplot(data.frame(real[,c('PC1','PC2')],cluster=km$cluster),aes(x=PC1,y=PC2,color=as.character(cluster)))
+g+geom_point(alpha=0.6)+scale_color_discrete(name="Cluster")+stdtheme
+ggsave(file=paste0('res/real/clustPC1-PC2_k',k,'_points-colcluster.png'),width=22,height=20,units='cm')
 
-
+# export center coords : directly with models names
+objdata=data.frame()
+for(model in c("expMixture","blocks","calibration")){objdata=rbind(objdata,data.frame(num=1:nrow(km$centers),km$centers,rep(model,nrow(km$centers))))}
+write.table(objdata,file='calib/objectives.csv',sep=" ",col.names = F,row.names = F,quote=F)
 
 #####
 # maps

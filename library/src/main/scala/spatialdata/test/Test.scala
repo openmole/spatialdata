@@ -10,7 +10,7 @@ object Test extends App {
 
   // Database
   //TestDatabase.testPostgis
-  TestDatabase.testMongo
+  //TestDatabase.testMongo
 
   // Indicators
   //TestIndicators.testSpatialIndics
@@ -23,7 +23,7 @@ object Test extends App {
   //TestSynthetic.testBlocksGrid
   //TestSynthetic.testPercolationGrid
   //TestSynthetic.testGeneratorLauncher
-  //TestSynthetic.testGeneratorCalibration
+  TestSynthetic.testGeneratorCalibration
 
 
   // Utils

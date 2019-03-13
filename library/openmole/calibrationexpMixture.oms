@@ -1,0 +1,86 @@
+val pc1objval = 0.0103258347969642;val pc2objval = -0.0860484475566962;val objnum = 1
+
+import java.util.Date
+import java.text.SimpleDateFormat
+import scala.io.Source
+
+logger.level("ALL")
+
+
+// setup data
+val rotation = Val[Array[Array[Double]]]
+val normalization = Val[Array[Array[Double]]]
+
+val rotationval = Source.fromFile(workDirectory / "setup/pca.csv").getLines().toArray.map{_.split(",").map{_.toDouble}}
+val normval = Source.fromFile(workDirectory /  "setup/norm.csv").getLines().toArray.map{_.split(",").map{_.toDouble}}
+
+// params
+val size = Val[Int]
+val expMixtureCenters = Val[Int]
+val expMixtureRadius = Val[Double]
+val expMixtureThreshold = Val[Double]
+
+val replication = Val[Int]
+
+// objective
+val pc1obj = Val[Double]
+val pc2obj = Val[Double]
+val mse = Val[Double]
+
+val model = ScalaTask("""
+    | import _root_.spatialdata.grid.GridGeneratorCalibration._
+    | import _root_.spatialdata.measures.Morphology
+    | import scala.util.Random
+    |
+    | implicit val rng = new Random(replication)
+    |
+    | def projection(morphology: Morphology): Array[Double] = Morphology.rotation("setup/pca.csv","setup/norm.csv")(morphology)
+    | def objective(pcs: Array[Double]): Double = math.sqrt(math.pow(pcs(0)-pc1obj,2)+math.pow(pcs(1)-pc2obj,2))
+    |
+    | val mse = CalibrateExpMixtureGridGenerator(size,expMixtureCenters,expMixtureRadius,expMixtureThreshold).calibrate(projection,objective)(rng)
+    |
+    """.stripMargin
+  ) set (
+  plugins += pluginsOf(_root_.spatialdata.grid.GridGeneratorCalibration),
+  (inputs,outputs) += (size,expMixtureCenters,expMixtureRadius,expMixtureThreshold,pc1obj,pc2obj,rotation,normalization,replication),
+  outputs += (mse),
+  pc1obj := pc1objval,
+  pc2obj := pc2objval,
+  rotation := rotationval,
+  normalization := normval,
+  size := 50
+)
+
+
+val modelname = "expMixture"
+val datestr = (new SimpleDateFormat("yyyyMMdd")).format(new Date()).toString
+//val purpose = "CALIB_GRID"
+val purpose = "TEST_CALIB"
+val resdir = purpose+"_"+modelname+"_"+objnum+"_"+datestr
+
+//val env = EGIEnvironment("vo.complex-systems.eu")
+val env = LocalEnvironment(4)
+
+
+val evolution =
+  NSGA2Evolution(
+    genome =
+      Seq(
+        expMixtureCenters in (0 to 10 by 1),
+        expMixtureRadius in Range(1.0,20.0),
+        expMixtureThreshold in Range(0.0,1.0)
+      ),
+      mu = 30,
+      stochastic = Stochastic(seed = replication),
+      objectives = Seq(mse),
+      evaluation = model,
+      termination = 8
+      //termination = 100000,
+      //parallelism = 1000,
+      //distribution = Island(10 minutes)
+)
+
+val savePopulation = SavePopulationHook(evolution, workDirectory / "calib" / resdir)
+
+
+(evolution on env hook savePopulation)

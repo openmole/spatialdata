@@ -5,24 +5,25 @@ object Test extends App {
 
 
   // OSM
-//  TestOSM.testBuildingExtractor
+  //TestOSM.testBuildingExtractor
   //TestOSM.testOSMGridSampling
 
   // Database
   //TestDatabase.testPostgis
+  //TestDatabase.testMongo
 
   // Indicators
   //TestIndicators.testSpatialIndics
   //TestIndicators.testMoran
   //TestIndicators.testStats
-  TestIndicators.testFFTConvolution
+  //TestIndicators.testFFTConvolution
 
   // Synthetic grids
   //TestSynthetic.testRandomGrids
   //TestSynthetic.testBlocksGrid
   //TestSynthetic.testPercolationGrid
   //TestSynthetic.testGeneratorLauncher
-  //TestSynthetic.testGeneratorCalibration
+  TestSynthetic.testGeneratorCalibration
 
 
   // Utils

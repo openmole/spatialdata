@@ -12,7 +12,7 @@ import se.kodapan.osm.jts.JtsGeometryFactory
 import se.kodapan.osm.parser.xml.instantiated.InstantiatedOsmXmlParser
 import se.kodapan.osm.services.api.v_0_6.ApiConnection
 import se.kodapan.osm.services.overpass.Overpass
-import spatialdata.utils.database.PostgisConnection
+import spatialdata.utils.database.{MongoConnection, PostgisConnection}
 import spatialdata.utils.gis.GISUtils._
 import spatialdata.utils.gis.PoligonizerUtils
 
@@ -87,6 +87,13 @@ object APIExtractor {
           val polygons = PostgisConnection.bboxRequest(west,south,east,north,"ways")
           if (spatialdata.DEBUG) println("retrieved via postgresql " + east + " n=" + north + " s=" + south + "w=" + west+" : "+polygons.size+" buildings")
           PostgisConnection.closeConnection()
+          polygons
+        }
+        case "mongo" => {
+          MongoConnection.initMongo("buildings")
+          val polygons = MongoConnection.bboxRequest(west,south,east,north,"buildings")
+          if (spatialdata.DEBUG) println("retrieved via mongo " + east + " n=" + north + " s=" + south + "w=" + west+" : "+polygons.size+" buildings")
+          MongoConnection.closeMongo()
           polygons
         }
       }

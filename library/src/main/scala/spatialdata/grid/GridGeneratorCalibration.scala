@@ -10,6 +10,25 @@ import scala.util.Random
 
 object GridGeneratorCalibration {
 
+  /**
+    * generic calibration function
+    *   note : better do separate scripts - different param names and types
+    * @param size
+    * @param params
+    * @param projection
+    * @param objective
+    * @param model
+    * @param rng
+    * @return
+    */
+  def calibrateModel(size: Int, params: Array[Double],projection: Morphology => Array[Double],objective: Array[Double]=> Double,model : String)(implicit rng : Random): Double = {
+    model match {
+      case "expMixture" =>  CalibrateExpMixtureGridGenerator(size,params(0).toInt,params(1),params(2)).calibrate(projection,objective)
+      case "blocks" => CalibrateBlocksGridGenerator(size, params(0).toInt, params(1).toInt, params(2).toInt).calibrate(projection, objective)
+      case "percolation" => CalibratePercolationGenerator(size,params(0),params(1).toInt,params(2)).calibrate(projection,objective)
+    }
+  }
+
 
   trait Calibration {
 
@@ -21,6 +40,8 @@ object GridGeneratorCalibration {
       * @return
       */
     def calibrate(projection: Morphology => Array[Double],objective: Array[Double]=> Double)(implicit rng : Random): Double
+
+
 
   }
 

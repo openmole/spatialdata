@@ -81,17 +81,17 @@ object Morphology {
     * @param morpho
     * @return
     */
-  def rotation(rotFile: String,normFile: String)(morpho: Morphology): Array[Double] = {
-    val rotation = MatrixUtils.createRealMatrix(CSV.readMat(rotFile))
-    val n = rotation.getRowDimension
-    val norms = CSV.readMat(normFile)
-    val morphonorm = morpho.toArray(n).zip(norms).map{case (m,a) => (a(0)-m)/(a(0)-a(1))}
-    println("normalized : "+morphonorm.toSeq)
-    val rotated = MatrixUtils.createRowRealMatrix(morphonorm).multiply(rotation).getRow(0)
-    println("rotated : "+rotated.toSeq)
+  def rotation(rotation: Array[Array[Double]],normalization: Array[Array[Double]])(morpho: Morphology): Array[Double] = {
+    val rot = MatrixUtils.createRealMatrix(rotation)
+    val n = rot.getRowDimension
+    val morphonorm = morpho.toArray(n).zip(normalization).map{case (m,a) => (a(0)-m)/(a(0)-a(1))}
+    //println("normalized : "+morphonorm.toSeq)
+    val rotated = MatrixUtils.createRowRealMatrix(morphonorm).multiply(rot).getRow(0)
+    //println("rotated : "+rotated.toSeq)
     rotated
   }
 
+  def rotation(rotFile: String,normFile: String)(morpho: Morphology): Array[Double] = rotation(CSV.readMat(rotFile),CSV.readMat(normFile))(morpho)
 
 
 

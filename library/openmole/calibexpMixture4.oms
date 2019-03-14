@@ -1,4 +1,4 @@
-val pc1objval = 0.0103258347969642;val pc2objval = -0.0860484475566962;val objnum = 1
+val pc1objval = -0.773530217615314;val pc2objval = -0.294339386091329;val objnum = 4
 
 import java.util.Date
 import java.text.SimpleDateFormat
@@ -16,9 +16,9 @@ val normval = Source.fromFile(workDirectory /  "setup/norm.csv").getLines().toAr
 
 // params
 val size = Val[Int]
-val percolationProba = Val[Double]
-val percolationBordPoints = Val[Int]
-val percolationLinkWidth = Val[Double]
+val expMixtureCenters = Val[Int]
+val expMixtureRadius = Val[Double]
+val expMixtureThreshold = Val[Double]
 
 val replication = Val[Int]
 
@@ -37,12 +37,12 @@ val model = ScalaTask("""
     | def projection(morphology: Morphology): Array[Double] = Morphology.rotation(rotation,normalization)(morphology)
     | def objective(pcs: Array[Double]): Double = math.sqrt(math.pow(pcs(0)-pc1obj,2)+math.pow(pcs(1)-pc2obj,2))
     |
-    | val mse = CalibratePercolationGenerator(size,percolationProba,percolationBordPoints,percolationLinkWidth).calibrate(projection,objective)(rng)
+    | val mse = CalibrateExpMixtureGridGenerator(size,expMixtureCenters,expMixtureRadius,expMixtureThreshold).calibrate(projection,objective)(rng)
     |
     """.stripMargin
   ) set (
   plugins += pluginsOf(_root_.spatialdata.grid.GridGeneratorCalibration),
-  (inputs,outputs) += (size,percolationProba,percolationBordPoints,percolationLinkWidth,pc1obj,pc2obj,rotation,normalization,replication),
+  (inputs,outputs) += (size,expMixtureCenters,expMixtureRadius,expMixtureThreshold,pc1obj,pc2obj,rotation,normalization,replication),
   outputs += (mse),
   pc1obj := pc1objval,
   pc2obj := pc2objval,
@@ -52,7 +52,7 @@ val model = ScalaTask("""
 )
 
 
-val modelname = "percolation"
+val modelname = "expMixture"
 val datestr = (new SimpleDateFormat("yyyyMMdd")).format(new Date()).toString
 val purpose = "CALIB_GRID"
 //val purpose = "TEST_CALIB"
@@ -66,9 +66,9 @@ val evolution =
   NSGA2Evolution(
     genome =
       Seq(
-        percolationProba in Range(0.1,0.9),
-        percolationBordPoints in (0 to 35 by 1),
-        percolationLinkWidth in Range(1.0,5.0)
+        expMixtureCenters in (0 to 10 by 1),
+        expMixtureRadius in Range(1.0,20.0),
+        expMixtureThreshold in Range(0.0,1.0)
       ),
       mu = 50,
       stochastic = Stochastic(seed = replication),

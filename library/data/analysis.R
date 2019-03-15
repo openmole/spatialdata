@@ -162,11 +162,14 @@ umzprofiles$diversity = 1 - (umzprofiles$clust1^2 + umzprofiles$clust2^2 + umzpr
 cor(umzprofiles[,c("clust1","clust2","clust3","clust4","diversity","Area","Pop1961","Pop1971","Pop1981","Pop1991","Pop2001","Pop2011","X","Y")])
 # -> correlations between X,Y and cluster profiles !
 # TODO check Fisher intervals for interesting correlations
+cor.test(umzprofiles$diversity,umzprofiles$X)
+
+cor.test(umzprofiles$diversity,umzprofiles$Y)
 
 summary(as.factor(as.character(umzprofiles$Country)))
 # TODO include
 
-chisq.test(cut(umzprofiles$diversity,10),umzprofiles$Country)
+chisq.test(cut(umzprofiles$diversity,50),umzprofiles$Country)
 # -> ultra shitty p-value
 
 
@@ -185,7 +188,7 @@ res=res[apply(res[,indics],1,function(r){length(which(is.na(r)))==0}),]
 # filter as for real
 res = res[res$density>0.05&res$density<0.8,]
 
-params=c("generator","blocksMaxSize","blocksMinSize","blocksNumber","expMixtureCenters","expMixtureRadius","expMixtureThreshold","percolationBordPoints","percolationLinkWidth","percolationProba","randomDensity","replication")
+params=c("generator","blocksMaxSize","blocksMinSize","blocksNumber","expMixtureCenters","expMixtureRadius","expMixtureThreshold","percolationBordPoints","percolationLinkWidth","percolationProba","randomDensity","replication","id")
 
 summary(res)
 #summary(res[res$generator=="percolation",params]) # for boundaries of calibration
@@ -204,7 +207,7 @@ summary(pca)
 
 # intra-run variability
 
-sres = res %>% group_by(id,generator) %>% summarize(
+sres = res[,c(indics,'id','generator')] %>% group_by(id,generator) %>% summarize(
   sdMoran=sd(moran),meanMoran=mean(moran),sharpeMoran=abs(meanMoran/sdMoran),
   sdAvgDistance=sd(avgDistance),meanAvgDistance=mean(avgDistance),sharpeAvgDistance=meanAvgDistance/sdAvgDistance,
   sdDensity=sd(density),meanDensity=mean(density),sharpeDensity=meanDensity/sdDensity,
@@ -212,10 +215,13 @@ sres = res %>% group_by(id,generator) %>% summarize(
   sdAvgDetour=sd(avgDetour),meanAvgDetour=mean(avgDetour),sharpeAvgDetour=meanAvgDetour/sdAvgDetour,
   sdAvgBlockArea=sd(avgBlockArea),meanAvgBlockArea=mean(avgBlockArea),sharpeAvgBlockArea=meanAvgBlockArea/sdAvgBlockArea,
   sdAvgComponentArea=sd(avgComponentArea),meanAvgComponentArea=mean(avgComponentArea),sharpeAvgComponentArea=meanAvgComponentArea/sdAvgComponentArea,
-  sdFullDilationSteps=sd(fullDilationSteps),meanFullDilationSteps
+  sdFullDilationSteps=sd(fullDilationSteps),meanFullDilationSteps=mean(fullDilationSteps),sharpeFullDilationSteps=meanFullDilationSteps/sdFullDilationSteps,
+  sdFullErosionSteps=sd(fullErosionSteps),meanFullErosionSteps=mean(fullErosionSteps),sharpeFullErosionSteps=meanFullErosionSteps/sdFullErosionSteps
 )
 
-# TODO
+sres=sres[apply(sres,1,function(r){length(which(is.na(r)))==0}),]
+#sres=sres[apply(sres,1,function(r){length(which(r<1e-8))==0}),]
+summary(sres)
 
 
 
@@ -249,15 +255,19 @@ normalized = all[,indics]
 for(j in 1:ncol(normalized)){normalized[,j]=(normalized[,j]-min(mins[j]))/(maxs[j]-mins[j])}
 rotated=cbind(as.data.frame(as.matrix(normalized)%*%realrotation),generator = all[,c("generator")])
 # reorder factor
-rotated$generator<-factor(rotated$generator,levels=rotated$generator)
+#rotated$generator<-factor(rotated$generator,levels=rotated$generator)
+#rotated=rotated[sample(1:nrow(rotated),1000),]
 g=ggplot(rotated[rotated$generator!='real',],aes(x=PC1,y=PC2,color=generator)) #size=ifelse(generator=="real",0.01,0.00005),
                  #shape=ifelse(generator=="real","d","a"),
                  #alpha=ifelse(generator=="real",0.5,0.01)))
-g+geom_point(alpha = 0.6,pch='+',size=1.5)+
-  geom_point(data=rotated[rotated$generator=='real',],aes(x=PC1,y=PC2),inherit.aes = F,col='blue',size=1.2,alpha=0.8,pch='+')+
-  geom_point(data=as.data.frame(realcenters[,c('PC1','PC2')]),aes(x=PC1,y=PC2,shape="16"),inherit.aes = F,col='black',size=3)+
-  scale_shape_discrete(guide=FALSE,solid=F)+scale_alpha_continuous(guide=FALSE)+
-  scale_color_discrete()+stdtheme
+g+geom_point(alpha = 0.5,pch='+',size=1.6)+
+  geom_point(data=rotated[rotated$generator=='real',],aes(x=PC1,y=PC2),inherit.aes = F,col='blue',size=1.5,alpha=0.8,pch='+')+
+  geom_point(data=data.frame(realcenters[,c('PC1','PC2')]),aes(x=PC1,y=PC2,shape="a"),inherit.aes = F,fill='black',size=3)+
+  geom_text(data=data.frame(realcenters[,c('PC1','PC2')],label=1:4),aes(x=PC1,y=PC2,label=label),hjust=2, vjust=2,inherit.aes = F,size=6)+
+  scale_shape_discrete(guide=FALSE,solid=T)+scale_alpha_continuous(guide=FALSE)+
+  scale_color_discrete()+
+  #discrete_scale(aes(size=10),breaks=c("blocks","random","percolation","expMixture"),labels=c("blocks","random","percolation","expMixture"),scale_name="Generator")+
+  stdtheme
 ggsave(file=paste0(resdir,'lhscalib_projrealpcs.png'),width=32,height=30,units='cm')
 
 
@@ -273,10 +283,12 @@ for(objnum in 1:nrow(km$centers)){
   show(paste0(objnum,' pc1 = ',o1,' ; pc2 = ',o2))
   for(generator in unique(as.character(res$generator))){
   show(paste0('generator = ',generator))
-dists = apply(rotated[rotated$generator==generator,c('PC1','PC2')],1,function(r){sqrt((r[1]-o1)^2+(r[2]-o2)^2)})
-allgen = all[all$generator==generator,]
-show(paste0(' min = ',min(dists)))
-show(allgen[dists==min(dists),])
+  dists = apply(rotated[rotated$generator==generator,c('PC1','PC2')],1,function(r){sqrt((r[1]-o1)^2+(r[2]-o2)^2)})
+  allgen = all[all$generator==generator,]
+  allgen$dists = dists
+  sallgens = allgen %>% group_by(id) %>% summarise(count=n(),distsd=sd(dists),dist=mean(dists))
+  sallgens = sallgens[sallgens$count==100,]# !
+  show(sallgens[sallgens$dist==min(sallgens$dist),])
 }
 }
 

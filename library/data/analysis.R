@@ -284,8 +284,37 @@ show(allgen[dists==min(dists),])
 for(objnum in 1:nrow(km$centers)){
   o1=km$centers[objnum,1];o2=km$centers[objnum,2]
   show(paste0(objnum,' pc1 = ',o1,' ; pc2 = ',o2))
-  
+  dists = apply(rotated[rotated$generator=='real',c('PC1','PC2')],1,function(r){sqrt((r[1]-o1)^2+(r[2]-o2)^2)})
+  allgen = all[all$generator=='real',]
+  show(paste0(' min = ',min(dists)))
+  show(allgen[dists<quantile(dists,0.001),c('lon','lat')])
 }
+
+
+
+##### closest in neighborhood of each objective
+# for(objnum in 1:nrow(km$centers)){
+#   o1=km$centers[objnum,1];o2=km$centers[objnum,2]
+#   show(paste0(objnum,' pc1 = ',o1,' ; pc2 = ',o2))
+#   dists = apply(rotated[rotated$generator=='real',c('PC1','PC2')],1,function(r){sqrt((r[1]-o1)^2+(r[2]-o2)^2)})
+#   allgen = all[all$generator=='real',]
+#   realpoints = allgen[dists<0.02,]
+#   
+#   dists = apply(rotated[rotated$generator!='real',c('PC1','PC2')],1,function(r){sqrt((r[1]-o1)^2+(r[2]-o2)^2)})
+#   allgen = all[all$generator!='real',]
+#   simpoints = allgen[dists<0.02,]
+#   
+#   full=rbind(realpoints,simpoints)
+#   d = as.matrix(dist(full))
+#   diag(d)<-Inf
+#   
+#   rowmins = apply(d[(nrow(realpoints)+1):nrow(full),1:nrow(realpoints)],1,min)
+#   rowminind=which(rowmins==min(rowmins))
+#   show(simpoints[rowminind,])
+#   
+#   colmin = d[(nrow(realpoints)+rowminind),1:nrow(realpoints)]
+# }
+
 
 
 

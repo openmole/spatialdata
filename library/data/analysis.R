@@ -50,6 +50,7 @@ for(j in 1:ncol(morph)){morph[,j]=(morph[,j]-min(morph[,j]))/(max(morph[,j])-min
 pca = prcomp(morph)
 summary(pca)
 pcs = as.matrix(morph)%*%pca$rotation
+realrotation = pca$rotation
 # export pc rotation
 write.table(pca$rotation,file="calib/pca.csv",quote = F,sep=',',col.names = F,row.names=F)
 
@@ -105,7 +106,9 @@ k=4
 km = kmeans(real[,c('PC1','PC2')],k,iter.max = 1000,nstart=5000)
 
 g=ggplot(data.frame(real[,c('PC1','PC2')],cluster=km$cluster),aes(x=PC1,y=PC2,color=as.character(cluster)))
-g+geom_point(alpha=0.6)+scale_color_discrete(name="Cluster")+stdtheme
+g+geom_point(alpha=0.6)+
+  geom_point(data=as.data.frame(km$centers),aes(x=PC1,y=PC2),inherit.aes = F,col='black',pch='+',size=2)+
+  scale_color_discrete(name="Cluster")+stdtheme
 ggsave(file=paste0('res/real/clustPC1-PC2_k',k,'_points-colcluster.png'),width=22,height=20,units='cm')
 
 # export center coords : directly with models names
@@ -115,6 +118,7 @@ write.table(objdata,file='calib/objectives.csv',sep=" ",col.names = F,row.names 
 
 
 real$cluster = km$cluster
+realcenters = km$centers
 
 # save real
 write.table(real,file='morpho/realpoints.csv',row.names = F,sep=',')
@@ -181,7 +185,7 @@ res=res[apply(res[,indics],1,function(r){length(which(is.na(r)))==0}),]
 # filter as for real
 res = res[res$density>0.05&res$density<0.8,]
 
-params=c("blocksMaxSize","blocksMinSize","blocksNumber","expMixtureCenters","expMixtureRadius","expMixtureThreshold","generator","percolationBordPoints","percolationLinkWidth","percolationProba","randomDensity")
+params=c("generator","blocksMaxSize","blocksMinSize","blocksNumber","expMixtureCenters","expMixtureRadius","expMixtureThreshold","percolationBordPoints","percolationLinkWidth","percolationProba","randomDensity","replication")
 
 summary(res)
 #summary(res[res$generator=="percolation",params]) # for boundaries of calibration
@@ -200,12 +204,25 @@ summary(pca)
 
 # intra-run variability
 
+sres = res %>% group_by(id,generator) %>% summarize(
+  sdMoran=sd(moran),meanMoran=mean(moran),sharpeMoran=abs(meanMoran/sdMoran),
+  sdAvgDistance=sd(avgDistance),meanAvgDistance=mean(avgDistance),sharpeAvgDistance=meanAvgDistance/sdAvgDistance,
+  sdDensity=sd(density),meanDensity=mean(density),sharpeDensity=meanDensity/sdDensity,
+  sdComponents=sd(components),meanComponents=mean(components),sharpeComponents=meanComponents/sdComponents,
+  sdAvgDetour=sd(avgDetour),meanAvgDetour=mean(avgDetour),sharpeAvgDetour=meanAvgDetour/sdAvgDetour,
+  sdAvgBlockArea=sd(avgBlockArea),meanAvgBlockArea=mean(avgBlockArea),sharpeAvgBlockArea=meanAvgBlockArea/sdAvgBlockArea,
+  sdAvgComponentArea=sd(avgComponentArea),meanAvgComponentArea=mean(avgComponentArea),sharpeAvgComponentArea=meanAvgComponentArea/sdAvgComponentArea,
+  sdFullDilationSteps=sd(fullDilationSteps),meanFullDilationSteps
+)
+
+# TODO
 
 
 
 
 ######
-all = rbind(cbind(real[,c(indics,"lon","lat")],generator=rep("real",nrow(real))),cbind(res[,c(indics,"generator")],lon=rep(0,nrow(res)),lat=rep(0,nrow(res))))
+dummyParams = data.frame(matrix(0,nrow(real),length(params)-1));names(dummyParams)<-params[-1]
+all = rbind(cbind(real[,c(indics,"lon","lat")],generator=rep("real",nrow(real)),dummyParams),cbind(res[,c(indics,params)],lon=rep(0,nrow(res)),lat=rep(0,nrow(res))))
 
 morph=all[,indics]
 for(j in 1:ncol(morph)){morph[,j]=(morph[,j]-min(morph[,j]))/(max(morph[,j])-min(morph[,j]))}
@@ -214,16 +231,61 @@ summary(pca)
 pcs = as.matrix(morph)%*%pca$rotation
 all = cbind(all,pcs)
 
+#
+rotcentroids = (as.matrix(cbind(km$centers,matrix(0,nrow = nrow(km$centers),ncol=length(indics)-ncol(km$centers))))%*%realrotation)%*%pca$rotation
 
 g=ggplot(all,aes(x=PC1,y=PC2,color=generator,#size=ifelse(generator=="real",0.01,0.00005),
                  pch=ifelse(generator=="real",'+','.'),
                  alpha=ifelse(generator=="real",0.5,0.01)))
-g+geom_point()+scale_shape_discrete(guide=FALSE)+scale_alpha_continuous(guide=FALSE)+stdtheme
+g+geom_point()+
+  geom_point(data=as.data.frame(rotcentroids[,c('PC1','PC2')]),aes(x=PC1,y=PC2),inherit.aes = F,col='black',pch='+')+
+  scale_shape_discrete(guide=FALSE)+scale_alpha_continuous(guide=FALSE)+stdtheme
 ggsave(file=paste0(resdir,'lhscalib.png'),width=32,height=30,units='cm')
+
+
+
+# plot projected in REAL principal component space
+normalized = all[,indics]
+for(j in 1:ncol(normalized)){normalized[,j]=(normalized[,j]-min(mins[j]))/(maxs[j]-mins[j])}
+rotated=cbind(as.data.frame(as.matrix(normalized)%*%realrotation),generator = all[,c("generator")])
+# reorder factor
+rotated$generator<-factor(rotated$generator,levels=rotated$generator)
+g=ggplot(rotated[rotated$generator!='real',],aes(x=PC1,y=PC2,color=generator)) #size=ifelse(generator=="real",0.01,0.00005),
+                 #shape=ifelse(generator=="real","d","a"),
+                 #alpha=ifelse(generator=="real",0.5,0.01)))
+g+geom_point(alpha = 0.6,pch='+',size=1.5)+
+  geom_point(data=rotated[rotated$generator=='real',],aes(x=PC1,y=PC2),inherit.aes = F,col='blue',size=1.2,alpha=0.8,pch='+')+
+  geom_point(data=as.data.frame(realcenters[,c('PC1','PC2')]),aes(x=PC1,y=PC2,shape="16"),inherit.aes = F,col='black',size=3)+
+  scale_shape_discrete(guide=FALSE,solid=F)+scale_alpha_continuous(guide=FALSE)+
+  scale_color_discrete()+stdtheme
+ggsave(file=paste0(resdir,'lhscalib_projrealpcs.png'),width=32,height=30,units='cm')
+
 
 
 ## TODO : additional plots calibration objectives and fitted pops ; plus extreme points with close simulated.
 
+
+
+###### closest sim points
+
+for(objnum in 1:nrow(km$centers)){
+  o1=km$centers[objnum,1];o2=km$centers[objnum,2]
+  show(paste0(objnum,' pc1 = ',o1,' ; pc2 = ',o2))
+  for(generator in unique(as.character(res$generator))){
+  show(paste0('generator = ',generator))
+dists = apply(rotated[rotated$generator==generator,c('PC1','PC2')],1,function(r){sqrt((r[1]-o1)^2+(r[2]-o2)^2)})
+allgen = all[all$generator==generator,]
+show(paste0(' min = ',min(dists)))
+show(allgen[dists==min(dists),])
+}
+}
+
+#### closest real points
+for(objnum in 1:nrow(km$centers)){
+  o1=km$centers[objnum,1];o2=km$centers[objnum,2]
+  show(paste0(objnum,' pc1 = ',o1,' ; pc2 = ',o2))
+  
+}
 
 
 

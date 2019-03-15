@@ -1,0 +1,181 @@
+
+
+
+[1] "1 pc1 = -0.401568005874794 ; pc2 = -0.139034657366536"
+[1] "generator = blocks"
+[1] " min = 0.00135782942380691"
+           moran avgDistance density components avgDetour avgBlockArea avgComponentArea fullDilationSteps
+124373 0.1602641    1.041462  0.2832         97  9.109906           26               69                16
+       fullErosionSteps lon lat generator blocksMaxSize blocksMinSize blocksNumber expMixtureCenters
+124373                5   0   0    blocks      4.702276      12.96444      12.4645          4.006979
+       expMixtureRadius expMixtureThreshold percolationBordPoints percolationLinkWidth percolationProba
+124373         10.77812           0.1704082               34.0386             2.610625        0.3449138
+       randomDensity replication
+124373     0.3793886 -1577939060
+[1] "generator = random"
+[1] " min = 0.390347979834076"
+               moran avgDistance density components  avgDetour avgBlockArea avgComponentArea fullDilationSteps
+124561 -0.0005628542   0.8943461  0.1884        162 0.01121168            2               16                 6
+       fullErosionSteps lon lat generator blocksMaxSize blocksMinSize blocksNumber expMixtureCenters
+124561                2   0   0    random      3.399863      16.97453     17.11476          4.013125
+       expMixtureRadius expMixtureThreshold percolationBordPoints percolationLinkWidth percolationProba
+124561         18.77346           0.4840884              3.349293             1.051137        0.7213761
+       randomDensity replication
+124561     0.1999027   -50324828
+[1] "generator = percolation"
+[1] " min = 0.179251778725918"
+            moran avgDistance   density components avgDetour avgBlockArea avgComponentArea fullDilationSteps
+289450 0.06856551   0.9661209 0.3448674        130  7.175883           20               45                 4
+       fullErosionSteps lon lat   generator blocksMaxSize blocksMinSize blocksNumber expMixtureCenters
+289450                4   0   0 percolation      3.908577      15.16822     1.534242          3.653548
+       expMixtureRadius expMixtureThreshold percolationBordPoints percolationLinkWidth percolationProba
+289450         3.909551           0.5261179              7.321375             4.982397        0.1359772
+       randomDensity replication
+289450     0.4050232  -683234901
+[1] "generator = expMixture"
+[1] " min = 0.107765963167782"
+           moran avgDistance density components avgDetour avgBlockArea avgComponentArea fullDilationSteps
+204260 0.1759923   0.9921613  0.2496         63  8.146711           36               66                19
+       fullErosionSteps lon lat  generator blocksMaxSize blocksMinSize blocksNumber expMixtureCenters
+204260                7   0   0 expMixture       5.36897      11.43406     19.03497          6.102987
+       expMixtureRadius expMixtureThreshold percolationBordPoints percolationLinkWidth percolationProba
+204260         4.009056           0.2289126              44.26328             1.918107        0.2894007
+       randomDensity replication
+204260     0.6752043   -38024375
+[1] "2 pc1 = 0.307899227735927 ; pc2 = -0.357540683059979"
+[1] "generator = blocks"
+[1] " min = 0.00256392515703211"
+           moran avgDistance density components avgDetour avgBlockArea avgComponentArea fullDilationSteps
+123345 0.1903378   0.7507697  0.1176         30  8.548725           36              170                43
+       fullErosionSteps lon lat generator blocksMaxSize blocksMinSize blocksNumber expMixtureCenters
+123345                6   0   0    blocks      1.180895      18.80175     2.645131          1.584847
+       expMixtureRadius expMixtureThreshold percolationBordPoints percolationLinkWidth percolationProba
+123345         11.67759            0.659643              13.44275             1.271355        0.9477312
+       randomDensity replication
+123345     0.7958949   -43871746
+[1] "generator = random"
+[1] " min = 0.733140569954451"
+               moran avgDistance density components  avgDetour avgBlockArea avgComponentArea fullDilationSteps
+166499 -0.0004186881   0.8664307  0.0512         15 0.04824478            2               53                13
+228789 -0.0004186881   0.8664307  0.0512         15 0.04824478            2               53                13
+298277 -0.0004186881   0.8664307  0.0512         15 0.04824478            2               53                13
+       fullErosionSteps lon lat generator blocksMaxSize blocksMinSize blocksNumber expMixtureCenters
+166499                1   0   0    random      16.49440     12.953874     4.046247          8.784011
+228789                1   0   0    random      17.30908      8.796093    10.579024          6.189379
+298277                1   0   0    random      10.86702     15.617044    17.193305          3.083746
+       expMixtureRadius expMixtureThreshold percolationBordPoints percolationLinkWidth percolationProba
+166499         1.064958           0.4738411              36.88832             4.082442       0.82711393
+228789         7.193192           0.1034629              28.62213             1.210283       0.01902665
+298277         3.663306           0.0739851              23.23272             1.968385       0.50970230
+       randomDensity replication
+166499    0.05951992   -50324828
+228789    0.05934936   -50324828
+298277    0.06012995   -50324828
+[1] "generator = percolation"
+[1] " min = 0.858174759748326"
+            moran avgDistance   density components avgDetour avgBlockArea avgComponentArea fullDilationSteps
+558026 0.06350328    1.088248 0.2341407         75  2.426259           21               69                 4
+       fullErosionSteps lon lat   generator blocksMaxSize blocksMinSize blocksNumber expMixtureCenters
+558026                3   0   0 percolation      6.175074      13.47663     7.975057          1.040862
+       expMixtureRadius expMixtureThreshold percolationBordPoints percolationLinkWidth percolationProba
+558026         2.426499           0.4055246              15.95822             4.463455         0.262004
+       randomDensity replication
+558026     0.5674752 -1823771086
+[1] "generator = expMixture"
+[1] " min = 0.00189547404428551"
+          moran avgDistance density components avgDetour avgBlockArea avgComponentArea fullDilationSteps
+192135 0.147895   0.4852531  0.0808         31  6.239738           23              116                43
+       fullErosionSteps lon lat  generator blocksMaxSize blocksMinSize blocksNumber expMixtureCenters
+192135                6   0   0 expMixture      10.48669      8.777851     8.426846          6.250709
+       expMixtureRadius expMixtureThreshold percolationBordPoints percolationLinkWidth percolationProba
+192135           3.8163           0.4153495              33.95562             3.383109         0.750464
+       randomDensity replication
+192135     0.9683222 -1315169452
+[1] "3 pc1 = -0.00169022591544116 ; pc2 = -0.0933680483743268"
+[1] "generator = blocks"
+[1] " min = 0.000549280232203691"
+           moran avgDistance density components avgDetour avgBlockArea avgComponentArea fullDilationSteps
+534243 0.1078281   0.7620847  0.1156         43  5.329797           22               95                21
+       fullErosionSteps lon lat generator blocksMaxSize blocksMinSize blocksNumber expMixtureCenters
+534243                4   0   0    blocks      14.27284      1.245443     10.87651          5.311592
+       expMixtureRadius expMixtureThreshold percolationBordPoints percolationLinkWidth percolationProba
+534243         7.604864           0.8362122              45.05266             1.508391        0.5563269
+       randomDensity replication
+534243     0.1159083  -342078397
+[1] "generator = random"
+[1] " min = 0.367305904818681"
+              moran avgDistance density components  avgDetour avgBlockArea avgComponentArea fullDilationSteps
+509427 -0.000476254   0.8597833  0.0532         20 0.03224366            2               51                13
+       fullErosionSteps lon lat generator blocksMaxSize blocksMinSize blocksNumber expMixtureCenters
+509427                1   0   0    random      6.182393        6.3364     11.96408          8.195396
+       expMixtureRadius expMixtureThreshold percolationBordPoints percolationLinkWidth percolationProba
+509427         18.59587           0.5206199              20.92794             3.136233        0.6480753
+       randomDensity replication
+509427    0.05188095 -1517768796
+[1] "generator = percolation"
+[1] " min = 0.451962197249087"
+            moran avgDistance   density components avgDetour avgBlockArea avgComponentArea fullDilationSteps
+558026 0.06350328    1.088248 0.2341407         75  2.426259           21               69                 4
+       fullErosionSteps lon lat   generator blocksMaxSize blocksMinSize blocksNumber expMixtureCenters
+558026                3   0   0 percolation      6.175074      13.47663     7.975057          1.040862
+       expMixtureRadius expMixtureThreshold percolationBordPoints percolationLinkWidth percolationProba
+558026         2.426499           0.4055246              15.95822             4.463455         0.262004
+       randomDensity replication
+558026     0.5674752 -1823771086
+[1] "generator = expMixture"
+[1] " min = 0.00130431025981528"
+            moran avgDistance density components avgDetour avgBlockArea avgComponentArea fullDilationSteps
+571383 0.08892927   0.7420237   0.104         47  4.890886           19               88                22
+       fullErosionSteps lon lat  generator blocksMaxSize blocksMinSize blocksNumber expMixtureCenters
+571383                5   0   0 expMixture      16.19818      8.932299     7.663158          9.267008
+       expMixtureRadius expMixtureThreshold percolationBordPoints percolationLinkWidth percolationProba
+571383         2.952703           0.2909198              38.62837             1.721285        0.2374159
+       randomDensity replication
+571383     0.4510333   945670917
+[1] "4 pc1 = -0.773530217615314 ; pc2 = -0.294339386091329"
+[1] "generator = blocks"
+[1] " min = 0.128294251221111"
+           moran avgDistance density components avgDetour avgBlockArea avgComponentArea fullDilationSteps
+503244 0.1871153    1.007597  0.4704        113  13.75411           38               41                10
+       fullErosionSteps lon lat generator blocksMaxSize blocksMinSize blocksNumber expMixtureCenters
+503244                6   0   0    blocks      10.76471      9.232292      18.5065          8.123425
+       expMixtureRadius expMixtureThreshold percolationBordPoints percolationLinkWidth percolationProba
+503244         14.33099           0.5147119              26.86313             3.395714        0.9154845
+       randomDensity replication
+503244     0.6549729 -1704061617
+[1] "generator = random"
+[1] " min = 0.467899251066489"
+             moran avgDistance density components avgDetour avgBlockArea avgComponentArea fullDilationSteps
+522288 0.001532892   0.9205318  0.7992        408  4.994182           16                3                 2
+       fullErosionSteps lon lat generator blocksMaxSize blocksMinSize blocksNumber expMixtureCenters
+522288                4   0   0    random      14.91338      9.516132     17.92184           3.50769
+       expMixtureRadius expMixtureThreshold percolationBordPoints percolationLinkWidth percolationProba
+522288         10.75457           0.1420602              37.04096             2.831039        0.5618233
+       randomDensity replication
+522288      0.796417  1159348655
+[1] "generator = percolation"
+[1] " min = 0.00295658748459472"
+            moran avgDistance   density components avgDetour avgBlockArea avgComponentArea fullDilationSteps
+447144 0.07123989   0.9909884 0.4971165        147  14.74765           28               35                 4
+521692 0.07123989   0.9909884 0.4971165        147  14.74765           28               35                 4
+       fullErosionSteps lon lat   generator blocksMaxSize blocksMinSize blocksNumber expMixtureCenters
+447144                4   0   0 percolation     18.633342      8.358712    12.829109          3.997188
+521692                4   0   0 percolation      9.800127     18.158160     7.525642          6.728917
+       expMixtureRadius expMixtureThreshold percolationBordPoints percolationLinkWidth percolationProba
+447144         18.48754          0.46921320             15.481693             3.514229        0.3584211
+521692         13.44539          0.08324059              5.455781             3.709316        0.3483628
+       randomDensity replication
+447144     0.5892340   -43871746
+521692     0.1219495   -43871746
+[1] "generator = expMixture"
+[1] " min = 0.303819334759393"
+          moran avgDistance density components avgDetour avgBlockArea avgComponentArea fullDilationSteps
+41715 0.3178257   0.9917573  0.4552         88  14.91188           49               53                15
+      fullErosionSteps lon lat  generator blocksMaxSize blocksMinSize blocksNumber expMixtureCenters
+41715                9   0   0 expMixture      8.179475      10.05754     4.157406          6.688085
+      expMixtureRadius expMixtureThreshold percolationBordPoints percolationLinkWidth percolationProba
+41715         5.121763           0.2114182               17.0789             1.196664        0.3462348
+      randomDensity replication
+41715      0.883337   -38024375
+
+

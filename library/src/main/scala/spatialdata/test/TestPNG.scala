@@ -3,6 +3,8 @@ package spatialdata.test
 import better.files.File
 import spatialdata.utils.io.PNG
 import spatialdata.grid.GridGeneratorLauncher
+import spatialdata.sampling.OSMGridSampling
+import spatialdata.grid._
 
 import scala.util.Random
 
@@ -10,13 +12,13 @@ object TestPNG {
 
   def testPNG(): Unit = {
 
-    implicit val rng = new Random
+    implicit val rng = new Random(42L)
     val launchers = Seq("random","expMixture","blocks","percolation").map{
-      GridGeneratorLauncher(_,50,
+      GridGeneratorLauncher(_,200,
         0.5,
-        5,10.0,0.5,
-        5,10,15,
-        0.2,10,4.0)
+        200,10.0,0.5,
+        80,10,30,
+        0.2,20,4.0)
     }
 
     val directory = File("data") / "test"
@@ -25,6 +27,21 @@ object TestPNG {
       case g => {
         val grid = g.getGrid
         PNG.write(grid, directory / s"${g.generatorType}.png")
+      }
+    }
+  }
+  def testOSMGridSampling(): Unit = {
+    implicit val rng: Random = new Random
+
+    val grids = OSMGridSampling.sampleGridsInLayer("data/cities_europe.shp",100,500,50)
+
+    val directory = File("data") / "test"
+    directory.createDirectories()
+
+    for (agrid <- grids) {
+      if (agrid._2.map(_.max).max > 0) {
+//        println(grid.gridToString(agrid._2))
+        PNG.write(agrid._2, directory / s"osm_${agrid._1}.png")
       }
     }
   }

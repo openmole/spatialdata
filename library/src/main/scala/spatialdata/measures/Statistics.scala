@@ -13,17 +13,17 @@ object Statistics {
     * Unbiased moment at a given order
     * @param x
     * @param order
-    * @param weighting optional array of weights (will be renormalized of not already)
+    * @param weighting optional array of weights (will be renormalized if not already)
     * @param filter filtering function
     * @return
     */
   def moment(x: Array[Double],order: Int = 1,weighting : Array[Double]=Array.empty,filter: Double => Boolean = _ => true): Double = {
-    val w: Array[Double] = weighting match {
+    val w: Array[Double] = x.zip(weighting).filter{case (x,_)=>filter(x)}.map{case (x,w)=> w} match {
       case a if (a.size==0) => Array.fill(x.size){1.0/x.size}
       case a if (a.sum != 1.0) => {val s = a.sum; a.map{_/s}}
       case a => a
     }
-    x.zip(w).filter{case (x,_)=>filter(x)}.map{case (x,w) => w*math.pow(x,order.toDouble)}.sum / x.filter(filter).length
+    x.filter(filter).zip(w).map{case (x,w) => w*math.pow(x,order.toDouble)}.sum
   }
 
 

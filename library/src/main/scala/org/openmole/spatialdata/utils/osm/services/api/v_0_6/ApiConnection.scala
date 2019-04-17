@@ -19,9 +19,6 @@ import org.openmole.spatialdata.utils.osm.xml.OsmXmlWriter
 
 /**
   * http://wiki.openstreetmap.org/wiki/API_v0.6
-  *
-  * @author kalle
-  * @since 2015-01-06 18:26
   */
 object ApiConnection {
   private val defaultServerURL = "https://api.openstreetmap.org/api"
@@ -108,7 +105,10 @@ class ApiConnection(var serverURL: String = ApiConnection.defaultServerURL,val t
     val top = df.format(north)
     val right = df.format(east)
     val response = httpClient.execute(new HttpGet(prefix + "map?bbox=" + left + "," + bottom + "," + right + "," + top))
+
+    // FIXME logging
     System.out.println(prefix + "map?bbox=" + left + "," + bottom + "," + right + "," + top)
+
     try {
       if (response.getStatusLine.getStatusCode != 200) throw new RuntimeException("HTTP status " + response.getStatusLine.getStatusCode + ", " + response.getStatusLine.getReasonPhrase)
       val parser = InstantiatedOsmXmlParser.newInstance
@@ -144,6 +144,8 @@ class ApiConnection(var serverURL: String = ApiConnection.defaultServerURL,val t
     xml.write("</osm>\n")
     val put = new HttpPut(prefix + "changeset/create")
     put.setEntity(new StringEntity(xml.toString, "UTF8"))
+
+    // FIXME create a decent logging service
     System.out.println(prefix + "changeset/create")
     val response = httpClient.execute(put)
     try {

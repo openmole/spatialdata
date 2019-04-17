@@ -5,6 +5,13 @@ import org.openmole.spatialdata._
 import com.vividsolutions.jts.geom.GeometryFactory
 import org.apache.commons.math3.linear.MatrixUtils
 
+
+/**
+  * Methods for spatial statistics
+  *
+  * TODO add standard tests / spatial point processes
+  *
+  */
 object Spatstat {
 
 

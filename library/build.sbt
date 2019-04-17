@@ -74,3 +74,29 @@ assemblyMergeStrategy in assembly := {
   case x => MergeStrategy.last
 }
 */
+
+
+/**
+  * Publishing
+  */
+
+publishTo := Some("Sonatype Snapshots Nexus" at "https://oss.sonatype.org/content/repositories/snapshots")
+
+//credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
+
+licenses in ThisBuild := Seq("Affero GPLv3" -> url("http://www.gnu.org/licenses/"))
+
+homepage in ThisBuild := Some(url("https://github.com/openmole/mgo"))
+
+pomExtra in ThisBuild := (
+  <developers>
+    <developer>
+      <id>justeraimbault</id>
+      <name>Juste Raimbault</name>
+    </developer>
+    <developer>
+      <id>julienperret</id>
+      <name>Julien Perret</name>
+    </developer>
+  </developers>
+  )

@@ -1,6 +1,7 @@
 
 package org.openmole.spatialdata.utils.io
 
+import org.openmole.spatialdata.network
 import org.openmole.spatialdata.network.Network
 
 /**
@@ -11,7 +12,7 @@ object Gexf {
 
 
   // TODO
-  def readGexf(file: String): Network = Network.empty
+  def readGexf(file: String): Network = network.empty
 
   // TODO
   def writeGexf(network: Network, file: String): Unit = {}

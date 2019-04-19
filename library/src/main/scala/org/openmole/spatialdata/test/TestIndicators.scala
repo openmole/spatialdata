@@ -4,9 +4,11 @@ import better.files.File
 
 import scala.util.Random
 import org.openmole.spatialdata._
-import org.openmole.spatialdata.measures._
-import org.openmole.spatialdata.synthetic.grid._
+import org.openmole.spatialdata.points.measures.SummarySpatialStatistics
+import org.openmole.spatialdata.grid.measures._
+import org.openmole.spatialdata.grid.synthetic._
 import org.openmole.spatialdata.utils.io._
+import org.openmole.spatialdata.utils.math.Statistics
 
 object TestIndicators {
 
@@ -21,8 +23,8 @@ object TestIndicators {
       val ngrid = grid.map{_.map{case d => if(d / maxval > 0.6) 1.0 else 0.0}}
 
     PNG.write(ngrid, File("data") / "test/grid.png")
-    PNG.write(Morphology.erosion(ngrid), File("data") / "test/gridFFT.png")
-    PNG.write(Morphology.erosion(ngrid,Morphology.convolutionDirect), File("data") / "test/gridDirect.png")
+    PNG.write(GridMorphology.erosion(ngrid), File("data") / "test/gridFFT.png")
+    PNG.write(GridMorphology.erosion(ngrid,GridMorphology.convolutionDirect), File("data") / "test/gridDirect.png")
     // TODO fix the fft convolution
     /*
       time(_=>println("fft erosion steps = "+Morphology.fullErosionSteps(ngrid)))
@@ -71,7 +73,7 @@ object TestIndicators {
 
     val morans = (1 to 1000).map{i =>
       println(i)
-      Morphology.moran(gen.generateGrid)
+      GridMorphology.moran(gen.generateGrid)
     }.toArray
 
     import org.dianahep.histogrammar._

@@ -1,9 +1,9 @@
 package org.openmole.spatialdata.test
 
 import org.openmole.spatialdata
+import org.openmole.spatialdata.grid.measures.GridMorphology
 import org.openmole.spatialdata.grid.GridGeneratorLauncher
-import org.openmole.spatialdata.measures.Morphology
-import org.openmole.spatialdata.synthetic.grid._
+import org.openmole.spatialdata.grid.synthetic._
 
 import scala.io.Source
 import scala.util.Random
@@ -23,7 +23,7 @@ object TestSynthetic {
 
     import org.openmole.spatialdata.grid.GridGeneratorCalibration._
 
-    def projection(morphology: Morphology): Array[Double] = Morphology.rotation(rotation,norm)(morphology)
+    def projection(morphology: GridMorphology): Array[Double] = GridMorphology.rotation(rotation,norm)(morphology)
     def objective(pcs: Array[Double]): Double = math.sqrt(math.pow(pcs(0)-pc1obj,2)+math.pow(pcs(1)-pc2obj,2))
 
     (1 to 20).foreach { case blocknum =>
@@ -81,7 +81,7 @@ object TestSynthetic {
 
     val morans = (1 until 10000).map{i =>
       if (i%100==0){println(i)}
-      Morphology.moran(RandomGridGenerator(size).generateGrid)
+      GridMorphology.moran(RandomGridGenerator(size).generateGrid)
     }.toArray
 
     import org.dianahep.histogrammar._

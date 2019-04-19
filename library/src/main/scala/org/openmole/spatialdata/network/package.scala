@@ -1,5 +1,9 @@
+package org.openmole.spatialdata
 
-package org.openmole.spatialdata.network
+import com.vividsolutions.jts.geom.LineString
+import scalax.collection.Graph
+import scalax.collection.edge.WUnDiEdge
+
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -13,19 +17,31 @@ import scalax.collection.edge.WUnDiEdge
 
 import org.openmole.spatialdata._
 
-case class Node(id: Int, x: Double, y: Double)
 
-case class Link(e1: Node,e2: Node,weight: Double = 1.0,length: Double = 1.0)
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
+import scala.util.Random
 
-object Link {def apply(e1: Node,e2: Node,weight: Double): Link = Link(e1,e2,weight,math.sqrt((e1.x-e2.x)*(e1.x-e2.x)+(e1.y-e2.y)*(e1.y-e2.y)))}
-
-case class Network(nodes: Set[Node], links: Set[Link])
 
 
 /**
   * Network functions
+  *
+  * FIXME put graph algorithms in utils
+  *
   */
-object Network {
+package object network {
+
+  case class Node(id: Int, x: Double, y: Double)
+
+  case class Link(e1: Node,e2: Node,weight: Double = 1.0,length: Double = 1.0)
+
+  object Link {def apply(e1: Node,e2: Node,weight: Double): Link = Link(e1,e2,weight,math.sqrt((e1.x-e2.x)*(e1.x-e2.x)+(e1.y-e2.y)*(e1.y-e2.y)))}
+
+  case class Network(nodes: Set[Node], links: Set[Link])
+
+
+
 
   def empty: Network = Network(Set.empty,Set.empty)
 
@@ -166,13 +182,13 @@ object Network {
       i <- vertices
       j <- vertices
     } yield ((i,j),if(i==j) {(Seq(i),0.0)}
-      else {
-        val path = g.get(i.id).shortestPathTo(g.get(j.id))
-        if(path.nonEmpty){
-          (path.get.nodes.map{nodeMap(_)}.toSeq,path.get.edges.map{_.weight}.sum)
-        }
-        else {(Seq.empty[Node],Double.PositiveInfinity)}
-      })).toMap
+    else {
+      val path = g.get(i.id).shortestPathTo(g.get(j.id))
+      if(path.nonEmpty){
+        (path.get.nodes.map{nodeMap(_)}.toSeq,path.get.edges.map{_.weight}.sum)
+      }
+      else {(Seq.empty[Node],Double.PositiveInfinity)}
+    })).toMap
   }
 
 
@@ -352,6 +368,32 @@ object Network {
     paths.toMap
   }
 
+
+  /**
+    * import a network from gis linestrings
+    * @param lines
+    * @param snap
+    * @return
+    */
+  def fromGISLines(lines: Seq[LineString], snap: Double): Network = {
+    /*lines.zipWithIndex.map{
+      case (line,i) => line.getCoordinates.zip
+    }*/
+    // would require some kind of spatial index for efficiency ? -> do the snapping directly here using a hashmap with rounded coordinates
+    // (quite dirty)
+
+    // TODO
+    empty
+  }
+
+
+  /**
+    * simplify a spatial network through snapping
+    * @param network
+    * @param snap
+    * @return
+    */
+  def spatialSimplification(network: Network,snap: Double): Network = empty
+
+
 }
-
-

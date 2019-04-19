@@ -1,6 +1,6 @@
 package org.openmole.spatialdata.utils.osm.services.overpass
 
-import org.openmole.spatialdata.osm.APIExtractor.Buildings.asPolygonSeq
+import org.openmole.spatialdata.utils.osm.APIExtractor.Buildings.asPolygonSeq
 import org.openmole.spatialdata.utils.osm.domain.root.PojoRoot
 import org.openmole.spatialdata.utils.osm.parser.xml.instantiated.InstantiatedOsmXmlParser
 

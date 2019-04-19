@@ -1,19 +1,15 @@
 
-package org.openmole.spatialdata.measures
+package org.openmole.spatialdata.grid.measures
 
 import org.apache.commons.math3.linear.MatrixUtils
-import org.apache.commons.math3.stat.regression.SimpleRegression
 import org.apache.commons.math3.util.MathArrays
+import org.openmole.spatialdata._
+import org.openmole.spatialdata.network._
+import org.openmole.spatialdata.utils.io.CSV
 import org.openmole.spatialdata.utils.math.Convolution
 
-import org.openmole.spatialdata._
-import org.openmole.spatialdata.network.Network
-import org.openmole.spatialdata.utils.io.CSV
 
-import scala.math._
-
-
-case class Morphology(
+case class GridMorphology(
                        height: Double,
                        width: Double,
                        area: Double,
@@ -52,11 +48,11 @@ case class Morphology(
   * FIXME See https://github.com/locationtech/geotrellis if implemented in raster operations
   *
   */
-object Morphology {
+object GridMorphology {
 
-  def apply(grid: RasterLayerData[Double]): Morphology = {
-    val cachedNetwork = Network.gridToNetwork(grid)
-    Morphology(
+  def apply(grid: RasterLayerData[Double]): GridMorphology = {
+    val cachedNetwork = network.gridToNetwork(grid)
+    GridMorphology(
       grid.size,grid(0).size,
       grid.flatten.sum,
       moranDirect(grid),
@@ -82,7 +78,7 @@ object Morphology {
     * @param morpho
     * @return
     */
-  def rotation(rotation: Array[Array[Double]],normalization: Array[Array[Double]])(morpho: Morphology): Array[Double] = {
+  def rotation(rotation: Array[Array[Double]],normalization: Array[Array[Double]])(morpho: GridMorphology): Array[Double] = {
     val rot = MatrixUtils.createRealMatrix(rotation)
     val n = rot.getRowDimension
     val morphonorm = morpho.toArray(n).zip(normalization).map{case (m,a) => (a(0)-m)/(a(0)-a(1))}
@@ -92,7 +88,7 @@ object Morphology {
     rotated
   }
 
-  def rotation(rotFile: String,normFile: String)(morpho: Morphology): Array[Double] = rotation(CSV.readMat(rotFile),CSV.readMat(normFile))(morpho)
+  def rotation(rotFile: String,normFile: String)(morpho: GridMorphology): Array[Double] = rotation(CSV.readMat(rotFile),CSV.readMat(normFile))(morpho)
 
 
 
@@ -103,8 +99,8 @@ object Morphology {
     * @return
     */
   def components(world: Array[Array[Double]],cachedNetwork: Option[Network] = None): Double = {
-    val network = cachedNetwork match {case None => Network.gridToNetwork(world);case n => n.get}
-    val components = Network.connectedComponents(network)
+    val nw = cachedNetwork match {case None => network.gridToNetwork(world);case n => n.get}
+    val components = network.connectedComponents(nw)
     //println("components = "+components.size)
     components.size
   }
@@ -116,8 +112,8 @@ object Morphology {
     */
   def avgBlockArea(world: Array[Array[Double]],cachedNetwork: Option[Network] = None): Double = {
     //val inversedNetwork = Network.gridToNetwork(world.map{_.map{case x => 1.0 - x}})
-    val network = cachedNetwork match {case None => Network.gridToNetwork(world);case n => n.get}
-    val components = Network.connectedComponents(network)
+    val nw = cachedNetwork match {case None => network.gridToNetwork(world);case n => n.get}
+    val components = network.connectedComponents(nw)
     val avgblockarea = components.size match {case n if n == 0 => 0.0;case n => components.map{_.nodes.size}.sum/components.size}
     //println("avgblockarea = "+avgblockarea)
     avgblockarea
@@ -129,8 +125,8 @@ object Morphology {
     * @return
     */
   def avgComponentArea(world: Array[Array[Double]]): Double = {
-    val inversedNetwork = Network.gridToNetwork(world.map{_.map{case x => 1.0 - x}})
-    val components = Network.connectedComponents(inversedNetwork)
+    val inversedNetwork = network.gridToNetwork(world.map{_.map{case x => 1.0 - x}})
+    val components = network.connectedComponents(inversedNetwork)
     //println("avgblockarea = "+avgblockarea)
     if(components.size > 0){
       components.map{_.nodes.size}.sum/components.size
@@ -147,14 +143,14 @@ object Morphology {
     */
   def avgDetour(world: Array[Array[Double]],cachedNetwork: Option[Network] = None,sampledPoints: Int=50): Double = {
     if(world.flatten.sum==world.map{_.length}.sum){return(0.0)}
-    val network = cachedNetwork match {case None => Network.gridToNetwork(world);case n => n.get}
+    val nw = cachedNetwork match {case None => network.gridToNetwork(world);case n => n.get}
     // too costly to do all shortest paths => sample
     //val shortestPaths = Network.allPairsShortestPath(network)
     //val avgdetour = shortestPaths.values.map{_.map{_.weight}.sum}.zip(shortestPaths.keys.map{case (n1,n2)=> math.sqrt((n1.x-n2.x)*(n1.x-n2.x)+(n1.y-n2.y)*(n1.y-n2.y))}).map{case (dn,de)=>dn/de}.sum/shortestPaths.size
     //println("avgdetour = "+avgdetour)
     // should sample points within connected components
-    val sampled = network.nodes.toSeq.take(sampledPoints)
-    val paths = Network.shortestPathsScalagraph(network,sampled)
+    val sampled = nw.nodes.toSeq.take(sampledPoints)
+    val paths = network.shortestPathsScalagraph(nw,sampled)
 
     val avgdetour = paths.filter{!_._2._2.isInfinite}.map{
       case (_,(nodes,d))=>

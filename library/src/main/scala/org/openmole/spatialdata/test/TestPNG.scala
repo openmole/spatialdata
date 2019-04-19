@@ -2,9 +2,8 @@ package org.openmole.spatialdata.test
 
 import better.files.File
 import org.openmole.spatialdata.grid.GridGeneratorLauncher
+import org.openmole.spatialdata.grid.real.OSMGridSampling
 import org.openmole.spatialdata.utils.io.PNG
-import org.openmole.spatialdata.sampling.OSMGridSampling
-import org.openmole.spatialdata.grid._
 
 import scala.util.Random
 

@@ -33,7 +33,7 @@ case class NetworkFlows(
 trait NetworkLoader {
 
   def load(network: Network): NetworkFlows = {
-    NetworkFlows()
+    NetworkFlows(network,network.links.map{l => (l,1.0)}.toMap,None)
   }
 
 }

@@ -1,9 +1,9 @@
 
 package org.openmole.spatialdata.grid
 
-import org.openmole.spatialdata.synthetic.grid._
-import org.openmole.spatialdata.measures._
 import org.openmole.spatialdata._
+import org.openmole.spatialdata.grid.synthetic._
+import org.openmole.spatialdata.grid.measures._
 
 import scala.util.Random
 
@@ -77,9 +77,9 @@ case class GridGeneratorLauncher(
     * @param rng
     * @return
     */
-  def getMorphology(implicit rng: Random): Morphology = {
+  def getMorphology(implicit rng: Random): GridMorphology = {
     val grid = getGrid
-    Morphology(grid)
+    GridMorphology(grid)
   }
 
 }

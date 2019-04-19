@@ -1,13 +1,22 @@
-package org.openmole.spatialdata.sampling
+package org.openmole.spatialdata.utils.gis
 
-import com.vividsolutions.jts.geom.{ GeometryCollection, MultiPolygon, Polygon}
+import com.vividsolutions.jts.geom.{GeometryCollection, MultiPolygon, Polygon}
 import com.vividsolutions.jts.triangulate.ConformingDelaunayTriangulationBuilder
-import org.openmole.spatialdata.utils.io.Shapefile
 import org.openmole.spatialdata._
+import org.openmole.spatialdata.utils.io.Shapefile
 
 import scala.util.{Random, Try}
 
-object SpatialSampling {
+
+/*
+trait SpatialSampling {
+  // TODO generic caracs of a spatial sampling ? -> not necessary ; here only GIS primitives
+}
+*/
+
+
+
+object LayerSampling {
 
 
   /**

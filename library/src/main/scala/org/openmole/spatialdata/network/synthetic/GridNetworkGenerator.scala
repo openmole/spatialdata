@@ -1,6 +1,7 @@
 
-package org.openmole.spatialdata.synthetic.network
+package org.openmole.spatialdata.network.synthetic
 
+import org.openmole.spatialdata.network
 import org.openmole.spatialdata.network._
 
 import scala.collection.mutable.ArrayBuffer
@@ -67,7 +68,7 @@ object GridNetworkGenerator {
     }
     //println("grid nw links = "+edges.size)
     //println("grid nw unique links = "+edges.map{case e => e.e1.id+"-"+e.e2.id+"-"+e.weight}.size)
-    Network(nodes.flatten.toSet,edges.toSet)
+    network.Network(nodes.flatten.toSet,edges.toSet)
   }
 
 

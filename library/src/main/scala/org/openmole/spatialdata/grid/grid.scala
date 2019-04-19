@@ -4,6 +4,8 @@ package org.openmole.spatialdata
 
 package object grid {
 
+  val empty = Array(Array(0.0))
+
   /**
     * String representation of a grid
     * @param world

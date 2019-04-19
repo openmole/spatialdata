@@ -1,4 +1,4 @@
-package org.openmole.spatialdata.osm
+package org.openmole.spatialdata.utils.osm
 
 import java.io.StringReader
 import java.util.Locale
@@ -10,7 +10,7 @@ import org.openmole.spatialdata.utils.gis.GISUtils.WGS84toPseudoMercatorFilter
 import org.openmole.spatialdata.utils.gis.PoligonizerUtils
 import org.openmole.spatialdata.utils.osm.domain.Way
 import org.openmole.spatialdata.utils.osm.domain.root.PojoRoot
-import org.openmole.spatialdata.utils.osm.domain.root.Root._
+import org.openmole.spatialdata.utils.osm.domain.root.Root.Enumerator
 import org.openmole.spatialdata.utils.osm.jts.JtsGeometryFactory
 import org.openmole.spatialdata.utils.osm.parser.xml.instantiated.InstantiatedOsmXmlParser
 import org.openmole.spatialdata.utils.osm.services.api.v_0_6.ApiConnection

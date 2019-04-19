@@ -1,12 +1,14 @@
-package org.openmole.spatialdata.osm
+package org.openmole.spatialdata.grid.measures
 
-import org.openmole.spatialdata.measures.Morphology
-import org.openmole.spatialdata.sampling.OSMGridSampling
+import org.openmole.spatialdata.grid.real.OSMGridSampling
 import org.openmole.spatialdata.utils.io.CSV
 
 import scala.util.Random
 
-object OSMRealMeasures extends App {
+/**
+  * A runnable object to compute morphological measures on a set of OpenStreetMap samples
+  */
+object OSMGridRealMeasures extends App {
 
   if(args.length!=5) println("Usage : $NPOINTS $WINDOWSIZE(m) $WORLDWIDTH(cells) $SEED(0 = random Int) $RESDIR [$MODE = postgresql,osm,overpass]")
 
@@ -22,7 +24,7 @@ object OSMRealMeasures extends App {
   val start = System.currentTimeMillis()
 
   val grids = OSMGridSampling.sampleGridsInLayer("data/cities_europe.shp",npoints,windowSize,worldWidth,mode=mode)
-  val morphologies = grids.map{case g => Morphology(g._2)}
+  val morphologies = grids.map{case g => GridMorphology(g._2)}
   val coordinates = grids.map{_._1}
 
   val data = morphologies.zip(coordinates).map{case (m,c)=>

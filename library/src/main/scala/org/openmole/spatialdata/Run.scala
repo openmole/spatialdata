@@ -1,10 +1,21 @@
-package org.openmole.spatialdata.run
+package org.openmole.spatialdata
 
 import better.files.File
-import org.openmole.spatialdata.osm.OSMGridGenerator
+import org.openmole.spatialdata.grid.real.OSMGridGenerator
 import org.openmole.spatialdata.utils.io.PNG
 
 import scala.util.Random
+
+
+object Run extends App {
+
+  RunGenerator.runOutputPng
+
+}
+
+
+
+
 
 object RunGenerator {
 
@@ -60,7 +71,7 @@ object RunGenerator {
      */
     //PNG.write(GridGeneratorLauncher("expMixture",50,0.0,6,3.8163,0.4153495,12,13,5,0.0,1,1.0).getGrid(new Random(-1315169452)), File("data") / "res" / "examples"/ "closest2_expMixture.png")
 
-  //real
+    //real
     /*
      min = 0.00525322533870854"
           lon      lat
@@ -146,3 +157,9 @@ object RunGenerator {
 
 
 }
+
+
+
+
+
+

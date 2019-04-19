@@ -1,11 +1,11 @@
 
-package org.openmole.spatialdata.osm
+package org.openmole.spatialdata.grid.real
 
 import com.vividsolutions.jts.geom._
-import com.vividsolutions.jts.geom.impl.CoordinateArraySequenceFactory
-import org.openmole.spatialdata.grid.GridGenerator
 import org.openmole.spatialdata.RasterLayerData
+import org.openmole.spatialdata.grid.GridGenerator
 import org.openmole.spatialdata.utils.gis.GISUtils
+import org.openmole.spatialdata.utils.osm.APIExtractor
 
 import scala.util.{Random, Try}
 

@@ -1,8 +1,10 @@
 
-package org.openmole.spatialdata.osm
+package org.openmole.spatialdata.network.real
 
-import org.openmole.spatialdata.network._
+import org.openmole.spatialdata.network
+import org.openmole.spatialdata.network.{Network, NetworkGenerator}
 import org.openmole.spatialdata.utils.gis.GISUtils
+import org.openmole.spatialdata.utils.osm.APIExtractor
 
 import scala.util.Random
 
@@ -26,7 +28,7 @@ object OSMNetworkGenerator {
   def OSMWayNetwork(lon: Double,lat: Double,windowSize: Double,tags: Map[String,Seq[String]],simplifySnapping: Double): Network = {
     val (west,south,east,north)=GISUtils.wgs84window(lon,lat,windowSize)
     val lines = APIExtractor.Highways.getHighways(south,west,east,north,tags)
-    SpatialNetwork.fromGISLines(lines,simplifySnapping)
+    network.fromGISLines(lines,simplifySnapping)
   }
 
 

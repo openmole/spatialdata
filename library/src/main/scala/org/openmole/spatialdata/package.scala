@@ -34,4 +34,9 @@ package object spatialdata {
   type Coordinate = (Double,Double)
 
 
+  /**
+    * Spatial field
+    */
+  type SpatialField = Map[Point2D,Array[Double]]
+
 }

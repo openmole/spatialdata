@@ -1,8 +1,8 @@
-
-package org.openmole.spatialdata.measures
+package org.openmole.spatialdata.utils.math
 
 import org.apache.commons.math3.stat.regression.SimpleRegression
 import org.dianahep.histogrammar._
+import org.dianahep.histogrammar.ascii._
 
 import scala.math.{Ordering, log}
 
@@ -41,7 +41,6 @@ object Statistics {
 
     if(display) {
       println("min = "+xx.min+" ; max ="+xx.max)
-      import org.dianahep.histogrammar.ascii._
       println(hist.ascii)
     }
 
@@ -120,4 +119,3 @@ object Statistics {
 
 
 }
-

@@ -2,10 +2,9 @@
 package org.openmole.spatialdata.test
 
 import com.vividsolutions.jts.geom.MultiPolygon
-import org.openmole.spatialdata.grid._
-import org.openmole.spatialdata.measures.Morphology
-import org.openmole.spatialdata.osm.OSMGridGenerator
-import org.openmole.spatialdata.sampling.OSMGridSampling
+import org.openmole.spatialdata.grid
+import org.openmole.spatialdata.grid.real._
+import org.openmole.spatialdata.grid.measures._
 
 import scala.util.Random
 
@@ -20,7 +19,7 @@ object TestOSM {
 
     for (grid <- grids) {
       //println(Grid.gridToString(grid)+"\n\n")
-      println(Morphology(grid._2))
+      println(GridMorphology(grid._2))
     }
 
     //println(SpatialSampling.samplePointsInLayer("data/cities_europe.shp",10))
@@ -41,9 +40,9 @@ object TestOSM {
     //
 
 
-    val grid = OSMGridGenerator(lon,lat,shift,50).generateGrid
-    println(gridToString(grid))
-    println(Morphology(grid))
+    val g = OSMGridGenerator(lon,lat,shift,50).generateGrid
+    println(grid.gridToString(g))
+    println(GridMorphology(g))
 
     /*
     BuildingExtractor.getBuildingIntersection(48.82864, 2.36238, 48.83040, 2.36752).foreach(println)

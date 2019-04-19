@@ -1,8 +1,8 @@
 
-package org.openmole.spatialdata.synthetic.grid
+package org.openmole.spatialdata.grid.synthetic
 
-import org.openmole.spatialdata.grid.GridGenerator
 import org.openmole.spatialdata._
+import org.openmole.spatialdata.grid.GridGenerator
 
 import scala.util.Random
 

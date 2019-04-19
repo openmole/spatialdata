@@ -3,10 +3,9 @@ package org.openmole.spatialdata.test
 import better.files.File
 import com.github.tototoshi.csv.CSVReader
 import org.openmole.spatialdata.grid._
-import org.openmole.spatialdata.measures.Morphology
-import org.openmole.spatialdata.osm.OSMGridGenerator
+import org.openmole.spatialdata.grid.measures.GridMorphology
+import org.openmole.spatialdata.grid.real.OSMGridGenerator
 import org.openmole.spatialdata.utils.io.PNG
-//import org.openmole.spatialdata.synthetic.grid._
 
 import scala.io.Source
 import scala.util.Random
@@ -45,7 +44,7 @@ object BuildClusterImages extends App {
     val reader = CSVReader.open(file.toJava)
     val rotation = Source.fromFile(rotationFile.toJava).getLines().toArray.map{_.split(",").map{_.toDouble}}
     val normalization = Source.fromFile(normFile.toJava).getLines().toArray.map{_.split(",").map{_.toDouble}}
-    def projection(morphology: Morphology): Array[Double] = Morphology.rotation(rotation,normalization)(morphology)
+    def projection(morphology: GridMorphology): Array[Double] = GridMorphology.rotation(rotation,normalization)(morphology)
     val valuesWithDistance = reader.toStreamWithHeaders.map {
       line => {
         val height = line("height").toDouble
@@ -77,7 +76,7 @@ object BuildClusterImages extends App {
         val percolationLinkWidth = line("percolationLinkWidth").toDouble
         val percolationProba = line("percolationProba").toDouble
 
-        val proj = projection(Morphology(height,width,area,moran,avgDistance,density,components,avgDetour,avgBlockArea,avgComponentArea,fullDilationSteps,fullErosionSteps,fullClosingSteps,fullOpeningSteps))
+        val proj = projection(GridMorphology(height,width,area,moran,avgDistance,density,components,avgDetour,avgBlockArea,avgComponentArea,fullDilationSteps,fullErosionSteps,fullClosingSteps,fullOpeningSteps))
         val (cluster, distanceToCluster) = clusters.map{case (c, (pc1, pc2)) => (c, sqDistance((proj(0), proj(1)), (pc1, pc2)))}.minBy(_._2)
         println(s"distance to cluster $cluster = $distanceToCluster")
         (cluster, distanceToCluster, width, height, size, replication, generator, randomDensity, blocksNumber, blocksMinSize, blocksMaxSize, expMixtureCenters, expMixtureRadius, expMixtureThreshold, percolationBordPoints, percolationLinkWidth, percolationProba)

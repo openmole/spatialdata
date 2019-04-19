@@ -1,6 +1,7 @@
 
-package org.openmole.spatialdata.synthetic.network
+package org.openmole.spatialdata.network.synthetic
 
+import org.openmole.spatialdata.network
 import org.openmole.spatialdata.network._
 
 import scala.util.Random
@@ -27,13 +28,13 @@ object PercolationNetworkGenerator {
     * @return
     */
   def bondPercolatedNetwork(worldSize: Int,percolationProba: Double,bordPoints: Int,linkwidth: Double,maxIterations: Int = 10000)(implicit rng: Random): Network = {
-    var network = GridNetworkGenerator(worldSize).generateNetwork
+    var nw = GridNetworkGenerator(worldSize).generateNetwork
     var bordConnected = 0
-    val xmin = network.nodes.map{_.x}.min;val xmax = network.nodes.map{_.x}.max
-    val ymin = network.nodes.map{_.y}.min;val ymax = network.nodes.map{_.y}.max
+    val xmin = nw.nodes.map{_.x}.min;val xmax = nw.nodes.map{_.x}.max
+    val ymin = nw.nodes.map{_.y}.min;val ymax = nw.nodes.map{_.y}.max
     var iteration = 0
     while(bordConnected<bordPoints||iteration<maxIterations){
-      network = Network.percolate(network,percolationProba,linkFilter={
+      nw = network.percolate(nw,percolationProba,linkFilter={
         l: Link => l.weight==0.0&&(
           (((l.e1.x!=xmin)&&(l.e2.x!=xmin))||((l.e1.x==xmin)&&(l.e2.x!=xmin))||((l.e2.x==xmin)&&(l.e1.x!=xmin)))&&
             (((l.e1.x!=xmax)&&(l.e2.x!=xmax))||((l.e1.x==xmax)&&(l.e2.x!=xmax))||((l.e2.x==xmax)&&(l.e1.x!=xmax)))&&
@@ -41,7 +42,7 @@ object PercolationNetworkGenerator {
             (((l.e1.y!=ymax)&&(l.e2.y!=ymax))||((l.e1.y==ymax)&&(l.e2.y!=ymax))||((l.e2.y==ymax)&&(l.e1.y!=ymax)))
           )
       })
-      val giantcomp =  Network.largestConnectedComponent(Network(network.nodes,network.links.filter{_.weight>0}))
+      val giantcomp =  network.largestConnectedComponent(Network(nw.nodes,nw.links.filter{_.weight>0}))
 
       //println("giantcomp size = "+giantcomp.links.size)
 
@@ -53,7 +54,7 @@ object PercolationNetworkGenerator {
       //println("nodesOnBord="+nodesOnBord)
       iteration = iteration + 1
     }
-    network
+    nw
   }
 
 

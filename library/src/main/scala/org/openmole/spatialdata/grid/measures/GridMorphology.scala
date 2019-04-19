@@ -6,8 +6,7 @@ import org.apache.commons.math3.util.MathArrays
 import org.openmole.spatialdata._
 import org.openmole.spatialdata.network._
 import org.openmole.spatialdata.utils.io.CSV
-import org.openmole.spatialdata.utils.math.Convolution
-
+import org.openmole.spatialdata.utils.math._
 
 case class GridMorphology(
                        height: Double,
@@ -100,7 +99,7 @@ object GridMorphology {
     */
   def components(world: Array[Array[Double]],cachedNetwork: Option[Network] = None): Double = {
     val nw = cachedNetwork match {case None => network.gridToNetwork(world);case n => n.get}
-    val components = network.connectedComponents(nw)
+    val components = Graph.connectedComponents(nw)
     //println("components = "+components.size)
     components.size
   }
@@ -113,7 +112,7 @@ object GridMorphology {
   def avgBlockArea(world: Array[Array[Double]],cachedNetwork: Option[Network] = None): Double = {
     //val inversedNetwork = Network.gridToNetwork(world.map{_.map{case x => 1.0 - x}})
     val nw = cachedNetwork match {case None => network.gridToNetwork(world);case n => n.get}
-    val components = network.connectedComponents(nw)
+    val components = Graph.connectedComponents(nw)
     val avgblockarea = components.size match {case n if n == 0 => 0.0;case n => components.map{_.nodes.size}.sum/components.size}
     //println("avgblockarea = "+avgblockarea)
     avgblockarea
@@ -126,7 +125,7 @@ object GridMorphology {
     */
   def avgComponentArea(world: Array[Array[Double]]): Double = {
     val inversedNetwork = network.gridToNetwork(world.map{_.map{case x => 1.0 - x}})
-    val components = network.connectedComponents(inversedNetwork)
+    val components = Graph.connectedComponents(inversedNetwork)
     //println("avgblockarea = "+avgblockarea)
     if(components.size > 0){
       components.map{_.nodes.size}.sum/components.size
@@ -150,7 +149,7 @@ object GridMorphology {
     //println("avgdetour = "+avgdetour)
     // should sample points within connected components
     val sampled = nw.nodes.toSeq.take(sampledPoints)
-    val paths = network.shortestPathsScalagraph(nw,sampled)
+    val paths = Graph.shortestPathsScalagraph(nw,sampled)
 
     val avgdetour = paths.filter{!_._2._2.isInfinite}.map{
       case (_,(nodes,d))=>

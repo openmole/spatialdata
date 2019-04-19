@@ -25,25 +25,77 @@ import scala.util.Random
 
 
 /**
-  * Network functions
+  * Network classes and functions
   *
   * FIXME put graph algorithms in utils
   *
   */
 package object network {
 
-  case class Node(id: Int, x: Double, y: Double)
+  /**
+    * Node of a spatial network
+    * @param id
+    * @param x
+    * @param y
+    */
+  case class Node(id: Int, position: Point2D) {
+    def x = position._1
+    def y = position._2
+  }
 
+  object Node {
+    def apply(id: Int,x: Double,y: Double): Node = Node(id,(x,y))
+  }
+
+  /**
+    * Link of a spatial network
+    * @param e1
+    * @param e2
+    * @param weight
+    * @param length
+    */
   case class Link(e1: Node,e2: Node,weight: Double = 1.0,length: Double = 1.0)
 
-  object Link {def apply(e1: Node,e2: Node,weight: Double): Link = Link(e1,e2,weight,math.sqrt((e1.x-e2.x)*(e1.x-e2.x)+(e1.y-e2.y)*(e1.y-e2.y)))}
+  object Link {
+    /**
+      * Link with euclidian length
+      * @param e1
+      * @param e2
+      * @param weight
+      * @return
+      */
+    def apply(e1: Node,e2: Node,weight: Double): Link = Link(e1,e2,weight,math.sqrt((e1.x-e2.x)*(e1.x-e2.x)+(e1.y-e2.y)*(e1.y-e2.y)))
 
+    def getNodes(links: Set[Link]): Set[Node] = links.flatMap{l=>Set(l.e1,l.e2)}
+  }
+
+  /**
+    * Network
+    * @param nodes
+    * @param links
+    */
   case class Network(nodes: Set[Node], links: Set[Link])
 
 
+  object Network {
+    /**
+      * additional links should be among nodes of this network ; otherwise they are added
+      * @param network
+      * @param additionalLinks
+      * @return
+      */
+    def apply(network: Network, additionalLinks: Set[Link]): Network = Network(
+      network.nodes.union(Link.getNodes(additionalLinks)),
+      network.links.union(additionalLinks)
+    )
+  }
 
 
-  def empty: Network = Network(Set.empty,Set.empty)
+  /**
+    * empty network
+    * @return
+    */
+  def empty: Network = Network(Set.empty[Node],Set.empty[Link])
 
   /**
     * percolate each potential link with a zero proba
@@ -166,207 +218,6 @@ package object network {
     Network(nodes.toSet,links.toSet)
   }
 
-
-  /**
-    *
-    * @param network
-    * @param vertices
-    * @return
-    */
-  def shortestPathsScalagraph(network: Network, vertices: Seq[Node]): Map[(Node,Node),(Seq[Node],Double)] = {
-    //println("Computing shortest paths between vertices : "+vertices)
-    val gg = networkToGraph(network)
-    val g = gg._1
-    val nodeMap = gg._2
-    (for {
-      i <- vertices
-      j <- vertices
-    } yield ((i,j),if(i==j) {(Seq(i),0.0)}
-    else {
-      val path = g.get(i.id).shortestPathTo(g.get(j.id))
-      if(path.nonEmpty){
-        (path.get.nodes.map{nodeMap(_)}.toSeq,path.get.edges.map{_.weight}.sum)
-      }
-      else {(Seq.empty[Node],Double.PositiveInfinity)}
-    })).toMap
-  }
-
-
-
-  /**
-    * extract connected components
-    *  using scala-graph component traverser
-    *
-    *
-    *
-    * @param network
-    * @return
-    */
-  // FIXME does not work with latest scala-graph version
-  /*def connectedComponentsScalagraph(network: Network): Seq[Network] = {
-    val (graph,nodeMap) = networkToGraph(network)
-    //val components: Seq[graph.Component] = graph.componentTraverser().toSeq
-    val components: Seq[graph.Component] = (for (component <- graph.componentTraverser()) yield component).toSeq
-    //println("components : "+components.size)
-    components.map{case c => graphToNetwork(Graph.from(c.nodes,c.edges),nodeMap)}
-
-  }*/
-
-  /**
-    * dirty component traverser (not appropriate network data structure)
-    * @param network
-    * @return
-    */
-  def connectedComponents(network: Network): Seq[Network] = {
-    val nlinks = new mutable.HashMap[Node,Seq[Link]]()
-    network.links.foreach{l =>
-      if(nlinks.contains(l.e1)){nlinks(l.e1)=nlinks(l.e1)++Seq(l)}else{nlinks(l.e1)=Seq(l)}
-      if(nlinks.contains(l.e2)){nlinks(l.e2)=nlinks(l.e2)++Seq(l)}else{nlinks(l.e2)=Seq(l)}
-    }
-    network.nodes.foreach{n=> if(!nlinks.contains(n)){nlinks(n)=Seq.empty}}
-
-    //traverse using the map, using hash consing
-    val totraverse = new mutable.HashMap[Node,Node]()
-    network.nodes.foreach{n=>totraverse.put(n,n)}
-    val res = new ArrayBuffer[Network]()
-
-    def otherend(n:Node,l:Link):Node = {if(l.e1==n)l.e2 else l.e1}
-
-    def traversenode(n: Node): (Seq[Node],Seq[Link]) = {
-      if(!totraverse.contains(n)){return((Seq.empty,nlinks(n)))} // note : a bit redundancy on links here as they are not colored
-      totraverse.remove(n)
-      val traversed = nlinks(n).map{l => traversenode(otherend(n,l))}
-      (Seq(n)++traversed.map{_._1}.flatten,traversed.map{_._2}.flatten)
-    }
-
-    while(totraverse.size>0){
-      val entry = totraverse.values.head
-      val currentcomponent = traversenode(entry)
-      res.append(Network(currentcomponent._1.toSet,currentcomponent._2.toSet))
-    }
-
-    res
-  }
-
-  /**
-    * get largest connected component
-    * @param network
-    * @return
-    */
-  def largestConnectedComponent(network: Network): Network = {
-    val components = connectedComponents(network)
-    //val largestComp = components.sortWith{case(n1,n2)=>n1.nodes.size>=n2.nodes.size}(0)
-    val largestComp = components.sortWith{case(n1,n2)=>n1.nodes.size>n2.nodes.size}(0)
-    //println("largest comp size : "+largestComp.nodes.size)
-    largestComp
-  }
-
-
-
-  /**
-    * Floid marshall shortest paths
-    *
-    * - slow in O(N^3) => DO NOT USE FOR LARGE NETWORKS
-    *
-    * @param network
-    * @return
-    */
-  def allPairsShortestPath(network: Network): Map[(Node,Node),Seq[Link]] = {
-    println("computing shortest paths between "+network.nodes.toSeq.size+" vertices")
-    val nodenames = network.nodes.toSeq.map{_.id}
-    println("unique nodes id = "+nodenames.size)
-    val nodeids: Map[Int,Int] = nodenames.toSeq.zipWithIndex.toMap
-    //val revnodeids: Map[Int,Int] = nodenames.zipWithIndex.map{case(oid,ind)=>(ind,oid)}.toMap
-    val revnodes: Map[Int,Node] = network.nodes.toSeq.zipWithIndex.map{case(n,i)=>(i,n)}.toMap
-    val nodes = nodeids.keySet //not necessary, for clarity
-    val mlinks = mutable.Map[Int, Set[Int]]()
-    val mlinkweights = mutable.Map[(Int,Int),Double]()
-    val linksMap = mutable.Map[(Int,Int),Link]()
-
-    for(link <- network.links){
-      if(!mlinks.keySet.contains(nodeids(link.e1.id))) mlinks(nodeids(link.e1.id))=Set.empty[Int]
-      if(!mlinks.keySet.contains(nodeids(link.e2.id))) mlinks(nodeids(link.e2.id))=Set.empty[Int]
-      // links assumed undirected in our case
-      mlinks(nodeids(link.e1.id))+=nodeids(link.e2.id)
-      mlinks(nodeids(link.e2.id))+=nodeids(link.e1.id)
-      mlinkweights((nodeids(link.e1.id),nodeids(link.e2.id)))=link.weight
-      mlinkweights((nodeids(link.e2.id),nodeids(link.e1.id)))=link.weight
-      linksMap((nodeids(link.e2.id),nodeids(link.e1.id)))=link
-      linksMap((nodeids(link.e1.id),nodeids(link.e2.id)))=link
-    }
-
-    val links = mlinks.toMap
-    val linkweights = mlinkweights.toMap
-
-    val n = nodes.size
-    val inf = Double.MaxValue
-
-    // Initialize distance matrix.
-    val ds = Array.fill[Double](n, n)(inf)
-    for (i <- 0 until n) ds(i)(i) = 0.0
-    for (i <- links.keys) {
-      for (j <- links(i)) {
-        ds(i)(j) = linkweights((i,j))
-      }
-    }
-
-    println(ds.flatten.filter(_!=inf).size)
-    println(2*network.links.size+network.nodes.size)
-
-    // Initialize next vertex matrix
-    // O(N^3)
-    val ns = Array.fill[Int](n, n)(-1)
-    for (k <- 0 until n; i <- 0 until n; j <- 0 until n)
-      if (ds(i)(k) != inf && ds(k)(j) != inf && ds(i)(k) + ds(k)(j) < ds(i)(j)) {
-        ds(i)(j) = ds(i)(k) + ds(k)(j)
-        ns(i)(j) = k
-      }
-
-    // FIX for unconnected networks ? should also work as ds(i)(j) = inf ?
-    println(ns.flatten.filter(_==(-1)).size)
-    println(network.links.size)
-
-
-    // Helper function to carve out paths from the next vertex matrix.
-    def extractPath(path: ArrayBuffer[Node],pathLinks: ArrayBuffer[Link], i: Int, j: Int) {
-      if (ds(i)(j) == inf) return
-      val k = ns(i)(j)
-      if (k != -1) {
-        extractPath(path,pathLinks, i, k)
-        //assert(revnodes.contains(j),"error : "+k)
-        path.append(revnodes(k))
-        extractPath(path,pathLinks, k, j)
-      }else {
-        // otherwise k is the next node, can add the link
-        //assert(revnodes.contains(i),"error : "+i)
-        //assert(revnodes.contains(j),"error : "+j)
-        assert(linksMap.contains(revnodes(i).id,revnodes(j).id),"error : "+network.links.filter{case l => l.e1.id==revnodes(i).id&&l.e2.id==revnodes(j).id}+" - "+network.links.filter{case l => l.e2.id==revnodes(i).id&&l.e1.id==revnodes(j).id})
-        pathLinks.append(linksMap(revnodes(i).id,revnodes(j).id))
-      }
-    }
-
-    // Extract paths.
-    //val pss = mutable.Map[Int, Map[Int, Seq[Int]]]()
-    val paths = mutable.Map[(Node,Node),Seq[Link]]()
-    for (i <- 0 until n) {
-      //val ps = mutable.Map[Int, Seq[Int]]()
-      for (j <- 0 until n) {
-        if (ds(i)(j) != inf) {
-          //val p = new ArrayBuffer[Int]()
-          val currentPath = new ArrayBuffer[Node]()
-          val currentPathLinks = new ArrayBuffer[Link]()
-          currentPath.append(revnodes(i))
-          if (i != j) {
-            extractPath(currentPath, currentPathLinks, i, j)
-            currentPath.append(revnodes(j))
-          }
-          paths((revnodes(i), revnodes(j))) = currentPathLinks.toSeq
-        }
-      }
-    }
-
-    paths.toMap
-  }
 
 
   /**

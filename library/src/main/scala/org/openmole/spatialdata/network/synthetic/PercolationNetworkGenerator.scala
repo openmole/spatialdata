@@ -3,6 +3,7 @@ package org.openmole.spatialdata.network.synthetic
 
 import org.openmole.spatialdata.network
 import org.openmole.spatialdata.network._
+import org.openmole.spatialdata.utils.math.Graph
 
 import scala.util.Random
 
@@ -42,7 +43,7 @@ object PercolationNetworkGenerator {
             (((l.e1.y!=ymax)&&(l.e2.y!=ymax))||((l.e1.y==ymax)&&(l.e2.y!=ymax))||((l.e2.y==ymax)&&(l.e1.y!=ymax)))
           )
       })
-      val giantcomp =  network.largestConnectedComponent(Network(nw.nodes,nw.links.filter{_.weight>0}))
+      val giantcomp =  Graph.largestConnectedComponent(Network(nw.nodes,nw.links.filter{_.weight>0}))
 
       //println("giantcomp size = "+giantcomp.links.size)
 

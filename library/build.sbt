@@ -65,7 +65,7 @@ libraryDependencies += "commons-io" % "commons-io" % "2.3"
 libraryDependencies += "org.apache.commons" % "commons-lang3" % "3.1"
 
 
-mainClass in (Compile, packageBin) := Some("spatialdata.osm.OSMRealMeasures")
+//mainClass in (Compile, packageBin) := Some("spatialdata.osm.OSMRealMeasures")
 //mainClass in (Compile, packageBin) := Some("spatialdata.test.Test")
 
 /*
@@ -74,6 +74,16 @@ assemblyMergeStrategy in assembly := {
   case x => MergeStrategy.last
 }
 */
+
+// publish fat jar
+// https://github.com/sbt/sbt-assembly#publishing-not-recommended
+assemblyJarName in assembly := name+"_2.12.jar"
+artifact in (Compile, assembly) := {
+  val art = (artifact in (Compile, assembly)).value
+  art.withClassifier(Some("assembly"))
+}
+
+addArtifact(artifact in (Compile, assembly), assembly)
 
 
 /**

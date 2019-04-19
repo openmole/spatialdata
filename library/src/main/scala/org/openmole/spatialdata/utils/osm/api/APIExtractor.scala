@@ -16,6 +16,9 @@ import scala.util.Try
 
 object APIExtractor {
 
+  /**
+    * Methods to extract buildings
+    */
   object Buildings {
 
     def asPolygonSeq(e: Root.Enumerator[Way]) = {
@@ -138,6 +141,9 @@ object APIExtractor {
   }
 
 
+  /**
+    * Methods to extract highways
+    */
   object Highways {
 
 

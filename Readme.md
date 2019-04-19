@@ -24,10 +24,14 @@ In the `library` folder, using `sbt`:
 ## Architecture
 
 Packages :
- - `grid` and `network` contain raster and network data types and primitives
- - `synthetic` synthetic generators for both
- - `measures` indicators
- - `osm` OpenStreetMap API
- - `sampling` sampling methods
- - `run` and `test` main run classes
+ - `grid` grid data methods
+ - `network` network data methods
+ - `points` points methods
+ - `test` test classes
  - `utils` tools
+
+
+Each data type package contains the following subpackages :
+ - `synthetic` synthetic generators
+ - `measures` indicators
+ - `real` real data and perturbations

@@ -71,6 +71,9 @@ package object network {
 
   /**
     * Network
+    *
+    * // FIXME for function needing indexing (adjacency etc), should not be sets
+    *
     * @param nodes
     * @param links
     */

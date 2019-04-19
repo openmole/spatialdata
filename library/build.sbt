@@ -77,13 +77,13 @@ assemblyMergeStrategy in assembly := {
 
 // publish fat jar
 // https://github.com/sbt/sbt-assembly#publishing-not-recommended
-assemblyJarName in assembly := name+"_2.12.jar"
+/*assemblyJarName in assembly := name+"_2.12.jar"
 artifact in (Compile, assembly) := {
   val art = (artifact in (Compile, assembly)).value
   art.withClassifier(Some("assembly"))
 }
-
 addArtifact(artifact in (Compile, assembly), assembly)
+*/
 
 
 /**

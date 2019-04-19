@@ -1,15 +1,12 @@
-package org.openmole.spatialdata.utils.osm.domain.root
-
-import org.openmole.spatialdata.utils.osm.domain.{Node, OsmObject, Relation, Way}
+package org.openmole.spatialdata.utils.osm
 
 
 object Root {
-
   abstract class Enumerator[T] {
     def next: T
   }
-
 }
+
 
 trait Root {
   def add(osmObject: OsmObject)

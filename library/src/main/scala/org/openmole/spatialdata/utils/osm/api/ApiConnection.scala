@@ -1,4 +1,4 @@
-package org.openmole.spatialdata.utils.osm.services.api.v_0_6
+package org.openmole.spatialdata.utils.osm.api
 
 import java.io.{InputStreamReader, StringWriter}
 import java.text.{DecimalFormat, DecimalFormatSymbols}
@@ -11,10 +11,8 @@ import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods.{HttpGet, HttpPut}
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.{BasicCredentialsProvider, CloseableHttpClient, HttpClientBuilder}
-import org.openmole.spatialdata.utils.osm.domain._
-import org.openmole.spatialdata.utils.osm.domain.root._
-import org.openmole.spatialdata.utils.osm.parser.xml.instantiated.{InstantiatedOsmXmlParser, InstantiatedOsmXmlParserDelta}
-import org.openmole.spatialdata.utils.osm.xml.OsmXmlWriter
+import org.openmole.spatialdata.utils.osm._
+import org.openmole.spatialdata.utils.osm.xml._
 
 
 /**

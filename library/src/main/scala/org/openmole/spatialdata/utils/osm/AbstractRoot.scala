@@ -1,8 +1,6 @@
-package org.openmole.spatialdata.utils.osm.domain.root
+package org.openmole.spatialdata.utils.osm
 
 import java.io.Serializable
-
-import org.openmole.spatialdata.utils.osm.domain._
 
 
 

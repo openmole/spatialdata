@@ -1,26 +1,35 @@
-package org.openmole.spatialdata.utils.osm.parser.xml.instantiated
+package org.openmole.spatialdata.utils.osm.xml
 
 import java.io._
 
 import org.apache.commons.io.input.ReaderInputStream
-import org.openmole.spatialdata.utils.osm.domain.root.{PojoRoot, Root}
-import org.openmole.spatialdata.utils.osm.domain.{Node, Relation, Way}
-import org.openmole.spatialdata.utils.osm.lang.InternImpl
-import org.openmole.spatialdata.utils.osm.parser.xml.{OsmXmlParserException, OsmXmlTimestampFormat}
-import org.openmole.spatialdata.utils.osm.parser.xml.OsmXmlTimestampFormat
+import org.openmole.spatialdata.utils.osm._
+
+import scala.collection.mutable
 
 object State extends Enumeration {
   type State = Value
   val none, create, modify, delete = Value
 }
 /**
-  * An .osm.xml and .osc.xml parser
-  * into a fully instantiated object graph.
-  *
-  * @author kalle
-  * @since 2013-03-27 21:41
+  * OSM data parser
   */
 object InstantiatedOsmXmlParser {
+
+
+  class HashConsing[T] extends Serializable {
+    private val map = new mutable.HashMap[T, T]()
+
+    def intern(obj: T): T = {
+      map.get(obj) match {
+        case None => {map.put(obj, obj);obj}
+        case Some(t) => t
+      }
+    }
+  }
+
+
+
   var factoryClass:Class[InstantiatedOsmXmlParser] = null
 
   /**
@@ -60,10 +69,10 @@ abstract class InstantiatedOsmXmlParser {
   protected var allowingMissingVersions = true
   protected var timestampFormat = new OsmXmlTimestampFormat
   protected var root: Root = new PojoRoot
-  protected var tagKeyIntern = new InternImpl[String]
-  protected var tagValueIntern = new InternImpl[String]
-  protected var userIntern = new InternImpl[String]
-  protected var roleIntern = new InternImpl[String]
+  protected var tagKeyIntern = new InstantiatedOsmXmlParser.HashConsing[String]
+  protected var tagValueIntern = new InstantiatedOsmXmlParser.HashConsing[String]
+  protected var userIntern = new InstantiatedOsmXmlParser.HashConsing[String]
+  protected var roleIntern = new InstantiatedOsmXmlParser.HashConsing[String]
 
   /**
     * Overrides use to {@link #parse(java.io.Reader)}

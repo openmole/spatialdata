@@ -4,7 +4,7 @@ package org.openmole.spatialdata.network.real
 import org.openmole.spatialdata.network
 import org.openmole.spatialdata.network.{Network, NetworkGenerator}
 import org.openmole.spatialdata.utils.gis.GISUtils
-import org.openmole.spatialdata.utils.osm.APIExtractor
+import org.openmole.spatialdata.utils.osm.api.APIExtractor
 
 import scala.util.Random
 

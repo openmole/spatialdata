@@ -1,24 +1,15 @@
-package org.openmole.spatialdata.utils.osm.services
+package org.openmole.spatialdata.utils.http
 
 import org.apache.http.HttpRequest
 import org.apache.http.client.HttpClient
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.conn.ClientConnectionManager
-import org.apache.http.conn.scheme.PlainSocketFactory
-import org.apache.http.conn.scheme.Scheme
-import org.apache.http.conn.scheme.SchemeRegistry
-import org.apache.http.impl.client.{DefaultHttpClient, HttpClientBuilder}
+import org.apache.http.conn.scheme.{PlainSocketFactory, Scheme, SchemeRegistry}
+import org.apache.http.impl.client.HttpClientBuilder
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager
 import org.apache.http.params.BasicHttpParams
-import org.openmole.spatialdata.utils.http.TorPoolManager
 
-/**
-  * @author kalle
-  * @since 2013-09-21 6:48 PM
-  */
-object HttpService {
-//  private val log = LoggerFactory.getLogger(classOf[HttpService])
-}
+
 
 class HttpService {
   private var minimumMillisecondsDelayBetweenRequests: Long  = 0

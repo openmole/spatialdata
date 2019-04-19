@@ -1,8 +1,8 @@
-package org.openmole.spatialdata.utils.osm.parser.xml.instantiated
+package org.openmole.spatialdata.utils.osm.xml
 
 import java.util
 
-import org.openmole.spatialdata.utils.osm.domain.{Node, Relation, Way}
+import org.openmole.spatialdata.utils.osm._
 
 
 /**

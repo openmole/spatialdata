@@ -1,24 +1,13 @@
-package org.openmole.spatialdata.utils.osm.parser.xml.instantiated
+package org.openmole.spatialdata.utils.osm.xml
 
 import java.io.Reader
 
 import javax.xml.stream._
-import org.openmole.spatialdata.utils.osm.parser.xml.instantiated.AbstractStreamingInstantiatedOsmXmlParser.StreamException
+import org.openmole.spatialdata.utils.osm.xml.AbstractStreamingInstantiatedOsmXmlParser.StreamException
 //{XMLInputFactory, XMLStreamConstants, XMLStreamException, XMLStreamReader}
 
 
-/**
-  * An .osm.xml and .osc.xml parser
-  * into a fully instantiated object graph.
-  * <p/>
-  * This class is not thread safe!
-  *
-  * @author kalle
-  * @since 2013-03-27 21:41
-  */
-object InstantiatedOsmXmlParserImpl {
-//  private val log = LoggerFactory.getLogger(classOf[InstantiatedOsmXmlParserImpl])
-}
+
 
 class InstantiatedOsmXmlParserImpl extends AbstractStreamingInstantiatedOsmXmlParser {
   private val xmlif = XMLInputFactory.newInstance

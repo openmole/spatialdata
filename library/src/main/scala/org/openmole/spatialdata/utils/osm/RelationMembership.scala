@@ -1,13 +1,8 @@
-package org.openmole.spatialdata.utils.osm.domain
+package org.openmole.spatialdata.utils.osm
 
 import java.io.Serializable
 
 
-/**
-  * @author kalle
-  * @since 2013-05-01 21:06
-  */
-@SerialVersionUID(1l)
 class RelationMembership extends Serializable {
   private var relation:Relation = _
   private var `object`:OsmObject = _

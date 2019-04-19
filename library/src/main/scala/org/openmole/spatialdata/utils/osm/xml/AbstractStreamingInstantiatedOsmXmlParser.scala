@@ -1,24 +1,17 @@
-package org.openmole.spatialdata.utils.osm.parser.xml.instantiated
+package org.openmole.spatialdata.utils.osm.xml
 
 import java.io.{InputStream, InputStreamReader, Reader, UnsupportedEncodingException}
 import java.text.ParseException
 
 import org.apache.commons.io.input.ReaderInputStream
-import org.openmole.spatialdata.utils.osm.domain._
-import org.openmole.spatialdata.utils.osm.parser.xml.OsmXmlParserException
-import org.openmole.spatialdata.utils.osm.parser.xml.instantiated.AbstractStreamingInstantiatedOsmXmlParser.StreamException
+import org.openmole.spatialdata.utils.osm._
+import org.openmole.spatialdata.utils.osm.xml.AbstractStreamingInstantiatedOsmXmlParser.StreamException
 
 import scala.util.control.Breaks
 
 
 /**
-  * An .osm.xml and .osc.xml parser
-  * into a fully instantiated object graph.
-  * <p/>
-  * This class is not thread safe!
-  *
-  * @author kalle
-  * @since 2013-03-27 21:41
+  * OSM parser
   */
 object AbstractStreamingInstantiatedOsmXmlParser {
 //  private val log = LoggerFactory.getLogger(classOf[AbstractStreamingInstantiatedOsmXmlParser])

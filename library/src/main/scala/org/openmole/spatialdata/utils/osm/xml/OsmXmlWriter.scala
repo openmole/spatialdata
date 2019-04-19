@@ -5,8 +5,7 @@ import java.text.{DecimalFormat, SimpleDateFormat}
 import java.util.Date
 
 import org.apache.commons.lang3.StringEscapeUtils
-import org.openmole.spatialdata.utils.osm.domain._
-import org.openmole.spatialdata.utils.osm.domain.root.PojoRoot
+import org.openmole.spatialdata.utils.osm._
 
 import scala.collection.JavaConverters._
 

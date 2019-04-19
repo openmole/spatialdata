@@ -1,17 +1,13 @@
-package org.openmole.spatialdata.utils.osm.jts
+package org.openmole.spatialdata.utils.osm
 
 import com.vividsolutions.jts.geom._
 import com.vividsolutions.jts.geom.impl.CoordinateArraySequence
-import org.openmole.spatialdata.utils.osm.domain.{Node, OsmObjectVisitor, Relation, Way}
 
 import scala.collection.JavaConverters._
 import scala.util.control.Breaks
 
 /**
   * Creates JTS geometries out of OSM nodes, ways and relations.
-  *
-  * @author kalle
-  * @since 2015-06-03 03:22
   */
 class JtsGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFactory) {
   def createPoint(node: Node) = geometryFactory.createPoint(new Coordinate(node.getX, node.getY))

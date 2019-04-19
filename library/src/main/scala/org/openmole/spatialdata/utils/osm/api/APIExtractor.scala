@@ -1,4 +1,4 @@
-package org.openmole.spatialdata.utils.osm
+package org.openmole.spatialdata.utils.osm.api
 
 import java.io.StringReader
 import java.util.Locale
@@ -8,13 +8,9 @@ import org.openmole.spatialdata
 import org.openmole.spatialdata.utils.database.{MongoConnection, PostgisConnection}
 import org.openmole.spatialdata.utils.gis.GISUtils.WGS84toPseudoMercatorFilter
 import org.openmole.spatialdata.utils.gis.PoligonizerUtils
-import org.openmole.spatialdata.utils.osm.domain.Way
-import org.openmole.spatialdata.utils.osm.domain.root.PojoRoot
-import org.openmole.spatialdata.utils.osm.domain.root.Root.Enumerator
-import org.openmole.spatialdata.utils.osm.jts.JtsGeometryFactory
-import org.openmole.spatialdata.utils.osm.parser.xml.instantiated.InstantiatedOsmXmlParser
-import org.openmole.spatialdata.utils.osm.services.api.v_0_6.ApiConnection
-import org.openmole.spatialdata.utils.osm.services.overpass.Overpass
+import org.openmole.spatialdata.utils.osm.JtsGeometryFactory
+import org.openmole.spatialdata.utils.osm._
+import org.openmole.spatialdata.utils.osm.xml.InstantiatedOsmXmlParser
 
 import scala.util.Try
 
@@ -22,7 +18,7 @@ object APIExtractor {
 
   object Buildings {
 
-    def asPolygonSeq(e: Enumerator[Way]) = {
+    def asPolygonSeq(e: Root.Enumerator[Way]) = {
       var result = scala.collection.mutable.Buffer[Polygon]()
       val fact = new JtsGeometryFactory()
       var way: Way = e.next
@@ -145,7 +141,7 @@ object APIExtractor {
   object Highways {
 
 
-    def asLineStringSeq(e: Enumerator[Way], tags: Map[String,Seq[String]]): Seq[LineString] = {
+    def asLineStringSeq(e: Root.Enumerator[Way], tags: Map[String,Seq[String]]): Seq[LineString] = {
       var result = scala.collection.mutable.Buffer[LineString]()
       val fact = new JtsGeometryFactory()
       var way: Way = e.next

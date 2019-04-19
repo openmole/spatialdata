@@ -1,4 +1,4 @@
-package org.openmole.spatialdata.utils.osm.parser.xml
+package org.openmole.spatialdata.utils.osm.xml
 
 /**
   * @author kalle

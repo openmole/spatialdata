@@ -1,25 +1,18 @@
-package org.openmole.spatialdata.utils.osm.services.overpass
+package org.openmole.spatialdata.utils.osm.api
+
+import java.io.{InputStreamReader, StringWriter}
+import java.util
 
 import org.apache.commons.io.IOUtils
-import org.apache.http.{HttpResponse, NameValuePair}
+import org.apache.http.NameValuePair
 import org.apache.http.client.entity.UrlEncodedFormEntity
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.message.BasicNameValuePair
-import java.io.InputStreamReader
-import java.io.StringWriter
-import java.util
+import org.openmole.spatialdata.utils.http.HttpService
+import APIExtractor.Buildings.asPolygonSeq
+import org.openmole.spatialdata.utils.osm._
+import org.openmole.spatialdata.utils.osm.xml.InstantiatedOsmXmlParser
 
-import scala.util.{Failure, Try}
-import org.openmole.spatialdata.utils.http.TorPoolManager
-import org.openmole.spatialdata.utils.osm.services.HttpService
-
-/**
-  * @author kalle
-  * @since 2012-12-31 16:32
-  */
-object Overpass {
-//  private val log = LoggerFactory.getLogger(classOf[Overpass])
-}
 
 class Overpass extends HttpService {
   private var serverURL = "http://www.overpass-api.de/api/interpreter"
@@ -84,3 +77,32 @@ class Overpass extends HttpService {
     this.serverURL = serverURL
   }
 }
+
+
+class OverpassException(message: String, cause: Throwable) extends Exception(message, cause) {}
+
+
+object TestOverpass extends App {
+
+  import java.io.StringReader
+
+  val overpass = new Overpass
+  overpass.setUserAgent("test suite of <https://github.com/karlwettin/osm-common/>");
+  overpass.open()
+
+  val root = new PojoRoot
+  val parser = InstantiatedOsmXmlParser.newInstance
+  parser.setRoot(root)
+
+  parser.parse(new StringReader(overpass.execute(
+    """
+      |<union>
+      |  <bbox-query s="51.249" w="7.148" n="51.251" e="7.152"/>
+      |  <recurse type="up"/>
+      |</union>
+      |<print mode="meta"/>
+    """.stripMargin)))
+  asPolygonSeq(root.enumerateWays).foreach(println)
+}
+
+

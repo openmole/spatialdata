@@ -1,8 +1,6 @@
-package org.openmole.spatialdata.utils.osm.domain.root
+package org.openmole.spatialdata.utils.osm
 
 import java.io.Serializable
-
-import org.openmole.spatialdata.utils.osm.domain._
 
 
 class PojoRoot extends AbstractRoot with Serializable {
@@ -11,24 +9,22 @@ class PojoRoot extends AbstractRoot with Serializable {
   private var relations:java.util.Map[Long, Relation] = new java.util.HashMap[Long, Relation]()
 
   override def enumerateNodes = new Root.Enumerator[Node]() {
-    private[root] val iterator = getNodes.entrySet.iterator
+    val iterator = getNodes.entrySet.iterator
     override
 
     def next: Node = return if (iterator.hasNext) iterator.next.getValue
     else null
   }
 
-  override def enumerateWays = new Root.Enumerator[Way]() {
-    private[root] val iterator = getWays.entrySet.iterator
+  override def enumerateWays = //getWays.values().iterator
+    new Root.Enumerator[Way]() {val iterator = getWays.entrySet.iterator
     override def next: Way =
       return if (iterator.hasNext) iterator.next.getValue else null
   }
 
   override def enumerateRelations = new Root.Enumerator[Relation]() {
-    private[root] val iterator = getRelations.entrySet.iterator
-    override
-
-    def next: Relation = return if (iterator.hasNext) iterator.next.getValue
+    val iterator = getRelations.entrySet.iterator
+    override def next: Relation = return if (iterator.hasNext) iterator.next.getValue
     else null
   }
 

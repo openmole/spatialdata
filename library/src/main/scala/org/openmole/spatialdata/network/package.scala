@@ -83,6 +83,8 @@ package object network {
   object Network {
     /**
       * additional links should be among nodes of this network ; otherwise they are added
+      * FIXME reindexing with indexed network ?
+      *
       * @param network
       * @param additionalLinks
       * @return

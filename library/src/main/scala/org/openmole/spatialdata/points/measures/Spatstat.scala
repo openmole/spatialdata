@@ -3,6 +3,7 @@ package org.openmole.spatialdata.points.measures
 import com.vividsolutions.jts.geom.GeometryFactory
 import org.apache.commons.math3.linear.MatrixUtils
 import org.openmole.spatialdata._
+import org.openmole.spatialdata.utils.gis.GeometryUtils
 import org.openmole.spatialdata.utils.math.Statistics
 
 
@@ -42,8 +43,7 @@ object Spatstat {
     //val my = Statistics.moment(ycor)
     val my = centroid._1
     val ynorm = pf.map{case p => (p._2 - my) / sy}
-    //println(ynorm.toSeq.map{math.pow(_,q)})
-    //println(xf.sum)
+
     xnorm.zip(ynorm).zip(xf).map{case((xx,yy),f)=>math.pow(xx,p)*math.pow(yy,q)*f}.sum/xf.sum
   }
 
@@ -127,16 +127,73 @@ object Spatstat {
   }
 
 
+
+
+
   /**
-    * Get the centroid of the convex hull of a point cloud
+    * Estimator of Ripley K function
+    *  - uses full distance matrix computation
+    *
+    *  Estimator for a stationary point process is
+    *   K(r) = A / (n (n-1)) \sum 1_{d_{ij}< r } e_{ij}
+    *
+    * with A area of the point cloud, e_{ij} bias correction
+    * @param pi point cloud
+    * @param radiusSamples number of radius steps at which compute the function
+    * @param radiusValues function giving radius values as a function of number of samples - note : radius are normalized to maximal distance such that K(1) = 1/pi
+    * @return K(r) as a map
+    */
+  def ripleyKFunction(pi: Array[Point2D],
+                      radiusSamples: Int = 50,
+                      radiusValues: Int => Array[Double] = {s => Array.tabulate(s){i => (i+1)*1.0/s}}//,
+                     // TODO generic edge correction implementation
+                      //edgeCorrection: Map[(Int,Int),Double] = {_ => 1.0}
+                     ): Map[Double,Double] = {
+    val n = pi.length
+    val rvalues = radiusValues(radiusSamples)
+    val distmat = euclidianDistanceMatrix(pi)
+    val area = GeometryUtils.convexHullArea(pi)
+    val dmax = distmat.map{_.max}.max
+
+    rvalues.map{ r =>
+      (r,area*distmat.map{_.map{d => if(d/dmax <= r) 1.0 else 0.0}.sum}.sum / (n*(n-1)))
+    }.toMap
+  }
+
+
+  /**
+    * Pair correlation function is linked to the derivative of Ripley's K
+    *
+    * @param pi
+    * @param radiusSamples
+    * @param radiusValues
+    * @return
+    */
+  def pairCorrelationFunction(pi: Array[Point2D],
+                              radiusSamples: Int = 50,
+                              radiusValues: Int => Array[Double] = {s => Array.tabulate(s){i => (i+1)*1.0/s}}
+                             ): Map[Double,Double] = {
+    val n = pi.length
+    val allripley = ripleyKFunction(pi,radiusSamples,radiusValues)
+    val rvalues = allripley.toArray.map{_._1}
+    val ripley = allripley.toArray.map{_._2}
+    val deltaripley = ripley.tail.zip(ripley.take(n-1)).map{case (kr,krprev) => (kr - krprev)}
+    val deltar = rvalues.tail.zip(rvalues.take(n-1)).map{case (r,rprev) => (r - rprev)}
+    deltaripley.zip(deltar).zip(rvalues.tail).map{
+      case ((dk,dr),r) => (r,dk / (dr * 2*math.Pi*r))
+    }.toMap
+  }
+
+
+  /**
+    * Inhomogenous K function (non stationary poisson point process with intensity lamba(u))
+    *   introduced by Baddeley, A. J., Møller, J., & Waagepetersen, R. (2000). Non‐and semi‐parametric estimation of interaction in inhomogeneous point patterns. Statistica Neerlandica, 54(3), 329-350.
+    *   http://sci-hub.tw/https://onlinelibrary.wiley.com/doi/pdf/10.1111/1467-9574.00144
+    *   
     * @param pi
     * @return
     */
-  def convexHullCentroid(pi: Array[Point2D]): Point2D = {
-    val geomFactory = new GeometryFactory
-    val convexHullCentroid = geomFactory.createMultiPoint(pi.map{case (x,y)=>geomFactory.createPoint(new com.vividsolutions.jts.geom.Coordinate(x,y))}).convexHull.getCentroid
-    (convexHullCentroid.getX,convexHullCentroid.getY)
-  }
+  def inhomKFunction(pi: Array[Double]): Map[Double,Double] = Map.empty
 
 
 

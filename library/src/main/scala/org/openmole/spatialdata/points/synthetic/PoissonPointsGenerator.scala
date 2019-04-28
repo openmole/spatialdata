@@ -13,6 +13,14 @@ case class PoissonPointsGenerator(lambda: Double) extends PointsGenerator {
 
 object PoissonPointsGenerator {
 
+  /**
+    *
+    * https://en.wikipedia.org/wiki/Poisson_point_process
+    *
+    * @param lambda
+    * @param rng
+    * @return
+    */
   def homogenousPoissonPoints(lambda: Double)(implicit rng: Random) = Array.empty[Point2D]
 
 }

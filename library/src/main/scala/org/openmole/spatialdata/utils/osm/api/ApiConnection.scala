@@ -91,7 +91,6 @@ class ApiConnection(var serverURL: String = ApiConnection.defaultServerURL,val t
     * @param west
     * @param north
     * @param east
-    * @throws Exception
     */
   @throws[Exception]
   def get(root: Root, south: Double, west: Double, north: Double, east: Double):InstantiatedOsmXmlParserDelta = {

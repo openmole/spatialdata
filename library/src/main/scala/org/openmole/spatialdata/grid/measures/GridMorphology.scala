@@ -187,6 +187,23 @@ object GridMorphology {
   }
 
   /**
+    * aggregated gravity flow with simple square externalities (linear utility)
+    *  TODO generalize to any utility function ? may be trickier to compute for other things than polynomials ?
+    * @param matrix
+    * @param congestionCost
+    * @return
+    */
+  def congestedFlows(matrix: Array[Array[Double]],congestionCost: Double): Double = {
+    val totPop = matrix.flatten.sum
+    val dmat = distanceMatrix(2 * matrix.length - 1)
+    val conv = Convolution.convolution2D(matrix, dmat.map{_.map{1/_}})
+    val flows = MathArrays.ebeMultiply(conv.flatten, matrix.flatten).sum / (totPop * totPop)
+    val convsquared = Convolution.convolution2D(matrix.map{_.map{math.pow(_,2)}}, dmat.map{_.map{d => math.pow(d,-2.0)}})
+    val cong = MathArrays.ebeMultiply(convsquared.flatten, matrix.map{_.map{math.pow(_,2)}}.flatten).sum / math.pow(totPop,4)
+    flows - congestionCost*cong
+  }
+
+  /**
     * Distance kernel
     *
     * @param n

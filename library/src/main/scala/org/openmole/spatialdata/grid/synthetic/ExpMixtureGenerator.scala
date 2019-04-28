@@ -70,7 +70,7 @@ object KernelMixture {
     }
     for(i<- 0 to w-1; j<- 0 to h-1){
       for(c <- coords){
-        vals(i)(j) = vals(i)(j) + kernel((i - c._1,(j - c._2)))
+        vals(i)(j) = vals(i)(j) + kernel((i - c._1),(j - c._2))
       }
     }
     //array to seq

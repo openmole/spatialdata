@@ -27,7 +27,7 @@ object Spatstat {
     */
   def spatialMoment(pi: Array[Point2D],x: Array[Double],p: Int = 0,q: Int = 0,filter: Double => Boolean = _ => true): Double = {
     val (pf,xf) = pi.zip(x).filter{case (p,xx)=>filter(xx)}.unzip
-    val centroid = convexHullCentroid(pi)
+    val centroid = GeometryUtils.convexHullCentroid(pi)
 
     val xcor = pf.map{_._1}
     //val sx = Statistics.std(xcor)
@@ -189,7 +189,7 @@ object Spatstat {
     * Inhomogenous K function (non stationary poisson point process with intensity lamba(u))
     *   introduced by Baddeley, A. J., Møller, J., & Waagepetersen, R. (2000). Non‐and semi‐parametric estimation of interaction in inhomogeneous point patterns. Statistica Neerlandica, 54(3), 329-350.
     *   http://sci-hub.tw/https://onlinelibrary.wiley.com/doi/pdf/10.1111/1467-9574.00144
-    *   
+    *
     * @param pi
     * @return
     */

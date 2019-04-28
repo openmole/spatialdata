@@ -11,6 +11,9 @@ package object spatialdata {
     */
   type RasterLayerData[N] = Array[Array[N]]
 
+  // this breaks everything
+  //implicit def rasterLayerDataIsVector[N](r: RasterLayerData[N]): Vector[Vector[N]] = r.map{_.toVector}.toVector
+
 
   /**
     * RasterData sequence of layer data

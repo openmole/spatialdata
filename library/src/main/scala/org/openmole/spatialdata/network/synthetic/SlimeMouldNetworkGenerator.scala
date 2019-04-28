@@ -26,7 +26,7 @@ object SlimeMouldNetworkGenerator {
     */
   def iterationSlimeMould(network: Network,P:Array[Array[Double]],D:Array[Array[Double]],slimeMould: SlimeMouldNetworkGenerator): Array[Array[Double]] = {
     // get od
-    val (o,d)=chooseOD(network)
+    val (o,d)=chooseOD(network,Seq.empty)
     // io flows
     val ioflows = getIOFlows(o,d,D,slimeMould.inputFlowSlimeMould)
     // flows

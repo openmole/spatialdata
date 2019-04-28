@@ -24,7 +24,6 @@ class Overpass extends HttpService {
     * @param overpassQuery
     * @param queryDescription
     * @return
-    * @throws Exception
     */
   @throws[OverpassException]
   def execute(overpassQuery: String, queryDescription: String = null) = try {

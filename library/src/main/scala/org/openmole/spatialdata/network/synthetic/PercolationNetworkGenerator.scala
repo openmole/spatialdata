@@ -34,7 +34,7 @@ object PercolationNetworkGenerator {
     val xmin = nw.nodes.map{_.x}.min;val xmax = nw.nodes.map{_.x}.max
     val ymin = nw.nodes.map{_.y}.min;val ymax = nw.nodes.map{_.y}.max
     var iteration = 0
-    while(bordConnected<bordPoints||iteration<maxIterations){
+    while(bordConnected<bordPoints&&iteration<maxIterations){
       nw = network.percolate(nw,percolationProba,linkFilter={
         l: Link => l.weight==0.0&&(
           (((l.e1.x!=xmin)&&(l.e2.x!=xmin))||((l.e1.x==xmin)&&(l.e2.x!=xmin))||((l.e2.x==xmin)&&(l.e1.x!=xmin)))&&

@@ -34,12 +34,14 @@ case class ExpMixtureGenerator(
                             * Should the distribution be normalized
                             */
                               // TODO not really useful ?
-                          normalized: Boolean = false
+                          normalized: Boolean = false,
+
+                          centerCoordinates: Seq[Point2D] = Seq.empty
 
                         ) extends GridGenerator {
 
   override def generateGrid(implicit rng: Random): RasterLayerData[Double] = {
-    println("Exp mixture grid of size "+size+" ; "+centers+" ; "+maxValue+" ; "+kernelRadius)
+    //println("Exp mixture grid of size "+size+" ; "+centers+" ; "+maxValue+" ; "+kernelRadius)
     def expKernel(x: Double, y: Double): Double = maxValue*exp(-sqrt(pow(x,2.0)+pow(y,2.0))/kernelRadius)
     KernelMixture.kernelMixture(size,Left(centers),expKernel,rng)
   }
@@ -53,7 +55,7 @@ case class ExpMixtureGenerator(
 object KernelMixture {
 
   def kernelMixture(worldSize: RasterDim,
-                    centers: Either[Int,Seq[Seq[Int]]],
+                    centers: Either[Int,Seq[(Int,Int)]],
                     kernel: (Double,Double)=>Double,
                     rng: Random
                    ): Array[Array[Double]] //Seq[Seq[(Double,(Int,Int))]]
@@ -63,12 +65,12 @@ object KernelMixture {
     val h = worldSize match {case Left(l) => l; case Right((_,h)) => h}
     val vals = Array.fill(w,h)(0.0)
     val coords = centers match {
-      case Left(i) => Seq.fill(i){Seq(rng.nextInt(w),rng.nextInt(h))}
+      case Left(i) => Seq.fill(i){(rng.nextInt(w),rng.nextInt(h))}
       case Right(c) => c
     }
     for(i<- 0 to w-1; j<- 0 to h-1){
       for(c <- coords){
-        vals(i)(j) = vals(i)(j) + kernel((i - c(0)),(j - c(1)))
+        vals(i)(j) = vals(i)(j) + kernel((i - c._1,(j - c._2)))
       }
     }
     //array to seq

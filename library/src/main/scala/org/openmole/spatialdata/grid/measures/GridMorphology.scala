@@ -195,12 +195,24 @@ object GridMorphology {
     */
   def congestedFlows(matrix: Array[Array[Double]],congestionCost: Double): Double = {
     val totPop = matrix.flatten.sum
-    val dmat = distanceMatrix(2 * matrix.length - 1)
-    val conv = Convolution.convolution2D(matrix, dmat.map{_.map{1/_}})
-    val flows = MathArrays.ebeMultiply(conv.flatten, matrix.flatten).sum / (totPop * totPop)
-    val convsquared = Convolution.convolution2D(matrix.map{_.map{math.pow(_,2)}}, dmat.map{_.map{d => math.pow(d,-2.0)}})
-    val cong = MathArrays.ebeMultiply(convsquared.flatten, matrix.map{_.map{math.pow(_,2)}}.flatten).sum / math.pow(totPop,4)
-    flows - congestionCost*cong
+    if(totPop==0.0){0.0} else {
+      val dmat = distanceMatrix(2 * matrix.length - 1)
+      val conv = Convolution.convolution2D(matrix, dmat.map {_.map {d => if (d==0) 0.0 else 1 / d}})
+      val flows = MathArrays.ebeMultiply(conv.flatten, matrix.flatten).sum / (totPop * totPop)
+      val convsquared = Convolution.convolution2D(matrix.map {
+        _.map {
+          math.pow(_, 2)
+        }
+      }, dmat.map {
+        _.map { d => if(d==0) 0.0 else math.pow(1/d, 2.0) }
+      })
+      val cong = MathArrays.ebeMultiply(convsquared.flatten, matrix.map {
+        _.map {
+          math.pow(_, 2)
+        }
+      }.flatten).sum / math.pow(totPop, 4)
+      flows - congestionCost * cong
+    }
   }
 
   /**

@@ -43,7 +43,8 @@ case class ExpMixtureGenerator(
   override def generateGrid(implicit rng: Random): RasterLayerData[Double] = {
     //println("Exp mixture grid of size "+size+" ; "+centers+" ; "+maxValue+" ; "+kernelRadius)
     def expKernel(x: Double, y: Double): Double = maxValue*exp(-sqrt(pow(x,2.0)+pow(y,2.0))/kernelRadius)
-    KernelMixture.kernelMixture(size,Left(centers),expKernel,rng)
+    val eithcenters = centerCoordinates.size match {case 0 => Left(centers);case _ => Right(centerCoordinates.map(c => (c._1.toInt,c._2.toInt)))}
+    KernelMixture.kernelMixture(size,eithcenters,expKernel,rng)
   }
 
 

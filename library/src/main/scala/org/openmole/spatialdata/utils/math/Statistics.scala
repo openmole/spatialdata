@@ -116,6 +116,27 @@ object Statistics {
   }
 
 
+  // TODO
+  /*
+  def conditionalExpectancies(initialValues: Vector[Double],
+                              initialState: Vector[Vector[Double]],
+                              valToState: (Vector[Double],Vector[Vector[Double]])=>Vector[Vector[Double]],
+                              probabilitiesFunction: (Vector[Vector[Double]],(Int => Vector[Double])) => (Int => Vector[Double]) = discreteChoicesProba,
+                              increments: Vector[Double]
+                             ): Vector[Vector[Double]] = {
+    def cond0(prevState: Vector)
+  }
+  */
+
+
+  def discreteChoicesProbaTime(state: Vector[Vector[Double]],beta: Int => Vector[Double]): Int => Vector[Double] = {
+    t =>
+      Matrix.toFlatVector(Matrix.fromVector(state).multiply(Matrix.fromColumnVector(beta(t))))
+  }
+
+  def discreteChoicesProba(state: Vector[Vector[Double]], beta: Vector[Double]): Vector[Double] = discreteChoicesProbaTime(state,{_ => beta})(0)
+
+
 
 
 }

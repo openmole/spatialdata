@@ -134,6 +134,7 @@ object Statistics {
       Matrix.toFlatVector(Matrix.fromVector(state).multiply(Matrix.fromColumnVector(beta(t))))
   }
 
+
   def discreteChoicesProba(state: Vector[Vector[Double]], beta: Vector[Double]): Vector[Double] = discreteChoicesProbaTime(state,{_ => beta})(0)
 
 

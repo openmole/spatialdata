@@ -12,6 +12,8 @@ import org.openmole.spatialdata.utils.math.Statistics
   *
   * TODO add standard tests / spatial point processes
   *
+  *  TODO Implement Rey, S. J., & Janikas, M. V. (2006). STARS: space–time analysis of regional systems. Geographical analysis, 38(1), 67-86.
+  *
   */
 object Spatstat {
 

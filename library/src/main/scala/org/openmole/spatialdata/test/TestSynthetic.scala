@@ -50,7 +50,7 @@ object TestSynthetic {
 
   def testPercolationGrid(): Unit = {
     implicit val rng = new Random
-    val grid = PercolationGridGenerator(50,0.5,20,3).generateGrid
+    val grid = PercolationGridGenerator(50,0.5,20,3,10000).generateGrid
 
     println(spatialdata.grid.gridToString(grid))
   }

@@ -57,7 +57,7 @@ object BlocksGridGenerator {
     * @return
     */
   def blocksGrid(size: RasterDim,blocks: Int,blockMinSize: Int, blockMaxSize: Int,rng: Random): RasterLayerData[Double] = {
-    println("Blocks grid of size "+size+" ; "+blocks+" ; "+blockMinSize+" ; "+blockMaxSize)
+    //println("Blocks grid of size "+size+" ; "+blocks+" ; "+blockMinSize+" ; "+blockMaxSize)
     val maxsize = math.max(blockMinSize,blockMaxSize)
     val minsize = math.min(blockMinSize,blockMaxSize)
     val w = size match {case Left(l) => l; case Right((w,_)) => w}

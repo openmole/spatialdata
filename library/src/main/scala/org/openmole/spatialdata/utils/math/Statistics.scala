@@ -128,14 +128,21 @@ object Statistics {
   }
   */
 
-
+/*
   def discreteChoicesProbaTime(state: Vector[Vector[Double]],beta: Int => Vector[Double]): Int => Vector[Double] = {
     t =>
       Matrix.toFlatVector(Matrix.fromVector(state).multiply(Matrix.fromColumnVector(beta(t))))
+  }*/
+
+  def discreteChoicesProbaTime(state: Array[Array[Double]],beta: Int => Array[Double]): Int => Array[Double] = {
+    t =>
+      Matrix.toFlatArray(Matrix.fromArray(state).multiply(Matrix.fromColumnArray(beta(t))))
   }
 
 
-  def discreteChoicesProba(state: Vector[Vector[Double]], beta: Vector[Double]): Vector[Double] = discreteChoicesProbaTime(state,{_ => beta})(0)
+  //def discreteChoicesProba(state: Vector[Vector[Double]], beta: Vector[Double]): Vector[Double] = discreteChoicesProbaTime(state,{_ => beta})(0)
+
+  def discreteChoicesProba(state: Array[Array[Double]], beta: Array[Double]): Array[Double] = discreteChoicesProbaTime(state,{_ => beta})(0)
 
 
 

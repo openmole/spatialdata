@@ -100,7 +100,6 @@ object GridMorphology {
   def components(world: Array[Array[Double]],cachedNetwork: Option[Network] = None): Double = {
     val nw = cachedNetwork match {case None => network.gridToNetwork(world);case n => n.get}
     val components = Graph.connectedComponents(nw)
-    //println("components = "+components.size)
     components.size
   }
 

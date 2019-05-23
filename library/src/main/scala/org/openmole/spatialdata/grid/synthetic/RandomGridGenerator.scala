@@ -38,11 +38,23 @@ object RandomGridGenerator {
     * @return
     */
   def randomGrid(size: RasterDim, rng: Random) : RasterLayerData[Double] = {
-    println("Random grid")
+    //println("Random grid")
     size match {
       case Left(size)=>Array.fill(size, size){ rng.nextDouble() }
       case Right((w,h))=>Array.fill(w, h){ rng.nextDouble() }
     }
+  }
+
+  /**
+    * Generate a sample of random grids
+    *
+    * @param gridSize
+    * @param samples
+    * @param rng
+    * @return
+    */
+  def randomGridSample(gridSize: Int, samples: Int, rng: scala.util.Random) = Array.fill(samples, gridSize, gridSize) {
+    rng.nextDouble()
   }
 
 

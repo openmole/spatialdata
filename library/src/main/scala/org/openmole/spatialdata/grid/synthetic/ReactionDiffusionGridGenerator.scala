@@ -74,7 +74,6 @@ object ReactionDiffusionGridGenerator {
         for (_ ← 1 to growthRate.toInt) { val i = rng.nextInt(width); val j = rng.nextInt(height); arrayVals(i)(j) = arrayVals(i)(j) + 1 }
       }
       else {
-        //val oldPop = arrayVals.map((a: Array[Double]) ⇒ a.map((c: Cell) ⇒ math.pow(c.population / population, alphaAtt)))
         val oldPop = arrayVals.map { _.map { case x ⇒ math.pow(x / population, alphaAtt) } }
         val ptot = oldPop.flatten.sum
 
@@ -100,7 +99,6 @@ object ReactionDiffusionGridGenerator {
       population = arrayVals.flatten.sum
 
     }
-    //Seq.tabulate(size, size) { (i: Int, j: Int) ⇒ arrayVals(i)(j) }
     arrayVals
   }
 

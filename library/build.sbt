@@ -89,14 +89,19 @@ addArtifact(artifact in (Compile, assembly), assembly)
 /**
   * Publishing
   */
+ThisBuild / organization := "org.openmole"
+
+useGpg := true
+
+publishMavenStyle in ThisBuild := true
 
 publishTo := Some("Sonatype Snapshots Nexus" at "https://oss.sonatype.org/content/repositories/snapshots")
 
-//credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
+credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
 
 licenses in ThisBuild := Seq("Affero GPLv3" -> url("http://www.gnu.org/licenses/"))
 
-homepage in ThisBuild := Some(url("https://github.com/openmole/mgo"))
+homepage in ThisBuild := Some(url("https://github.com/openmole/spatialdata"))
 
 pomExtra in ThisBuild := (
   <developers>

@@ -11,9 +11,10 @@ case class PercolationNetworkGenerator(
                                         worldSize: Int,
                                         percolationProba: Double,
                                         bordPoints: Int,
-                                        linkwidth: Double
+                                        linkwidth: Double,
+                                        maxIterations:    Int
                                       ) extends NetworkGenerator {
-  override def generateNetwork(implicit rng: Random): Network = PercolationNetworkGenerator.bondPercolatedNetwork(worldSize,percolationProba,bordPoints,linkwidth)
+  override def generateNetwork(implicit rng: Random): Network = PercolationNetworkGenerator.bondPercolatedNetwork(worldSize,percolationProba,bordPoints,linkwidth,maxIterations)
 }
 
 

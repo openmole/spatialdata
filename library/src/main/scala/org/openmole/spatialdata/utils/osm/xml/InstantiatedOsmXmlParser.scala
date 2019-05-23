@@ -75,7 +75,7 @@ abstract class InstantiatedOsmXmlParser {
   protected var roleIntern = new InstantiatedOsmXmlParser.HashConsing[String]
 
   /**
-    * Overrides use to {@link #parse(java.io.Reader)}
+    * Overrides use to [[java.io.Reader]]
     *
     * @param xml
     * @return
@@ -93,7 +93,7 @@ abstract class InstantiatedOsmXmlParser {
   }
 
   /**
-    * Overrides use to {@link #parse(java.io.InputStream)}
+    * Overrides use to [[java.io.InputStream]]
     *
     * @param xml
     * @return

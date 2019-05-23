@@ -14,7 +14,7 @@ case class PercolationGridGenerator(
                                    percolationProba: Double,
                                    bordPoints: Int,
                                    linkwidth: Double,
-
+                                   maxIterations: Int,
                                    /**
                                      * does the percolated stuff corresponds to buildings or streets ?
                                      */
@@ -22,8 +22,8 @@ case class PercolationGridGenerator(
                                    ) extends GridGenerator {
 
   override def generateGrid(implicit rng: Random): RasterLayerData[Double] = {
-    println("Percolation grid of size "+size+" ; "+percolationProba+" ; "+bordPoints+" ; "+linkwidth)
-    val percolatedGrid = network.networkToGrid(PercolationNetworkGenerator(size,percolationProba,bordPoints,linkwidth).generateNetwork(rng),linkwidth=linkwidth)
+    //println("Percolation grid of size "+size+" ; "+percolationProba+" ; "+bordPoints+" ; "+linkwidth)
+    val percolatedGrid = network.networkToGrid(PercolationNetworkGenerator(size,percolationProba,bordPoints,linkwidth,maxIterations).generateNetwork(rng),linkwidth=linkwidth)
     if (percolateBuildings) percolatedGrid else percolatedGrid.map{_.map{1.0 - _}}
   }
 

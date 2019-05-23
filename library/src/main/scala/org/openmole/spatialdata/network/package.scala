@@ -78,6 +78,10 @@ package object network {
     * @param links
     */
   case class Network(nodes: Set[Node], links: Set[Link])
+  /*trait Network {
+    def nodes: Set[Node]
+    def links: Set[Link]
+  } */
 
 
   object Network {
@@ -93,6 +97,11 @@ package object network {
       network.nodes.union(Link.getNodes(additionalLinks)),
       network.links.union(additionalLinks)
     )
+
+      /*new Network {
+      override def nodes = network.nodes.union(Link.getNodes(additionalLinks))
+      override def links = network.links.union(additionalLinks)
+    }*/
   }
 
 
@@ -127,7 +136,7 @@ package object network {
 
 
   /**
-    * network to grid
+    * Network to grid: rasterize a network
     * @param network
     * @return
     */
@@ -142,17 +151,9 @@ package object network {
       val i2 = l.e2.x - xmin;val j2 = l.e2.y - ymin
       val istep = (i1 - i2) match {case x if math.abs(x) < 1e-10 => 0.0 ;case _ => math.cos(math.atan((j2 - j1)/(i2 - i1)))*footPrintResolution}
       val jstep = (j1 - j2) match {case x if math.abs(x) < 1e-10 => 0.0 ;case _ => math.sin(math.atan((j2 - j1)/(i2 - i1)))*footPrintResolution}
-      //println("istep,jstep = "+istep+","+jstep)
-      //println(l)
       val nsteps = (i1 - i2) match {case x if math.abs(x) < 1e-10 => (j2 - j1)/jstep;case _ => (i2 - i1)/istep}
-      //println(nsteps)
       var x = l.e1.x;var y = l.e1.y
       (0.0 to nsteps by 1.0).foreach{_ =>
-        //println("x = "+x+"; y = "+y)
-        /*( - (linkwidth-1)/2 to (linkwidth-1)/2 by 1.0).toSeq.zip(( - (linkwidth-1)/2 to (linkwidth-1)/2 by 1.0)).foreach {
-          case (k1,k2) =>
-            res(xcor(x+k1))(ycor(y+k2)) = 1.0
-        }*/
         for {
           k1 <- - (linkwidth-1)/2 to (linkwidth-1)/2 by 1.0
           k2 <-  - (linkwidth-1)/2 to (linkwidth-1)/2 by 1.0

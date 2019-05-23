@@ -77,7 +77,7 @@ object GridGeneratorCalibration {
                                           percolationLinkWidth: Double
                                           ) extends Calibration {
     override def calibrate(projection: GridMorphology => Array[Double], objective: Array[Double] => Double)(implicit rng: Random): Double = {
-      objective(projection(GridMorphology(PercolationGridGenerator(gridSize,percolationProba,percolationBordPoints,percolationLinkWidth).generateGrid(rng))))
+      objective(projection(GridMorphology(PercolationGridGenerator(gridSize,percolationProba,percolationBordPoints,percolationLinkWidth,10000).generateGrid(rng))))
     }
   }
 

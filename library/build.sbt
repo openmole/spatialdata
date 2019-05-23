@@ -28,9 +28,11 @@ val geotoolsVersion = "18.4"
 libraryDependencies ++= Seq(
   "org.apache.commons" % "commons-math3" % "3.6.1",
   "com.github.pathikrit" %% "better-files" % "3.5.0",
-  "org.diana-hep" %% "histogrammar" % "1.0.4",// to publish locally as 2.12: pull from https://github.com/histogrammar/histogrammar-scala, add scala-2.12 in core/pom.xml and mvn install locally
+  //"org.diana-hep" %% "histogrammar" % "1.0.4",// to publish locally as 2.12: pull from https://github.com/histogrammar/histogrammar-scala, add scala-2.12 in core/pom.xml and mvn install locally
+  "org.openmole" %% "histogrammar" % "1.0.4-SNAPSHOT",
   "com.vividsolutions" % "jts" % "1.13",
-  "org.scala-graph" %% "graph-core" % "1.12.6-SNAPSHOT",
+  //"org.scala-graph" %% "graph-core" % "1.12.6-SNAPSHOT", // modified version published on org.openmole sonatype snapshots
+  "org.openmole" %% "graph-core" % "1.12.6-SNAPSHOT",
 //  "se.kodapan.osm.common" % "core" % osmCommonVersion exclude("com.vividsolutions","jts"),
 //  "se.kodapan.osm.common" % "java" % osmCommonVersion exclude("com.vividsolutions","jts"),
 //  "se.kodapan.osm.common" % "jts" % osmCommonVersion exclude("com.vividsolutions","jts"),

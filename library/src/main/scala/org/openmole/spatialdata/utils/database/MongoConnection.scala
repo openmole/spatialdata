@@ -6,7 +6,7 @@ import com.mongodb.MongoClient
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Filters.and
 import com.mongodb.client.{MongoCollection, MongoDatabase}
-import com.vividsolutions.jts.geom.{Coordinate, GeometryFactory, Polygon}
+import org.locationtech.jts.geom.{Coordinate, GeometryFactory, Polygon}
 import org.bson.Document
 import org.bson.conversions.Bson
 

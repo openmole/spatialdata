@@ -1,7 +1,7 @@
 
 package org.openmole.spatialdata.utils.gis
 
-import com.vividsolutions.jts.geom.{Coordinate, CoordinateSequence, CoordinateSequenceFilter, GeometryFactory}
+import org.locationtech.jts.geom.{Coordinate, CoordinateSequence, CoordinateSequenceFilter, GeometryFactory}
 import org.geotools.geometry.jts.JTS
 import org.geotools.referencing.CRS
 import org.opengis.referencing.crs.CoordinateReferenceSystem

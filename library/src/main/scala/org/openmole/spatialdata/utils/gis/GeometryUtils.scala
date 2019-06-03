@@ -1,6 +1,6 @@
 package org.openmole.spatialdata.utils.gis
 
-import com.vividsolutions.jts.geom.{Geometry, GeometryFactory}
+import org.locationtech.jts.geom.{Geometry, GeometryFactory}
 import org.openmole.spatialdata._
 
 object GeometryUtils {
@@ -19,7 +19,7 @@ object GeometryUtils {
 
   def convexHullPoints(pi: Array[Point2D]): Geometry = {
     val geomFactory = new GeometryFactory
-    geomFactory.createMultiPoint(pi.map{case (x,y)=>geomFactory.createPoint(new com.vividsolutions.jts.geom.Coordinate(x,y))}).convexHull
+    geomFactory.createMultiPoint(pi.map{case (x,y)=>geomFactory.createPoint(new org.locationtech.jts.geom.Coordinate(x,y))}).convexHull
   }
 
 

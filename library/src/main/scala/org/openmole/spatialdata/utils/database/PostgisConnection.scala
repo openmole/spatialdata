@@ -4,8 +4,8 @@ package org.openmole.spatialdata.utils.database
 import java.sql.{Connection, DriverManager}
 import java.util.Properties
 
-import com.vividsolutions.jts.io._
-import com.vividsolutions.jts.geom.{Geometry, GeometryFactory, Polygon}
+import org.locationtech.jts.io._
+import org.locationtech.jts.geom.{Geometry, GeometryFactory, Polygon}
 import org.geotools.data.simple.{SimpleFeatureIterator, SimpleFeatureSource}
 import org.geotools.data.{DataStore, DataStoreFinder}
 import org.geotools.factory.CommonFactoryFinder

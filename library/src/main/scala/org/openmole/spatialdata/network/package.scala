@@ -1,6 +1,6 @@
 package org.openmole.spatialdata
 
-import com.vividsolutions.jts.geom.LineString
+import org.locationtech.jts.geom.LineString
 import scalax.collection.Graph
 import scalax.collection.edge.WUnDiEdge
 

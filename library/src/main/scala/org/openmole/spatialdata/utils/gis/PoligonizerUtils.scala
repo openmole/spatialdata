@@ -3,10 +3,10 @@ package org.openmole.spatialdata.utils.gis
 import java.util
 import java.util.Calendar
 
-import com.vividsolutions.jts.geom._
-import com.vividsolutions.jts.geom.util.LinearComponentExtracter
-import com.vividsolutions.jts.operation.polygonize.Polygonizer
-import com.vividsolutions.jts.precision.GeometryPrecisionReducer
+import org.locationtech.jts.geom._
+import org.locationtech.jts.geom.util.LinearComponentExtracter
+import org.locationtech.jts.operation.polygonize.Polygonizer
+import org.locationtech.jts.precision.GeometryPrecisionReducer
 
 import scala.collection.JavaConverters._
 

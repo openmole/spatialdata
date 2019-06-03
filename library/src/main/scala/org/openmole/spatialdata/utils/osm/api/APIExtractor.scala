@@ -3,7 +3,7 @@ package org.openmole.spatialdata.utils.osm.api
 import java.io.StringReader
 import java.util.Locale
 
-import com.vividsolutions.jts.geom._
+import org.locationtech.jts.geom._
 import org.openmole.spatialdata
 import org.openmole.spatialdata.utils.database.{MongoConnection, PostgisConnection}
 import org.openmole.spatialdata.utils.gis.GISUtils.WGS84toPseudoMercatorFilter

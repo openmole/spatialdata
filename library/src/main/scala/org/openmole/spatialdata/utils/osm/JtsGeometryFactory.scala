@@ -1,7 +1,7 @@
 package org.openmole.spatialdata.utils.osm
 
-import com.vividsolutions.jts.geom._
-import com.vividsolutions.jts.geom.impl.CoordinateArraySequence
+import org.locationtech.jts.geom._
+import org.locationtech.jts.geom.impl.CoordinateArraySequence
 
 import scala.collection.JavaConverters._
 import scala.util.control.Breaks

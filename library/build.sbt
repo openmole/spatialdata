@@ -1,11 +1,11 @@
 scalaVersion := "2.12.7"
-//scalaVersion := "2.11.8"
 
 name := "spatialdata"
 
-organization := "org.openmole"
+organization := "org.openmole.library"
 
-version := "0.1-SNAPSHOT"
+//version := "0.1-SNAPSHOT"
+version := "0.1"
 
 resolvers ++= Seq(
   "osgeo" at "http://download.osgeo.org/webdav/geotools",
@@ -23,28 +23,20 @@ resolvers ++= Seq(
 )
 
 val osmCommonVersion = "0.0.3-SNAPSHOT"
-val geotoolsVersion = "18.4"
+//val geotoolsVersion = "18.4"
+val geotoolsVersion = "21.0"
 
 libraryDependencies ++= Seq(
   "org.apache.commons" % "commons-math3" % "3.6.1",
   "com.github.pathikrit" %% "better-files" % "3.5.0",
-  //"org.diana-hep" %% "histogrammar" % "1.0.4",// to publish locally as 2.12: pull from https://github.com/histogrammar/histogrammar-scala, add scala-2.12 in core/pom.xml and mvn install locally
   "org.openmole" %% "histogrammar" % "1.0.4-SNAPSHOT",
   "com.vividsolutions" % "jts" % "1.13",
-  //"org.scala-graph" %% "graph-core" % "1.12.6-SNAPSHOT", // modified version published on org.openmole sonatype snapshots
   "org.openmole" %% "graph-core" % "1.12.6-SNAPSHOT",
-//  "se.kodapan.osm.common" % "core" % osmCommonVersion exclude("com.vividsolutions","jts"),
-//  "se.kodapan.osm.common" % "java" % osmCommonVersion exclude("com.vividsolutions","jts"),
-//  "se.kodapan.osm.common" % "jts" % osmCommonVersion exclude("com.vividsolutions","jts"),
   "org.geotools" % "geotools" % geotoolsVersion exclude("javax.media", "jai_core") exclude("com.vividsolutions", "jts-core"),
   "org.geotools" % "gt-shapefile" % geotoolsVersion exclude("javax.media", "jai_core") exclude("com.vividsolutions", "jts-core"),
-//  "org.geotools" % "gt-postgis" % "2.7.5" exclude("javax.media", "jai_core") exclude("com.vividsolutions", "jts-core"), // does not exist
   "com.github.tototoshi" %% "scala-csv" % "1.3.4",
-  //"javax.media" % "jai_core" % "1.1.3" //from "http://download.osgeo.org/webdav/geotools/javax/media/jai_core/1.1.3/jai_core-1.1.3.jar"
-  //"mysql" % "mysql-connector-java" % "8.0.14"
   "org.postgresql" % "postgresql" % "42.2.5",
   "org.mongodb" % "mongo-java-driver" % "3.10.0"
-
 )
 
 
@@ -91,13 +83,19 @@ addArtifact(artifact in (Compile, assembly), assembly)
 /**
   * Publishing
   */
-ThisBuild / organization := "org.openmole"
+//ThisBuild / organization := "org.openmole.library"
 
 useGpg := true
 
 publishMavenStyle in ThisBuild := true
 
-publishTo := Some("Sonatype Snapshots Nexus" at "https://oss.sonatype.org/content/repositories/snapshots")
+publishTo := {
+  val nexus = "https://oss.sonatype.org/"
+  if (isSnapshot.value) Some("snapshots" at nexus + "content/repositories/snapshots")
+  else Some("releases" at nexus + "service/local/staging/deploy/maven2")
+}
+
+publishConfiguration := publishConfiguration.value.withOverwrite(true)
 
 credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
 
@@ -117,3 +115,17 @@ pomExtra in ThisBuild := (
     </developer>
   </developers>
   )
+
+
+import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
+
+releaseProcess := Seq[ReleaseStep](
+  checkSnapshotDependencies,
+  inquireVersions,
+  setReleaseVersion,
+  tagRelease,
+  releaseStepCommand("publishSigned"),
+  releaseStepCommand("sonatypeReleaseAll"),
+  pushChanges
+)
+

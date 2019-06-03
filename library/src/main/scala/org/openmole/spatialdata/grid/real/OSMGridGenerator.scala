@@ -1,7 +1,7 @@
 
 package org.openmole.spatialdata.grid.real
 
-import com.vividsolutions.jts.geom._
+import org.locationtech.jts.geom._
 import org.openmole.spatialdata.RasterLayerData
 import org.openmole.spatialdata.grid.GridGenerator
 import org.openmole.spatialdata.utils.gis.GISUtils

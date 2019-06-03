@@ -5,7 +5,7 @@ name := "spatialdata"
 organization := "org.openmole.library"
 
 //version := "0.1-SNAPSHOT"
-version := "0.1"
+//version := "0.1"
 
 resolvers ++= Seq(
   "osgeo" at "http://download.osgeo.org/webdav/geotools",
@@ -29,8 +29,10 @@ val geotoolsVersion = "21.0"
 libraryDependencies ++= Seq(
   "org.apache.commons" % "commons-math3" % "3.6.1",
   "com.github.pathikrit" %% "better-files" % "3.5.0",
+  // FIXME remove snapshot version
   "org.openmole" %% "histogrammar" % "1.0.4-SNAPSHOT",
   "com.vividsolutions" % "jts" % "1.13",
+  // FIXME remove snapshot version
   "org.openmole" %% "graph-core" % "1.12.6-SNAPSHOT",
   "org.geotools" % "geotools" % geotoolsVersion exclude("javax.media", "jai_core") exclude("com.vividsolutions", "jts-core"),
   "org.geotools" % "gt-shapefile" % geotoolsVersion exclude("javax.media", "jai_core") exclude("com.vividsolutions", "jts-core"),
@@ -89,7 +91,7 @@ useGpg := true
 
 publishMavenStyle in ThisBuild := true
 
-publishTo := {
+publishTo in ThisBuild := {
   val nexus = "https://oss.sonatype.org/"
   if (isSnapshot.value) Some("snapshots" at nexus + "content/repositories/snapshots")
   else Some("releases" at nexus + "service/local/staging/deploy/maven2")
@@ -102,6 +104,8 @@ credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
 licenses in ThisBuild := Seq("Affero GPLv3" -> url("http://www.gnu.org/licenses/"))
 
 homepage in ThisBuild := Some(url("https://github.com/openmole/spatialdata"))
+
+scmInfo in ThisBuild := Some(ScmInfo(url("https://github.com/openmole/spatialdata.git"), "scm:git:git@github.com:openmole/spatialdata.git"))
 
 pomExtra in ThisBuild := (
   <developers>
@@ -116,6 +120,7 @@ pomExtra in ThisBuild := (
   </developers>
   )
 
+sonatypeProfileName := "org.openmole"
 
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 
@@ -125,7 +130,10 @@ releaseProcess := Seq[ReleaseStep](
   setReleaseVersion,
   tagRelease,
   releaseStepCommand("publishSigned"),
-  releaseStepCommand("sonatypeReleaseAll"),
-  pushChanges
+  //setNextVersion,
+  //commitNextVersion,
+  releaseStepCommand("sonatypeRelease")
+  //releaseStepCommand("sonatypeReleaseAll")//,
+  //pushChanges
 )
 

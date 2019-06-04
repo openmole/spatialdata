@@ -30,10 +30,10 @@ libraryDependencies ++= Seq(
   "org.apache.commons" % "commons-math3" % "3.6.1",
   "com.github.pathikrit" %% "better-files" % "3.5.0",
   // FIXME remove snapshot version
-  "org.openmole" %% "histogrammar" % "1.0.4-SNAPSHOT",
+  //"org.openmole" %% "histogrammar" % "1.0.4-SNAPSHOT",
   "com.vividsolutions" % "jts" % "1.13",
-  // FIXME remove snapshot version
   "org.openmole" %% "graph-core" % "1.12.6-SNAPSHOT",
+  //"org.openmole.library" %% "graph-core" % "1.12.5.1",
   "org.geotools" % "geotools" % geotoolsVersion exclude("javax.media", "jai_core") exclude("com.vividsolutions", "jts-core"),
   "org.geotools" % "gt-shapefile" % geotoolsVersion exclude("javax.media", "jai_core") exclude("com.vividsolutions", "jts-core"),
   "com.github.tototoshi" %% "scala-csv" % "1.3.4",
@@ -97,6 +97,7 @@ publishTo in ThisBuild := {
   else Some("releases" at nexus + "service/local/staging/deploy/maven2")
 }
 
+// TODO remove when clean version released
 publishConfiguration := publishConfiguration.value.withOverwrite(true)
 
 credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")

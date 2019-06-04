@@ -1,8 +1,8 @@
 package org.openmole.spatialdata.utils.math
 
 import org.apache.commons.math3.stat.regression.SimpleRegression
-import org.dianahep.histogrammar._
-import org.dianahep.histogrammar.ascii._
+//import org.dianahep.histogrammar._
+//import org.dianahep.histogrammar.ascii._
 
 import scala.math.{Ordering, log}
 
@@ -36,16 +36,25 @@ object Statistics {
     */
   def histogram(x: Array[Double],breaks: Int,filter: Double => Boolean = _ => true,display:Boolean = false): Array[(Double,Double)] = {
     val xx = x.filter(filter)
-    val hist = Bin(breaks,xx.min-1e-6,xx.max+1e-6,{d: Double=>d})
-    for (d <- xx) {hist.fill(d)}
+    val counts = Array.fill(breaks)(0.0)
+    //val hist = Bin(breaks,xx.min-1e-6,xx.max+1e-6,{d: Double=>d})
+    //for (d <- xx) {hist.fill(d)}
+    val ampl = xx.max - xx.min
+    val mi = xx.min
+    for (d <- xx) {
+      val bin = ((d - mi) * (breaks - 1) / ampl).toInt
+      counts(bin) = counts(bin) + 1.0
+    }
 
+    /*
     if(display) {
       println("min = "+xx.min+" ; max ="+xx.max)
       println(hist.ascii)
-    }
+    }*/
 
-    val xstep = (xx.max - xx.min) / breaks
-    Array.tabulate(breaks){case i => xstep / 2 + i*xstep}.zip(hist.values.map{_.asInstanceOf[Counting].entries})
+    val xstep = ampl / breaks
+    //Array.tabulate(breaks){case i => xstep / 2 + i*xstep}.zip(hist.values.map{_.asInstanceOf[Counting].entries})
+    Array.tabulate(breaks){case i => xstep / 2 + i*xstep}.zip(counts)
   }
 
   /**

@@ -84,6 +84,7 @@ object TestSynthetic {
       GridMorphology.moran(RandomGridGenerator(size).generateGrid)
     }.toArray
 
+    /*
     import org.dianahep.histogrammar._
     val hist = Bin(50,morans.min,morans.max,{d: Double=>d})
     for (d <- morans) hist.fill(d)
@@ -91,6 +92,7 @@ object TestSynthetic {
     import org.dianahep.histogrammar.ascii._
 
     println(hist.ascii)
+*/
 
   }
 

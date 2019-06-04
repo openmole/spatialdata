@@ -76,12 +76,14 @@ object TestIndicators {
       GridMorphology.moran(gen.generateGrid)
     }.toArray
 
+    /*
     import org.dianahep.histogrammar._
     import org.dianahep.histogrammar.ascii._
 
     val hist = Bin(50,morans.min,morans.max,{d: Double=>d})
     for (d <- morans) hist.fill(d)
     println(hist.ascii)
+*/
 
 
   }

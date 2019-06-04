@@ -14,26 +14,20 @@ resolvers ++= Seq(
   "apache" at "http://repo.maven.apache.org/maven2",
   Resolver.sonatypeRepo("snapshots"),
   Resolver.sonatypeRepo("staging"),
-  //Resolver.mavenLocal, // remove constraint of locally publishing librairies => copies in lib
-  Resolver.mavenCentral,
-  "Local Maven Repository" at "file:"+(new java.io.File(".")).getAbsolutePath+"/lib/maven",
+  Resolver.mavenCentral//,
+  //"Local Maven Repository" at "file:"+(new java.io.File(".")).getAbsolutePath+"/lib/maven",
   //Resolver.sbtIvyRepo("file:"+(new java.io.File(".")).getAbsolutePath+"/lib/ivy")
-    Resolver.file("Local ivy", file( (new java.io.File(".")).getAbsolutePath+"/lib/ivy"))(Resolver.ivyStylePatterns)
-
+  //  Resolver.file("Local ivy", file( (new java.io.File(".")).getAbsolutePath+"/lib/ivy"))(Resolver.ivyStylePatterns)
 )
 
-val osmCommonVersion = "0.0.3-SNAPSHOT"
-//val geotoolsVersion = "18.4"
 val geotoolsVersion = "21.0"
 
 libraryDependencies ++= Seq(
   "org.apache.commons" % "commons-math3" % "3.6.1",
   "com.github.pathikrit" %% "better-files" % "3.5.0",
-  // FIXME remove snapshot version
-  //"org.openmole" %% "histogrammar" % "1.0.4-SNAPSHOT",
   "com.vividsolutions" % "jts" % "1.13",
-  "org.openmole" %% "graph-core" % "1.12.6-SNAPSHOT",
-  //"org.openmole.library" %% "graph-core" % "1.12.5.1",
+  //"org.openmole" %% "graph-core" % "1.12.6-SNAPSHOT",
+  "org.openmole.library" %% "graph-core" % "1.12.5.1",
   "org.geotools" % "geotools" % geotoolsVersion exclude("javax.media", "jai_core") exclude("com.vividsolutions", "jts-core"),
   "org.geotools" % "gt-shapefile" % geotoolsVersion exclude("javax.media", "jai_core") exclude("com.vividsolutions", "jts-core"),
   "com.github.tototoshi" %% "scala-csv" % "1.3.4",

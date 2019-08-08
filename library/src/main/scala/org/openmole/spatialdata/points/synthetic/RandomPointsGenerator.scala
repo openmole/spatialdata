@@ -8,10 +8,16 @@ import scala.util.Random
 
 /**
   * Random points
-  * TODO add boundaries etc
+  *
   * @param npoints
   */
-case class RandomPointsGenerator(npoints: Int) extends PointsGenerator {
+case class RandomPointsGenerator(
+                                  npoints: Int,
+                                  xmin: Double = 0.0,
+                                  xmax: Double = 1.0,
+                                  ymin: Double = 0.0,
+                                  ymax: Double = 1.0
+                                ) extends PointsGenerator {
   override def generatePoints(implicit rng: Random): Array[(Double, Double)] = RandomPointsGenerator.randomPoints(this)(rng)
 }
 
@@ -19,6 +25,8 @@ case class RandomPointsGenerator(npoints: Int) extends PointsGenerator {
 
 object RandomPointsGenerator {
 
-  def randomPoints(generator: RandomPointsGenerator)(implicit rng: Random): Array[Point2D] = Array.fill(generator.npoints){(rng.nextDouble(),rng.nextDouble())}
+  def randomPoints(generator: RandomPointsGenerator)(implicit rng: Random): Array[Point2D] =
+    Array.fill(generator.npoints){(generator.xmin + (generator.xmax - generator.xmin)*rng.nextDouble(),
+                                    generator.ymin + (generator.ymax - generator.ymin)*rng.nextDouble())}
 
 }

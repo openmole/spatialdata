@@ -140,6 +140,9 @@ object Spatstat {
     *   K(r) = A / (n (n-1)) \sum 1_{d_{ij}< r } e_{ij}
     *
     * with A area of the point cloud, e_{ij} bias correction
+    *
+    *  TODO for scalar summary of ripley, instead of piecewise linear, use integral ?
+    *
     * @param pi point cloud
     * @param radiusSamples number of radius steps at which compute the function
     * @param radiusValues function giving radius values as a function of number of samples - note : radius are normalized to maximal distance such that K(1) = 1/pi

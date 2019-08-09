@@ -178,11 +178,44 @@ object GridMorphology {
     * @param matrix
     * @return
     */
-  def distanceMean(matrix: Array[Array[Double]]): Double = {
+  def distanceMean(matrix: Array[Array[Double]],normalize: Boolean = true): Double = {
     val totPop = matrix.flatten.sum
     val dmat = distanceMatrix(2 * matrix.length - 1)
     val conv = Convolution.convolution2D(matrix, dmat)
-    math.sqrt(math.Pi) / (matrix.length * totPop * totPop) * MathArrays.ebeMultiply(conv.flatten, matrix.flatten).sum
+    val norm = if (normalize) math.sqrt(math.Pi / matrix.flatten.length) else 1.0
+    norm / (totPop * totPop) * MathArrays.ebeMultiply(conv.flatten, matrix.flatten).sum
+  }
+
+
+  /**
+    * Acentrism index
+    *   Le Néchet, F. (2015). De la forme urbaine à la structure métropolitaine: une typologie de la configuration interne des densités pour les principales métropoles européennes de l’Audit Urbain. Cybergeo: European Journal of Geography.
+    *    - simplified as requires computation of average distance for each quantile considered
+    */
+  def acentrism(matrix: Array[Array[Double]], quantiles: Array[Double] = (0.0 to 0.99 by 0.01).toArray): Double = {
+    val popdists = quantiles.map{ q =>
+      val posvalues = matrix.flatten.filter(_ > 0).sorted
+      val qth = posvalues(q*posvalues.size)
+      val filteredmat = matrix.map(_.map{d => if (d < qth) 0.0 else d})
+      (posvalues.sum,distanceMean(filteredmat,normalize = false))
+    }
+    val (totpop,totdist)=popdists(1)
+    popdists.tail.zip(popdists.dropRight(1)).map{case ((pi1,di1),(pi,di)) => (pi - pi1)*(di + di1) / (2*totpop*totdist)}.sum
+  }
+
+
+  /**
+    * Box counting fractal dimension using convolution
+    * @return
+    */
+  def fractalDimension(matrix: Array[Array[Double]]): (Double,Double) = {
+    val maxkernelsize = math.floor(math.min(matrix.length,matrix(0).length) / 4) - 1
+    val rc = (1 to maxkernelsize by 1).map{k=>
+      val convol: Array[Array[Double]] = Convolution.convolution2D(matrix,Array.fill(2*k.toInt+1){Array.fill(2*k.toInt+1)(1.0)})
+      val counts = convol.map(_.zipWithIndex).zipWithIndex.map{case (r,i) => r.map{case (d,j) => if (i%(2*k.toInt+1)==k.toInt&&j%(2*k.toInt+1)==k.toInt) if(d > 0.0) 1.0 else 0.0 else 0.0}}.flatten.sum
+      (2*k.toInt+1,counts)
+    }
+
   }
 
   /**

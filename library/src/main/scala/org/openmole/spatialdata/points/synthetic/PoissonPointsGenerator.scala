@@ -28,11 +28,11 @@ case class PoissonPointsGenerator(
 
 object PoissonPointsGenerator {
 
-  def apply(lambda: Double,xmin: Double, xmax: Double, ymin: Double, ymax: Double) = PoissonPointsGenerator(lambda,Array.empty,true,xmin,xmax,ymin,ymax)
+  def apply(lambda: Double,xmin: Double, xmax: Double, ymin: Double, ymax: Double): PoissonPointsGenerator = PoissonPointsGenerator(lambda,Array.empty,true,xmin,xmax,ymin,ymax)
 
-  def apply(lambdaField: Array[Array[Double]]) = PoissonPointsGenerator(0.0,lambdaField,false)
+  def apply(lambdaField: Array[Array[Double]]): PoissonPointsGenerator = PoissonPointsGenerator(0.0,lambdaField,false)
 
-  def apply(lambdaField: Array[Array[Double]], xmin: Double, xmax: Double, ymin: Double, ymax: Double) =
+  def apply(lambdaField: Array[Array[Double]], xmin: Double, xmax: Double, ymin: Double, ymax: Double): PoissonPointsGenerator =
     PoissonPointsGenerator(0.0,lambdaField,false,xmin,xmax,ymin,ymax)
 
   /**
@@ -68,7 +68,7 @@ object PoissonPointsGenerator {
     val points = new ArrayBuffer[(Double,Double)]
     while (points.length < n){
       val (x,y) = (rng.nextDouble(),rng.nextDouble())
-      val (i,j) = (math.floor(y*lambdas.length),math.floor(x*lambdas(0).length))
+      val (i,j) = (math.floor(y*lambdas.length).toInt,math.floor(x*lambdas(0).length).toInt)
       val localIntensity: Double = lambdas(i)(j)
       if (localIntensity / totalIntensity > rng.nextDouble()) points.append((generator.xmin + (generator.xmax - generator.xmin)*x,generator.ymin + (generator.ymax - generator.ymin)*y))
     }

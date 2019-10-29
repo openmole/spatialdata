@@ -2,6 +2,7 @@ package org.openmole.spatialdata.points.synthetic
 
 import org.openmole.spatialdata._
 import org.openmole.spatialdata.points.PointsGenerator
+import org.openmole.spatialdata.utils.math
 
 import scala.util.Random
 
@@ -26,7 +27,8 @@ case class RandomPointsGenerator(
 object RandomPointsGenerator {
 
   def randomPoints(generator: RandomPointsGenerator)(implicit rng: Random): Array[Point2D] =
-    Array.fill(generator.npoints){(generator.xmin + (generator.xmax - generator.xmin)*rng.nextDouble(),
-                                    generator.ymin + (generator.ymax - generator.ymin)*rng.nextDouble())}
-
+    //Array.fill(generator.npoints){(math.digits(generator.xmin + (generator.xmax - generator.xmin)*rng.nextDouble,4),
+    //  math.digits(generator.ymin + (generator.ymax - generator.ymin)*rng.nextDouble,4))}
+    Array.fill(generator.npoints){(generator.xmin + (generator.xmax - generator.xmin)*rng.nextDouble,
+      generator.ymin + (generator.ymax - generator.ymin)*rng.nextDouble)}
 }

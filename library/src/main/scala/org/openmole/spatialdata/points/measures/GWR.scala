@@ -28,6 +28,7 @@ object GWR {
     //val reg = new OLSMultipleLinearRegression()
     //reg.newSampleData(yvalues,xvalues)
     //GWRResult(Array(reg.estimateRegressionParameters()))
+    GWRResult(Array.empty)
   }
 
   /**
@@ -41,7 +42,7 @@ object GWR {
     * @param weights
     */
   def gwr(yvalues: Array[Double],xvalues: Array[Array[Double]], weights: Array[Double]) = {
-    new RealMatrix(xvalues)
+    MatrixUtils.createRealMatrix(xvalues)
   }
 
 

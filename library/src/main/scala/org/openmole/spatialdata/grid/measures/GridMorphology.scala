@@ -195,7 +195,7 @@ object GridMorphology {
   def acentrism(matrix: Array[Array[Double]], quantiles: Array[Double] = (0.0 to 0.99 by 0.01).toArray): Double = {
     val popdists = quantiles.map{ q =>
       val posvalues = matrix.flatten.filter(_ > 0).sorted
-      val qth = posvalues(q*posvalues.size)
+      val qth = posvalues((q*posvalues.size).toInt)
       val filteredmat = matrix.map(_.map{d => if (d < qth) 0.0 else d})
       (posvalues.sum,distanceMean(filteredmat,normalize = false))
     }
@@ -206,16 +206,19 @@ object GridMorphology {
 
   /**
     * Box counting fractal dimension using convolution
+    *
+    * FIXME finish implementation
+    *
     * @return
     */
   def fractalDimension(matrix: Array[Array[Double]]): (Double,Double) = {
     val maxkernelsize = math.floor(math.min(matrix.length,matrix(0).length) / 4) - 1
-    val rc = (1 to maxkernelsize by 1).map{k=>
+    val rc = (1 to maxkernelsize.toInt by 1).map{k=>
       val convol: Array[Array[Double]] = Convolution.convolution2D(matrix,Array.fill(2*k.toInt+1){Array.fill(2*k.toInt+1)(1.0)})
       val counts = convol.map(_.zipWithIndex).zipWithIndex.map{case (r,i) => r.map{case (d,j) => if (i%(2*k.toInt+1)==k.toInt&&j%(2*k.toInt+1)==k.toInt) if(d > 0.0) 1.0 else 0.0 else 0.0}}.flatten.sum
       (2*k.toInt+1,counts)
     }
-
+    (0.0,0.0)
   }
 
   /**

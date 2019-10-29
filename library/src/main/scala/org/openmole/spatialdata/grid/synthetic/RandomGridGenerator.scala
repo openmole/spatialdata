@@ -14,12 +14,28 @@ case class RandomGridGenerator(
                                 size : RasterDim,
 
                               /**
+                                * Rescaling factor (by default a probability density)
+                                */
+                              totalPopulation: Double = -1,
+
+                              /**
+                                * approximate proportion of empty cells
+                                */
+                              occupiedCells: Double = -1,
+
+                              /**
                                 * Number of layers
                                 */
                               layers : Int = 1
                               ) extends GridGenerator {
 
-  override def generateGrid(implicit rng: Random): RasterLayerData[Double] = RandomGridGenerator.randomGrid(size,rng)
+  override def generateGrid(implicit rng: Random): RasterLayerData[Double] = {
+    val grid = RandomGridGenerator.randomGrid(size,occupiedCells,rng)
+    totalPopulation match {
+      case -1 => grid
+      case _ => {val s = grid.flatten.sum; grid.map{_.map{_ * totalPopulation / s }}}
+    }
+  }
 
 }
 
@@ -37,11 +53,14 @@ object RandomGridGenerator {
     * @param rng
     * @return
     */
-  def randomGrid(size: RasterDim, rng: Random) : RasterLayerData[Double] = {
-    //println("Random grid")
+  def randomGrid(size: RasterDim, occupied: Double, rng: Random) : RasterLayerData[Double] = {
+    def randompop: Double = occupied match {
+      case -1 => rng.nextDouble()
+      case _ => if(rng.nextDouble()<occupied) rng.nextDouble() else 0.0
+    }
     size match {
-      case Left(size)=>Array.fill(size, size){ rng.nextDouble() }
-      case Right((w,h))=>Array.fill(w, h){ rng.nextDouble() }
+      case Left(size)=>Array.fill(size, size)(randompop)
+      case Right((w,h))=>Array.fill(w, h)(randompop)
     }
   }
 

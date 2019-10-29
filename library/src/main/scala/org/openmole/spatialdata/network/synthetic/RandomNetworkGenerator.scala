@@ -1,5 +1,7 @@
 package org.openmole.spatialdata.network.synthetic
 
+import org.locationtech.jts.planargraph.PlanarGraph
+import org.openmole.spatialdata.network
 import org.openmole.spatialdata.network._
 import org.openmole.spatialdata.points.synthetic.RandomPointsGenerator
 import org.openmole.spatialdata.utils._
@@ -10,14 +12,23 @@ case class RandomNetworkGenerator(
                                    /**
                                      * number of nodes
                                      */
-                                 nnodes: Int,
+                                   nnodes: Int,
 
                                    /**
                                      * number of links
                                      */
-                                   nlinks: Int
+                                   nlinks: Int,
+
+                                   /**
+                                     * planarize the final network
+                                     */
+                                   planarize: Boolean = false,
+
+                                   directed: Boolean = false,
+
+                                   withIndex: Boolean = true
                                  ) extends NetworkGenerator {
-  override def generateNetwork(implicit rng: Random): Network = RandomNetworkGenerator.randomNetwork(nnodes,nlinks)
+  override def generateNetwork(implicit rng: Random): Network = RandomNetworkGenerator.randomNetwork(nnodes,nlinks,planarize,directed,withIndex)
 }
 
 
@@ -30,10 +41,11 @@ object RandomNetworkGenerator {
     * @param nlinks
     * @return
     */
-  def randomNetwork(nnodes: Int,nlinks: Int)(implicit rng: Random): Network = {
+  def randomNetwork(nnodes: Int,nlinks: Int,planarize: Boolean,directed: Boolean,withIndex: Boolean)(implicit rng: Random): Network = {
     val coords = RandomPointsGenerator(nnodes).generatePoints
-    val nodes = Network(coords.zipWithIndex.map{case ((x,y),id) => Node(id,x,y)}.toSet,Set.empty[Link])
-    addRandomLinks(nodes,nlinks)
+    val nodes = if(withIndex) Network(coords.zipWithIndex.map{case ((x,y),id) => Node(id,x,y)}.toSet,Set.empty[Link]) else Network(coords.map{case (x,y) => Node(0,x,y)}.toSet,Set.empty[Link])
+    val res = addRandomLinks(nodes,nlinks,directed)
+    if(planarize) network.planarize(res) else res
   }
 
   /**
@@ -43,9 +55,9 @@ object RandomNetworkGenerator {
     * @param rng
     * @return
     */
-  def addRandomLinks(network: Network,nlinks: Int)(implicit rng: Random): Network = {
+  def addRandomLinks(network: Network,nlinks: Int,directed: Boolean)(implicit rng: Random): Network = {
     val (origins,destinations) = (network.nodes.randomTake(nlinks),network.nodes.randomTake(nlinks))
-    Network(network,origins.zip(destinations).map{case (o,d) => Link(o,d)}.toSet)
+    Network(network,origins.zip(destinations).flatMap{case (o,d) => if(o!=d) Some(Link(o,d,directed)) else None}.toSet)
   }
 
 }

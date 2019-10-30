@@ -1,33 +1,47 @@
 package org.openmole.spatialdata.utils.math
 
 import org.openmole.spatialdata.network._
+import scalax.collection.Graph
+import scalax.collection.edge.WUnDiEdge
+
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
+import scala.util.Random
+import scalax.collection.{Graph, GraphEdge}
+import scalax.collection.edge.Implicits._
+import scalax.collection.GraphPredef._
+import scalax.collection.GraphEdge._
+import scalax.collection.GraphTraversal._
+import scalax.collection.edge.WUnDiEdge
+import org.openmole.spatialdata._
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-object Graph {
+object GraphAlgorithms {
 
   /**
-    *
+    * Shortest paths - by default not a spatial network as weight function is only the weight
     * @param network
     * @param vertices
     * @return
     */
-  def shortestPathsScalagraph(network: Network, vertices: Seq[Node]): Map[(Node,Node),(Seq[Node],Double)] = {
+  def shortestPaths(network: Network, vertices: Seq[Node], linkWeight: Link => Double = _.weight): Map[(Node,Node),(Seq[Node],Seq[Link],Double)] = {
     //println("Computing shortest paths between vertices : "+vertices)
-    val gg = networkToGraph(network)
-    val g = gg._1
-    val nodeMap = gg._2
+    val (g,nodeMap,linkMap) = networkToGraph(network, linkWeight)
     (for {
       i <- vertices
       j <- vertices
-    } yield ((i,j),if(i==j) {(Seq(i),0.0)}
+    } yield ((i,j),if(i==j) {(Seq(i),Seq.empty[Link],0.0)}
     else {
       val path = g.get(i.id).shortestPathTo(g.get(j.id))
       if(path.nonEmpty){
-        (path.get.nodes.map{nodeMap(_)}.toSeq,path.get.edges.map{_.weight}.sum)
+        (path.get.nodes.map{nodeMap(_)}.toSeq,
+          path.get.edges.map{e => linkMap((e._1,e._2))}.toSeq,
+          path.get.edges.map{_.weight}.sum
+        )
       }
-      else {(Seq.empty[Node],Double.PositiveInfinity)}
+      else {(Seq.empty[Node],Seq.empty[Link],Double.PositiveInfinity)}
     })).toMap
   }
 
@@ -100,6 +114,44 @@ object Graph {
     //println("largest comp size : "+largestComp.nodes.size)
     largestComp
   }
+
+
+
+  /**
+    * convert a Network to a Graph object
+    * @param network
+    * @return
+    */
+  def networkToGraph(network: Network, linkWeight: Link => Double = _.weight): (Graph[Int,WUnDiEdge],Map[Int,Node],Map[(Int,Int),Link]) = {
+    assert(network.hasConsistentIds,"Can not convert network to graph: non injective id set")
+    //var linklist = ArrayBuffer[WUnDiEdge[Int]]()
+    //for(link <- network.links){linklist.append()}
+    //println("links = "+network.links.toSeq.size)
+    val linkset = network.links.toSeq.map{case link => link.e1.id~link.e2.id % linkWeight(link)}
+    //println("linkset = "+linkset.size)
+    val graph = Graph.from(linkset.flatten,linkset.toList)
+    val nodeMap = network.nodes.map{(n:Node)=>(n.id,n)}.toMap
+    val linkMap = network.links.map{l => ((l.e1.id,l.e2.id),l)}.toMap
+    (graph,nodeMap,linkMap)
+  }
+
+  /**
+    *
+    * @param graph
+    * @return
+    */
+
+  def graphToNetwork(graph: Graph[Int,WUnDiEdge],nodeMap: Map[Int,Node]): Network = {
+    val links = ArrayBuffer[Link]();val nodes = ArrayBuffer[Node]()
+    for(edge <-graph.edges){
+      //links.append(Link(edge._1,edge._2,edge.weight))
+      nodes.append(nodeMap(edge._1),nodeMap(edge._2))
+      links.append(Link(nodeMap(edge._1),nodeMap(edge._2),edge.weight))
+    }
+    Network(nodes.toSet,links.toSet)
+  }
+
+
 
 
 

@@ -99,7 +99,7 @@ object GridMorphology {
     */
   def components(world: Array[Array[Double]],cachedNetwork: Option[Network] = None): Double = {
     val nw = cachedNetwork match {case None => network.gridToNetwork(world);case n => n.get}
-    val components = Graph.connectedComponents(nw)
+    val components = GraphAlgorithms.connectedComponents(nw)
     components.size
   }
 
@@ -111,7 +111,7 @@ object GridMorphology {
   def avgBlockArea(world: Array[Array[Double]],cachedNetwork: Option[Network] = None): Double = {
     //val inversedNetwork = Network.gridToNetwork(world.map{_.map{case x => 1.0 - x}})
     val nw = cachedNetwork match {case None => network.gridToNetwork(world);case n => n.get}
-    val components = Graph.connectedComponents(nw)
+    val components = GraphAlgorithms.connectedComponents(nw)
     val avgblockarea = components.size match {case n if n == 0 => 0.0;case n => components.map{_.nodes.size}.sum/components.size}
     //println("avgblockarea = "+avgblockarea)
     avgblockarea
@@ -124,7 +124,7 @@ object GridMorphology {
     */
   def avgComponentArea(world: Array[Array[Double]]): Double = {
     val inversedNetwork = network.gridToNetwork(world.map{_.map{case x => 1.0 - x}})
-    val components = Graph.connectedComponents(inversedNetwork)
+    val components = GraphAlgorithms.connectedComponents(inversedNetwork)
     //println("avgblockarea = "+avgblockarea)
     if(components.size > 0){
       components.map{_.nodes.size}.sum/components.size
@@ -148,10 +148,10 @@ object GridMorphology {
     //println("avgdetour = "+avgdetour)
     // should sample points within connected components
     val sampled = nw.nodes.toSeq.take(sampledPoints)
-    val paths = Graph.shortestPathsScalagraph(nw,sampled)
+    val paths = GraphAlgorithms.shortestPaths(nw,sampled)
 
-    val avgdetour = paths.filter{!_._2._2.isInfinite}.map{
-      case (_,(nodes,d))=>
+    val avgdetour = paths.filter{!_._2._3.isInfinite}.map{
+      case (_,(nodes,_,d))=>
         val (n1,n2) = (nodes(0),nodes.last)
         val de = math.sqrt((n1.x-n2.x)*(n1.x-n2.x)+(n1.y-n2.y)*(n1.y-n2.y))
         //println(d,de)

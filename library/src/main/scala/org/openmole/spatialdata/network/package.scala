@@ -31,167 +31,7 @@ import org.openmole.spatialdata.utils.math._
   */
 package object network {
 
-  /**
-    * Node of a spatial network
-    * @param id // note: how to impose comparison only on positions? -> all ids to 0?
-    * @param position point in a 2D space
-    */
-  case class Node(id: Int, position: Point2D) {
-    def x: Double = position._1
-    def y: Double = position._2
 
-    def distance(n2: Node): Double = math.sqrt(math.pow(x-n2.x,2)+math.pow(y-n2.y,2))
-
-    /**
-      * lexicographic order
-      * @param n2
-      * @return
-      */
-    def <=(n2: Node): Boolean = x<n2.x||(x==n2.x&&y<=n2.y)
-
-  }
-
-  object Node {
-    def apply(id: Int,x: Double,y: Double): Node = Node(id,(x,y))
-  }
-
-  /**
-    * Link of a spatial network
-    * @param e1
-    * @param e2
-    * @param weight
-    * @param length
-    */
-  case class Link(e1: Node,e2: Node,weight: Double,length: Double) {
-
-    def x: Double = (e1.x + e2.x)/2
-    def y: Double = (e1.y + e2.y)/2
-
-    def heading: Double = (e1.x - e2.x,e1.y - e2.y) match {
-      case (0.0,0.0) => 0.0 // by convention
-      case (0.0,dy) => math.Pi/2*dy/math.abs(dy)
-      case (dx,dy) => math.atan(dy/dx)
-    }
-
-    /**
-      * !!! prev error: sin <-> cos (complementary def of heading)
-      * @param xx
-      * @return
-      */
-    def xwithin(xx: Double): Boolean = math.abs(x - xx) <= math.abs(length / 2 * math.cos(heading))
-    def ywithin(yy: Double): Boolean = math.abs(y - yy) <= math.abs(length / 2 * math.sin(heading))
-
-    /**
-      * Compute intersection with an other link
-      * @param l2
-      * @return
-      */
-    def intersection(l2: Link): Option[Node] = {
-      //println("inter? "+this+" ; "+l2)
-      if(this.length==0.0||l2.length==0.0) return None
-      if(e1==e2||l2.e1==l2.e2||e1==l2.e1||e1==l2.e2||e2==l2.e1||e2==l2.e2) return None // by convention no intersection if one common extremity
-      val (h1,h2) = (heading,l2.heading)
-      if(math.abs(h1)==math.Pi/2&&math.abs(h2)==math.Pi/2) return None
-      val (m1,m2) = (math.tan(h1),math.tan(h2))
-      if(m1 == m2) return None // parallel links
-      if(math.abs(h1)==math.Pi/2){// this vertical link
-        val c2 = l2.y - l2.x * m2
-        val xx = this.x
-        val yy = m2 * xx + c2
-        if((!l2.xwithin(xx))||(!this.ywithin(yy))) return None else {
-          //val inter = Node(0,digits(xx,4),digits(yy,4))
-          val inter = Node(0,xx,yy)
-          if (e1==inter||e2==inter||l2.e1==inter||l2.e2==inter) return None
-          else return Some(inter)
-        }
-      }
-      if(math.abs(h2)==math.Pi/2){ // vertical second link
-        val c1 = this.y - this.x * m1
-        val xx = l2.x
-        val yy = m1 * xx + c1
-        if((!xwithin(xx))||(!l2.ywithin(yy))) return None else {
-          //val inter = Node(0,digits(xx,4),digits(yy,4))
-          val inter = Node(0,xx,yy)
-          if (e1==inter||e2==inter||l2.e1==inter||l2.e2==inter) return None
-          else return Some(inter)
-        }
-      }
-      // intercepts
-      val c1 = this.y - this.x * m1
-      val c2 = l2.y - l2.x * m2
-      val xx = (c2 - c1) / (m1 - m2)
-      if((!xwithin(xx))||(!l2.xwithin(xx))) None else {
-        //val inter = Node(0,digits(xx,4),digits(m1 * xx + c1,4))
-        val inter = Node(0,xx,m1 * xx + c1)
-        if (e1==inter||e2==inter||l2.e1==inter||l2.e2==inter) return None
-        else return Some(inter)
-      }
-    }
-
-  }
-
-  object Link {
-    /**
-      * Link with euclidian length
-      * @param e1
-      * @param e2
-      * @param weight
-      * @return
-      */
-    def apply(e1: Node,e2: Node,weight: Double): Link = Link(e1,e2,weight,math.sqrt((e1.x-e2.x)*(e1.x-e2.x)+(e1.y-e2.y)*(e1.y-e2.y)))
-
-    def apply(e1: Node, e2: Node):Link = apply(e1,e2,1.0)
-
-    def apply(e1: Node, e2: Node, directed: Boolean): Link = if(directed) Link(e1,e2) else {
-      if(e1<=e2) Link(e1,e2) else Link(e2,e1)
-    }
-
-    def getNodes(links: Set[Link]): Set[Node] = links.flatMap{l=>Set(l.e1,l.e2)}
-  }
-
-  /**
-    * Network
-    *
-    * TODO - many functions are a mess, in particular adding nodes and links - this must be fixed and made consistent with adjacency representation
-    * The sequence order may be used by functions needing it (adjacency matrix operations etc)
-    *
-    * @param nodes
-    * @param links
-    */
-  case class Network(nodes: Set[Node], links: Set[Link])
-  /*trait Network {
-    def nodes: Set[Node]
-    def links: Set[Link]
-  } */
-
-
-  object Network {
-    /**
-      * additional links should be among nodes of this network ; otherwise they are added
-      * FIXME reindexing with indexed network ?
-      * FIXME  + node id consistency is assumed here ! do something to deactivate it/manage in a consistent way
-      *
-      * @param network
-      * @param additionalLinks
-      * @return
-      */
-    def apply(network: Network, additionalLinks: Set[Link]): Network = Network(
-      network.nodes.union(Link.getNodes(additionalLinks)),
-      network.links.union(additionalLinks)
-    )
-
-    /**
-      * same than above with an empty network
-      * @param links
-      * @return
-      */
-    def apply(links: Set[Link]): Network = Network(Link.getNodes(links),links)
-
-      /*new Network {
-      override def nodes = network.nodes.union(Link.getNodes(additionalLinks))
-      override def links = network.links.union(additionalLinks)
-    }*/
-  }
 
 
   /**
@@ -282,39 +122,6 @@ package object network {
 
 
 
-
-  /**
-    * convert a Network to a Graph object
-    * @param network
-    * @return
-    */
-  def networkToGraph(network: Network): (Graph[Int,WUnDiEdge],Map[Int,Node]) = {
-    //var linklist = ArrayBuffer[WUnDiEdge[Int]]()
-    //for(link <- network.links){linklist.append()}
-    //println("links = "+network.links.toSeq.size)
-    val linkset = network.links.toSeq.map{case link => link.e1.id~link.e2.id % link.weight}
-    //println("linkset = "+linkset.size)
-    (Graph.from(linkset.flatten,linkset.toList),network.nodes.map{(n:Node)=>(n.id,n)}.toMap)
-  }
-
-  /**
-    *
-    * @param graph
-    * @return
-    */
-
-  def graphToNetwork(graph: Graph[Int,WUnDiEdge],nodeMap: Map[Int,Node]): Network = {
-    val links = ArrayBuffer[Link]();val nodes = ArrayBuffer[Node]()
-    for(edge <-graph.edges){
-      //links.append(Link(edge._1,edge._2,edge.weight))
-      nodes.append(nodeMap(edge._1),nodeMap(edge._2))
-      links.append(Link(nodeMap(edge._1),nodeMap(edge._2),edge.weight))
-    }
-    Network(nodes.toSet,links.toSet)
-  }
-
-
-
   /**
     * import a network from gis linestrings
     * @param lines
@@ -347,7 +154,6 @@ package object network {
 
   /**
     * Brutal planarization algorithm (add intersections iteratively)
-    * FIXME how ids are handled by intersection
     *
     * !!! FIXME !!! iterative version does not work -> get all intersections, order by link and replace links by successive sublinks
     *
@@ -387,24 +193,29 @@ package object network {
     }
     Network(addIntersection(Iterator.iterate((empty.links,network.links))(addIntersection).takeWhile(_._2.size>0).toSeq.last)._1)
      */
-    val inters = getIntersections(network.links)
-    // FIXME pb with precision of same inter
-    println("min dist inters = "+(for {
-      i1 <- inters.map{_._2}
-      i2<- inters.map{_._2}
-      if i1 != i2
-      d = i1.distance(i2)
-    } yield d).min)
-    val newlinks: Seq[Link] = inters.groupBy(_._1).toSeq.flatMap{case (l,currentinters) => {
+    val inters: Seq[(Link,Node)] = getIntersections(network.links)
+    // need to group intersections that are virtually the same
+    val toreplace: Map[Node,(Node,Double)] = (for {
+      i <- 0 to inters.length - 2
+      j <- (i+1) until inters.length
+      d = inters(i)._2.distance(inters(j)._2)
+    } yield (inters(i)._2,(inters(j)._2,d))).filter(_._2._2<1e-10).toMap
+    val newinters = inters.map{case (l,n) => if(toreplace.contains(n)) (l,toreplace(n)._1) else (l,n) }
+    val newlinks: Seq[Link] = newinters.groupBy(_._1).toSeq.flatMap{case (l,currentinters) => {
         val nodeseq = (Seq(l.e1,l.e2)++currentinters.map(_._2)).sortWith{case (n1,n2)=> n1 <= n2}
         nodeseq.dropRight(1).zip(nodeseq.drop(1)).map{case (n1,n2) => Link(n1,n2,false)}
       }
     }
     // return a new network with new links - totally fucks up the ids, anyway complicated to find a mapping
-    println("total new links : "+newlinks.size)
+    //println("total new links : "+newlinks.size)
     Network(newlinks.toSet)
   }
 
+  /**
+    * Compute intersections of a set of links
+    * @param links
+    * @return
+    */
   def getIntersections(links: Set[Link]): Seq[(Link,Node)] = {
     (for {
       l1 <- links
@@ -430,8 +241,8 @@ package object network {
     Iterator.iterate((network.links,false))(findIntersection).takeWhile(!_._2).toSeq.last._1.nonEmpty
     */
     val inters = getIntersections(network.links)
-    println("intersections (isPlanar) : "+inters.size)
-    inters.size==0
+    //println("intersections (isPlanar) : "+inters.size)
+    inters.isEmpty
   }
 
 

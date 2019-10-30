@@ -3,7 +3,8 @@ package org.openmole.spatialdata.test
 object Test extends App {
 
   // Coupled network / grid
-  TestCoupled.testRandom()
+  TestCoupled.testWeakCouplingNodePositions()
+  //TestCoupled.testRandom()
 
   // Network algorithms
   //TestNetwork.testPlanarization()
@@ -31,6 +32,7 @@ object Test extends App {
 
 
   // Utils
+  //TestUtils.testSampling
   //TestUtils.testCSV
   //TestPNG.testPNG()
   //TestPNG.testOSMGridSampling()

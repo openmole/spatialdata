@@ -6,7 +6,7 @@ import scala.util.Random
 
 trait PointsGenerator {
 
-  def generatePoints(implicit rng: Random): Array[Point2D]
+  def generatePoints(implicit rng: Random): Vector[Point2D]
 
 
 

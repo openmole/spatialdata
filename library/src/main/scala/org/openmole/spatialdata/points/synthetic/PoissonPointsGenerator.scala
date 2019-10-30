@@ -15,7 +15,7 @@ case class PoissonPointsGenerator(
                                    ymin: Double = 0.0,
                                    ymax: Double = 1.0
                                  ) extends PointsGenerator {
-  override def generatePoints(implicit rng: Random): Array[(Double, Double)] =
+  override def generatePoints(implicit rng: Random): Vector[(Double, Double)] =
     if (homogenous) PoissonPointsGenerator.homogenousPoissonPoints(this) else PoissonPointsGenerator.heterogenousPoissonPoints(this)
 
 
@@ -43,11 +43,11 @@ object PoissonPointsGenerator {
     * @param rng
     * @return
     */
-  def homogenousPoissonPoints(generator: PoissonPointsGenerator)(implicit rng: Random) = {
+  def homogenousPoissonPoints(generator: PoissonPointsGenerator)(implicit rng: Random): Vector[(Double,Double)] = {
     // draw number of points
     val n = poissonVariable(generator.lambda*generator.area)
     // then just random points
-    Array.fill(n){(generator.xmin + (generator.xmax - generator.xmin)*rng.nextDouble(),
+    Vector.fill(n){(generator.xmin + (generator.xmax - generator.xmin)*rng.nextDouble(),
       generator.ymin + (generator.ymax - generator.ymin)*rng.nextDouble())}
   }
 
@@ -60,7 +60,7 @@ object PoissonPointsGenerator {
     * @param rng
     * @return
     */
-  def heterogenousPoissonPoints(generator: PoissonPointsGenerator)(implicit rng: Random): Array[(Double,Double)] = {
+  def heterogenousPoissonPoints(generator: PoissonPointsGenerator)(implicit rng: Random): Vector[(Double,Double)] = {
     val totalIntensity = generator.weightedArea
     val n = poissonVariable(totalIntensity)
     // rejection sampling ; the array representing intensity must be inversed on rows
@@ -72,7 +72,7 @@ object PoissonPointsGenerator {
       val localIntensity: Double = lambdas(i)(j)
       if (localIntensity / totalIntensity > rng.nextDouble()) points.append((generator.xmin + (generator.xmax - generator.xmin)*x,generator.ymin + (generator.ymax - generator.ymin)*y))
     }
-    points.toArray
+    points.toVector
   }
 
 

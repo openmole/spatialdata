@@ -19,16 +19,16 @@ case class RandomPointsGenerator(
                                   ymin: Double = 0.0,
                                   ymax: Double = 1.0
                                 ) extends PointsGenerator {
-  override def generatePoints(implicit rng: Random): Array[(Double, Double)] = RandomPointsGenerator.randomPoints(this)(rng)
+  override def generatePoints(implicit rng: Random): Vector[(Double, Double)] = RandomPointsGenerator.randomPoints(this)(rng)
 }
 
 
 
 object RandomPointsGenerator {
 
-  def randomPoints(generator: RandomPointsGenerator)(implicit rng: Random): Array[Point2D] =
+  def randomPoints(generator: RandomPointsGenerator)(implicit rng: Random): Vector[Point2D] =
     //Array.fill(generator.npoints){(math.digits(generator.xmin + (generator.xmax - generator.xmin)*rng.nextDouble,4),
     //  math.digits(generator.ymin + (generator.ymax - generator.ymin)*rng.nextDouble,4))}
-    Array.fill(generator.npoints){(generator.xmin + (generator.xmax - generator.xmin)*rng.nextDouble,
+    Vector.fill(generator.npoints){(generator.xmin + (generator.xmax - generator.xmin)*rng.nextDouble,
       generator.ymin + (generator.ymax - generator.ymin)*rng.nextDouble)}
 }

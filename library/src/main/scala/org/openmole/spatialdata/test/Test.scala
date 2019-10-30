@@ -2,9 +2,11 @@ package org.openmole.spatialdata.test
 
 object Test extends App {
 
+  // Coupled network / grid
+  TestCoupled.testRandom()
 
   // Network algorithms
-  TestNetwork.testPlanarization()
+  //TestNetwork.testPlanarization()
 
   // OSM
   //TestOSM.testBuildingExtractor

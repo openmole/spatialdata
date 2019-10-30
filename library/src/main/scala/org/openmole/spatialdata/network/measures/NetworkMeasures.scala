@@ -3,6 +3,8 @@ package org.openmole.spatialdata.network.measures
 import org.openmole.spatialdata.network._
 import org.openmole.spatialdata.network.loading.ShortestPathsNetworkLoader
 
+import scala.util.Random
+
 
 
 
@@ -18,7 +20,7 @@ case class NetworkMeasures(
 
 object NetworkMeasures {
 
-  def apply(network: Network): NetworkMeasures = NetworkMeasures(Seq(SummaryNetworkMeasures(network),ShortestPathsNetworkMeasures(network)))
+  def apply(network: Network)(implicit rng: Random): NetworkMeasures = NetworkMeasures(Seq(SummaryNetworkMeasures(network),ShortestPathsNetworkMeasures(network)))
 
   sealed trait Measures
 
@@ -68,8 +70,8 @@ object NetworkMeasures {
       * @param network
       * @return
       */
-    def apply(network: Network): ShortestPathsNetworkMeasures = {
-      val bwloading = ShortestPathsNetworkLoader(network).load(None)
+    def apply(network: Network, pathSample: Double = 1.0)(implicit rng: Random): ShortestPathsNetworkMeasures = {
+      val bwloading = ShortestPathsNetworkLoader(network, pathSample).load(None)
       val nw = bwloading.loadedNetwork
       val paths = nw.cachedShortestPaths.get
 

@@ -2,6 +2,8 @@ package org.openmole.spatialdata.network
 
 import org.openmole.spatialdata.utils.math.GraphAlgorithms
 
+import scala.util.Random
+
 
 /**
   * Network
@@ -27,7 +29,12 @@ case class Network(
     * @param linkWeight
     * @return
     */
-  def computeShortestPaths(linkWeight: Link => Double = _.weight): Network = if(cachedShortestPaths.isEmpty) this.copy(cachedShortestPaths=Some(GraphAlgorithms.shortestPaths(this,nodes.toSeq,linkWeight))) else this
+  def computeShortestPaths(linkWeight: Link => Double = _.weight,
+                           pathSample: Double = 1.0,
+                           recompute: Boolean = false)(implicit rng: Random): Network =
+    if(cachedShortestPaths.isEmpty||recompute)
+      this.copy(cachedShortestPaths=Some(GraphAlgorithms.shortestPaths(this,nodes.toSeq,linkWeight,pathSample)))
+    else this
 
 }
 

@@ -8,6 +8,8 @@ import org.openmole.spatialdata.network._
 import org.openmole.spatialdata.utils.io.CSV
 import org.openmole.spatialdata.utils.math._
 
+import scala.util.Random
+
 case class GridMorphology(
                        height: Double,
                        width: Double,
@@ -147,8 +149,8 @@ object GridMorphology {
     //val avgdetour = shortestPaths.values.map{_.map{_.weight}.sum}.zip(shortestPaths.keys.map{case (n1,n2)=> math.sqrt((n1.x-n2.x)*(n1.x-n2.x)+(n1.y-n2.y)*(n1.y-n2.y))}).map{case (dn,de)=>dn/de}.sum/shortestPaths.size
     //println("avgdetour = "+avgdetour)
     // should sample points within connected components
-    val sampled = nw.nodes.toSeq.take(sampledPoints)
-    val paths = GraphAlgorithms.shortestPaths(nw,sampled)
+    val sampled = nw.nodes.toSeq.take(sampledPoints) // FIXME no shuffling here?
+    val paths = GraphAlgorithms.shortestPaths(nw,sampled)(new Random) // rng is not used, sampling done before
 
     val avgdetour = paths.filter{!_._2._3.isInfinite}.map{
       case (_,(nodes,_,d))=>

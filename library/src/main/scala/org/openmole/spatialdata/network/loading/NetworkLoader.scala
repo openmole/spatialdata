@@ -2,6 +2,8 @@ package org.openmole.spatialdata.network.loading
 
 import org.openmole.spatialdata.network.{Link, Network, Node}
 
+import scala.util.Random
+
 
 
 
@@ -15,7 +17,7 @@ import org.openmole.spatialdata.network.{Link, Network, Node}
   */
 trait NetworkLoader {
 
-  def load(odPattern: Option[Map[(Node,Node),Double]]): NetworkLoading
+  def load(odPattern: Option[Map[(Node,Node),Double]])(implicit rng: Random): NetworkLoading
 
   def defaultLoading(network: Network) = NetworkLoading(network,network.links.map{l => (l,1.0)}.toMap,None)
 

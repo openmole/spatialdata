@@ -20,6 +20,15 @@ object Stochastic {
   def sampleWithReplacementBy[T](sampled: Traversable[T], probability: T => Double, samples: Int)(implicit rng: Random): Vector[T] =
     (0 until samples).map(_ => sampleOneBy(sampled, probability)).toVector
 
-
+  def sampleWithoutReplacementBy[T](sampled: Traversable[T], probability: T => Double, samples: Int)(implicit rng: Random): Vector[T] = {
+    assert(samples <= sampled.size,"Can not sample more than vector size : "+samples+" / "+sampled.size)
+    Iterator.iterate((sampled, Vector.empty[T])) { case (rest, res) => {
+      val totproba = rest.map(probability(_)).sum // FIXME not efficient, could be computed from the previously sampled proba
+      val normalizedProba = rest.toSeq.map(probability(_) / totproba)
+      val sample = sampleOneBy[((T, Int), Double)](rest.toSeq.zipWithIndex.zip(normalizedProba), _._2)
+      (rest.toSeq.zipWithIndex.filter(_._2 != sample._1._2).map(_._1), Vector(sample._1._1) ++ res)
+    }
+    }.take(samples).toSeq.last._2
+  }
 
 }

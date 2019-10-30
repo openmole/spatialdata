@@ -26,12 +26,13 @@ object GraphAlgorithms {
     * @param vertices
     * @return
     */
-  def shortestPaths(network: Network, vertices: Seq[Node], linkWeight: Link => Double = _.weight): Map[(Node,Node),(Seq[Node],Seq[Link],Double)] = {
+  def shortestPaths(network: Network, vertices: Seq[Node], linkWeight: Link => Double = _.weight,pathSample: Double = 1.0)(implicit rng: Random): Map[(Node,Node),(Seq[Node],Seq[Link],Double)] = {
     //println("Computing shortest paths between vertices : "+vertices)
     val (g,nodeMap,linkMap) = networkToGraph(network, linkWeight)
+    val odnodes = if(pathSample==1.0) vertices else Stochastic.sampleWithoutReplacementBy[Node](vertices,v => 1.0 / vertices.length.toDouble, math.floor(pathSample*vertices.length).toInt)
     (for {
-      i <- vertices
-      j <- vertices
+      i <- odnodes
+      j <- odnodes
     } yield ((i,j),if(i==j) {(Seq(i),Seq.empty[Link],0.0)}
     else {
       val path = g.get(i.id).shortestPathTo(g.get(j.id))

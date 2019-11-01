@@ -1,9 +1,9 @@
 package org.openmole.spatialdata
 
 import org.apache.commons.math3.random.RandomDataGenerator
+import org.openmole.spatialdata
 
 import scala.util.Random
-
 import collection.JavaConverters._
 
 package object utils {
@@ -21,6 +21,7 @@ package object utils {
 
     def shuffle(implicit rng: Random): Seq[A] = rng.shuffle(s.toSeq)
 
+    // FIXME does not work for sampling with replacement !
     def randomTake(n: Int)(implicit rng: Random): Seq[A] = shuffle.take(n)
 
   }
@@ -30,6 +31,9 @@ package object utils {
     fun()
     println("time : "+(System.currentTimeMillis()-start)+" ms")
   }
+
+  def log(msg: String): Unit = if(spatialdata.DEBUG) println(msg)
+
 
 
 }

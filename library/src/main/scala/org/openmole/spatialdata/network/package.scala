@@ -194,6 +194,11 @@ package object network {
     Network(addIntersection(Iterator.iterate((empty.links,network.links))(addIntersection).takeWhile(_._2.size>0).toSeq.last)._1)
      */
     val inters: Seq[(Link,Node)] = getIntersections(network.links)
+    // FIXME bug if empty?
+    //println(network.links.size)
+    //assert(inters.size>0,s"Links: ${network.links.size}")
+    if(inters.size==0){return network}
+
     // need to group intersections that are virtually the same
     val toreplace: Map[Node,(Node,Double)] = (for {
       i <- 0 to inters.length - 2

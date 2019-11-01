@@ -4,6 +4,7 @@ import org.openmole.spatialdata.Point2D
 import org.openmole.spatialdata.network._
 import org.openmole.spatialdata.points.synthetic.RandomPointsGenerator
 import org.openmole.spatialdata.utils._
+import org.openmole.spatialdata.utils.math.Stochastic
 
 import scala.util.Random
 
@@ -35,6 +36,15 @@ case class RandomNetworkGenerator(
 
 object RandomNetworkGenerator {
 
+  /**
+    * planar undirected
+    * @param points
+    * @param nlinks
+    * @return
+    */
+  def apply(points: Seq[(Double,Double)], nlinks: Int): RandomNetworkGenerator = RandomNetworkGenerator(0,nlinks,true,false,false,points)
+
+  def apply(nnodes: Int, nlinks: Int): RandomNetworkGenerator = RandomNetworkGenerator(nnodes,nlinks,true,false,false, Seq.empty)
 
   /**
     * basic random euclidian network (no planarisation)
@@ -57,7 +67,10 @@ object RandomNetworkGenerator {
     * @return
     */
   def addRandomLinks(network: Network,nlinks: Int,directed: Boolean)(implicit rng: Random): Network = {
-    val (origins,destinations) = (network.nodes.randomTake(nlinks),network.nodes.randomTake(nlinks))
+    // FIXME the randomTake in set has a strange behavior?! yes acts as a set!
+    //val (origins,destinations) = (network.nodes.randomTake(nlinks),network.nodes.randomTake(nlinks))
+    val (origins,destinations) = (Stochastic.sampleWithReplacement[Node](network.nodes.toSeq,nlinks),Stochastic.sampleWithReplacement[Node](network.nodes.toSeq,nlinks))
+    //println(origins);println(destinations);println(origins.zip(destinations).map{case (o,d) => if(o <= d) (o,d) else (d,o)}.filter{c => c._1 != c._2}.toSet.size)
     Network(network,origins.zip(destinations).flatMap{case (o,d) => if(o!=d) Some(Link(o,d,directed)) else None}.toSet)
   }
 

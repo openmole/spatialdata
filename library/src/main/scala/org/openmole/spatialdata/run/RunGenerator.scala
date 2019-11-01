@@ -1,20 +1,10 @@
-package org.openmole.spatialdata
+package org.openmole.spatialdata.run
 
 import better.files.File
 import org.openmole.spatialdata.grid.real.OSMGridGenerator
 import org.openmole.spatialdata.utils.io.PNG
 
 import scala.util.Random
-
-
-object Run extends App {
-
-  RunGenerator.runOutputPng
-
-}
-
-
-
 
 
 object RunGenerator {
@@ -157,9 +147,5 @@ object RunGenerator {
 
 
 }
-
-
-
-
 
 

@@ -1,6 +1,7 @@
 package org.openmole.spatialdata.network.loading
 
 import org.openmole.spatialdata.network.{Link, Network, Node}
+import org.openmole.spatialdata.utils
 
 import scala.util.Random
 
@@ -21,6 +22,7 @@ object ShortestPathsNetworkLoader {
   def load(network: Network, odPattern: Option[Map[(Node, Node), Double]], pathSample: Double)(implicit rng: Random): NetworkLoading = {
     //  this requires that network nodes have ids ! => ok checked in shortest paths
     //val paths: Map[(Node,Node),(Seq[Node],Seq[Link],Double)] = Graph.shortestPaths(network,network.nodes.toSeq)
+    utils.log(s"Loading network with shortest paths between ${math.floor(network.nodes.size*pathSample)} nodes")
     val nwWithPaths = network.computeShortestPaths(l=> l.weight*l.length,pathSample)
     val paths = nwWithPaths.cachedShortestPaths.get
     val odflows: Seq[(Seq[Link],Double)] = odPattern match {

@@ -44,6 +44,14 @@ object RandomGridGenerator {
 
   def apply(size: Int): RandomGridGenerator = new RandomGridGenerator(size)
 
+  /**
+    * proba density with occupied cells
+    * @param size
+    * @param occupiedCells
+    * @return
+    */
+  def apply(size: Int,occupiedCells: Double): RandomGridGenerator = new RandomGridGenerator(Left(size),1.0,occupiedCells,1)
+
 
   /**
     * Random layer

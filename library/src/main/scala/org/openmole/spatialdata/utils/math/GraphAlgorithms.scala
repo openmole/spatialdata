@@ -22,6 +22,9 @@ object GraphAlgorithms {
 
   /**
     * Shortest paths - by default not a spatial network as weight function is only the weight
+    *
+    * FIXME works if the network is not connected but returns existing paths only
+    *
     * @param network
     * @param vertices
     * @return
@@ -69,10 +72,14 @@ object GraphAlgorithms {
 
   /**
     * dirty component traverser (not appropriate network data structure)
+    *
+    * FIXME remove the mutable and the while
+    *
     * @param network
     * @return
     */
   def connectedComponents(network: Network): Seq[Network] = {
+    utils.log(s"Traversing graph of size (${network.nodes.size};${network.links.size}) for connected components")
     val nlinks = new mutable.HashMap[Node,Seq[Link]]()
     network.links.foreach{l =>
       if(nlinks.contains(l.e1)){nlinks(l.e1)=nlinks(l.e1)++Seq(l)}else{nlinks(l.e1)=Seq(l)}
@@ -153,7 +160,9 @@ object GraphAlgorithms {
   }
 
 
-
+  /**
+    * TODO: code an astar and or dynamic routing (update) for more perf of shortest paths?
+    */
 
 
   /**

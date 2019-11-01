@@ -14,7 +14,7 @@ import scala.util.Random
 
 object TestCoupled {
 
-  def testWeakCouplingNodePositions(gridSize:Int = 50, gridOccupation: Double = 0.5,nwNodes: Int = 100, nwLinks: Int = 1000): Unit = {
+  def testWeakCouplingNodePositions(gridSize:Int = 50, gridOccupation: Double = 0.5,nwNodes: Int = 25, nwLinks: Int = 250): Unit = {
     implicit val rng = new Random
 
     val randomGrid = RandomGridGenerator(gridSize,1.0,gridOccupation).generateGrid
@@ -27,7 +27,8 @@ object TestCoupled {
     println("Moran grid = "+GridMorphology.moran(randomGrid)+" ; Entropy = "+Statistics.entropy(randomGrid)+" ; slope = "+
       Statistics.slope(randomGrid)+" ; avg dist = "+GridMorphology.distanceMean(randomGrid)
     )
-    println(ShortestPathsNetworkMeasures(randomNetwork,0.05))
+    //println(ShortestPathsNetworkMeasures(randomNetwork,pathSample = 0.05))
+    println(NetworkMeasures(randomNetwork,pathSample = 1.0))
 
   }
 
@@ -42,7 +43,7 @@ object TestCoupled {
     println("Moran grid = "+GridMorphology.moran(randomGrid)+" ; Entropy = "+Statistics.entropy(randomGrid)+" ; slope = "+
     Statistics.slope(randomGrid)+" ; avg dist = "+GridMorphology.distanceMean(randomGrid)
     )
-    println(NetworkMeasures(randomNetwork))
+    println(NetworkMeasures(randomNetwork,1.0))
 
   }
 

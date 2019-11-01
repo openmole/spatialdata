@@ -2,6 +2,8 @@ package org.openmole.spatialdata.network.measures
 
 import org.openmole.spatialdata.network._
 import org.openmole.spatialdata.network.loading.ShortestPathsNetworkLoader
+import org.openmole.spatialdata.network.measures.NetworkMeasures.{ShortestPathsNetworkMeasures, SummaryNetworkMeasures}
+import org.openmole.spatialdata.utils.math.GraphAlgorithms
 
 import scala.util.Random
 
@@ -9,7 +11,9 @@ import scala.util.Random
 
 
 case class NetworkMeasures(
-                          measures: Seq[NetworkMeasures.Measures]
+                          measures: Seq[NetworkMeasures.Measures],
+                          summary: Option[SummaryNetworkMeasures] = None ,
+                          shortestPaths: Option[ShortestPathsNetworkMeasures] = None
                           ) {
 
   override def toString: String = measures.map(_.toString).mkString("\n")
@@ -20,18 +24,32 @@ case class NetworkMeasures(
 
 object NetworkMeasures {
 
-  def apply(network: Network)(implicit rng: Random): NetworkMeasures = NetworkMeasures(Seq(SummaryNetworkMeasures(network),ShortestPathsNetworkMeasures(network)))
+  def apply(network: Network,pathSample: Double)(implicit rng: Random): NetworkMeasures = {
+    val summary = SummaryNetworkMeasures(network)
+    val shortest = ShortestPathsNetworkMeasures(network, pathSample)
+    NetworkMeasures(Seq(summary,shortest), Some(summary),Some(shortest))
+  }
 
   sealed trait Measures
 
   case class SummaryNetworkMeasures(
-                                     gamma: Double
+                                   nodes: Double,
+                                   links: Double,
+                                   gamma: Double,
+                                   totalLength: Double,
+                                   weakComponents: Double
                                    ) extends Measures
 
   object SummaryNetworkMeasures {
 
 
-    def apply(network: Network): SummaryNetworkMeasures = SummaryNetworkMeasures(gamma(network))
+    def apply(network: Network): SummaryNetworkMeasures = SummaryNetworkMeasures(
+      network.nodes.size.toDouble,
+      network.links.size.toDouble,
+      gamma(network),
+      totalLength(network),
+      GraphAlgorithms.connectedComponents(network).size.toDouble
+    )
 
     /**
       * directed network density
@@ -40,6 +58,7 @@ object NetworkMeasures {
       */
     def gamma(network: Network): Double = network.links.size.toDouble / (network.nodes.size.toDouble * (network.nodes.size.toDouble - 1.0))
 
+    def totalLength(network: Network): Double = network.links.map{_.length}.sum
 
   }
 

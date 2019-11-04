@@ -44,7 +44,8 @@ object CSV {
     res.toArray
   }
 
-  def writeCSV(data: Array[Array[Double]],file:String,sep:String,header:Array[String] = Array.empty) = {
+
+  def writeCSV[T <: Any](data: Array[Array[T]],file:String,sep:String,header:Array[String] = Array.empty): Unit = {
     implicit val writerFormat = new DefaultCSVFormat {
       override val delimiter = sep.charAt(0)
       override val quoteChar: Char = '"'

@@ -64,16 +64,27 @@ object RunWeakCoupling {
     val nlinks = Seq(20,30,40)
     val modes = Seq("random","density")
 
-    val res: Array[Array[Double]] = (for {
+    val params = (for {
       occ <- occupied
       nodes <- nnodes
       links <- nlinks
       mode <- modes
       seed <- seeds
-    } yield run(occ,nodes,links,seed,mode)).toArray
+    } yield (occ,nodes,links,seed,mode)).zipWithIndex.map{case (p,i) => (p._1,p._2,p._3,p._4,p._5,i)}
+
+    val res: Array[Array[Any]] = (for {
+      p <- params
+      occ = p._1
+      nodes = p._2
+      links = p._3
+      seed = p._4
+      mode = p._5
+      id = p._6
+    } yield run(occ,nodes,links,seed,mode)++Array(occ,nodes,links,mode,seed,id)).toArray
 
     CSV.writeCSV(res,"data/coupled/nullmodel.csv",";",Array("moran","distanceMean","entropy","slope","rsquared",
-      "meanBetweenness","meanPathLength","meanEfficiency","diameter","nodes","totalLength","components"
+      "meanBetweenness","meanPathLength","meanEfficiency","diameter","nodes","totalLength","components","occupation","nodes",
+      "links","mode","seed","id"
     ))
 
   }

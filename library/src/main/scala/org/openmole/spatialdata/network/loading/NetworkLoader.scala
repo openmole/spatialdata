@@ -17,7 +17,7 @@ import scala.util.Random
   */
 trait NetworkLoader {
 
-  def load(odPattern: Option[Map[(Node,Node),Double]])(implicit rng: Random): NetworkLoading
+  def load(network: Network, odPattern: Option[Map[(Node,Node),Double]])(implicit rng: Random): NetworkLoading
 
   def defaultLoading(network: Network) = NetworkLoading(network,network.links.map{l => (l,1.0)}.toMap,None)
 

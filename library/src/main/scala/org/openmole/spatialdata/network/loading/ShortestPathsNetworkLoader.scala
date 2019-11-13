@@ -5,12 +5,16 @@ import org.openmole.spatialdata.utils
 
 import scala.util.Random
 
+/**
+  * Shortest paths network loading
+  * @param network
+  * @param pathSample
+  */
 case class ShortestPathsNetworkLoader(
-                                       network: Network,
                                        pathSample: Double = 1.0
                                      ) extends NetworkLoader {
 
-  override def load(odPattern: Option[Map[(Node, Node), Double]])(implicit rng: Random): NetworkLoading =
+  override def load(network: Network,odPattern: Option[Map[(Node, Node), Double]])(implicit rng: Random): NetworkLoading =
     ShortestPathsNetworkLoader.load(network, odPattern,pathSample)
 
 }

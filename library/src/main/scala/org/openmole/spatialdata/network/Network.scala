@@ -13,6 +13,8 @@ import scala.util.Random
   *
   * TODO add directed and weighted options
   *
+  * TODO can we have a composition law for networks to have some sort of structure ?
+  *
   * @param nodes
   * @param links
   */
@@ -36,12 +38,30 @@ case class Network(
       this.copy(cachedShortestPaths=Some(GraphAlgorithms.shortestPaths(this,nodes.toSeq,linkWeight,pathSample)))
     else this
 
+  /**
+    * update link weights
+    *   !!! does not change the cached shortest paths
+    * @param newLinkCosts
+    * @return
+    */
+  def updateLinkCosts(newLinkCosts: Seq[Link]): Network = {
+    val linkCostMap = newLinkCosts.map{l => (l.id,l.weight)}.toMap
+    this.copy(links = links.map{l => l.copy(weight=linkCostMap.getOrElse(l.id,l.weight))})
+  }
+
+
 }
 
 
 object Network {
 
 
+  /**
+    * Basic constructor
+    * @param nodes
+    * @param links
+    * @return
+    */
   def apply(nodes: Set[Node],links: Set[Link]): Network = Network(nodes,links, None)
 
   /**

@@ -9,7 +9,13 @@ package org.openmole.spatialdata.network
   * @param weight
   * @param length
   */
-case class Link(e1: Node,e2: Node,weight: Double,length: Double) {
+case class Link(e1: Node,e2: Node,weight: Double,length: Double, directed: Boolean) {
+
+  /**
+    * unique id if node ids are defined and unique
+    * @return
+    */
+  def id: (Int,Int) = if(directed) (e1.id,e2.id) else {if(e1<=e2) (e1.id,e2.id) else (e2.id,e1.id)}
 
   /**
     * Link center x coordinate
@@ -98,13 +104,18 @@ object Link {
     * @param weight
     * @return
     */
-  def apply(e1: Node,e2: Node,weight: Double): Link = Link(e1,e2,weight,math.sqrt((e1.x-e2.x)*(e1.x-e2.x)+(e1.y-e2.y)*(e1.y-e2.y)))
+  def apply(e1: Node,e2: Node,weight: Double, directed: Boolean): Link = {
+    val d = math.sqrt((e1.x-e2.x)*(e1.x-e2.x)+(e1.y-e2.y)*(e1.y-e2.y))
+    if (directed) Link(e1,e2,weight,d,directed) else {
+      if (e1<=e2) Link(e1,e2,weight,d,directed) else Link(e2,e1,weight,d,directed)
+    }
+  }
+
+  def apply(e1: Node,e2: Node,weight: Double): Link = Link(e1,e2,weight,false)
 
   def apply(e1: Node, e2: Node):Link = apply(e1,e2,1.0)
 
-  def apply(e1: Node, e2: Node, directed: Boolean): Link = if(directed) Link(e1,e2) else {
-    if(e1<=e2) Link(e1,e2) else Link(e2,e1)
-  }
+  def apply(e1: Node, e2: Node, directed: Boolean): Link = Link(e1,e2,1.0,directed)
 
   def getNodes(links: Set[Link]): Set[Node] = links.flatMap{l=>Set(l.e1,l.e2)}
 }

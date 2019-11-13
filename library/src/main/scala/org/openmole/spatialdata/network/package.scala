@@ -31,8 +31,12 @@ import org.openmole.spatialdata.utils.math._
   */
 package object network {
 
+  type ShortestPaths = Map[(Node,Node),(Seq[Node],Seq[Link],Double)]
 
-
+  implicit class ShortestPathsDecorator(sp1: ShortestPaths){
+    def |-|(sp2: ShortestPaths): Double =
+      sp1.keySet.intersect(sp2.keySet).map{k => math.abs(sp1(k)._3 - sp2(k)._3)}.sum // path sets are assumed to be between same nodes
+  }
 
   /**
     * empty network

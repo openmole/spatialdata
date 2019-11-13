@@ -3,7 +3,7 @@ package org.openmole.spatialdata.network.measures
 import org.openmole.spatialdata.network._
 import org.openmole.spatialdata.network.loading.ShortestPathsNetworkLoader
 import org.openmole.spatialdata.network.measures.NetworkMeasures.{ShortestPathsNetworkMeasures, SummaryNetworkMeasures}
-import org.openmole.spatialdata.utils.math.GraphAlgorithms
+import org.openmole.spatialdata.utils.graph.GraphAlgorithms
 
 import scala.util.Random
 
@@ -90,7 +90,7 @@ object NetworkMeasures {
       * @return
       */
     def apply(network: Network, pathSample: Double = 1.0)(implicit rng: Random): ShortestPathsNetworkMeasures = {
-      val bwloading = ShortestPathsNetworkLoader(network, pathSample).load(None)
+      val bwloading = ShortestPathsNetworkLoader(pathSample).load(network,None)
       val nw = bwloading.loadedNetwork
       val paths = nw.cachedShortestPaths.get
 

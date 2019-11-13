@@ -1,37 +1,63 @@
-package org.openmole.spatialdata.utils.math
+package org.openmole.spatialdata.utils.graph
 
+import org.jgrapht.alg.shortestpath.DijkstraShortestPath
 import org.openmole.spatialdata.network._
-import scalax.collection.Graph
-import scalax.collection.edge.WUnDiEdge
+import org.openmole.spatialdata.utils
+import org.openmole.spatialdata.utils.math.Stochastic
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
-import scalax.collection.{Graph, GraphEdge}
-import scalax.collection.edge.Implicits._
-import scalax.collection.GraphPredef._
-import scalax.collection.GraphEdge._
-import scalax.collection.GraphTraversal._
-import scalax.collection.edge.WUnDiEdge
-import org.openmole.spatialdata._
 
-import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
+import collection.JavaConverters._
 
+/**
+  * Libraries to test:
+  *   - JGraphT seems very well maintained https://github.com/jgrapht/jgrapht/
+  *   - Guava https://github.com/google/guava/wiki/GraphsExplained
+  *   - Apache common graph seems dead http://commons.apache.org/sandbox/commons-graph/source-repository.html
+  */
 object GraphAlgorithms {
+
+
+  /**
+    * Shortest paths using Dijkstra in the JGraphT library
+    * @param network
+    * @param vertices
+    * @param linkWeight
+    * @param pathSample
+    * @param rng
+    * @return
+    */
+  def shortestPathsJGraphT(network: Network, vertices: Seq[Node], linkWeight: Link => Double = _.weight,pathSample: Double = 1.0)(implicit rng: Random): ShortestPaths = {
+    val (g,nodeMap,linkMap) = GraphConversions.networkToJGraphT(network,linkWeight)
+    val algo = new DijkstraShortestPath(g)
+    (for {
+      i <- vertices
+      j <- vertices
+    } yield ((i,j),if(i==j) {(Seq(i),Seq.empty[Link],0.0)}
+    else {
+      val path = algo.getPath(i.id,j.id)
+      (path.getVertexList.asScala.map{nodeMap(_)},
+        path.getEdgeList.asScala.map{e => linkMap((g.getEdgeSource(e),g.getEdgeTarget(e)))},
+      path.getWeight)
+    })).toMap
+  }
+
 
   /**
     * Shortest paths - by default not a spatial network as weight function is only the weight
     *
     * FIXME works if the network is not connected but returns existing paths only
+    * FIXME sampling should not be done here
     *
     * @param network
     * @param vertices
     * @return
     */
-  def shortestPaths(network: Network, vertices: Seq[Node], linkWeight: Link => Double = _.weight,pathSample: Double = 1.0)(implicit rng: Random): Map[(Node,Node),(Seq[Node],Seq[Link],Double)] = {
+  def shortestPaths(network: Network, vertices: Seq[Node], linkWeight: Link => Double = _.weight,pathSample: Double = 1.0)(implicit rng: Random): ShortestPaths = {
     //println("Computing shortest paths between vertices : "+vertices)
-    val (g,nodeMap,linkMap) = networkToGraph(network, linkWeight)
+    val (g,nodeMap,linkMap) = GraphConversions.networkToGraph(network, linkWeight)
     val odnodes = if(pathSample==1.0) vertices else Stochastic.sampleWithoutReplacementBy[Node](vertices,v => 1.0 / vertices.length.toDouble, math.floor(pathSample*vertices.length).toInt)
     (for {
       i <- odnodes
@@ -125,48 +151,18 @@ object GraphAlgorithms {
 
 
 
-  /**
-    * convert a Network to a Graph object
-    * @param network
-    * @return
-    */
-  def networkToGraph(network: Network, linkWeight: Link => Double = _.weight): (Graph[Int,WUnDiEdge],Map[Int,Node],Map[(Int,Int),Link]) = {
-    assert(network.hasConsistentIds,"Can not convert network to graph: non injective id set")
-    //var linklist = ArrayBuffer[WUnDiEdge[Int]]()
-    //for(link <- network.links){linklist.append()}
-    //println("links = "+network.links.toSeq.size)
-    val linkset = network.links.toSeq.map{case link => link.e1.id~link.e2.id % linkWeight(link)}
-    //println("linkset = "+linkset.size)
-    val graph = Graph.from(linkset.flatten,linkset.toList)
-    val nodeMap = network.nodes.map{(n:Node)=>(n.id,n)}.toMap
-    val linkMap = network.links.map{l => ((l.e1.id,l.e2.id),l)}.toMap
-    (graph,nodeMap,linkMap)
-  }
-
-  /**
-    *
-    * @param graph
-    * @return
-    */
-
-  def graphToNetwork(graph: Graph[Int,WUnDiEdge],nodeMap: Map[Int,Node]): Network = {
-    val links = ArrayBuffer[Link]();val nodes = ArrayBuffer[Node]()
-    for(edge <-graph.edges){
-      //links.append(Link(edge._1,edge._2,edge.weight))
-      nodes.append(nodeMap(edge._1),nodeMap(edge._2))
-      links.append(Link(nodeMap(edge._1),nodeMap(edge._2),edge.weight))
-    }
-    Network(nodes.toSet,links.toSet)
-  }
 
 
   /**
     * TODO: code an astar and or dynamic routing (update) for more perf of shortest paths?
+    *  -> see in JGraphT
     */
 
 
   /**
-    * Floid marshall shortest paths
+    * Floid Warshall shortest paths
+    *
+    * See https://jgrapht.org/javadoc/org/jgrapht/alg/shortestpath/JohnsonShortestPaths.html for sparse graphs in O(n2 logN)
     *
     * - slow in O(N^3) => DO NOT USE FOR LARGE NETWORKS
     *

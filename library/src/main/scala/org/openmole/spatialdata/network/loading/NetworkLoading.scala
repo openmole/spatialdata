@@ -23,7 +23,7 @@ case class NetworkLoading(
 
   def updateFlows(newflows: Map[Link,Double]): NetworkLoading = NetworkLoading.updateFlows(this,newflows)
 
-  def updateCosts(linkCostFunction: Link => Double): NetworkLoading = NetworkLoading.updateCosts(this, linkCostFunction)
+  def updateCosts(linkCostFunction: (Link, Double) => Double): NetworkLoading = NetworkLoading.updateCosts(this, linkCostFunction)
 
 }
 
@@ -37,9 +37,9 @@ object NetworkLoading {
     loading.odPattern
   )
 
-  def updateCosts(loading: NetworkLoading, linkCostFunction: Link => Double): NetworkLoading = {
-    val newLinks = loading.flows.map{case (l,f) => l.copy(weight = linkCostFunction(f))}
-    loading.copy(loadedNetwork = loading.loadedNetwork.updateLinkCosts(newLinks.toSeq))
+  def updateCosts(loading: NetworkLoading, linkCostFunction: (Link, Double) => Double): NetworkLoading = {
+    val newLinks: Seq[Link] = loading.flows.map{case (l,f) => l.copy(weight = linkCostFunction(l,f))}.toSeq
+    loading.copy(loadedNetwork = loading.loadedNetwork.updateLinkCosts(newLinks))
   }
 
 

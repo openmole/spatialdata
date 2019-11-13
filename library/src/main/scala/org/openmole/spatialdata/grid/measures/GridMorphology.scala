@@ -5,6 +5,7 @@ import org.apache.commons.math3.linear.MatrixUtils
 import org.apache.commons.math3.util.MathArrays
 import org.openmole.spatialdata._
 import org.openmole.spatialdata.network._
+import org.openmole.spatialdata.utils.graph.GraphAlgorithms
 import org.openmole.spatialdata.utils.io.CSV
 import org.openmole.spatialdata.utils.math._
 

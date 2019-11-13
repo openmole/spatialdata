@@ -17,7 +17,7 @@ import scala.util.Random
   */
 case class UserEquilibriumNetworkLoader(
                                          network: Network,
-                                         linkCostFunction: Link => Double,
+                                         linkCostFunction: (Link, Double) => Double,
                                          descentStep: Double = 0.5,
                                          epsilon: Double = 0.05,
                                          pathSample: Double = 1.0
@@ -43,7 +43,7 @@ object UserEquilibriumNetworkLoader {
     * @param rng
     * @return
     */
-  def load(network: Network,linkCostFunction: Link => Double,odPattern: Option[Map[(Node,Node),Double]],pathSample: Double,descentStep: Double, epsilon: Double)(implicit rng: Random): NetworkLoading = {
+  def load(network: Network,linkCostFunction: (Link,Double) => Double,odPattern: Option[Map[(Node,Node),Double]],pathSample: Double,descentStep: Double, epsilon: Double)(implicit rng: Random): NetworkLoading = {
     // In practice can be implemented with any other loader (not sure it converges though ?)
     val loader: NetworkLoader = ShortestPathsNetworkLoader(pathSample)
     def step(state: (NetworkLoading,Double)): (NetworkLoading,Double) = {
@@ -54,7 +54,7 @@ object UserEquilibriumNetworkLoader {
         case (l,f) =>
           val newflow = (1 - descentStep)*f + descentStep*shortestPathsFlows.getOrElse(l.id,f)
           // assume there is no other weight process in the weight - must be included in the linkCostFunction
-          (l.copy(weight=linkCostFunction(newflow)),newflow)
+          (l.copy(weight=linkCostFunction(l,newflow)),newflow)
          }.toMap
         // update loaded network with new costs
       val newLinkFlowsIds = newLinkFlows.map{case (l,f) => (l.id,f)}

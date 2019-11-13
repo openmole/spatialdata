@@ -41,5 +41,4 @@ package object spatialdata {
     * Spatial field
     */
   type SpatialField = Map[Point2D,Array[Double]]
-
 }

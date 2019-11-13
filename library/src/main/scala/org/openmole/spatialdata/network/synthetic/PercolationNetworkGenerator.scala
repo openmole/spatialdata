@@ -3,7 +3,7 @@ package org.openmole.spatialdata.network.synthetic
 
 import org.openmole.spatialdata.network
 import org.openmole.spatialdata.network._
-import org.openmole.spatialdata.utils.math.GraphAlgorithms
+import org.openmole.spatialdata.utils.graph.GraphAlgorithms
 
 import scala.util.Random
 

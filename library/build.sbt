@@ -26,13 +26,16 @@ libraryDependencies ++= Seq(
   "org.apache.commons" % "commons-math3" % "3.6.1",
   "com.github.pathikrit" %% "better-files" % "3.5.0",
   "com.vividsolutions" % "jts" % "1.13",
-  //"org.openmole" %% "graph-core" % "1.12.6-SNAPSHOT",
   "org.openmole.library" %% "graph-core" % "1.12.5.1",
   "org.geotools" % "geotools" % geotoolsVersion exclude("javax.media", "jai_core") exclude("com.vividsolutions", "jts-core"),
   "org.geotools" % "gt-shapefile" % geotoolsVersion exclude("javax.media", "jai_core") exclude("com.vividsolutions", "jts-core"),
   "com.github.tototoshi" %% "scala-csv" % "1.3.4",
   "org.postgresql" % "postgresql" % "42.2.5",
-  "org.mongodb" % "mongo-java-driver" % "3.10.0"
+  "org.mongodb" % "mongo-java-driver" % "3.10.0",
+  "org.jgrapht" % "jgrapht-core" % "1.3.1",
+  "org.apache.httpcomponents" % "httpclient" % "4.3.5",
+  "commons-io" % "commons-io" % "2.3",
+  "org.apache.commons" % "commons-lang3" % "3.1"
 )
 
 
@@ -40,20 +43,15 @@ libraryDependencies ++= Seq(
 enablePlugins(SbtOsgi)
 
 //lazy val omlplugin = Project("omlplugin", file("src")) settings(
-  OsgiKeys.exportPackage := Seq("spatialdata.*;-split-package:=merge-first")
-  OsgiKeys.importPackage := Seq("*;resolution:=optional")
-  OsgiKeys.privatePackage := Seq("!scala.*,!java.*,!monocle.*,!META-INF.*.RSA,!META-INF.*.SF,!META-INF.*.DSA,META-INF.services.*,META-INF.*,*")
+OsgiKeys.exportPackage := Seq("spatialdata.*;-split-package:=merge-first")
+OsgiKeys.importPackage := Seq("*;resolution:=optional")
+OsgiKeys.privatePackage := Seq("!scala.*,!java.*,!monocle.*,!META-INF.*.RSA,!META-INF.*.SF,!META-INF.*.DSA,META-INF.services.*,META-INF.*,*")
 // FilteredSet,scala.collection.FilterableSet,scala.collection.EqSetFacade
 //OsgiKeys.embeddedJars := Seq(new java.io.File("/Users/juste/.ivy2/cache/org.scala-graph/graph-core_2.12/jars/graph-core_2.12-1.12.5.jar"))
-  OsgiKeys.requireCapability := """osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))""""
+OsgiKeys.requireCapability := """osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))""""
 //)
 
 //excludeFilter in unmanagedSources := HiddenFileFilter || "*kodapan*"
-
-libraryDependencies += "org.apache.httpcomponents" % "httpclient" % "4.3.5"
-libraryDependencies += "commons-io" % "commons-io" % "2.3"
-libraryDependencies += "org.apache.commons" % "commons-lang3" % "3.1"
-
 
 //mainClass in (Compile, packageBin) := Some("spatialdata.osm.OSMRealMeasures")
 //mainClass in (Compile, packageBin) := Some("spatialdata.test.Test")

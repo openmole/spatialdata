@@ -32,6 +32,12 @@ package object utils {
     println("time : "+(System.currentTimeMillis()-start)+" ms")
   }
 
+  def withTimer[A,B](fun: A => B)(a: A): (B,Double) = {
+    val start = System.currentTimeMillis()
+    val res = fun(a)
+    (res,System.currentTimeMillis()-start)
+  }
+
   def log(msg: String): Unit = if(spatialdata.DEBUG) println(msg)
 
 

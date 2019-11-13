@@ -1,6 +1,6 @@
 package org.openmole.spatialdata.network
 
-import org.openmole.spatialdata.utils.math.GraphAlgorithms
+import org.openmole.spatialdata.utils.graph.GraphAlgorithms
 
 import scala.util.Random
 

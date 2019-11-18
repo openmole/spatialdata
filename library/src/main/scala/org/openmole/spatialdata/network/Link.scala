@@ -117,5 +117,11 @@ object Link {
 
   def apply(e1: Node, e2: Node, directed: Boolean): Link = Link(e1,e2,1.0,directed)
 
+  /**
+    * Get nodes associated to a set of links
+    * @param links
+    * @return
+    */
   def getNodes(links: Set[Link]): Set[Node] = links.flatMap{l=>Set(l.e1,l.e2)}
+
 }

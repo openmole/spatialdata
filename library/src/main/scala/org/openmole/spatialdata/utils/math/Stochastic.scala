@@ -40,4 +40,7 @@ object Stochastic {
     }.take(samples).toSeq.last._2
   }
 
+  def sampleWithoutReplacement[T](sampled: Traversable[T], samples: Int)(implicit rng: Random): Vector[T] =
+    sampleWithoutReplacementBy[T](sampled,_ => 1.0 / sampled.size.toDouble, samples)
+
 }

@@ -2,11 +2,19 @@ package org.openmole.spatialdata
 
 import org.apache.commons.math3.random.RandomDataGenerator
 import org.openmole.spatialdata
+import org.openmole.spatialdata.utils.math.Stochastic
 
 import scala.util.Random
 import collection.JavaConverters._
 
 package object utils {
+
+
+  implicit class TraversableDecorator[T](s: Traversable[T]){
+
+    def sampleWithoutReplacement(samples: Int)(implicit rng: Random): Vector[T] = Stochastic.sampleWithoutReplacementBy(s,{_: T => 1/s.size}, samples)
+
+  }
 
 
   implicit class SetDecorator[A](s: Set[A]) {

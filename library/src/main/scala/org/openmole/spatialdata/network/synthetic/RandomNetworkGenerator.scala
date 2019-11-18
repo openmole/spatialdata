@@ -67,10 +67,7 @@ object RandomNetworkGenerator {
     * @return
     */
   def addRandomLinks(network: Network,nlinks: Int,directed: Boolean)(implicit rng: Random): Network = {
-    // FIXME the randomTake in set has a strange behavior?! yes acts as a set!
-    //val (origins,destinations) = (network.nodes.randomTake(nlinks),network.nodes.randomTake(nlinks))
     val (origins,destinations) = (Stochastic.sampleWithReplacement[Node](network.nodes.toSeq,nlinks),Stochastic.sampleWithReplacement[Node](network.nodes.toSeq,nlinks))
-    //println(origins);println(destinations);println(origins.zip(destinations).map{case (o,d) => if(o <= d) (o,d) else (d,o)}.filter{c => c._1 != c._2}.toSet.size)
     Network(network,origins.zip(destinations).flatMap{case (o,d) => if(o!=d) Some(Link(o,d,directed)) else None}.toSet)
   }
 

@@ -1,9 +1,11 @@
 package org.openmole.spatialdata.network
 
 import org.openmole.spatialdata.utils.graph.GraphAlgorithms
+import org.openmole.spatialdata.utils._
+import org.openmole.spatialdata.utils.graph.GraphAlgorithms.{DijkstraJGraphT, ShortestPathMethod}
 
 import scala.util.Random
-
+import scala.math._
 
 /**
   * Network
@@ -21,7 +23,9 @@ import scala.util.Random
 case class Network(
                     nodes: Set[Node],
                     links: Set[Link],
-                    cachedShortestPaths: Option[Map[(Node,Node),(Seq[Node],Seq[Link],Double)]]
+                    directed: Boolean = false,
+                    cachedShortestPaths: Option[Map[(Node,Node),(Seq[Node],Seq[Link],Double)]] = None,
+                    shortestPathsMethod: ShortestPathMethod = DijkstraJGraphT()
                   ) {
 
   def hasConsistentIds: Boolean = nodes.toSeq.map(_.id).distinct.length==nodes.size
@@ -35,7 +39,15 @@ case class Network(
                            pathSample: Double = 1.0,
                            recompute: Boolean = false)(implicit rng: Random): Network =
     if(cachedShortestPaths.isEmpty||recompute)
-      this.copy(cachedShortestPaths=Some(GraphAlgorithms.shortestPaths(this,nodes.toSeq,linkWeight,pathSample)))
+      this.copy(cachedShortestPaths=Some(
+        GraphAlgorithms.shortestPaths(
+          network = this,
+          vertices = nodes.sampleWithoutReplacement(floor(pathSample*nodes.size).toInt),
+          linkWeight,
+          shortestPathsMethod
+         ) // FIXME provide context bound
+        )
+      )
     else this
 
   /**
@@ -62,7 +74,7 @@ object Network {
     * @param links
     * @return
     */
-  def apply(nodes: Set[Node],links: Set[Link]): Network = Network(nodes,links, None)
+  //def apply(nodes: Set[Node],links: Set[Link]): Network = Network(nodes=nodes,links=links)
 
   /**
     * additional links should be among nodes of this network ; otherwise they are added
@@ -75,8 +87,7 @@ object Network {
     */
   def apply(network: Network, additionalLinks: Set[Link]): Network = Network(
     network.nodes.union(Link.getNodes(additionalLinks)),
-    network.links.union(additionalLinks),
-    None
+    network.links.union(additionalLinks)
   )
 
   /**

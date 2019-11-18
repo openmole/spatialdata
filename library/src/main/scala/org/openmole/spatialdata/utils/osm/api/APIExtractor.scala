@@ -16,6 +16,13 @@ import scala.util.Try
 
 object APIExtractor {
 
+  sealed trait OSMAPIMode
+  case object OSMOverpass extends OSMAPIMode
+  case object OSMDirect extends OSMAPIMode
+  case class Postgresql(port: Int) extends OSMAPIMode
+  case class Mongo(port: Int) extends OSMAPIMode
+
+
   /**
     * Methods to extract buildings
     */
@@ -49,10 +56,10 @@ object APIExtractor {
       * @param mode osm,overpass, postgresql
       * @return
       */
-    def getBuildings(south: Double, west: Double, north: Double, east: Double, mode: String = "overpass"): Seq[Polygon] = {
+    def getBuildings(south: Double, west: Double, north: Double, east: Double, mode: OSMAPIMode = OSMOverpass): Seq[Polygon] = {
       Locale.setDefault(Locale.ENGLISH)
       mode match {
-        case "overpass" => {
+        case OSMOverpass => {
           val overpass = new Overpass
           overpass.setUserAgent("Spatial Data extraction")
           overpass.open()
@@ -74,22 +81,21 @@ object APIExtractor {
           if (spatialdata.DEBUG) println("retrieved via overpass " + east + " n=" + north + " s=" + south + "w=" + west)
           asPolygonSeq(root.enumerateWays)
         }
-        case "osm" => {
+        case OSMDirect => {
           val api = new ApiConnection()
           val res = api.get(south, west, north, east)
           if (spatialdata.DEBUG) println("retrieved via standard api " + east + " n=" + north + " s=" + south + "w=" + west)
           asPolygonSeq(res.enumerateWays)
         }
-        case "postgresql" => {
-	  // FIXME port shoudnt be hardcoded here
-          PostgisConnection.initPostgis("buildings",5433)
+        case Postgresql(port) => {
+          PostgisConnection.initPostgis(database ="buildings",port = port)
           val polygons = PostgisConnection.bboxRequest(west,south,east,north,"ways")
           if (spatialdata.DEBUG) println("retrieved via postgresql " + east + " n=" + north + " s=" + south + "w=" + west+" : "+polygons.size+" buildings")
           PostgisConnection.closeConnection()
           polygons
         }
-        case "mongo" => {
-          MongoConnection.initMongo("buildings")
+        case Mongo(port) => {
+          MongoConnection.initMongo(database = "buildings",port=port)
           val polygons = MongoConnection.bboxRequest(west,south,east,north,"buildings")
           if (spatialdata.DEBUG) println("retrieved via mongo " + east + " n=" + north + " s=" + south + "w=" + west+" : "+polygons.size+" buildings")
           MongoConnection.closeMongo()

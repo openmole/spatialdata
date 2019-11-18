@@ -1,14 +1,17 @@
 package org.openmole.spatialdata.utils.graph
 
-import org.jgrapht.alg.shortestpath.DijkstraShortestPath
+import org.jgrapht.Graph
+import org.jgrapht.alg.shortestpath.{DijkstraShortestPath, FloydWarshallShortestPaths, JohnsonShortestPaths}
+import org.jgrapht.alg.interfaces._
+import org.jgrapht.graph.{DefaultWeightedEdge, SimpleWeightedGraph}
 import org.openmole.spatialdata.network._
 import org.openmole.spatialdata.utils
+import org.openmole.spatialdata.utils.graph.GraphAlgorithms.ShortestPathMethod
 import org.openmole.spatialdata.utils.math.Stochastic
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
-
 import collection.JavaConverters._
 
 /**
@@ -19,28 +22,72 @@ import collection.JavaConverters._
   */
 object GraphAlgorithms {
 
+  sealed trait ShortestPathMethod
+  case class DijkstraJGraphT() extends ShortestPathMethod
+  case class FloydWarshallJGraphT() extends ShortestPathMethod
+  case class ScalaGraph() extends ShortestPathMethod
+
+  /**
+    * Shortest paths
+    * @param network
+    * @param vertices
+    * @param linkWeight
+    * @tparam T
+    * @return
+    */
+  def shortestPaths(network: Network, vertices: Seq[Node], linkWeight: Link => Double = _.weight,method: ShortestPathMethod = DijkstraJGraphT()): ShortestPaths = {
+    method match {
+      case _ : DijkstraJGraphT => shortestPathsJGraphT(network, vertices, linkWeight)
+      case _ : FloydWarshallJGraphT => allShortestPathsFloydWarshallJGraphT(network, linkWeight)
+      case _ : ScalaGraph => shortestPathsScalaGraph(network, vertices, linkWeight)
+    }
+  }
+
 
   /**
     * Shortest paths using Dijkstra in the JGraphT library
     * @param network
     * @param vertices
     * @param linkWeight
-    * @param pathSample
     * @param rng
     * @return
     */
-  def shortestPathsJGraphT(network: Network, vertices: Seq[Node], linkWeight: Link => Double = _.weight,pathSample: Double = 1.0)(implicit rng: Random): ShortestPaths = {
+  def shortestPathsJGraphT(network: Network, vertices: Seq[Node], linkWeight: Link => Double = _.weight): ShortestPaths =
+    shortestPathsWithJGraphTAlgorithm(network,vertices,g => new DijkstraShortestPath(g), linkWeight)
+
+
+  /**
+    * Floyd-Warshall of JGraphT
+    * @param network
+    * @param linkWeight
+    * @return
+    */
+  def allShortestPathsFloydWarshallJGraphT(network: Network, linkWeight: Link => Double = _.weight): ShortestPaths =
+    shortestPathsWithJGraphTAlgorithm(network,network.nodes.toSeq,g=> new FloydWarshallShortestPaths[Int,DefaultWeightedEdge](g),linkWeight)
+
+  def allShortestPathsJohnsonJGraphT(network: Network, linkWeight: Link => Double = _.weight): ShortestPaths =
+    shortestPathsWithJGraphTAlgorithm(network,network.nodes.toSeq,g=> new JohnsonShortestPaths[Int,DefaultWeightedEdge](g),linkWeight)
+
+
+  /**
+    * Generic shortest paths using different JGraphT algo
+    * @param network
+    * @param vertices
+    * @param algorithm
+    * @param linkWeight
+    * @return
+    */
+  def shortestPathsWithJGraphTAlgorithm(network: Network, vertices: Seq[Node],algorithm: Graph[Int,DefaultWeightedEdge] => ShortestPathAlgorithm[Int,DefaultWeightedEdge], linkWeight: Link => Double = _.weight): ShortestPaths = {
     val (g,nodeMap,linkMap) = GraphConversions.networkToJGraphT(network,linkWeight)
-    val algo = new DijkstraShortestPath(g)
     (for {
-      i <- vertices
-      j <- vertices
+      i <- network.nodes.toSeq
+      j <- network.nodes.toSeq
     } yield ((i,j),if(i==j) {(Seq(i),Seq.empty[Link],0.0)}
     else {
-      val path = algo.getPath(i.id,j.id)
+      val path = algorithm(g).getPath(i.id,j.id)
       (path.getVertexList.asScala.map{nodeMap(_)},
         path.getEdgeList.asScala.map{e => linkMap((g.getEdgeSource(e),g.getEdgeTarget(e)))},
-      path.getWeight)
+        path.getWeight)
     })).toMap
   }
 
@@ -55,10 +102,11 @@ object GraphAlgorithms {
     * @param vertices
     * @return
     */
-  def shortestPaths(network: Network, vertices: Seq[Node], linkWeight: Link => Double = _.weight,pathSample: Double = 1.0)(implicit rng: Random): ShortestPaths = {
+  def shortestPathsScalaGraph(network: Network, vertices: Seq[Node], linkWeight: Link => Double = _.weight): ShortestPaths = {
     //println("Computing shortest paths between vertices : "+vertices)
-    val (g,nodeMap,linkMap) = GraphConversions.networkToGraph(network, linkWeight)
-    val odnodes = if(pathSample==1.0) vertices else Stochastic.sampleWithoutReplacementBy[Node](vertices,v => 1.0 / vertices.length.toDouble, math.floor(pathSample*vertices.length).toInt)
+    val (g,nodeMap,linkMap) = GraphConversions.networkToScalaGraph(network, linkWeight)
+    //val odnodes = if(pathSample==1.0) vertices else Stochastic.sampleWithoutReplacementBy[Node](vertices,v => 1.0 / vertices.length.toDouble, math.floor(pathSample*vertices.length).toInt)
+    val odnodes = vertices // better to do the sampling explicitly outside the function
     (for {
       i <- odnodes
       j <- odnodes
@@ -77,24 +125,7 @@ object GraphAlgorithms {
 
 
 
-  /**
-    * extract connected components
-    *  using scala-graph component traverser
-    *
-    *
-    *
-    * @param network
-    * @return
-    */
-  // FIXME does not work with latest scala-graph version
-  /*def connectedComponentsScalagraph(network: Network): Seq[Network] = {
-    val (graph,nodeMap) = networkToGraph(network)
-    //val components: Seq[graph.Component] = graph.componentTraverser().toSeq
-    val components: Seq[graph.Component] = (for (component <- graph.componentTraverser()) yield component).toSeq
-    //println("components : "+components.size)
-    components.map{case c => graphToNetwork(Graph.from(c.nodes,c.edges),nodeMap)}
 
-  }*/
 
   /**
     * dirty component traverser (not appropriate network data structure)
@@ -143,9 +174,7 @@ object GraphAlgorithms {
     */
   def largestConnectedComponent(network: Network): Network = {
     val components = connectedComponents(network)
-    //val largestComp = components.sortWith{case(n1,n2)=>n1.nodes.size>=n2.nodes.size}(0)
     val largestComp = components.sortWith{case(n1,n2)=>n1.nodes.size>n2.nodes.size}(0)
-    //println("largest comp size : "+largestComp.nodes.size)
     largestComp
   }
 

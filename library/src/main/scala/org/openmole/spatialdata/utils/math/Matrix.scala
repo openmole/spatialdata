@@ -4,6 +4,9 @@ import org.apache.commons.math3.linear.{MatrixUtils, RealMatrix}
 
 /**
   * matrix utilities (not linear algebra operations which are in [[Linear]]
+  *
+  * TODO test spark matrices https://spark.apache.org/docs/2.1.2/api/java/org/apache/spark/mllib/linalg/Matrix.html
+  *
   */
 object Matrix {
 

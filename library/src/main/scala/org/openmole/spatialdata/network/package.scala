@@ -67,6 +67,33 @@ package object network {
     Network(network.nodes,newLinksSet)
   }
 
+  /**
+    * Remove a set of links and optionally corresponding nodes if belonging only to removed links
+    *  FIXME cached shortest paths are removed by default - could implement dynamic programming shortest paths and include here
+    *   (should work with link removal, only recompute path if deleted link on it - requires caching paths themselves but ok)
+    * @param network
+    * @param removedLinks
+    * @param keepNodes
+    * @return
+    */
+  def removeLinks(network: Network, removedLinks: Set[Link],keepNodes: Boolean = false): Network = {
+    if(keepNodes) network.copy(links = network.links.filter(!removedLinks.contains(_)),cachedShortestPaths = None)
+    else {
+      val keptLinks = network.links.filter(!removedLinks.contains(_))
+      network.copy(links = keptLinks, nodes = Link.getNodes(keptLinks),cachedShortestPaths = None)
+    }
+  }
+
+  /**
+    * Remove nodes - ids are unchanged as restriction of injective index is still injective
+    *  can not have the option to keep links as would not have any sense
+    * @param network
+    * @param removedNodes
+    * @return
+    */
+  def removeNodes(network: Network, removedNodes: Set[Node]): Network =
+    network.copy(nodes = network.nodes.filter(!removedNodes.contains(_)), links = network.links.filter{l => (!removedNodes.contains(l.e1))&(!removedNodes.contains(l.e2))}, cachedShortestPaths = None)
+
 
   /**
     * Network to grid: rasterize a network

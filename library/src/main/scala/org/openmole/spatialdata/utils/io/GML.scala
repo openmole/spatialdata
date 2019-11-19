@@ -7,7 +7,7 @@ import org.openmole.spatialdata.network._
 object GML {
 
   // TODO
-  def readGML(file: String): Network = network.empty
+  def readGML(file: String): Network = Network.empty
 
   // TODO
   def writeGML(network: Network,file: String): Unit = {}

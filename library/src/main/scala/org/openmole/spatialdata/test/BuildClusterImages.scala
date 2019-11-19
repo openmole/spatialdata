@@ -6,13 +6,14 @@ import org.openmole.spatialdata.grid._
 import org.openmole.spatialdata.grid.measures.GridMorphology
 import org.openmole.spatialdata.grid.real.OSMGridGenerator
 import org.openmole.spatialdata.utils.io.PNG
+import org.openmole.spatialdata.utils.osm.api.APIExtractor.{OSMAPIMode, OSMOverpass}
 
 import scala.io.Source
 import scala.util.Random
 
 object BuildClusterImages extends App {
   def sqDistance(p1: (Double, Double), p2: (Double, Double)) = Math.pow(p1._1 - p2._1, 2) + Math.pow(p1._2 - p2._2, 2)
-  def buildClusterImagesReal(file: File, outputDir: File, clusters: Map[Int, (Double, Double)], worldWidth: Int = 500, mode: String = "overpass")(implicit rng: Random) {
+  def buildClusterImagesReal(file: File, outputDir: File, clusters: Map[Int, (Double, Double)], worldWidth: Int = 500, mode: OSMAPIMode = OSMOverpass)(implicit rng: Random) {
     val reader = CSVReader.open(file.toJava)
     val valuesWithDistance = reader.allWithHeaders().map {
       line => {

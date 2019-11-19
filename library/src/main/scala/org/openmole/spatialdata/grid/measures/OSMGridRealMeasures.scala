@@ -2,6 +2,7 @@ package org.openmole.spatialdata.grid.measures
 
 import org.openmole.spatialdata.grid.real.OSMGridSampling
 import org.openmole.spatialdata.utils.io.CSV
+import org.openmole.spatialdata.utils.osm.api.APIExtractor._
 
 import scala.util.Random
 
@@ -17,7 +18,14 @@ object OSMGridRealMeasures extends App {
   val worldWidth = args(2).toInt // 50
   val seed = args(3).toInt match {case s if s == 0.0 => {println("random seed");new Random().nextInt()};case s => s}
   val resdir = args(4)
-  val mode = if(args.length>=6) args(5) else "postgresql"
+  val mode: OSMAPIMode = if(args.length>=6) {
+    args(5) match {
+      case "overpass" => OSMOverpass
+      case "osm" => OSMDirect
+      case "mongo" => Mongo()
+      case _ => Postgresql()
+    }
+  } else Postgresql()
 
   implicit val rng: Random = new Random(seed)
 

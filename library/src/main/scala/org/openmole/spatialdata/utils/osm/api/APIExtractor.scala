@@ -19,8 +19,8 @@ object APIExtractor {
   sealed trait OSMAPIMode
   case object OSMOverpass extends OSMAPIMode
   case object OSMDirect extends OSMAPIMode
-  case class Postgresql(port: Int) extends OSMAPIMode
-  case class Mongo(port: Int) extends OSMAPIMode
+  case class Postgresql(port: Int = 5433) extends OSMAPIMode
+  case class Mongo(port: Int = 27017) extends OSMAPIMode
 
 
   /**
@@ -114,7 +114,7 @@ object APIExtractor {
       //.flatMap(simplify)
     }
 
-    def getBuildingIntersection(south: Double, west: Double, north: Double, east: Double, mode: String = "overpass"): Seq[Geometry] = {
+    def getBuildingIntersection(south: Double, west: Double, north: Double, east: Double, mode: OSMAPIMode = OSMOverpass): Seq[Geometry] = {
       val buildings = getBuildings(south, west, north, east, mode)
       val fact = new GeometryFactory()
       val env = fact.createPolygon(fact.createLinearRing(Array(new Coordinate(west, north), new Coordinate(east, north), new Coordinate(east, south), new Coordinate(west, south), new Coordinate(west, north))), Array())
@@ -124,7 +124,7 @@ object APIExtractor {
     }
 
 
-    def getNegativeBuildingIntersection(south: Double, west: Double, north: Double, east: Double, mode: String = "overpass"): Geometry = {
+    def getNegativeBuildingIntersection(south: Double, west: Double, north: Double, east: Double, mode: OSMAPIMode = OSMOverpass): Geometry = {
       val buildings = getBuildings(south, west, north, east, mode)
       val fact = new GeometryFactory()
       val env = fact.createPolygon(fact.createLinearRing(Array(new Coordinate(west, north), new Coordinate(east, north), new Coordinate(east, south), new Coordinate(west, south), new Coordinate(west, north))), Array())

@@ -4,7 +4,7 @@ import org.openmole.spatialdata.network
 import org.openmole.spatialdata.network.{Network, Node, ShortestPaths}
 import org.openmole.spatialdata.network.measures.NetworkMeasures
 import org.openmole.spatialdata.network.measures.NetworkMeasures.ShortestPathsNetworkMeasures
-import org.openmole.spatialdata.network.synthetic.{GridNetworkGenerator, RandomNetworkGenerator}
+import org.openmole.spatialdata.network.synthetic.{GridNetworkGenerator, RandomNetworkGenerator, TreeMinDistGenerator}
 import org.openmole.spatialdata.utils.graph.GraphAlgorithms.{ScalaGraph, _}
 import org.openmole.spatialdata.utils.math.Stochastic
 import org.openmole.spatialdata.utils._
@@ -13,6 +13,11 @@ import scala.util.Random
 
 object TestNetwork {
 
+
+  def testTreeMinDist: Unit = {
+    implicit val rng = new Random
+    visualization.staticVisualization(TreeMinDistGenerator(50).generateNetwork)
+  }
 
   /**
     * JGraphT in average around 10 times faster !
@@ -48,7 +53,7 @@ object TestNetwork {
     //println(network.isPlanar(nw)) // rq: the grid network should already be planar: OK
     // but the random not: WTF?
 
-    val planarized = network.planarize(nw)
+    val planarized = nw.planarize
     //println(planarized)
     //println(network.isPlanar(planarized))
     //println(planarized.links.map{_.length})

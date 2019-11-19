@@ -35,7 +35,8 @@ libraryDependencies ++= Seq(
   "org.jgrapht" % "jgrapht-core" % "1.3.1",
   "org.apache.httpcomponents" % "httpclient" % "4.3.5",
   "commons-io" % "commons-io" % "2.3",
-  "org.apache.commons" % "commons-lang3" % "3.1"
+  "org.apache.commons" % "commons-lang3" % "3.1",
+  "it.uniroma1.dis.wsngroup.gexf4j" % "gexf4j" % "1.0.0"
 )
 
 

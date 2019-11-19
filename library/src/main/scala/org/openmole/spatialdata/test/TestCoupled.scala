@@ -21,7 +21,7 @@ object TestCoupled {
     val points =  DensityPointsGenerator(nwNodes,randomGrid,true).generatePoints
     println(points)
     val randomNetwork = RandomNetworkGenerator(nlinks = nwLinks,points=points,planarize = true).generateNetwork
-    println(network.isPlanar(randomNetwork))
+    println(randomNetwork.isPlanar)
     println(randomNetwork)
 
     println("Moran grid = "+GridMorphology.moran(randomGrid)+" ; Entropy = "+Statistics.entropy(randomGrid)+" ; slope = "+

@@ -136,7 +136,8 @@ object GraphAlgorithms {
     * @return
     */
   def connectedComponents(network: Network): Seq[Network] = {
-    utils.log(s"Traversing graph of size (${network.nodes.size};${network.links.size}) for connected components")
+    //utils.log(s"Traversing graph of size (${network.nodes.size};${network.links.size}) for connected components")
+
     val nlinks = new mutable.HashMap[Node,Seq[Link]]()
     network.links.foreach{l =>
       if(nlinks.contains(l.e1)){nlinks(l.e1)=nlinks(l.e1)++Seq(l)}else{nlinks(l.e1)=Seq(l)}

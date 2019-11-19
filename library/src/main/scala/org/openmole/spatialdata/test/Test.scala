@@ -1,5 +1,7 @@
 package org.openmole.spatialdata.test
 
+import scala.util.Random
+
 object Test extends App {
 
   // Coupled network / grid
@@ -7,7 +9,7 @@ object Test extends App {
   //TestCoupled.testRandom()
 
   // Network algorithms
-  TestNetwork.testShortestPathImplementations()
+  //TestNetwork.testShortestPathImplementations()
   //TestNetwork.testPlanarization()
 
   // OSM
@@ -23,6 +25,9 @@ object Test extends App {
   //TestIndicators.testMoran
   //TestIndicators.testStats
   //TestIndicators.testFFTConvolution
+
+  // Synthetic networks
+  TestNetwork.testTreeMinDist
 
   // Synthetic grids
   //TestSynthetic.testRandomGrids

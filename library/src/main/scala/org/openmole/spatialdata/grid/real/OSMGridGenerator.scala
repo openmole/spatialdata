@@ -6,6 +6,7 @@ import org.openmole.spatialdata.RasterLayerData
 import org.openmole.spatialdata.grid.GridGenerator
 import org.openmole.spatialdata.utils.gis.GISUtils
 import org.openmole.spatialdata.utils.osm.api.APIExtractor
+import org.openmole.spatialdata.utils.osm.api.APIExtractor.{OSMAPIMode, OSMOverpass}
 
 import scala.util.{Random, Try}
 
@@ -14,7 +15,7 @@ case class OSMGridGenerator(
                            lat: Double,
                            windowSize: Double,
                            worldWidth: Int,
-                           mode: String = "overpass"
+                           mode: OSMAPIMode = OSMOverpass
                            ) extends GridGenerator {
   override def generateGrid(implicit rng: Random): RasterLayerData[Double] = OSMGridGenerator.OSMBuildingsGrid(lon,lat,windowSize,worldWidth,mode)
 }
@@ -29,7 +30,7 @@ object OSMGridGenerator {
     * @param worldWidth
     * @return
     */
-  def OSMBuildingsGrid(lon: Double, lat: Double,windowSize: Double, worldWidth: Int,mode: String): RasterLayerData[Double] = {
+  def OSMBuildingsGrid(lon: Double, lat: Double,windowSize: Double, worldWidth: Int,mode: OSMAPIMode): RasterLayerData[Double] = {
     // get polygons
     val (west,south,east,north)=GISUtils.wgs84window(lon,lat,windowSize)
     val g: Geometry = APIExtractor.Buildings.getNegativeBuildingIntersection(south, west, north, east,mode)

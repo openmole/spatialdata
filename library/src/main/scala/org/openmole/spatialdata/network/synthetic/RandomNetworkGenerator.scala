@@ -56,7 +56,7 @@ object RandomNetworkGenerator {
     val coords = if(points.length==0) RandomPointsGenerator(nnodes).generatePoints else points
     val nodes = if(withIndex) Network(coords.zipWithIndex.map{case ((x,y),id) => Node(id,x,y)}.toSet,Set.empty[Link]) else Network(coords.map{case (x,y) => Node(0,x,y)}.toSet,Set.empty[Link])
     val res = addRandomLinks(nodes,nlinks,directed)
-    if(planar) planarize(res) else res
+    if(planar) res.planarize else res
   }
 
   /**

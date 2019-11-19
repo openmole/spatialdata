@@ -11,7 +11,7 @@ case class SlimeMouldNetworkGenerator(
                                        inputFlowSlimeMould: Double,
                                        deltatSlimeMould: Double = 0.05
                                      ) extends NetworkGenerator {
-  override def generateNetwork(implicit rng: Random): Network = empty
+  override def generateNetwork(implicit rng: Random): Network = Network.empty
 }
 
 

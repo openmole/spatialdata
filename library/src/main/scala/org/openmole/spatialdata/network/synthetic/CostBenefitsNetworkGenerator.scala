@@ -13,7 +13,7 @@ case class CostBenefitsNetworkGenerator(
                                        lambda: Double
                                        ) extends NetworkGenerator {
 
-  override def generateNetwork(implicit rng: Random): Network = empty
+  override def generateNetwork(implicit rng: Random): Network = Network.empty
 
 }
 
@@ -22,7 +22,7 @@ object CostBenefitsNetworkGenerator {
 
 
   // TODO
-  def addCostBenefitLinks(network: Network, lambda: Double, generalizedCostFunction: Network => Map[Link,Double]): Network = empty
+  def addCostBenefitLinks(network: Network, lambda: Double, generalizedCostFunction: Network => Map[Link,Double]): Network = Network.empty
 
 
 }

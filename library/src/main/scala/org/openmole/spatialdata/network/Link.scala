@@ -124,4 +124,22 @@ object Link {
     */
   def getNodes(links: Set[Link]): Set[Node] = links.flatMap{l=>Set(l.e1,l.e2)}
 
+
+
+  /**
+    * Compute intersections of a set of links
+    * @param links
+    * @return
+    */
+  def getIntersections(links: Set[Link]): Seq[(Link,Node)] = {
+    (for {
+      l1 <- links
+      l2 <- links
+      inter = l1.intersection(l2)
+      if inter.isDefined
+    } yield (l1,inter.get)).toSeq
+  }
+
+
+
 }

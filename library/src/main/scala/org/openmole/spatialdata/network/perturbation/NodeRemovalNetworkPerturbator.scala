@@ -10,5 +10,5 @@ case class NodeRemovalNetworkPerturbator(
                                         ) extends NetworkPerturbator {
 
   override def perturbateNetwork(network: Network)(implicit rng: Random): Network =
-    removeNodes(network,Stochastic.sampleWithoutReplacement(network.nodes,math.floor(removedNodesProportion*network.nodes.size).toInt).toSet)
+    network.removeNodes(Stochastic.sampleWithoutReplacement(network.nodes,math.floor(removedNodesProportion*network.nodes.size).toInt).toSet)
 }

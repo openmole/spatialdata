@@ -8,8 +8,12 @@ import org.openmole.spatialdata.utils.graph.GraphAlgorithms
 import scala.util.Random
 
 
-
-
+/**
+  * Network measures
+  * @param measures
+  * @param summary
+  * @param shortestPaths
+  */
 case class NetworkMeasures(
                           measures: Seq[NetworkMeasures.Measures],
                           summary: Option[SummaryNetworkMeasures] = None ,
@@ -32,6 +36,15 @@ object NetworkMeasures {
 
   sealed trait Measures
 
+  /**
+    * Summary statistics
+    *
+    * @param nodes
+    * @param links
+    * @param gamma
+    * @param totalLength
+    * @param weakComponents
+    */
   case class SummaryNetworkMeasures(
                                    nodes: Double,
                                    links: Double,
@@ -63,6 +76,14 @@ object NetworkMeasures {
   }
 
 
+  /**
+    * Measures linked to shortest paths
+    * @param betweenness
+    * @param closeness
+    * @param meanPathLength
+    * @param meanEfficiency
+    * @param diameter
+    */
   case class ShortestPathsNetworkMeasures(
                                          betweenness: Map[Link,Double],
                                          closeness: Map[Node,Double],
@@ -91,6 +112,7 @@ object NetworkMeasures {
       */
     def apply(network: Network, pathSample: Double = 1.0)(implicit rng: Random): ShortestPathsNetworkMeasures = {
       val bwloading = ShortestPathsNetworkLoader(pathSample).load(network,None)
+      // FIXME quicker to use org.jgrapht.alg.scoring.BetweennessCentrality
       val nw = bwloading.loadedNetwork
       val paths = nw.cachedShortestPaths.get
 

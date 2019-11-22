@@ -16,7 +16,8 @@ object TestNetwork {
 
   def testTreeMinDist: Unit = {
     implicit val rng = new Random
-    visualization.staticVisualization(TreeMinDistGenerator(50).generateNetwork)
+    //visualization.staticVisualization(TreeMinDistGenerator(50).generateNetwork)
+    visualization.staticVisualization(TreeMinDistGenerator(50,connexificationAlgorithm = n => n.projectionConnect).generateNetwork)
   }
 
   /**

@@ -13,10 +13,11 @@ import scala.util.Random
   */
 case class TreeMinDistGenerator(
                                 nnodes: Int,
-                                points: Seq[Point2D] = Seq.empty
+                                points: Seq[Point2D] = Seq.empty,
+                                connexificationAlgorithm: Network => Network = n => n.weakComponentConnect
                                ) extends NetworkGenerator {
 
-  override def generateNetwork(implicit rng: Random): Network = TreeMinDistGenerator.treeMinDistNetwork(nnodes, points)
+  override def generateNetwork(implicit rng: Random): Network = TreeMinDistGenerator.treeMinDistNetwork(nnodes, points, connexificationAlgorithm)
 
 }
 
@@ -24,10 +25,10 @@ case class TreeMinDistGenerator(
 
 object TreeMinDistGenerator {
 
-  def treeMinDistNetwork(nodes: Int, points: Seq[Point2D])(implicit rng: Random): Network = {
+  def treeMinDistNetwork(nodes: Int, points: Seq[Point2D],connexificationAlgorithm: Network => Network)(implicit rng: Random): Network = {
     val coords = if(points.isEmpty) RandomPointsGenerator(nodes).generatePoints else points
     // TODO option to connect each node with closest neighbor before ? (cf NetLogo implementation)
-    Network(coords).weakComponentConnect
+    connexificationAlgorithm(Network(coords))
   }
 
 }

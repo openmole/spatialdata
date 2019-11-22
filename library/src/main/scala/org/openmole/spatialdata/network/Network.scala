@@ -251,6 +251,29 @@ case class Network(
     Iterator.iterate((this,-1))(connectClosestComponents).takeWhile(_._2!=1).toSeq.last._1
   }
 
+  /**
+    * Get links connecting single nodes to closest
+    *   FIXME cannot work returning a Seq[Link], must return a network as projection node must be created !
+    *   FIXME what happens with directed links ?
+    * @return
+    */
+  def projectionConnect: Network = {
+    def addLinkToProjection(state: (Network,Int)): (Network,Int) = {
+      val components = GraphAlgorithms.connectedComponents(state._1)
+      val nodestoconnect = components.filter(_.nodes.size == 1)
+      val n = nodestoconnect.head.nodes.head // should be one node only
+      if (state._1.links.isEmpty) return (state._1.addLinks(Set(Link(n,nodestoconnect.minBy(_.nodes.head.distance(n)).nodes.head))),nodestoconnect.size - 1)
+      val (projnode,projlink) = n.projection(state._1.links) //links cannot be empty
+      val newLinks = Set(
+        Link(projlink.e1,projnode,projlink.weight),
+        Link(projnode,projlink.e2,projlink.weight),
+        Link(n,projnode,projlink.weight)
+      )
+      (state._1.removeLinks(Set(projlink),keepNodes = true).addLinks(newLinks),nodestoconnect.size - 1)
+    }
+    Iterator.iterate((this,Int.MaxValue))(addLinkToProjection).takeWhile(_._2>0).toSeq.last._1
+  }
+
 
 
 }

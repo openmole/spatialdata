@@ -253,6 +253,7 @@ case class Network(
 
   /**
     * Get links connecting single nodes to closest
+    *   TODO option to connect each node with closest neighbor before ? (cf NetLogo implementation)
     *   FIXME cannot work returning a Seq[Link], must return a network as projection node must be created !
     *   FIXME what happens with directed links ?
     * @return
@@ -261,17 +262,18 @@ case class Network(
     def addLinkToProjection(state: (Network,Int)): (Network,Int) = {
       val components = GraphAlgorithms.connectedComponents(state._1)
       val nodestoconnect = components.filter(_.nodes.size == 1)
+      if(nodestoconnect.isEmpty) return (state._1,0)
       val n = nodestoconnect.head.nodes.head // should be one node only
-      if (state._1.links.isEmpty) return (state._1.addLinks(Set(Link(n,nodestoconnect.minBy(_.nodes.head.distance(n)).nodes.head))),nodestoconnect.size - 1)
+      if (state._1.links.isEmpty) return (state._1.addLinks(Set(Link(n,nodestoconnect.tail.minBy(_.nodes.head.distance(n)).nodes.head))),nodestoconnect.size - 1)
       val (projnode,projlink) = n.projection(state._1.links) //links cannot be empty
       val newLinks = Set(
         Link(projlink.e1,projnode,projlink.weight),
         Link(projnode,projlink.e2,projlink.weight),
         Link(n,projnode,projlink.weight)
       )
-      (state._1.removeLinks(Set(projlink),keepNodes = true).addLinks(newLinks),nodestoconnect.size - 1)
+      (state._1.removeLinks(Set(projlink),keepNodes = true).addLinks(newLinks),nodestoconnect.size)
     }
-    Iterator.iterate((this,Int.MaxValue))(addLinkToProjection).takeWhile(_._2>0).toSeq.last._1
+    Iterator.iterate((this,Int.MaxValue))(addLinkToProjection).takeWhile(_._2>0).toSeq.last._1.withConsistentIds
   }
 
 

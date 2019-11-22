@@ -27,7 +27,6 @@ object TreeMinDistGenerator {
 
   def treeMinDistNetwork(nodes: Int, points: Seq[Point2D],connexificationAlgorithm: Network => Network)(implicit rng: Random): Network = {
     val coords = if(points.isEmpty) RandomPointsGenerator(nodes).generatePoints else points
-    // TODO option to connect each node with closest neighbor before ? (cf NetLogo implementation)
     connexificationAlgorithm(Network(coords))
   }
 

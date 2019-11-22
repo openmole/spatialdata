@@ -12,7 +12,9 @@ package object utils {
 
   implicit class TraversableDecorator[T](s: Traversable[T]){
 
-    def sampleWithoutReplacement(samples: Int)(implicit rng: Random): Vector[T] = Stochastic.sampleWithoutReplacementBy(s,{_: T => 1/s.size}, samples)
+    def sampleWithReplacement(samples: Int)(implicit rng: Random): Vector[T] = Stochastic.sampleWithReplacement(s, samples)
+
+    def sampleWithoutReplacement(samples: Int)(implicit rng: Random): Vector[T] = Stochastic.sampleWithoutReplacement(s, samples)
 
   }
 

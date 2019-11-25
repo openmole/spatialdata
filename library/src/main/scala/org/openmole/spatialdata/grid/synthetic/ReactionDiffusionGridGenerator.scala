@@ -7,46 +7,30 @@ import org.openmole.spatialdata.grid.GridGenerator
 import scala.util.Random
 
 
+/**
+  *
+  * @param size The size of generated grids
+  * @param growthRate Population increase at each step
+  * @param totalPopulation total final population
+  * @param alpha Strength of preferential attachment
+  * @param beta Strength of diffusion
+  * @param diffusionSteps Number of diffusions
+  * @param initialConfiguration optional initial config
+  * @param layers Number of layers
+  */
 case class ReactionDiffusionGridGenerator(
-                                /**
-                                  * The size of generated grids
-                                  */
                                 size : RasterDim,
-
-                                /**
-                                  * Population increase at each step
-                                  */
                                 growthRate : Int,
-
-                                /**
-                                  * total final population
-                                  */
                                 totalPopulation : Int,
-
-                                /**
-                                  * Strength of preferential attachment
-                                  */
                                 alpha : Double,
-
-                                /**
-                                  * Strength of diffusion
-                                  */
                                 beta : Double,
-
-                                /**
-                                  * Number of diffusions
-                                  */
                                 diffusionSteps : Int,
-
-                                /**
-                                  * Number of layers
-                                  */
+                                initialConfiguration: Option[RasterLayerData[Double]] = None,
                                 layers : Int = 1
                               ) extends GridGenerator {
 
   override def generateGrid(implicit rng: Random): RasterLayerData[Double] =
-    ReactionDiffusionGridGenerator.reactionDiffusionGrid(size,growthRate,totalPopulation,alpha,beta,diffusionSteps,rng)
-      .asInstanceOf[RasterLayerData[Double]]
+    ReactionDiffusionGridGenerator.reactionDiffusionGrid(size,growthRate,totalPopulation,alpha,beta,diffusionSteps)
 
 }
 
@@ -60,11 +44,11 @@ object ReactionDiffusionGridGenerator {
     * @param gridSize
     * @return
     */
-  def reactionDiffusionGrid(size: RasterDim, growthRate: Double, totalPopulation: Double, alphaAtt: Double, diffusion: Double, diffusionSteps: Int, rng: Random): Array[Array[Double]] = {
+  def reactionDiffusionGrid(size: RasterDim, growthRate: Double, totalPopulation: Double, alphaAtt: Double, diffusion: Double, diffusionSteps: Int, initialConfiguration: Option[RasterLayerData[Double]] = None,iterImpl: Boolean = false)(implicit rng: Random): Array[Array[Double]] = {
     val (width,height)= size match {case Left(s)=>(s,s);case Right(c)=> c}
 
-    var arrayVals = Array.fill(width, height) { 0.0 }
-    var population: Double = 0
+    var arrayVals = initialConfiguration.getOrElse(Array.fill(width, height) { 0.0 })
+    var population: Double = arrayVals.flatten.sum
 
     while (population < totalPopulation) {
 
@@ -74,20 +58,55 @@ object ReactionDiffusionGridGenerator {
         for (_ ← 1 to growthRate.toInt) { val i = rng.nextInt(width); val j = rng.nextInt(height); arrayVals(i)(j) = arrayVals(i)(j) + 1 }
       }
       else {
-        val oldPop = arrayVals.map { _.map { case x ⇒ math.pow(x / population, alphaAtt) } }
+        val oldPop: Array[Array[Double]] = arrayVals.map { _.map { case x ⇒ math.pow(x / population, alphaAtt) } }
         val ptot = oldPop.flatten.sum
 
-        for (_ ← 1 to growthRate.toInt) {
-          var s = 0.0; val r = rng.nextDouble(); var i = 0; var j = 0
-          //draw the cell from cumulative distrib
-          while (s < r) {
-            s = s + (oldPop(i)(j) / ptot)
-            j = j + 1
-            if (j == height) { j = 0; i = i + 1 }
+        if (iterImpl) {
+          for (_ ← 1 to growthRate.toInt) {
+            var s = 0.0; val r = rng.nextDouble(); var i = 0; var j = 0
+            //draw the cell from cumulative distrib
+            while (s < r) {
+              s = s + (oldPop(i)(j) / ptot)
+              j = j + 1
+              if (j == height) {
+                j = 0; i = i + 1
+              }
+            }
+            if (j == 0) {
+              j = height - 1; i = i - 1
+            } else {
+              j = j - 1
+            };
+            arrayVals(i)(j) = arrayVals(i)(j) + 1
           }
-          if (j == 0) { j = height - 1; i = i - 1 } else { j = j - 1 };
-          arrayVals(i)(j) = arrayVals(i)(j) + 1
+        }else {
+
+          val probas = Array.fill(growthRate.toInt)(rng.nextDouble())
+          val flatpops = oldPop.zipWithIndex.flatMap { case (r, i) => r.zipWithIndex.map {(_, i)}}
+          //println(probas.toSeq)
+          //println(flatpops)
+
+          //oldPop.map(_.zipWithIndex).zipWithIndex.flatMap{case ((p,j),i) => }
+          // no need to stack drawn states (side effect in the population array)
+          def nextProba(state: (Array[Double], Array[((Double, Int), Int)], Double, (Double, Int, Int))): (Array[Double], Array[((Double, Int), Int)], Double, (Double, Int, Int)) = {
+            println(state)
+            if (state._1.isEmpty) return (Array.empty, Array.empty, 0.0, (0.0, 0, 0))
+            // as probas sum to one, second array will never be empty
+            if (state._1.head <= state._3) {
+              // dirty to use side effect like this, pop array should be in the state - but better for memory ?
+              arrayVals(state._4._2)(state._4._3) = arrayVals(state._4._2)(state._4._3) + 1
+              nextProba(state.copy(_1 = state._1.tail))
+            } else {
+              val ((d, j), i) = state._2.head
+              nextProba(state.copy(_2 = state._2.tail, _3 = state._3 + d / ptot, _4 = (d, i, j)))
+            }
+          }
+
+          println("prev pop = "+arrayVals.flatten.sum)
+          Iterator.iterate((probas,flatpops , 0.0, (0.0, 0, 0)))(nextProba).takeWhile(!_._1.isEmpty)
+          println("it pop = "+arrayVals.flatten.sum)
         }
+
       }
 
       // diffuse
@@ -105,7 +124,8 @@ object ReactionDiffusionGridGenerator {
   /**
     * Diffuse to neighbors proportion alpha of capacities
     *
-    * // FIXME take into account square grids
+    *  FIXME take into account NON square grids
+    *  FIXME can be done with convolution
     *
     * @param a
     */

@@ -27,9 +27,10 @@ object Test extends App {
   //TestIndicators.testFFTConvolution
 
   // Synthetic networks
-  TestNetwork.testTreeMinDist
+  //TestNetwork.testTreeMinDist
 
   // Synthetic grids
+  TestReactionDiffusion.benchmarkImplementation
   //TestSynthetic.testRandomGrids
   //TestSynthetic.testBlocksGrid
   //TestSynthetic.testPercolationGrid

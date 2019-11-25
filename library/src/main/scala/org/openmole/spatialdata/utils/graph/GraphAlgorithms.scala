@@ -268,8 +268,9 @@ object GraphAlgorithms {
   object ComponentsAlgorithms {
 
 
+    // FIXME
     def connectedComponentsJGraphT(network: Network): Seq[Network] = {
-
+      Seq.empty
     }
 
 

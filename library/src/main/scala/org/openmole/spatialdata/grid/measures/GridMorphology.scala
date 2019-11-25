@@ -18,6 +18,8 @@ case class GridMorphology(
                        area: Double,
                        moran: Double,
                        avgDistance: Double,
+                       entropy: Double,
+                       slope: (Double,Double),
                        density: Double,
                        components: Double,
                        avgDetour: Double,
@@ -53,6 +55,26 @@ case class GridMorphology(
   */
 object GridMorphology {
 
+
+  sealed trait GridMorphologyIndicator
+  case class Moran() extends GridMorphologyIndicator
+  case class AverageDistance() extends GridMorphologyIndicator
+  case class Entropy() extends GridMorphologyIndicator
+  case class Slope() extends GridMorphologyIndicator
+
+  // FIXME to finish -> separate block based indicators from density grid ?
+  def apply(grid: RasterLayerData[Double], indicators: Seq[GridMorphologyIndicator]): GridMorphology = {
+    GridMorphology(grid.size,grid(0).size,grid.flatten.sum,
+      if (indicators.contains(Moran())) moran(grid) else 0.0,
+      if (indicators.contains(AverageDistance())) distanceMean(grid) else 0.0,
+      if (indicators.contains(Entropy())) Statistics.entropy(grid) else 0.0,
+      if (indicators.contains(Slope())) Statistics.slope(grid) else (0.0,0.0),
+      density(grid),
+      0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+    )
+  }
+
+
   def apply(grid: RasterLayerData[Double]): GridMorphology = {
     // FIXME construct a specific random here
     implicit val rng = new Random
@@ -62,6 +84,7 @@ object GridMorphology {
       grid.flatten.sum,
       moranDirect(grid),
       distanceMeanDirect(grid),
+      0.0,(0.0,0.0),
       density(grid),
       components(grid,Some(cachedNetwork)),
       avgDetour(grid,Some(cachedNetwork)),

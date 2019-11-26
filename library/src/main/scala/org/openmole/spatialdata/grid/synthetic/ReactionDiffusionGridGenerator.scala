@@ -26,11 +26,12 @@ case class ReactionDiffusionGridGenerator(
                                 beta : Double,
                                 diffusionSteps : Int,
                                 initialConfiguration: Option[RasterLayerData[Double]] = None,
-                                layers : Int = 1
+                                layers : Int = 1,
+                                iterImpl: Boolean = true
                               ) extends GridGenerator {
 
   override def generateGrid(implicit rng: Random): RasterLayerData[Double] =
-    ReactionDiffusionGridGenerator.reactionDiffusionGrid(size,growthRate,totalPopulation,alpha,beta,diffusionSteps)
+    ReactionDiffusionGridGenerator.reactionDiffusionGrid(size,growthRate,totalPopulation,alpha,beta,diffusionSteps,iterImpl=iterImpl)
 
 }
 
@@ -44,7 +45,7 @@ object ReactionDiffusionGridGenerator {
     * @param gridSize
     * @return
     */
-  def reactionDiffusionGrid(size: RasterDim, growthRate: Double, totalPopulation: Double, alphaAtt: Double, diffusion: Double, diffusionSteps: Int, initialConfiguration: Option[RasterLayerData[Double]] = None,iterImpl: Boolean = false)(implicit rng: Random): Array[Array[Double]] = {
+  def reactionDiffusionGrid(size: RasterDim, growthRate: Double, totalPopulation: Double, alphaAtt: Double, diffusion: Double, diffusionSteps: Int, initialConfiguration: Option[RasterLayerData[Double]] = None,iterImpl: Boolean = true)(implicit rng: Random): Array[Array[Double]] = {
     val (width,height)= size match {case Left(s)=>(s,s);case Right(c)=> c}
 
     var arrayVals = initialConfiguration.getOrElse(Array.fill(width, height) { 0.0 })
@@ -81,7 +82,35 @@ object ReactionDiffusionGridGenerator {
           }
         }else {
 
-          val probas = Array.fill(growthRate.toInt)(rng.nextDouble())
+          val probas = Array.fill(growthRate.toInt)(rng.nextDouble()).sorted
+
+          //println(probas.toSeq)
+
+          var s = 0.0
+          var i = 0
+          var j = 0
+          var k = 0
+          //draw the cell from cumulative distrib
+          while (k < probas.length) {
+            if (s <= probas(k)) {
+              s = s + (oldPop(i)(j) / ptot)
+              j = j + 1
+              if (j == height) {
+                j = 0
+                i = i + 1
+              }
+            } else {
+              k = k + 1
+              val (ii,jj) = if (j == 0) (i - 1,height - 1) else (i,j - 1)
+
+              arrayVals(ii)(jj) = arrayVals(ii)(jj) + 1
+            }
+        }
+
+          /*
+          // functional recursive implementation is WAY slower (10 times) -> something not done right ? ! forgot to sort probas
+          // still 4times slower
+
           val flatpops = oldPop.zipWithIndex.flatMap { case (r, i) => r.zipWithIndex.map {(_, i)}}
           //println(probas.toSeq)
           //println(flatpops)
@@ -89,7 +118,7 @@ object ReactionDiffusionGridGenerator {
           //oldPop.map(_.zipWithIndex).zipWithIndex.flatMap{case ((p,j),i) => }
           // no need to stack drawn states (side effect in the population array)
           def nextProba(state: (Array[Double], Array[((Double, Int), Int)], Double, (Double, Int, Int))): (Array[Double], Array[((Double, Int), Int)], Double, (Double, Int, Int)) = {
-            println(state)
+            //println(state)
             if (state._1.isEmpty) return (Array.empty, Array.empty, 0.0, (0.0, 0, 0))
             // as probas sum to one, second array will never be empty
             if (state._1.head <= state._3) {
@@ -102,9 +131,15 @@ object ReactionDiffusionGridGenerator {
             }
           }
 
-          println("prev pop = "+arrayVals.flatten.sum)
-          Iterator.iterate((probas,flatpops , 0.0, (0.0, 0, 0)))(nextProba).takeWhile(!_._1.isEmpty)
-          println("it pop = "+arrayVals.flatten.sum)
+          val initstate = (probas,flatpops , 0.0, (0.0, 0, 0))
+          //println("prev pop = "+arrayVals.flatten.sum)
+          val res = nextProba(initstate)
+          //println("it pop = "+arrayVals.flatten.sum)
+
+          //Iterator.iterate(initstate)(nextProba).takeWhile(!_._1.isEmpty).toSeq
+          */
+
+
         }
 
       }
@@ -124,7 +159,6 @@ object ReactionDiffusionGridGenerator {
   /**
     * Diffuse to neighbors proportion alpha of capacities
     *
-    *  FIXME take into account NON square grids
     *  FIXME can be done with convolution
     *
     * @param a
@@ -133,7 +167,7 @@ object ReactionDiffusionGridGenerator {
     val newVals = a.clone()
     val size = a.length
 
-    for (i ← 0 to size - 1; j ← 0 to size - 1) {
+    for (i ← a.indices; j ← a(0).indices) {
       // diffuse in neigh cells
       if (i >= 1) { newVals(i - 1)(j) = newVals(i - 1)(j) + (alpha / 8) * a(i)(j) }
       if (i < size - 1) { newVals(i + 1)(j) = newVals(i + 1)(j) + (alpha / 8) * a(i)(j) }

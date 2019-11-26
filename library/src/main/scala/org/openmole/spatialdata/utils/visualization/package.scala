@@ -1,5 +1,6 @@
 package org.openmole.spatialdata.utils
 
+import org.openmole.spatialdata.{RasterLayerData, _}
 import org.openmole.spatialdata.network.{Network, Node}
 import javax.swing._
 import java.awt._
@@ -59,10 +60,62 @@ package object visualization {
     * Quick visu for debugging purposes
     * @param network
     */
-  def staticVisualization(network: Network,withLabel: Boolean = false,nodeColorClasses: Option[Node=>Int]=None): Unit = {
+  def staticNetworkVisualization(network: Network,withLabel: Boolean = false,nodeColorClasses: Option[Node=>Int]=None): Unit = {
     val frame = NetworkFrame(network = network,withLabel=withLabel,nodeColorClasses=nodeColorClasses)
     frame.init
   }
+
+  def normalization(r: RasterLayerData[Double]): RasterLayerData[Double] = {
+    val (mi,ma) = (r.flatten.min,r.flatten.max);r.map{_.map{d: Double => (d - mi) / (ma - mi)}}
+  }
+
+  case class RasterFrame(
+                          raster: RasterLayerData[Double],
+                          gradientColors: (Color,Color) = (Color.WHITE,Color.BLACK),
+                          projection: RasterLayerData[Double] => RasterLayerData[Double] = normalization,
+                          frameWidth: Int = 600,
+                          frameHeight: Int = 600
+  ) extends JFrame() {
+    def init: Unit = {
+      frameInit()
+      setSize(frameWidth,frameHeight)
+      setLocation(100,100)
+      setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
+      add(new JComponent {
+        setUI(new ComponentUI {
+          override def paint(g: Graphics, c: JComponent): Unit = {
+            val gg: Graphics2D = g.create.asInstanceOf[Graphics2D]
+            gg.setRenderingHint(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_ON)
+            gg.setStroke(new BasicStroke(1, BasicStroke.CAP_ROUND,BasicStroke.JOIN_ROUND))
+            val colorArray = projection(raster).map{_.map{d =>
+              new Color(
+              (gradientColors._1.getRed*d + (1 - d)*gradientColors._2.getRed).toInt,
+              (gradientColors._1.getGreen*d + (1 - d)*gradientColors._2.getGreen).toInt,
+              (gradientColors._1.getBlue*d + (1 - d)*gradientColors._2.getBlue).toInt
+            )}}
+            val (rowstep,colstep) = (frameHeight / colorArray.length,frameWidth/colorArray(0).length)
+            colorArray.zipWithIndex.foreach{case (row,i)=>
+              row.zipWithIndex.foreach{case (color,j) =>
+                gg.setColor(color)
+                gg.fillRect(j*colstep,i*rowstep,colstep,rowstep)
+              }
+            }
+          }
+        })
+        setOpaque(true)
+        setForeground(Color.BLACK)
+        setBackground(Color.WHITE)
+      })
+      setVisible(true)
+      Thread.sleep(10000)
+    }
+  }
+
+  def staticRasterVisualization(raster: RasterLayerData[Double],projection: RasterLayerData[Double] => RasterLayerData[Double] = normalization): Unit = {
+    val frame = RasterFrame(raster)
+    frame.init
+  }
+
 
 
 }

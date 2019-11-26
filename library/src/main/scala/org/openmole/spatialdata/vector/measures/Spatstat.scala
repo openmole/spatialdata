@@ -1,4 +1,4 @@
-package org.openmole.spatialdata.points.measures
+package org.openmole.spatialdata.vector.measures
 
 import com.vividsolutions.jts.geom.GeometryFactory
 import org.apache.commons.math3.linear.MatrixUtils

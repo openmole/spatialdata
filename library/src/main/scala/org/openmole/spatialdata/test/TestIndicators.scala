@@ -4,7 +4,7 @@ import better.files.File
 
 import scala.util.Random
 import org.openmole.spatialdata._
-import org.openmole.spatialdata.points.measures.SummarySpatialStatistics
+import org.openmole.spatialdata.vector.measures.SummarySpatialStatistics
 import org.openmole.spatialdata.grid.measures._
 import org.openmole.spatialdata.grid.synthetic._
 import org.openmole.spatialdata.utils.io._

@@ -43,7 +43,7 @@ val fullOpeningSteps = Val[Double]
 
 
 val model = ScalaTask("""
-    | import _root_.org.openmole.spatialdata.grid.GridGeneratorLauncher
+    | import _root_.org.openmole.spatialdata.application.grid.GridGeneratorLauncher
     | import _root_.spatialdata.measures.Morphology
     | import scala.util.Random
     |
@@ -59,7 +59,7 @@ val model = ScalaTask("""
     | val (height,width,area,moran,avgDistance,density,components,avgDetour,avgBlockArea,avgComponentArea,fullDilationSteps,fullErosionSteps,fullClosingSteps,fullOpeningSteps) = morpho.getMorphology(rng).toTuple
   """.stripMargin
   ) set (
-  plugins += pluginsOf(_root_.org.openmole.spatialdata.grid.GridGeneratorLauncher),
+  plugins += pluginsOf(_root_.org.openmole.spatialdata.application.grid.GridGeneratorLauncher),
   (inputs,outputs) += (generator,size,randomDensity,expMixtureCenters,expMixtureRadius,expMixtureThreshold,blocksNumber,blocksMinSize,blocksMaxSize,percolationProba,percolationBordPoints,percolationLinkWidth,replication,id),
   outputs += (height,width,area,moran,avgDistance,density,components,avgDetour,avgBlockArea,avgComponentArea,fullDilationSteps,fullErosionSteps,fullClosingSteps,fullOpeningSteps)
 )

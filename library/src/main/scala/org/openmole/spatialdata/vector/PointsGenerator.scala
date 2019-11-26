@@ -1,4 +1,4 @@
-package org.openmole.spatialdata.points
+package org.openmole.spatialdata.vector
 
 import org.openmole.spatialdata.{Point2D, SpatialField}
 

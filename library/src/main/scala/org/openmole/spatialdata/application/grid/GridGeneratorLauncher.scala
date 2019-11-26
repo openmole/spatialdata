@@ -1,9 +1,9 @@
 
-package org.openmole.spatialdata.grid
+package org.openmole.spatialdata.application.grid
 
 import org.openmole.spatialdata._
-import org.openmole.spatialdata.grid.synthetic._
 import org.openmole.spatialdata.grid.measures._
+import org.openmole.spatialdata.grid.synthetic._
 
 import scala.util.Random
 

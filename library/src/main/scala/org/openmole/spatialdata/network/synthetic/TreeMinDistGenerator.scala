@@ -2,7 +2,7 @@ package org.openmole.spatialdata.network.synthetic
 
 import org.openmole.spatialdata.Point2D
 import org.openmole.spatialdata.network.{Network, NetworkGenerator}
-import org.openmole.spatialdata.points.synthetic.RandomPointsGenerator
+import org.openmole.spatialdata.vector.synthetic.RandomPointsGenerator
 
 import scala.util.Random
 

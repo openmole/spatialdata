@@ -11,6 +11,11 @@ package object spatialdata {
     */
   type RasterLayerData[N] = Array[Array[N]]
 
+  /*
+  implicit class RasterLayerDataDecorator[T,U](d: RasterLayerData[T]) {
+    def mapElementWise(f: T => U): RasterLayerData[U] = d.map{row: Array[T] => row.map(f).toArray[U]}
+  }*/
+
   // this breaks everything
   //implicit def rasterLayerDataIsVector[N](r: RasterLayerData[N]): Vector[Vector[N]] = r.map{_.toVector}.toVector
 

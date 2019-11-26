@@ -30,7 +30,8 @@ object Test extends App {
   //TestNetwork.testTreeMinDist
 
   // Synthetic grids
-  TestReactionDiffusion.benchmarkImplementation
+  TestReactionDiffusion.testModel
+  //TestReactionDiffusion.benchmarkImplementation
   //TestSynthetic.testRandomGrids
   //TestSynthetic.testBlocksGrid
   //TestSynthetic.testPercolationGrid

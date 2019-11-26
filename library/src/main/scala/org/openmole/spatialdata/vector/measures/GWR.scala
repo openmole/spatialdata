@@ -1,4 +1,4 @@
-package org.openmole.spatialdata.points.measures
+package org.openmole.spatialdata.vector.measures
 
 import org.apache.commons.math3.stat.regression._
 import org.apache.commons.math3.linear._

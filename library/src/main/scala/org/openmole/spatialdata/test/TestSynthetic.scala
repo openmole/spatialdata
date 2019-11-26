@@ -1,8 +1,8 @@
 package org.openmole.spatialdata.test
 
 import org.openmole.spatialdata
+import org.openmole.spatialdata.application.grid.GridGeneratorLauncher
 import org.openmole.spatialdata.grid.measures.GridMorphology
-import org.openmole.spatialdata.grid.GridGeneratorLauncher
 import org.openmole.spatialdata.grid.synthetic._
 
 import scala.io.Source
@@ -21,7 +21,7 @@ object TestSynthetic {
 
     implicit val rng = new Random
 
-    import org.openmole.spatialdata.grid.GridGeneratorCalibration._
+    import org.openmole.spatialdata.application.grid.GridGeneratorCalibration._
 
     def projection(morphology: GridMorphology): Array[Double] = GridMorphology.rotation(rotation,norm)(morphology)
     def objective(pcs: Array[Double]): Double = math.sqrt(math.pow(pcs(0)-pc1obj,2)+math.pow(pcs(1)-pc2obj,2))

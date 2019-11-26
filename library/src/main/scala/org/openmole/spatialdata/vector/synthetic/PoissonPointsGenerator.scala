@@ -1,6 +1,6 @@
-package org.openmole.spatialdata.points.synthetic
+package org.openmole.spatialdata.vector.synthetic
 
-import org.openmole.spatialdata.points.PointsGenerator
+import org.openmole.spatialdata.vector.PointsGenerator
 
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random

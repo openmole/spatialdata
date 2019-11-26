@@ -1,4 +1,4 @@
-package org.openmole.spatialdata.points.measures
+package org.openmole.spatialdata.vector.measures
 
 import org.openmole.spatialdata.SpatialField
 

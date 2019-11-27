@@ -1,7 +1,8 @@
-package org.openmole.spatialdata.application.grid
+package org.openmole.spatialdata.application.urbmorph
 
 import org.openmole.spatialdata.grid.measures.GridMorphology
-import org.openmole.spatialdata.grid.synthetic.PercolationGridGenerator
+import org.openmole.spatialdata.grid.synthetic._
+import org.openmole.spatialdata._
 
 import scala.util.Random
 

@@ -298,13 +298,13 @@ object GridMorphology {
     * @return
     */
   def moran(matrix: Array[Array[Double]],weightFunction: Array[Array[Double]]=> Array[Array[Double]] = spatialWeights): Double = {
-    val n = matrix.length
+    //val n = matrix.length
     val flatConf = matrix.flatten
     val popMean = flatConf.sum / flatConf.length
     val centeredConf = matrix.map { r => r.map { d => d - popMean } }
     val variance = MathArrays.ebeMultiply(centeredConf.flatten, centeredConf.flatten).sum
     val weights = weightFunction(matrix)
-    val totWeight = Convolution.convolution2D(Array.fill(n, n) { 1.0 }, weights).flatten.sum
+    val totWeight = Convolution.convolution2D(Array.fill(matrix.length, matrix(0).length) { 1.0 }, weights).flatten.sum
     flatConf.length / (totWeight * variance) * MathArrays.ebeMultiply(centeredConf.flatten, Convolution.convolution2D(centeredConf, weights).flatten).sum
   }
 
@@ -314,8 +314,9 @@ object GridMorphology {
     * @return
     */
   def spatialWeights(matrix: Array[Array[Double]]): Array[Array[Double]] = {
-    val n:Int = 2 * matrix.length - 1
-    Array.tabulate(n, n) { (i, j) => if (i == n / 2 && j == n / 2) 0.0 else 1 / math.sqrt((i - n / 2) * (i - n / 2) + (j - n / 2) * (j - n / 2)) }
+    val (n,p) = (2 * (matrix.length - 1) + 1,2 * (matrix(0).length - 1) + 1)
+    val (ic,jc) = ((n-1)/2 + 1,(p-1)/2 + 1)
+    Array.tabulate(n, p) { (i, j) => if (i == ic && j == jc) 0.0 else 1 / math.sqrt((i - ic) * (i - ic) + (j - jc) * (j - jc)) }
   }
 
 

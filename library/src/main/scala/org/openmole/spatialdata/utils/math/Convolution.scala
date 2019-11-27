@@ -10,12 +10,14 @@ object Convolution {
 
   /**
     * Generic convol for double Arrays (in O(nlog(n)), using FFT)
-    *
+    *  FIXME implement general x*y and call this kernel convol
     * @param x
     * @param k centered kernel
     * @return y = x*k with y_i = \sum_{j=1}{|K|}{x_{i-j-|K|/2}*k_j}
     */
   def convolution(x: Array[Double], k: Array[Double]): Array[Double] = {
+    assert(k.length%2==1,"Kernel must be centered")
+    assert(k.length <= x.length,"Kernel must be smaller than vector") // fails it k is too large and not padded to a power of two; anyway no reason to do that as retrieve x part only
     val xl = pow(2.0, ceil(log(x.length) / log(2.0)) + 1)
     val xp = x.padTo(x.length + (xl.toInt - x.length) / 2, 0.0).reverse.padTo(xl.toInt, 0.0).reverse
     val kp = k.padTo(k.length + (xl.toInt - k.length) / 2, 0.0).reverse.padTo(xl.toInt, 0.0).reverse
@@ -29,16 +31,17 @@ object Convolution {
   }
 
   /**
-    * Square convol (for tests)
+    * Direct computation of convolution O(n2)
     *
     * @param x
-    * @param k
+    * @param k centered kernel
     * @return
     */
   def directConvol(x: Array[Double], k: Array[Double]): Array[Double] = {
-    val kl = k.length
-    val xpadded = x.padTo(x.length + kl, 0.0).reverse.padTo(x.length + 2 * kl, 0.0).reverse
-    Array.tabulate(x.length + k.length) { i => MathArrays.ebeMultiply(k.reverse, xpadded.splitAt(i + 1)._2.splitAt(k.length)._1).sum }
+    assert(k.length%2==1,"Kernel must be centered")
+    val xpadded = x.padTo(x.length + (k.length-1)/2, 0.0).reverse.padTo(x.length + k.length - 1, 0.0).reverse
+   // Array.tabulate(x.length + k.length) { i => MathArrays.ebeMultiply(k.reverse, xpadded.splitAt(i + 1)._2.splitAt(k.length)._1).sum }
+    Array.tabulate(x.length) { i => MathArrays.ebeMultiply(k.reverse, xpadded.splitAt(i)._2.splitAt(k.length)._1).sum }
   }
 
   /*
@@ -57,7 +60,7 @@ object Convolution {
     * @param k
     */
   def convolution2D(x: Array[Array[Double]], k: Array[Array[Double]]): Array[Array[Double]] = {
-    val xpad = x.map { row =>
+    /*val xpad = x.map { row =>
       row.padTo(2 * (row.length / 2) + 1 + k(0).length, 0.0).reverse.padTo(2 * (row.length / 2) + 1 + 2 * k(0).length, 0.0).reverse
     }.padTo(2 * (x.length / 2) + 1 + k.length, Array.fill(2 * (x(0).length / 2) + 1 + 2 * k(0).length) { 0.0 }).reverse.padTo(2 * (x.length / 2) + 1 + 2 * k.length, Array.fill(2 * (x(0).length / 2) + 1 + 2 * k(0).length) { 0.0 })
     val xpos = Array.fill(x.length, x(0).length) { 1.0 }.map {
@@ -66,6 +69,12 @@ object Convolution {
     val kpad = k.map { row => row.padTo(row.length + (xpad(0).length - row.length) / 2, 0.0).reverse.padTo(xpad(0).length, 0.0).reverse }.padTo(k.length + (xpad.length - k.length) / 2, Array.fill(xpad(0).length) { 0.0 }).reverse.padTo(xpad.length, Array.fill(xpad(0).length) { 0.0 })
     val flatconv = convolution(xpad.flatten, kpad.flatten)
     flatconv.zipWithIndex.filter { case (_, j) => xpos(j) > 0 }.map { case (d, _) => d }.sliding(x(0).length, x.length).toArray.reverse
+    */
+    println(x.flatten.length)
+    println(k.flatten.length)
+    val xn = x.flatten.length
+    val kn = k.flatten.length
+    convolution(x.flatten.padTo(xn + kn/2,0.0).reverse.padTo(xn + kn,0.0).reverse,k.flatten).drop((kn-xn)/2).dropRight((kn-xn)/2).grouped(x(0).length).toArray
   }
 
 }

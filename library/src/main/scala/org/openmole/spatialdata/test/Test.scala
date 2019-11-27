@@ -22,21 +22,27 @@ object Test extends App {
 
   // Indicators
   //TestIndicators.testSpatialIndics
-  //TestIndicators.testMoran
+  TestIndicators.testMoran
   //TestIndicators.testStats
   //TestIndicators.testFFTConvolution
 
   // Synthetic networks
   //TestNetwork.testTreeMinDist
 
-  // Synthetic grids
-  TestReactionDiffusion.testModel
+  // Reaction Diffusion
+  //TestReactionDiffusion.testRealDataCalibration
+  //TestReactionDiffusion.testModel
   //TestReactionDiffusion.benchmarkImplementation
+
+  // Synthetic grids
   //TestSynthetic.testRandomGrids
   //TestSynthetic.testBlocksGrid
   //TestSynthetic.testPercolationGrid
   //TestSynthetic.testGeneratorLauncher
   //TestSynthetic.testGeneratorCalibration
+
+  // Maths
+  //TestMaths.testConvolution
 
 
   // Utils

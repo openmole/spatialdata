@@ -33,12 +33,12 @@ object CSV {
     * @param sep
     * @return
     */
-  def readMat(file: String,sep: String=","): Array[Array[Double]] = {
+  def readMat(file: String,sep: String=",",naformat: String = "NA"): Array[Array[Double]] = {
     val r = new BufferedReader(new FileReader(new File(file)))
     val res = new ArrayBuffer[Array[Double]]
     var currentline = r.readLine()
     while(currentline!=null){
-      res.append(currentline.split(sep).map{_.toDouble})
+      res.append(currentline.split(sep).map{s => if(s.equals("NA")) Double.NaN else s.toDouble})
       currentline = r.readLine()
     }
     res.toArray

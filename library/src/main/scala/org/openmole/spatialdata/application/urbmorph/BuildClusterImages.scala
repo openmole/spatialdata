@@ -1,9 +1,7 @@
-package org.openmole.spatialdata.test
+package org.openmole.spatialdata.application.urbmorph
 
 import better.files.File
 import com.github.tototoshi.csv.CSVReader
-import org.openmole.spatialdata.application.grid.GridGeneratorLauncher
-import org.openmole.spatialdata.grid._
 import org.openmole.spatialdata.grid.measures.GridMorphology
 import org.openmole.spatialdata.grid.real.OSMGridGenerator
 import org.openmole.spatialdata.utils.io.PNG

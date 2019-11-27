@@ -1,5 +1,5 @@
 
-package org.openmole.spatialdata.application.grid
+package org.openmole.spatialdata.application.urbmorph
 
 import org.openmole.spatialdata._
 import org.openmole.spatialdata.grid.measures._

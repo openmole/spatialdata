@@ -1,7 +1,7 @@
 package org.openmole.spatialdata.test
 
 import better.files.File
-import org.openmole.spatialdata.application.grid.GridGeneratorLauncher
+import org.openmole.spatialdata.application.urbmorph.GridGeneratorLauncher
 import org.openmole.spatialdata.grid.real.OSMGridSampling
 import org.openmole.spatialdata.utils.io.PNG
 

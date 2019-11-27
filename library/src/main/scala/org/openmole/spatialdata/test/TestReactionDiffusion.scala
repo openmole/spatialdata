@@ -3,9 +3,12 @@ package org.openmole.spatialdata.test
 import org.apache.commons.math3.stat.inference.KolmogorovSmirnovTest
 import org.openmole.spatialdata.grid.synthetic.ReactionDiffusionGridGenerator
 import org.openmole.spatialdata._
+import org.openmole.spatialdata.application.reactiondiffusion.ReactionDiffusionCalibration
 import org.openmole.spatialdata.grid.measures.GridMorphology
 import org.openmole.spatialdata.grid.measures.GridMorphology._
+import org.openmole.spatialdata.grid.real.CSVGridGenerator
 import org.openmole.spatialdata.utils._
+import org.openmole.spatialdata.utils.io.CSV
 
 import scala.util.Random
 
@@ -14,6 +17,34 @@ object TestReactionDiffusion {
 
 
   def testRealDataCalibration(): Unit = {
+
+    val rng = new Random
+
+    val params = (0 until 2).map{_ =>
+      (3.0*rng.nextDouble(),0.05*rng.nextDouble(),10.0+10*rng.nextDouble(),rng.nextLong())
+    }
+
+    val targetArea = 10
+    val initYear = "1990"
+    val targetYear = "2000"
+
+    val initialConfig = CSVGridGenerator("data/ucdb/"+targetArea+"_"+initYear+".csv",";").generateGrid(rng)
+
+    val objs = CSV.readCSV("data/ucdb/morphologies.csv",sep=";")
+    val targetPop = objs("totalPop"+targetYear)(targetArea-1).toDouble
+    val targetMoran = objs("moran"+targetYear)(targetArea-1).toDouble
+    val targetAvgDist = objs("avgDist"+targetYear)(targetArea-1).toDouble
+    val targetEntropy = objs("entropy"+targetYear)(targetArea-1).toDouble
+    val targetSlope = objs("alpha"+targetYear)(targetArea-1).toDouble
+
+    val res = params.map {case (alpha,beta,tsteps,s) =>
+      val calib = ReactionDiffusionCalibration(initialConfig,alpha,beta,1.0,tsteps,targetPop,targetMoran,targetAvgDist,targetEntropy,targetSlope,s)
+      (calib,calib.runModel)
+    }
+
+    val best = res.minBy(_._2)
+
+    println(s"Best is ${best}")
 
   }
 

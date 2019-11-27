@@ -73,8 +73,11 @@ object TestIndicators {
 
     val morans = (1 to 1000).map{i =>
       println(i)
-      GridMorphology.moran(gen.generateGrid)
+      val grid = gen.generateGrid
+      (GridMorphology.moran(grid),GridMorphology.moranDirect(grid))
     }.toArray
+
+    println(morans.map{d => math.abs(d._1 - d._2)}.sum)
 
     /*
     import org.dianahep.histogrammar._

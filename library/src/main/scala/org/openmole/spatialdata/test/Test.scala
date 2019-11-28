@@ -22,7 +22,7 @@ object Test extends App {
 
   // Indicators
   //TestIndicators.testSpatialIndics
-  TestIndicators.testMoran
+  //TestIndicators.testMorphology
   //TestIndicators.testStats
   //TestIndicators.testFFTConvolution
 
@@ -30,7 +30,7 @@ object Test extends App {
   //TestNetwork.testTreeMinDist
 
   // Reaction Diffusion
-  //TestReactionDiffusion.testRealDataCalibration
+  TestReactionDiffusion.testRealDataCalibration
   //TestReactionDiffusion.testModel
   //TestReactionDiffusion.benchmarkImplementation
 
@@ -43,7 +43,7 @@ object Test extends App {
 
   // Maths
   //TestMaths.testConvolution
-
+  //TestMaths.testConvolution2D
 
   // Utils
   //TestUtils.testSampling

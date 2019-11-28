@@ -26,9 +26,9 @@ case class ReactionDiffusionGridGenerator(
                                 alpha : Double,
                                 beta : Double,
                                 diffusionSteps : Int,
-                                initialConfiguration: Option[RasterLayerData[Double]] = None,
+                                initialConfiguration: Option[Seq[Seq[Double]]] = None,
                                 layers : Int = 1,
-                                iterImpl: Boolean = true
+                                iterImpl: Boolean = false
                               ) extends GridGenerator {
 
   override def generateGrid(implicit rng: Random): RasterLayerData[Double] =
@@ -46,16 +46,23 @@ object ReactionDiffusionGridGenerator {
     * @param gridSize
     * @return
     */
-  def reactionDiffusionGrid(size: RasterDim, growthRate: Double, totalPopulation: Double, alphaAtt: Double, diffusion: Double, diffusionSteps: Int, initialConfiguration: Option[RasterLayerData[Double]] = None,iterImpl: Boolean = true)(implicit rng: Random): Array[Array[Double]] = {
+  def reactionDiffusionGrid(size: RasterDim, growthRate: Double, totalPopulation: Double, alphaAtt: Double, diffusion: Double, diffusionSteps: Int, initialConfiguration: Option[Seq[Seq[Double]]] = None,iterImpl: Boolean = true)(implicit rng: Random): Array[Array[Double]] = {
     // FIXME inversion height - width
-    val (width,height)= if(initialConfiguration.isDefined) (initialConfiguration.get.size,initialConfiguration.get(0).size) else size match {case Left(s)=>(s,s);case Right(c)=> c}
+    val (width,height)= if(initialConfiguration.isDefined) (initialConfiguration.get.length,initialConfiguration.get(0).length) else size match {case Left(s)=>(s,s);case Right(c)=> c}
 
-    var arrayVals: Array[Array[Double]] = initialConfiguration.getOrElse(Array.fill(width, height) { 0.0 })
+    var arrayVals: Array[Array[Double]] = if (initialConfiguration.isDefined) {
+      val copyconfig = initialConfiguration.get.map{_.toVector}.toVector
+      Array.tabulate(width,height){ (i,j) => copyconfig(i)(j)}
+    } else Array.fill(width, height) { 0.0 }
     var population: Double = arrayVals.flatten.filter(!_.isNaN).sum
 
     val deltapop = totalPopulation - population
 
-    while (population < totalPopulation) {
+    var steps = 0
+    var stepdeltapop = 0.0
+
+    // FIXME thematic Q : are negative pop increment just a bias in the heuristic or could be interpreted realistically? NO because get out only from boundaries: true if more sprawl, no meaning if external migration
+    while (population < totalPopulation && stepdeltapop>=0.0) {
 
       val prevpop = population
 
@@ -101,7 +108,8 @@ object ReactionDiffusionGridGenerator {
           //draw the cell from cumulative distrib
           while (k < probas.length) {
             if (s <= probas(k)) {
-              s = s + (oldPop(i)(j) / ptot)
+              val d = oldPop(i)(j)
+              if (!d.isNaN) s = s + (d / ptot)
               j = j + 1
               if (j == height) {
                 j = 0
@@ -160,9 +168,10 @@ object ReactionDiffusionGridGenerator {
 
       // update total population
       population = arrayVals.flatten.filter(!_.isNaN).sum
-      println(population / totalPopulation)
-      println("Increase = "+(prediffpop - prevpop)/deltapop)
-      println("Lost in diffusion = "+(prediffpop-population)/deltapop)
+
+      stepdeltapop = population - prevpop
+      steps = steps + 1
+      if (steps%1000==0) println(s"${steps}: Prop ${population / totalPopulation} ;Increase = ${(prediffpop - prevpop)/deltapop} ; diff ${(prediffpop-population)/deltapop}")
       //println("NaNs % = "+arrayVals.flatten.filter(_.isNaN).length.toDouble / arrayVals.flatten.length.toDouble)
 
 

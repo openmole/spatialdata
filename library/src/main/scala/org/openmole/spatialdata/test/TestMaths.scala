@@ -8,6 +8,16 @@ import scala.util.Random
 object TestMaths {
 
 
+  def testConvolution2D(): Unit = {
+    val rng = new Random
+    val x = Array.fill(10,20){rng.nextDouble()}
+    val k = Array.fill(5,5)(1.0)
+    val c2d = Convolution.convolution2D(x,k)
+    println(c2d.length+" ; "+c2d(0).length)
+
+  }
+
+
 
   def testConvolution(): Unit = {
 

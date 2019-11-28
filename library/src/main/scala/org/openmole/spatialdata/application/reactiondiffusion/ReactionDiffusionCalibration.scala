@@ -9,7 +9,7 @@ import scala.runtime.RichDouble
 import scala.util.Random
 
 case class ReactionDiffusionCalibration(
-                                       initialConfiguration: Array[Array[Double]],
+                                       initialConfiguration: Seq[Seq[Double]], // bad idea to have mutables as case class fields
                                        alpha: Double,
                                        beta: Double,
                                        diffusionSteps: Double,
@@ -34,11 +34,17 @@ case class ReactionDiffusionCalibration(
     val generator = ReactionDiffusionGridGenerator((width,height),growthrate.toInt,popConstraint.toInt,alpha,beta,diffusionSteps.toInt,
       Some(initialConfiguration)
     )
-    val morphology = GridMorphology(generator.generateGrid,Seq(Moran(),AverageDistance(),Entropy(),Slope()))
+    val generated = generator.generateGrid
+    val finalPop = generated.flatten.filter(!_.isNaN).sum
+    val morphology = GridMorphology(generated,Seq(Moran(),AverageDistance(),Entropy(),Slope()))
     // basic relative squared cost function
+    if(verbose) println(s" Moran : ${morphology.moran} / ${moranObjective} ; avgDist : ${morphology.avgDistance} / ${avgDistObjective} ; Entropy : ${morphology.entropy} / ${entropyObjective} ; hierarchy : ${morphology.slope._1} / ${slopeObjective}")
     val mse = relSquare(moranObjective,morphology.moran) + relSquare(avgDistObjective,morphology.avgDistance) + relSquare(entropyObjective,morphology.entropy) + relSquare(slopeObjective,morphology.slope._1)
     if(verbose) println(s"Sq Rel Error = ${mse}")
-    mse
+    val poperror = math.abs(finalPop-popConstraint)/popConstraint
+    if(verbose) println(s"Pop rel error = ${poperror}")
+    // if(poperror > 0.1) Double.MaxValue else // do not do that, may bias selection through stoch outsiders - better include pop error in mse
+    mse + poperror
   }
 
 }

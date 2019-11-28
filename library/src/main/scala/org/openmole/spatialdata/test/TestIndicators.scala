@@ -4,11 +4,14 @@ import better.files.File
 
 import scala.util.Random
 import org.openmole.spatialdata._
+import org.openmole.spatialdata.grid.measures.GridMorphology.{AverageDistance, Moran}
 import org.openmole.spatialdata.vector.measures.SummarySpatialStatistics
 import org.openmole.spatialdata.grid.measures._
 import org.openmole.spatialdata.grid.synthetic._
+import org.openmole.spatialdata.utils._
 import org.openmole.spatialdata.utils.io._
-import org.openmole.spatialdata.utils.math.Statistics
+import org.openmole.spatialdata.utils.math.{Convolution, Statistics}
+
 
 object TestIndicators {
 
@@ -24,7 +27,7 @@ object TestIndicators {
 
     PNG.write(ngrid, File("data") / "test/grid.png")
     PNG.write(GridMorphology.erosion(ngrid), File("data") / "test/gridFFT.png")
-    PNG.write(GridMorphology.erosion(ngrid,GridMorphology.convolutionDirect), File("data") / "test/gridDirect.png")
+    PNG.write(GridMorphology.erosion(ngrid,Convolution.convolution2dDirect), File("data") / "test/gridDirect.png")
     // TODO fix the fft convolution
     /*
       time(_=>println("fft erosion steps = "+Morphology.fullErosionSteps(ngrid)))
@@ -65,19 +68,25 @@ object TestIndicators {
     println(Statistics.histogram(Array.fill(1000000){rng.nextDouble()},20).toSeq)//.map{case c => Array(c._1,c._2)})
   }
 
-  def testMoran(): Unit = {
+  def testMorphology(): Unit = {
 
     implicit val rng = new Random
 
-    val gen = ExpMixtureGenerator(Left(100),10,1.0,10.0)
+    val gen = ExpMixtureGenerator((20,40),10,1.0,10.0)
 
-    val morans = (1 to 1000).map{i =>
+    val indics = (1 to 100).map{i =>
       println(i)
       val grid = gen.generateGrid
-      (GridMorphology.moran(grid),GridMorphology.moranDirect(grid))
+      val (mo1,t1) = withTimer[GridMorphology](GridMorphology(grid,Seq(Moran(),AverageDistance())))
+      println(mo1.avgDistance)
+      val (mo2,t2) = withTimer[(Double,Double)]((GridMorphology.moranDirect(grid),GridMorphology.distanceMeanDirect(grid)))
+      println(mo2._2)
+      (mo1,mo2,t1,t2)
     }.toArray
 
-    println(morans.map{d => math.abs(d._1 - d._2)}.sum)
+    println(indics.map{d => scala.math.abs(d._1.moran - d._2._1)+scala.math.abs(d._1.avgDistance - d._2._2)}.sum)
+    println(indics.map{_._3}.sum/indics.length.toDouble)
+    println(indics.map{_._4}.sum/indics.length.toDouble)
 
     /*
     import org.dianahep.histogrammar._

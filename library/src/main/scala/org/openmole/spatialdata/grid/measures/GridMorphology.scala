@@ -42,6 +42,8 @@ case class GridMorphology(
     }
   }
 
+  def |-|(m2: GridMorphology): Double = toArray().zip(m2.toArray()).map{case (o1,o2) => scala.math.abs(o1-o2)}.sum
+
 }
 
 
@@ -208,11 +210,12 @@ object GridMorphology {
     * @return
     */
   def distanceMean(matrix: Array[Array[Double]],normalize: Boolean = true): Double = {
-    val totPop = matrix.flatten.sum
-    val dmat = distanceMatrix(2 * matrix.length - 1)
-    val conv = Convolution.convolution2D(matrix, dmat)
-    val norm = if (normalize) math.sqrt(math.Pi / matrix.flatten.length) else 1.0
-    norm / (totPop * totPop) * MathArrays.ebeMultiply(conv.flatten, matrix.flatten).sum
+    val x = matrix.map{_.map{d => if(d.isNaN) 0.0 else d}}
+    val totPop = x.flatten.sum
+    val dmat = distanceMatrix(2 * x.length - 1,2 * x(0).length - 1)
+    val conv = Convolution.convolution2D(x, dmat)
+    val norm = if (normalize) math.sqrt(math.Pi / x.flatten.length) else 1.0
+    norm / (totPop * totPop) * MathArrays.ebeMultiply(conv.flatten, x.flatten).sum
   }
 
 
@@ -260,7 +263,7 @@ object GridMorphology {
   def congestedFlows(matrix: Array[Array[Double]],congestionCost: Double): Double = {
     val totPop = matrix.flatten.sum
     if(totPop==0.0){0.0} else {
-      val dmat = distanceMatrix(2 * matrix.length - 1)
+      val dmat = distanceMatrix(2 * matrix.length - 1,2 * matrix(0).length - 1)
       val conv = Convolution.convolution2D(matrix, dmat.map {_.map {d => if (d==0) 0.0 else 1 / d}})
       val flows = MathArrays.ebeMultiply(conv.flatten, matrix.flatten).sum / (totPop * totPop)
       val convsquared = Convolution.convolution2D(matrix.map {
@@ -285,8 +288,8 @@ object GridMorphology {
     * @param n
     * @return
     */
-  def distanceMatrix(n: Int): Array[Array[Double]] = {
-    Array.tabulate(n, n) { (i, j) => math.sqrt((i - n / 2) * (i - n / 2) + (j - n / 2) * (j - n / 2)) }
+  def distanceMatrix(n: Int, p: Int): Array[Array[Double]] = {
+    Array.tabulate(n, p) { (i, j) => math.sqrt((i - n / 2) * (i - n / 2) + (j - p / 2) * (j - p / 2)) }
   }
 
 
@@ -298,25 +301,28 @@ object GridMorphology {
     * @return
     */
   def moran(matrix: Array[Array[Double]],weightFunction: Array[Array[Double]]=> Array[Array[Double]] = spatialWeights): Double = {
-    //val n = matrix.length
-    val flatConf = matrix.flatten
+    val x = matrix.map{_.map{d => if(d.isNaN) 0.0 else d}}
+    val flatConf = x.flatten
     val popMean = flatConf.sum / flatConf.length
-    val centeredConf = matrix.map { r => r.map { d => d - popMean } }
+    val centeredConf = x.map { r => r.map { d => d - popMean }}
     val variance = MathArrays.ebeMultiply(centeredConf.flatten, centeredConf.flatten).sum
-    val weights = weightFunction(matrix)
-    val totWeight = Convolution.convolution2D(Array.fill(matrix.length, matrix(0).length) { 1.0 }, weights).flatten.sum
+    val weights = weightFunction(x)
+    val totWeight = Convolution.convolution2D(Array.fill(x.length, x(0).length) { 1.0 }, weights).flatten.sum
     flatConf.length / (totWeight * variance) * MathArrays.ebeMultiply(centeredConf.flatten, Convolution.convolution2D(centeredConf, weights).flatten).sum
   }
 
   /**
     * Default spatial weights for Moran
+    *  FIXME non square size
     * @param n
     * @return
     */
   def spatialWeights(matrix: Array[Array[Double]]): Array[Array[Double]] = {
-    val (n,p) = (2 * (matrix.length - 1) + 1,2 * (matrix(0).length - 1) + 1)
+    /*val (n,p) = (2 * (matrix.length - 1) + 1,2 * (matrix(0).length - 1) + 1)
     val (ic,jc) = ((n-1)/2 + 1,(p-1)/2 + 1)
-    Array.tabulate(n, p) { (i, j) => if (i == ic && j == jc) 0.0 else 1 / math.sqrt((i - ic) * (i - ic) + (j - jc) * (j - jc)) }
+    Array.tabulate(n, p) { (i, j) => if (i == ic && j == jc) 0.0 else 1 / math.sqrt((i - ic) * (i - ic) + (j - jc) * (j - jc)) }*/
+    val (n,p) = (2 * matrix.length - 1,2 * matrix(0).length - 1)
+    Array.tabulate(n, p) { (i, j) => if (i == n / 2 && j == p / 2) 0.0 else 1 / math.sqrt((i - n / 2) * (i - n / 2) + (j - p / 2) * (j - p / 2))}
   }
 
 
@@ -339,7 +345,7 @@ object GridMorphology {
         (c2, p2) <- zipWithPosition(matrix)
       } yield distance(p1, p2) * c1 * c2).sum
 
-    def normalisation = matrix.length / math.sqrt(math.Pi)
+    def normalisation = math.sqrt(matrix.flatten.length / math.Pi)
 
     if(totalQuantity==0.0||normalisation==0.0) return(0.0)
 
@@ -401,64 +407,6 @@ object GridMorphology {
   }
 
 
-  /**
-    * convolution using fft (pb: operator is sum by default)
-    *  - binary convol here operator is not applied during convol itself but linked to mask
-    * @param matrix
-    * @param mask
-    * @param operator
-    */
-  // FIXME DOES NOT WORK
-  /*def convolution(matrix: Array[Array[Double]],
-                  mask: Array[Array[Double]],
-                  filter: Double=>Double = {case d => if(d > 0.0)1.0 else 0.0}
-                 ): Array[Array[Double]] ={
-    // mask must be padded
-    val paddedMask: Array[Array[Double]] = Array.fill((matrix.length-mask.length)/2){Array.fill(matrix(0).length){0.0}}++
-      mask.map{case row=>Array.fill((matrix(0).length-mask(0).length)/2){0.0}++row++Array.fill((matrix(0).length-mask(0).length)/2){0.0}}++
-      Array.fill((matrix.length-mask.length)/2){Array.fill(matrix(0).length){0.0}}
-    val convol: Array[Array[Double]] = Convolution.convolution2D(matrix,paddedMask)
-    convol.map{
-      _.map{
-        case d => filter(d)
-      }
-    }
-  }
-  */
-
-  /**
-    * Naive two dimensional convolution for morpho math - default operator is average (dilation) - replace by product for erosion
-    *   (not efficient at all but no math commons to work in the gui)
-    * @param matrix
-    * @param mask should be of uneven size
-    * @param operator sum by default
-    * @return
-    */
-  def convolutionDirect(matrix: Array[Array[Double]],mask: Array[Array[Double]],
-                        //operator: Array[Double]=>Double = {case a => if(a.filter(_>0.0).size>0)1.0 else 0.0})
-                        filter: Double=>Double = {case d => if(d > 0.0)1.0 else 0.0}
-                       )
-     : Array[Array[Double]] = {
-    assert(mask.length%2==1&&mask(0).length%2==1,"mask should be of uneven size")
-    val sizes = matrix.map(_.length);assert(sizes.max==sizes.min,"array should be rectangular")
-    val masksizes = mask.map(_.length);assert(masksizes.max==masksizes.min,"mask should be rectangular")
-    val (paddingx,paddingy) = ((mask.length-1)/2,(mask(0).length-1)/2)
-    val padded = Array.tabulate(matrix.length+2*paddingx,matrix(0).length+2*paddingy){
-      case (i,j) if i<paddingx||i>=(matrix.length+paddingx)||j<paddingy||j>=(matrix(0).length+paddingy) => 0.0
-      case (i,j) => matrix(i-paddingx)(j-paddingy)
-    }
-    val res = Array.fill(matrix.length+2*paddingx,matrix(0).length+2*paddingy)(0.0)
-    for(i <- paddingx until (res.length - paddingx);j <- paddingy until (res(0).length-paddingy)){
-      val masked = Array.fill(mask.size,mask(0).size)(0.0)
-      for(k <- - paddingx to paddingx;l <- - paddingy to paddingy){
-        //assert(i+k<matrix.length&j+l<matrix(0).length,"size : "+i+" "+j+" "+k+" "+" "+l+" for a matrix of size "+matrix.length+";"+matrix(0).length)
-        masked(k+paddingx)(l+paddingy)=padded(i+k)(j+l)*mask(k+paddingx)(l+paddingy)
-      }
-      res(i)(j) = filter(masked.flatten.sum)
-    }
-    //res.zip(matrix).map{case (row,initrow) => row.take(initrow.length + paddingy).takeRight(initrow.length)}.take(matrix.length+paddingx).takeRight(matrix.length)
-    res.map{case row => row.slice(paddingy,row.length-paddingy)}.slice(paddingx,res.length-paddingx)
-  }
 
   /**
     * Dilation with default cross mask
@@ -466,11 +414,11 @@ object GridMorphology {
     * @return
     */
   def dilation(matrix: Array[Array[Double]],
-               convol: (Array[Array[Double]],Array[Array[Double]],(Double=> Double))=> Array[Array[Double]] = convolutionDirect): Array[Array[Double]] =
+               convol: (Array[Array[Double]],Array[Array[Double]],(Double=> Double))=> Array[Array[Double]] = Convolution.convolution2dDirect): Array[Array[Double]] =
     convol(matrix,Array(Array(0.0,1.0,0.0),Array(1.0,1.0,1.0),Array(0.0,1.0,0.0)),{case d => if(d > 0.0)1.0 else 0.0})
 
   def erosion(matrix: Array[Array[Double]],
-              convol: (Array[Array[Double]],Array[Array[Double]],(Double=> Double))=> Array[Array[Double]] = convolutionDirect): Array[Array[Double]] = {
+              convol: (Array[Array[Double]],Array[Array[Double]],(Double=> Double))=> Array[Array[Double]] = Convolution.convolution2dDirect): Array[Array[Double]] = {
     val mask = Array(Array(0.0, 1.0, 0.0), Array(1.0, 1.0, 1.0), Array(0.0, 1.0, 0.0))
     convol(matrix,
       mask,
@@ -485,7 +433,7 @@ object GridMorphology {
     * @return
     */
   def fullDilationSteps(matrix: Array[Array[Double]],
-                        convol: (Array[Array[Double]],Array[Array[Double]],(Double=> Double))=> Array[Array[Double]] = convolutionDirect
+                        convol: (Array[Array[Double]],Array[Array[Double]],(Double=> Double))=> Array[Array[Double]] = Convolution.convolution2dDirect
                        ): Double = {
     var steps = 0
     var complete = false
@@ -508,7 +456,7 @@ object GridMorphology {
     * @return
     */
   def fullErosionSteps(matrix: Array[Array[Double]],
-                       convol: (Array[Array[Double]],Array[Array[Double]],(Double=> Double))=> Array[Array[Double]] = convolutionDirect
+                       convol: (Array[Array[Double]],Array[Array[Double]],(Double=> Double))=> Array[Array[Double]] = Convolution.convolution2dDirect
                       ): Double = {
     var steps = 0
     var complete = false
@@ -533,7 +481,7 @@ object GridMorphology {
     * @return
     */
   def fullClosingSteps(matrix: Array[Array[Double]],
-                       convol: (Array[Array[Double]],Array[Array[Double]],(Double=> Double))=> Array[Array[Double]] = convolutionDirect
+                       convol: (Array[Array[Double]],Array[Array[Double]],(Double=> Double))=> Array[Array[Double]] = Convolution.convolution2dDirect
                       ): Double = {
     var steps = 0
     var complete = false
@@ -560,7 +508,7 @@ object GridMorphology {
     * @return
     */
   def fullOpeningSteps(matrix: Array[Array[Double]],
-                       convol: (Array[Array[Double]],Array[Array[Double]],(Double=> Double))=> Array[Array[Double]] = convolutionDirect
+                       convol: (Array[Array[Double]],Array[Array[Double]],(Double=> Double))=> Array[Array[Double]] = Convolution.convolution2dDirect
                       ): Double = {
     var steps = 0
     var complete = false

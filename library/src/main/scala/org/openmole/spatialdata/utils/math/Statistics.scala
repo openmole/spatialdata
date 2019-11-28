@@ -83,11 +83,11 @@ object Statistics {
   def slope(matrix: Seq[Seq[Double]]): (Double,Double) = slope(matrix.flatten.toArray)
 
   def slope(values: Array[Double]): (Double,Double) = {
-    def distribution: Array[Double] = values.sorted(Ordering.Double.reverse).filter(_ > 0)
+    def distribution: Array[Double] = values.filter(_ > 0).sorted(Ordering.Double.reverse)
     def distributionLog: Array[Array[Double]] = distribution.zipWithIndex.map { case (q, i) => Array(log(i + 1), log(q)) }
     val simpleRegression = new SimpleRegression(true)
     simpleRegression.addData(distributionLog)
-    (simpleRegression.getSlope(), simpleRegression.getRSquare())
+    (simpleRegression.getSlope, simpleRegression.getRSquare)
   }
 
 
@@ -104,23 +104,23 @@ object Statistics {
 
 
   /**
-    *
+    * Entropy of a stat distrib
     * @param values
     * @return
     */
   def entropy(values: Array[Double]): Double = {
-    val totalQuantity = values.sum
+    val x = values.map{d => if (d.isNaN) 0.0 else d}
+    val totalQuantity = x.sum
     //assert(totalQuantity > 0)
 
       totalQuantity match {
         case 0.0 => 0.0
         case _ =>
-           values.map {p =>
+          x.map {p =>
               val quantityRatio = p / totalQuantity
               val localEntropy = if (quantityRatio == 0.0) 0.0 else quantityRatio * math.log (quantityRatio)
-             //assert(!localEntropy.isNaN, s"${quantityRatio} ${math.log(quantityRatio)}")
               localEntropy
-           }.sum * (- 1 / math.log (values.length) )
+           }.sum * (- 1 / math.log (x.length) )
       }
   }
 

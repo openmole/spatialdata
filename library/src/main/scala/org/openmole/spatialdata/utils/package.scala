@@ -16,27 +16,11 @@ package object utils {
 
     def sampleWithoutReplacement(samples: Int)(implicit rng: Random): Vector[T] = Stochastic.sampleWithoutReplacement(s, samples)
 
-  }
-
-
-  implicit class SetDecorator[A](s: Set[A]) {
-
-    // does not use the implicit rng - distinct from the math commons one
-    /*def randomTake(n: Int)(implicit rng: Random): Seq[A] = {
-      val randomgen = new RandomDataGenerator()
-      randomgen.nextSample(s.toSeq.asJavaCollection,n).toSeq.map{_.asInstanceOf[A]}
-    }
-    def shuffle(implicit rng: Random) = randomTake(s.size)
-    */
-
-    def shuffle(implicit rng: Random): Seq[A] = rng.shuffle(s.toSeq)
-
-    // FIXME does not work for sampling with replacement !
-    def randomTake(n: Int)(implicit rng: Random): Seq[A] = shuffle.take(n)
+    def shuffle(implicit rng: Random): Seq[T] = rng.shuffle(s.toSeq)
 
   }
 
-  def time(fun: Unit=> Unit): Unit= {
+  def withTimer(fun: Unit=> Unit): Unit= {
     val start = System.currentTimeMillis()
     fun()
     println("time : "+(System.currentTimeMillis()-start)+" ms")
@@ -47,6 +31,9 @@ package object utils {
     val res = fun(a)
     (res,System.currentTimeMillis()-start)
   }
+
+  // FIXME does not work
+  def withTimer[A](a: A): (A,Double) = withTimer[Unit,A]{ _ => a}()
 
   def log(msg: String): Unit = if(spatialdata.DEBUG) println(msg)
 

@@ -2,6 +2,7 @@
 # Spatial Data - a scala library for spatial sensitivity analysis
 
 
+[![Build Status](https://travis-ci.com/JusteRaimbault/SpatialData.svg?branch=master)](https://travis-ci.com/JusteRaimbault/SpatialData)
 [![codecov](https://codecov.io/gh/JusteRaimbault/SpatialData/branch/master/graph/badge.svg)](https://codecov.io/gh/JusteRaimbault/SpatialData)
 
 ## General purpose

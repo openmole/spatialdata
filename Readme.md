@@ -2,6 +2,7 @@
 # Spatial Data - a scala library for spatial sensitivity analysis
 
 
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.openmole.library/spatialdata_2.12/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.openmole.library/spatialdata_2.12)
 [![Build Status](https://travis-ci.com/JusteRaimbault/SpatialData.svg?branch=master)](https://travis-ci.com/JusteRaimbault/SpatialData)
 [![codecov](https://codecov.io/gh/JusteRaimbault/SpatialData/branch/master/graph/badge.svg)](https://codecov.io/gh/JusteRaimbault/SpatialData)
 

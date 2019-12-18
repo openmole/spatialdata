@@ -1,5 +1,7 @@
 package org.openmole.spatialdata.scalatest.network
 
-class NetworkSpec {
+import org.scalatest.flatspec.AnyFlatSpec
+
+class NetworkSpec extends AnyFlatSpec {
 
 }

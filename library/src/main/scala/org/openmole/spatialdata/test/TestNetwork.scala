@@ -1,13 +1,11 @@
 package org.openmole.spatialdata.test
 
-import org.openmole.spatialdata.network
-import org.openmole.spatialdata.network.{Network, Node, ShortestPaths}
-import org.openmole.spatialdata.network.measures.NetworkMeasures
-import org.openmole.spatialdata.network.measures.NetworkMeasures.ShortestPathsNetworkMeasures
-import org.openmole.spatialdata.network.synthetic.{GridNetworkGenerator, RandomNetworkGenerator, TreeMinDistGenerator}
-import org.openmole.spatialdata.utils.graph.GraphAlgorithms.{ScalaGraph, _}
-import org.openmole.spatialdata.utils.math.Stochastic
 import org.openmole.spatialdata.utils._
+import org.openmole.spatialdata.network.measures.NetworkMeasures.ShortestPathsNetworkMeasures
+import org.openmole.spatialdata.network.synthetic.{RandomNetworkGenerator, TreeMinDistGenerator}
+import org.openmole.spatialdata.network.{Network, ShortestPaths}
+import org.openmole.spatialdata.utils.graph.GraphAlgorithms.{DijkstraJGraphT, FloydWarshallJGraphT, ScalaGraph, shortestPaths}
+import org.openmole.spatialdata.utils.{visualization, withTimer}
 
 import scala.util.Random
 

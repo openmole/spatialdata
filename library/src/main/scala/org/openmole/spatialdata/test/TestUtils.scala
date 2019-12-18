@@ -1,10 +1,10 @@
-
 package org.openmole.spatialdata.test
 
 import org.openmole.spatialdata.utils.io.CSV
 import org.openmole.spatialdata.utils.math.Stochastic
 
 import scala.util.Random
+
 
 object TestUtils {
 

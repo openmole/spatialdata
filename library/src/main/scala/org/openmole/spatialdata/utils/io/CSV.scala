@@ -16,7 +16,7 @@ object CSV {
     * @param sep
     * @return
     */
-  def readCSV(file: String,sep: String=","): Map[String,Seq[String]] = {
+  def readCSVFile(file: File,sep: String=","): Map[String,Seq[String]] = {
 
     implicit val readerFormat = new DefaultCSVFormat {
       override val delimiter = sep.charAt(0)
@@ -26,6 +26,8 @@ object CSV {
     //CSVReader.open(file)(readerFormat).all()
     header.map{case s => (s,content.map{_.get(s).get})}.toMap
   }
+
+  def readCSV(filename: String,sep: String = ","): Map[String,Seq[String]] = readCSVFile(new File(filename),sep)
 
   /**
     * read a numerical matrix

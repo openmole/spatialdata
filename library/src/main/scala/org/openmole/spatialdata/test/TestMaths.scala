@@ -1,7 +1,7 @@
 package org.openmole.spatialdata.test
 
 import org.openmole.spatialdata.utils.math.Convolution
-import org.openmole.spatialdata.utils._
+import org.openmole.spatialdata.utils.withTimer
 
 import scala.util.Random
 

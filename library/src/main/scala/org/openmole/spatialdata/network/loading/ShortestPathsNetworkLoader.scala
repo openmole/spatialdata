@@ -23,6 +23,14 @@ case class ShortestPathsNetworkLoader(
 object ShortestPathsNetworkLoader {
 
 
+  /**
+    * Load a network with shortest paths (~ betweenness centrality)
+    * @param network network to load
+    * @param odPattern optional O-D flows
+    * @param pathSample
+    * @param rng
+    * @return
+    */
   def load(network: Network, odPattern: Option[Map[(Node, Node), Double]], pathSample: Double)(implicit rng: Random): NetworkLoading = {
     //  this requires that network nodes have ids ! => ok checked in shortest paths
     //val paths: Map[(Node,Node),(Seq[Node],Seq[Link],Double)] = Graph.shortestPaths(network,network.nodes.toSeq)

@@ -1,10 +1,13 @@
-package org.openmole.spatialdata.grid.measures
+package org.openmole.spatialdata.application.urbmorph
 
+
+import org.openmole.spatialdata.grid.measures.GridMorphology
 import org.openmole.spatialdata.grid.real.OSMGridSampling
 import org.openmole.spatialdata.utils.io.CSV
 import org.openmole.spatialdata.utils.osm.api.APIExtractor._
 
 import scala.util.Random
+
 
 /**
   * A runnable object to compute morphological measures on a set of OpenStreetMap samples

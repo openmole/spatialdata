@@ -1,6 +1,6 @@
 package org.openmole.spatialdata.test
 
-import org.openmole.spatialdata.utils.database._
+import org.openmole.spatialdata.utils.database.{MongoConnection, PostgisConnection}
 
 object TestDatabase {
 

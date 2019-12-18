@@ -1,17 +1,16 @@
 package org.openmole.spatialdata.test
 
 import better.files.File
+import org.openmole.spatialdata._
+import org.openmole.spatialdata.grid.measures.GridMorphology
+import org.openmole.spatialdata.grid.measures.GridMorphology.{AverageDistance, Moran}
+import org.openmole.spatialdata.grid.synthetic.ExpMixtureGenerator
+import org.openmole.spatialdata.utils.io.{CSV, PNG}
+import org.openmole.spatialdata.utils.math.{Convolution, Statistics}
+import org.openmole.spatialdata.utils.withTimer
+import org.openmole.spatialdata.vector.measures.SummarySpatialStatistics
 
 import scala.util.Random
-import org.openmole.spatialdata._
-import org.openmole.spatialdata.grid.measures.GridMorphology.{AverageDistance, Moran}
-import org.openmole.spatialdata.vector.measures.SummarySpatialStatistics
-import org.openmole.spatialdata.grid.measures._
-import org.openmole.spatialdata.grid.synthetic._
-import org.openmole.spatialdata.utils._
-import org.openmole.spatialdata.utils.io._
-import org.openmole.spatialdata.utils.math.{Convolution, Statistics}
-
 
 object TestIndicators {
 

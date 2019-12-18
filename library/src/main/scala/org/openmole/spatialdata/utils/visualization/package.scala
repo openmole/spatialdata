@@ -107,11 +107,14 @@ package object visualization {
         setBackground(Color.WHITE)
       })
       setVisible(true)
-      Thread.sleep(10000)
+      //Thread.sleep(10000)
     }
   }
 
-  def staticRasterVisualization(raster: RasterLayerData[Double],projection: RasterLayerData[Double] => RasterLayerData[Double] = normalization): Unit = {
+  def staticRasterVisualization(raster: RasterLayerData[Double],
+                                projection: RasterLayerData[Double] => RasterLayerData[Double] = //normalization
+                                 {r =>visualization.normalization(r.map{_.map{d => if(d<=0.0) 0.0 else scala.math.log10(d)}})}
+                               ): Unit = {
     val frame = RasterFrame(raster)
     frame.init
   }

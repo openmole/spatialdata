@@ -1,17 +1,16 @@
 package org.openmole.spatialdata.test
 
 import org.apache.commons.math3.stat.inference.KolmogorovSmirnovTest
-import org.openmole.spatialdata.grid.synthetic.ReactionDiffusionGridGenerator
 import org.openmole.spatialdata._
 import org.openmole.spatialdata.application.reactiondiffusion.ReactionDiffusionCalibration
 import org.openmole.spatialdata.grid.measures.GridMorphology
-import org.openmole.spatialdata.grid.measures.GridMorphology._
+import org.openmole.spatialdata.grid.measures.GridMorphology.{AverageDistance, Entropy, Moran, Slope}
 import org.openmole.spatialdata.grid.real.CSVGridGenerator
-import org.openmole.spatialdata.utils._
+import org.openmole.spatialdata.grid.synthetic.ReactionDiffusionGridGenerator
 import org.openmole.spatialdata.utils.io.CSV
+import org.openmole.spatialdata.utils.{math, visualization, withTimer}
 
 import scala.util.Random
-
 
 object TestReactionDiffusion {
 
@@ -29,6 +28,7 @@ object TestReactionDiffusion {
     val targetYear = "2000"
 
     val initialConfig = CSVGridGenerator("data/ucdb/"+targetArea+"_"+initYear+".csv",";").generateGrid(rng).map{_.toSeq}.toSeq
+    val finalConfig = CSVGridGenerator("data/ucdb/"+targetArea+"_"+targetYear+".csv",";").generateGrid(rng).map{_.toSeq}.toSeq
 
     val objs = CSV.readCSV("data/ucdb/morphologies.csv",sep=";")
     val targetPop = objs("totalPop"+targetYear)(targetArea-1).toDouble
@@ -38,8 +38,8 @@ object TestReactionDiffusion {
     val targetSlope = objs("alpha"+targetYear)(targetArea-1).toDouble
 
     val res = params.map {case (alpha,beta,tsteps,s) =>
-      val calib = ReactionDiffusionCalibration(initialConfig,alpha,beta,1.0,tsteps,targetPop,targetMoran,targetAvgDist,targetEntropy,targetSlope,s)
-      val (r,t) = withTimer[Unit,Double]{_ => calib.runModel}()
+      val calib = ReactionDiffusionCalibration(initialConfig,finalConfig,alpha,beta,1.0,tsteps,targetPop,targetMoran,targetAvgDist,targetEntropy,targetSlope,s)
+      val (r,t) = withTimer[Unit,Double]{_ => calib.runModel._1}()
       println(t)
       (calib,r,t)
     }
@@ -56,14 +56,40 @@ object TestReactionDiffusion {
 
     implicit val rng = new Random
 
-    //val generatoriter = ReactionDiffusionGridGenerator(100,100,1000,0.5,0.8,1)
-    val generator = ReactionDiffusionGridGenerator(size =(56,62),alpha = 8.844, beta = 0.09763,growthRate = 2033, totalPopulation = 189215, diffusionSteps = 1)
+    val targetArea = 100
+    val initYear = 1975
+    val targetYear = 1990
+    //val targetYear = 2015
 
-    generator.generateGrid
-    //visualization.staticRasterVisualization(generator.generateGrid,projection = {r =>
-    //  visualization.normalization(r.map{_.map{d => if(d<=0.0) 0.0 else scala.math.log10(d)}})
-    //}
-    //)
+    //
+
+    val initialConfig = CSVGridGenerator("data/ucdb/"+targetArea+"_"+initYear+".csv",";").generateGrid(rng)
+    val finalConfig = CSVGridGenerator("data/ucdb/"+targetArea+"_"+targetYear+".csv",";").generateGrid(rng)
+
+    //println(initialConfig)
+    visualization.staticRasterVisualization(initialConfig.map{_.map{d => if(d.isNaN) 0.0 else d}})
+
+    val deltaPop = finalConfig.flatten.filter(!_.isNaN).sum - initialConfig.flatten.filter(!_.isNaN).sum
+
+    //1.2819520088589078,0.2938849030874698,27.432594956849854
+    //0.2216093312569525,1.3820604067624241E-4,6.30040094455728,1.4048088387268383,9
+    // 1.046268668726121,0.0011831875088893903,97.987991963447,2.4225641231727895E8,51
+
+    //val generatoriter = ReactionDiffusionGridGenerator(100,100,1000,0.5,0.8,1)
+    //val generator = ReactionDiffusionGridGenerator(size =(56,62),alpha = 8.844, beta = 0.09763,growthRate = 2033, totalPopulation = 189215, diffusionSteps = 1)
+    val generator = ReactionDiffusionGridGenerator(size =(56,62),alpha = 1.04626, beta = 0.001183,growthRate = (deltaPop / 97).toInt,
+      totalPopulation = finalConfig.flatten.filter(!_.isNaN).sum.toInt, diffusionSteps = 1,initialConfiguration = Some(initialConfig.map{_.toSeq}.toSeq))
+
+    val grid = generator.generateGrid.map{_.map{d => if(d.isNaN) 0.0 else d}}
+
+    println(deltaPop)
+    println(math.relSquare(finalConfig.flatten.filter(!_.isNaN).sum,grid.flatten.sum))
+
+    visualization.staticRasterVisualization(grid)
+    visualization.staticRasterVisualization(finalConfig.map{_.map{d => if(d.isNaN) 0.0 else d}})
+
+    visualization.staticRasterVisualization(initialConfig.zip(grid).map{case (r1,r2) => r1.zip(r2).map{case (p1,p2) => p2-p1}.map{d => if (d.isNaN) 0.0 else d}})
+    visualization.staticRasterVisualization(initialConfig.zip(finalConfig).map{case (r1,r2) => r1.zip(r2).map{case (p1,p2) => p2-p1}.map{d => if (d.isNaN) 0.0 else d}})
 
   }
 

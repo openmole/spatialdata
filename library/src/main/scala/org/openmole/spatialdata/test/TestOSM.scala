@@ -1,10 +1,8 @@
-
 package org.openmole.spatialdata.test
 
-import com.vividsolutions.jts.geom.MultiPolygon
 import org.openmole.spatialdata.grid
-import org.openmole.spatialdata.grid.real._
-import org.openmole.spatialdata.grid.measures._
+import org.openmole.spatialdata.grid.measures.GridMorphology
+import org.openmole.spatialdata.grid.real.{OSMGridGenerator, OSMGridSampling}
 
 import scala.util.Random
 

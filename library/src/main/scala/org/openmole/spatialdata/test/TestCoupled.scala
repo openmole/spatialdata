@@ -4,13 +4,11 @@ import org.openmole.spatialdata._
 import org.openmole.spatialdata.grid.measures.GridMorphology
 import org.openmole.spatialdata.grid.synthetic.RandomGridGenerator
 import org.openmole.spatialdata.network.measures.NetworkMeasures
-import org.openmole.spatialdata.network.measures.NetworkMeasures.ShortestPathsNetworkMeasures
 import org.openmole.spatialdata.network.synthetic.RandomNetworkGenerator
-import org.openmole.spatialdata.vector.synthetic.DensityPointsGenerator
 import org.openmole.spatialdata.utils.math.Statistics
+import org.openmole.spatialdata.vector.synthetic.DensityPointsGenerator
 
 import scala.util.Random
-
 
 object TestCoupled {
 

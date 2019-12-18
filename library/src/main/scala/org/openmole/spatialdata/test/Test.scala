@@ -1,7 +1,5 @@
 package org.openmole.spatialdata.test
 
-import scala.util.Random
-
 object Test extends App {
 
   // Coupled network / grid
@@ -30,8 +28,8 @@ object Test extends App {
   //TestNetwork.testTreeMinDist
 
   // Reaction Diffusion
-  TestReactionDiffusion.testRealDataCalibration
-  //TestReactionDiffusion.testModel
+  //TestReactionDiffusion.testRealDataCalibration
+  TestReactionDiffusion.testModel
   //TestReactionDiffusion.benchmarkImplementation
 
   // Synthetic grids

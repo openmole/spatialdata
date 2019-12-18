@@ -4,9 +4,6 @@ name := "spatialdata"
 
 organization := "org.openmole.library"
 
-//version := "0.1-SNAPSHOT"
-//version := "0.1"
-
 resolvers ++= Seq(
   "osgeo" at "http://download.osgeo.org/webdav/geotools",
   "geosolutions" at "http://maven.geo-solutions.it",
@@ -14,10 +11,7 @@ resolvers ++= Seq(
   "apache" at "http://repo.maven.apache.org/maven2",
   Resolver.sonatypeRepo("snapshots"),
   Resolver.sonatypeRepo("staging"),
-  Resolver.mavenCentral//,
-  //"Local Maven Repository" at "file:"+(new java.io.File(".")).getAbsolutePath+"/lib/maven",
-  //Resolver.sbtIvyRepo("file:"+(new java.io.File(".")).getAbsolutePath+"/lib/ivy")
-  //  Resolver.file("Local ivy", file( (new java.io.File(".")).getAbsolutePath+"/lib/ivy"))(Resolver.ivyStylePatterns)
+  Resolver.mavenCentral
 )
 
 val geotoolsVersion = "21.0"
@@ -41,44 +35,56 @@ libraryDependencies ++= Seq(
 
 
 
+lazy val osmrealmeasures = Project("osmrealmeasures", file("target/osmrealmeasures")) settings(
+  mainClass in (Compile, packageBin) := Some("org.openmole.spatialdata.application.urbmorph.OSMRealMeasures")
+)
+
+lazy val runtest = Project("test", file("target/test")) settings(
+  mainClass in (Compile, packageBin) := Some("org.openmole.spatialdata.test.Test")
+)
+
+
 enablePlugins(SbtOsgi)
 
-//lazy val omlplugin = Project("omlplugin", file("src")) settings(
-OsgiKeys.exportPackage := Seq("spatialdata.*;-split-package:=merge-first")
-OsgiKeys.importPackage := Seq("*;resolution:=optional")
-OsgiKeys.privatePackage := Seq("!scala.*,!java.*,!monocle.*,!META-INF.*.RSA,!META-INF.*.SF,!META-INF.*.DSA,META-INF.services.*,META-INF.*,*")
-// FilteredSet,scala.collection.FilterableSet,scala.collection.EqSetFacade
-//OsgiKeys.embeddedJars := Seq(new java.io.File("/Users/juste/.ivy2/cache/org.scala-graph/graph-core_2.12/jars/graph-core_2.12-1.12.5.jar"))
-OsgiKeys.requireCapability := """osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))""""
+//lazy val omlplugin = Project("omlplugin", file("target/omlplugin")) enablePlugins SbtOsgi settings( // FIXME
+//  name := "spatialdata",
+ //org.openmole.spatialdata.application.*
+  OsgiKeys.exportPackage := Seq("*;-split-package:=merge-first")//,
+  OsgiKeys.importPackage := Seq("*;resolution:=optional;-split-package:=merge-first")//,
+// test private package to have only application visible
+  OsgiKeys.privatePackage := Seq("org.openmole.spatialdata.grid,org.openmole.spatialdata.network,org.openmole.spatialdata.run,org.openmole.spatialdata.test,org.openmole.spatialdata.utils,org.openmole.spatialdata.vector,!scala.*,!java.*,!monocle.*,!META-INF.*.RSA,!META-INF.*.SF,!META-INF.*.DSA,META-INF.services.*,META-INF.*,*")//,
+  OsgiKeys.requireCapability := """osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))""""
 //)
 
-//excludeFilter in unmanagedSources := HiddenFileFilter || "*kodapan*"
-
-//mainClass in (Compile, packageBin) := Some("spatialdata.osm.OSMRealMeasures")
-//mainClass in (Compile, packageBin) := Some("spatialdata.test.Test")
-
-/*
-assemblyMergeStrategy in assembly := {
-  case PathList("META-INF", xs @ _*) => MergeStrategy.discard
-  case x => MergeStrategy.last
-}
-*/
 
 // publish fat jar
 // https://github.com/sbt/sbt-assembly#publishing-not-recommended
-/*assemblyJarName in assembly := name+"_2.12.jar"
-artifact in (Compile, assembly) := {
-  val art = (artifact in (Compile, assembly)).value
-  art.withClassifier(Some("assembly"))
-}
-addArtifact(artifact in (Compile, assembly), assembly)
-*/
+lazy val assemble = Project("assembly", file("target/assemble")) settings (
+  assemblyMergeStrategy in assembly := {
+    case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+    case x => MergeStrategy.last
+  },
+  assemblyJarName in assembly := name+"_2.12.jar",
+  artifact in (Compile, assembly) := {
+    val art = (artifact in (Compile, assembly)).value
+    art.withClassifier(Some("assembly"))
+  },
+  addArtifact(artifact in (Compile, assembly), assembly)
+)
+
+
+/**
+  * Testing with scalatest
+  */
+
+libraryDependencies += "org.scalactic" %% "scalactic" % "3.1.0"
+libraryDependencies += "org.scalatest" %% "scalatest" % "3.1.0" //% "test"
+
 
 
 /**
   * Publishing
   */
-//ThisBuild / organization := "org.openmole.library"
 
 useGpg := true
 
@@ -114,8 +120,14 @@ pomExtra in ThisBuild := (
   </developers>
   )
 
+/**
+  * Releasing
+  */
+
+
 sonatypeProfileName := "org.openmole"
 
+import sbt.enablePlugins
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 
 releaseProcess := Seq[ReleaseStep](

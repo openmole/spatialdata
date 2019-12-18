@@ -53,10 +53,12 @@ object RandomNetworkGenerator {
     * @return
     */
   def randomNetwork(nnodes: Int,nlinks: Int,planar: Boolean,directed: Boolean,withIndex: Boolean, points: Seq[Point2D])(implicit rng: Random): Network = {
-    val coords = if(points.length==0) RandomPointsGenerator(nnodes).generatePoints else points
-    val nodes = if(withIndex) Network(coords.zipWithIndex.map{case ((x,y),id) => Node(id,x,y)}.toSet,Set.empty[Link]) else Network(coords.map{case (x,y) => Node(0,x,y)}.toSet,Set.empty[Link])
-    val res = addRandomLinks(nodes,nlinks,directed)
-    if(planar) res.planarize else res
+    if (nnodes==0) Network.empty else {
+      val coords = if (points.isEmpty) RandomPointsGenerator(nnodes).generatePoints else points
+      val nodes = if (withIndex) Network(coords.zipWithIndex.map { case ((x, y), id) => Node(id, x, y) }.toSet, Set.empty[Link]) else Network(coords.map { case (x, y) => Node(0, x, y) }.toSet, Set.empty[Link])
+      val res = addRandomLinks(nodes, nlinks, directed)
+      if (planar) res.planarize else res
+    }
   }
 
   /**
@@ -67,8 +69,10 @@ object RandomNetworkGenerator {
     * @return
     */
   def addRandomLinks(network: Network,nlinks: Int,directed: Boolean)(implicit rng: Random): Network = {
-    val (origins,destinations) = (Stochastic.sampleWithReplacement[Node](network.nodes.toSeq,nlinks),Stochastic.sampleWithReplacement[Node](network.nodes.toSeq,nlinks))
-    Network(network,origins.zip(destinations).flatMap{case (o,d) => if(o!=d) Some(Link(o,d,directed)) else None}.toSet)
+    if (nlinks==0) network else {
+      val (origins, destinations) = (Stochastic.sampleWithReplacement[Node](network.nodes.toSeq, nlinks), Stochastic.sampleWithReplacement[Node](network.nodes.toSeq, nlinks))
+      Network(network, origins.zip(destinations).flatMap { case (o, d) => if (o != d) Some(Link(o, d, directed)) else None }.toSet)
+    }
   }
 
 }

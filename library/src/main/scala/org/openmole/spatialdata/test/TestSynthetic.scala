@@ -3,7 +3,7 @@ package org.openmole.spatialdata.test
 import org.openmole.spatialdata
 import org.openmole.spatialdata.application.urbmorph.GridGeneratorLauncher
 import org.openmole.spatialdata.grid.measures.GridMorphology
-import org.openmole.spatialdata.grid.synthetic._
+import org.openmole.spatialdata.grid.synthetic.{BlocksGridGenerator, PercolationGridGenerator, RandomGridGenerator}
 
 import scala.io.Source
 import scala.util.Random

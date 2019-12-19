@@ -78,6 +78,34 @@ case class Network(
     this.copy(links = links.map{l => l.copy(weight=linkCostMap.getOrElse(l.id,l.weight))})
   }
 
+
+  /**
+    * Subnetwork from nodes
+    * @param subnodes
+    * @return
+    */
+  def subNetworkNodes(subnodes: Set[Node]): Network = {
+    this.copy(
+      nodes = subnodes.intersect(nodes),
+      links = links.filter{l => subnodes.contains(l.e1)&&subnodes.contains(l.e2)},
+      cachedShortestPaths=None
+    )
+  }
+
+  /**
+    * Subnetwork from links
+    * @param sublinks
+    * @return
+    */
+  def subNetworkLinks(sublinks: Set[Link]): Network = {
+    val keptnodes = Link.getNodes(sublinks)
+    this.copy(
+      nodes = nodes.intersect(keptnodes),
+      links = links.intersect(sublinks),
+      cachedShortestPaths = None
+    )
+  }
+
   /**
     * add new links
     * @param newLinks
@@ -102,13 +130,21 @@ case class Network(
     * @param keepNodes
     * @return
     */
-  def removeLinks(removedLinks: Set[Link],keepNodes: Boolean = false): Network = {
+  def removeLinks(removedLinks: Set[Link], keepNodes: Boolean = false): Network = {
     if(keepNodes) this.copy(links = links.filter(!removedLinks.contains(_)),cachedShortestPaths = None)
     else {
       val keptLinks = links.filter(!removedLinks.contains(_))
       this.copy(links = keptLinks, nodes = Link.getNodes(keptLinks),cachedShortestPaths = None)
     }
   }
+
+  /**
+    * Remove a number of random links
+    * @param removed
+    * @param keepNodes
+    * @return
+    */
+  def removeRandomLinks(removed: Int, keepNodes: Boolean = false)(implicit rng: Random): Network = removeLinks(links.sampleWithoutReplacement(removed).toSet, keepNodes)
 
   /**
     * Remove nodes - ids are unchanged as restriction of injective index is still injective
@@ -120,6 +156,13 @@ case class Network(
   def removeNodes(removedNodes: Set[Node]): Network =
     this.copy(nodes = nodes.filter(!removedNodes.contains(_)), links = links.filter{l => (!removedNodes.contains(l.e1))&(!removedNodes.contains(l.e2))}, cachedShortestPaths = None)
 
+  /**
+    * Remove random nodes
+    * @param removed
+    * @param rng
+    * @return
+    */
+  def removeRandomNodes(removed: Int)(implicit rng: Random): Network = removeNodes(nodes.sampleWithoutReplacement(removed).toSet)
 
 
   /**
@@ -144,15 +187,6 @@ case class Network(
     * @return
     */
   def isPlanar : Boolean = {
-    /*def findIntersection(state: (Set[Link],Boolean)): (Set[Link],Boolean) = {
-      val sremLinks = state._1.toSeq
-      if(sremLinks.size<=1) return (Set.empty,true) // must stop
-      val currentLink = sremLinks.head
-      val nonintersectinglinks = sremLinks.tail.iterator.takeWhile(l => currentLink.intersection(l).isEmpty).toSeq
-      if(nonintersectinglinks.size==sremLinks.size-1) return (sremLinks.tail.toSet,false) else return (sremLinks.tail.toSet,true)
-    }
-    Iterator.iterate((network.links,false))(findIntersection).takeWhile(!_._2).toSeq.last._1.nonEmpty
-    */
     val inters = Link.getIntersections(links)
     inters.isEmpty
   }
@@ -161,9 +195,7 @@ case class Network(
 
   /**
     * Brutal planarization algorithm (add intersections iteratively)
-    *
-    * !!! FIXME !!! iterative version does not work -> get all intersections, order by link and replace links by successive sublinks
-    *
+
     *  Other options: link filtering through embedding into topological surfaces (see PMFG etc)
     *   (removes links)
     *   Tumminello, M., Aste, T., Di Matteo, T., & Mantegna, R. N. (2005). A tool for filtering information in complex systems. Proceedings of the National Academy of Sciences, 102(30), 10421-10426.
@@ -171,40 +203,9 @@ case class Network(
     * @return
     */
   def planarize: Network = {
-    /*
-    def addIntersection(state: (Set[Link],Set[Link])): (Set[Link],Set[Link]) = {
-      val (validLinks,remLinks) = state
-      println(validLinks.size+" ; "+remLinks.size)
-      val sremLinks = remLinks.toSeq
-      val currentLink = sremLinks.head
-      if (sremLinks.size==1) return (validLinks++Set(currentLink),Set.empty)
-      //println(currentLink.intersection(sremLinks.tail.head))
-      val interindex = sremLinks.tail.indexWhere(l => !currentLink.intersection(l).isEmpty)
-      //println(interindex+" ; remlinks : "+remLinks.size)
-      if(interindex == -1) return (validLinks++Set(currentLink),sremLinks.tail.toSet)
-      val currentintersecting = sremLinks.tail(interindex)
-      val intersection = currentLink.intersection(currentintersecting).get
-      //println(intersection)
-      // create 4 new links and put them in tail of remaining
-      val (l11,l12) = (Link(currentLink.e1,intersection,currentLink.weight),Link(currentLink.e2,intersection,currentLink.weight))
-      val (l21,l22) = (Link(currentintersecting.e1,intersection,currentintersecting.weight),Link(currentintersecting.e2,intersection,currentintersecting.weight))
-      //println(currentLink+" inter "+currentintersecting);println("----")
-      //println(l11);println(l12);println(l21);println(l22)
-      //assert(l11.length>1e-3&&l12.length>1e-3&&l21.length>1e-3&&l22.length>1e-3)
-      assert(l11.length>0&&l12.length>0&&l21.length>0&&l22.length>0)
-      //println(l11.e1==l11.e2);println(l12.e1==l12.e2);println(l21.e1==l21.e2);println(l22.e1==l22.e2)
-      (validLinks,sremLinks.tail.zipWithIndex.filter(_._2!=interindex).unzip._1.toSet++Set(
-          l11,l12,l21,l22
-        )
-      )
-    }
-    Network(addIntersection(Iterator.iterate((empty.links,network.links))(addIntersection).takeWhile(_._2.size>0).toSeq.last)._1)
-     */
     val inters: Seq[(Link,Node)] = Link.getIntersections(links)
-    // FIXME bug if empty?
-    //println(network.links.size)
-    //assert(inters.size>0,s"Links: ${network.links.size}")
-    if(inters.size==0){return this}
+
+    if(inters.isEmpty){return this.withConsistentIds}
 
     // need to group intersections that are virtually the same
     val toreplace: Map[Node,(Node,Double)] = (for {
@@ -218,9 +219,14 @@ case class Network(
       nodeseq.dropRight(1).zip(nodeseq.drop(1)).map{case (n1,n2) => Link(n1,n2,false)}
     }
     }
-    // return a new network with new links - totally fucks up the ids, anyway complicated to find a mapping
-    //println("total new links : "+newlinks.size)
-    Network(newlinks.toSet)
+    // return a new network with new links - need to reindex the ids
+    val newlinksset = newlinks.toSet
+    // keep old nodes that had no links
+    val newnodes = Link.getNodes(newlinksset).union(nodes.filter(n => !inters.map(_._2).contains(n)&&(!newinters.contains(n))))
+    val res = Network(newnodes,newlinksset)
+    //println("----------\n"+res)
+    //println(res.withConsistentIds)
+    res.withConsistentIds
   }
 
 
@@ -235,7 +241,7 @@ case class Network(
       if n1 != n2
       d = n1.distance(n2)
     } yield ((n1,n2),d)).toMap
-    // FIXME note: for performance should not recompute components at each step
+    //  note: for performance should not recompute components at each step
     def connectClosestComponents(state: (Network,Int)): (Network,Int) = {
       val components = GraphAlgorithms.connectedComponents(state._1)
       if(components.size==1) (state._1,1)

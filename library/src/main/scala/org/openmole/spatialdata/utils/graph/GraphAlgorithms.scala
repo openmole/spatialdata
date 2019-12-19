@@ -1,6 +1,8 @@
 package org.openmole.spatialdata.utils.graph
 
 import org.jgrapht.Graph
+import org.jgrapht.alg.connectivity.ConnectivityInspector
+import org.jgrapht.alg.cycle.PatonCycleBase
 import org.jgrapht.alg.shortestpath.{DijkstraShortestPath, FloydWarshallShortestPaths, JohnsonShortestPaths}
 import org.jgrapht.alg.interfaces._
 import org.jgrapht.graph.{DefaultWeightedEdge, SimpleWeightedGraph}
@@ -58,6 +60,9 @@ object GraphAlgorithms {
   object ShortestPathsAlgorithms {
     /**
       * Generic shortest paths using different JGraphT algo
+      *
+      * FIXME returns empty path if no path - maybe better to not put in the return map ?
+      *
       * @param network
       * @param vertices
       * @param algorithm
@@ -72,9 +77,13 @@ object GraphAlgorithms {
       } yield ((i,j),if(i==j) {(Seq(i),Seq.empty[Link],0.0)}
       else {
         val path = algorithm(g).getPath(i.id,j.id)
-        (path.getVertexList.asScala.map{nodeMap(_)},
-          path.getEdgeList.asScala.map{e => linkMap((g.getEdgeSource(e),g.getEdgeTarget(e)))},
-          path.getWeight)
+        if(path == null) {(Seq.empty[Node],Seq.empty[Link],Double.PositiveInfinity)} else {
+          (path.getVertexList.asScala.map {
+            nodeMap(_)
+          },
+            path.getEdgeList.asScala.map { e => linkMap((g.getEdgeSource(e), g.getEdgeTarget(e))) },
+            path.getWeight)
+        }
       })).toMap
     }
 
@@ -247,8 +256,18 @@ object GraphAlgorithms {
   case class ConnectedComponentsJGraphT() extends ComponentsMethod
 
 
-  // TODO
-  def connectedComponents(network: Network): Seq[Network] = ComponentsAlgorithms.connectedComponentsTraverse(network)
+  /**
+    * Get connected components (undirected network)
+    * @param network
+    * @param method
+    * @return
+    */
+  def connectedComponents(network: Network, method: ComponentsMethod = ConnectedComponentsTraverse()): Seq[Network] =
+    method match {
+      case _ : ConnectedComponentsTraverse => ComponentsAlgorithms.connectedComponentsTraverse(network)
+      case _ : ConnectedComponentsJGraphT => ComponentsAlgorithms.connectedComponentsJGraphT(network)
+    }
+
 
 
   /**
@@ -257,8 +276,8 @@ object GraphAlgorithms {
     * @param network
     * @return
     */
-  def largestConnectedComponent(network: Network): Network = {
-    val components = connectedComponents(network)
+  def largestConnectedComponent(network: Network, method: ComponentsMethod = ConnectedComponentsTraverse()): Network = {
+    val components = connectedComponents(network, method)
     val largestComp = components.sortWith { case (n1, n2) => n1.nodes.size > n2.nodes.size }(0)
     largestComp
   }
@@ -267,10 +286,17 @@ object GraphAlgorithms {
 
   object ComponentsAlgorithms {
 
-
-    // FIXME
+    /**
+      * Undirected weak components using JGraphT
+      *
+      * FIXME untested - yield empty components
+      *
+      * @param network
+      * @return
+      */
     def connectedComponentsJGraphT(network: Network): Seq[Network] = {
-      Seq.empty
+      val (g,nodeMap,_) = GraphConversions.networkToJGraphT(network)
+      new ConnectivityInspector(g).connectedSets().asScala.map{ nodeindices => network.subNetworkNodes(nodeindices.asScala.map(nodeMap(_)).toSet)}
     }
 
 
@@ -314,18 +340,14 @@ object GraphAlgorithms {
 
       def traversenode(n: Node): (Seq[Node], Seq[Link]) = {
         if (!totraverse.contains(n)) {
-          return ((Seq.empty, nlinks(n)))
+          return (Seq.empty, nlinks(n))
         } // note : a bit redundancy on links here as they are not colored
         totraverse.remove(n)
         val traversed = nlinks(n).map { l => traversenode(otherend(n, l)) }
-        (Seq(n) ++ traversed.map {
-          _._1
-        }.flatten, traversed.map {
-          _._2
-        }.flatten)
+        (Seq(n) ++ traversed.flatMap(_._1), traversed.flatMap(_._2))
       }
 
-      while (totraverse.size > 0) {
+      while (totraverse.nonEmpty) {
         val entry = totraverse.values.head
         val currentcomponent = traversenode(entry)
         res.append(Network(currentcomponent._1.toSet, currentcomponent._2.toSet))
@@ -336,6 +358,37 @@ object GraphAlgorithms {
 
 
   }
+
+
+
+  sealed trait CycleDetectionMethod
+  case class PatonJGraphT() extends CycleDetectionMethod
+
+
+  def cycles(network: Network, method: CycleDetectionMethod = PatonJGraphT()): Seq[Network] =
+    method match {
+      case _ : PatonJGraphT => CycleAlgorithms.cyclesPatonJGraphT(network)
+    }
+
+  object CycleAlgorithms {
+
+    /**
+      * FIXME returned graphs have consistent ids but no properties of initial graph (should copy ?)
+      * @param nw
+      * @return
+      */
+    def cyclesPatonJGraphT(nw: Network): Seq[Network] = {
+      val (g,nodeMap,edgeMap) = GraphConversions.networkToJGraphT(nw)
+      val cycles = new PatonCycleBase(g).getCycleBasis.getCycles.asScala.toSeq
+      cycles.map{l =>
+        val edges = l.asScala.map{e => edgeMap((g.getEdgeSource(e),g.getEdgeTarget(e)))}.toSet
+        Network(Link.getNodes(edges),edges)
+      }
+    }
+
+  }
+
+
 
 
 }

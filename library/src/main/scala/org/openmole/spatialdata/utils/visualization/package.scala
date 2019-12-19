@@ -16,13 +16,15 @@ package object visualization {
 
   def palette(i: Int): Color = {colors(i%colors.size)}
 
-  case class NetworkFrame(network: Network,
+  case class NetworkFrame(networks: Seq[Network],
                           frameWidth: Int = 600,
                           frameHeight: Int = 600,
                           nodeSize: Int = 6,
                           margin: Int = 50,
                           withLabel: Boolean = true,
-                          nodeColorClasses: Option[Node => Int] = None
+                          edgeColors: Seq[Int] = Seq.empty ,
+                          nodeColorClasses: Node => Int = {_ => 0},
+                          nodePositioning: Node => Point2D = {n => n.position}
                          ) extends JFrame() {
     def init: Unit = {
       frameInit()
@@ -34,16 +36,27 @@ package object visualization {
           override def paint(g: Graphics, c: JComponent): Unit = {
             val gg: Graphics2D = g.create.asInstanceOf[Graphics2D]
             gg.setColor(Color.BLACK)
-            gg.setRenderingHint(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_ON)
-            gg.setStroke(new BasicStroke(1, BasicStroke.CAP_ROUND,BasicStroke.JOIN_ROUND))
-            network.nodes.foreach{n => {
-              val (x,y) = (margin + (n.x * frameWidth - nodeSize/2).toInt,margin + (n.y*frameHeight-nodeSize/2).toInt)
-              if (nodeColorClasses.isDefined) gg.setColor(palette(nodeColorClasses.get(n)))
-              gg.fillRect(x,y,nodeSize,nodeSize)
-              if (withLabel) gg.drawString(n.id.toString,x+nodeSize,y+nodeSize)
-            }}
-            gg.setColor(Color.BLACK) // link no color by default
-            network.links.foreach{l => gg.drawLine(margin + (l.e1.x*frameWidth).toInt,margin + (l.e1.y*frameHeight).toInt,margin + (l.e2.x*frameWidth).toInt,margin + (l.e2.y*frameHeight).toInt)}
+            gg.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+            gg.setStroke(new BasicStroke(1, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND))
+
+            val ecolors = if(edgeColors.nonEmpty) edgeColors else Seq.fill(networks.size)(0)
+            networks.zip(ecolors).foreach {case (network, ecolor) =>
+              network.nodes.foreach { n => {
+                val np = nodePositioning(n)
+                val (x, y) = (margin + (np._1 * frameWidth - nodeSize / 2).toInt, margin + (np._2 * frameHeight - nodeSize / 2).toInt)
+                //if (nodeColorClasses.isDefined) gg.setColor(palette(nodeColorClasses.get(n))) //slight perf loss without option?
+                gg.setColor(palette(nodeColorClasses(n)))
+                gg.fillRect(x, y, nodeSize, nodeSize)
+                if (withLabel) gg.drawString(n.id.toString, x + nodeSize, y + nodeSize)
+              }
+              }
+              gg.setColor(palette(ecolor))
+              network.links.foreach { l => gg.drawLine(
+                margin + (nodePositioning(l.e1)._1 * frameWidth).toInt,
+                margin + (nodePositioning(l.e1)._2 * frameHeight).toInt,
+                margin + (nodePositioning(l.e2)._1 * frameWidth).toInt,
+                margin + (nodePositioning(l.e2)._2 * frameHeight).toInt) }
+            }
           }
         })
         setOpaque(true)
@@ -60,8 +73,13 @@ package object visualization {
     * Quick visu for debugging purposes
     * @param network
     */
-  def staticNetworkVisualization(network: Network,withLabel: Boolean = false,nodeColorClasses: Option[Node=>Int]=None): Unit = {
-    val frame = NetworkFrame(network = network,withLabel=withLabel,nodeColorClasses=nodeColorClasses)
+  def staticNetworkVisualization(networks: Seq[Network],
+                                 withLabel: Boolean = false,
+                                 edgeColors: Seq[Int] = Seq.empty,
+                                 nodeColorClasses: Node=>Int={_ => 0},
+                                 nodePositioning: Node => Point2D = {n => n.position}
+                                ): Unit = {
+    val frame = NetworkFrame(networks = networks,withLabel=withLabel,edgeColors=edgeColors,nodeColorClasses=nodeColorClasses,nodePositioning=nodePositioning)
     frame.init
   }
 

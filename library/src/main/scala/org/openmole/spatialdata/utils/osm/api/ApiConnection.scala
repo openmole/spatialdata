@@ -25,20 +25,20 @@ object ApiConnection {
   val apiVersion = "0.6"
 }
 
-class ApiConnection(var serverURL: String = ApiConnection.defaultServerURL,val timeout: Int = 1000) {
-  while ( {
-    serverURL.endsWith("/")
-  }) serverURL = serverURL.substring(0, serverURL.length - 1)
-  this.serverURL = serverURL + "/"
-  prefix = this.serverURL + ApiConnection.apiVersion + "/"
-  var requestBuilder = RequestConfig.custom()
-  requestBuilder.setConnectTimeout(timeout)
-  requestBuilder.setConnectionRequestTimeout(timeout)
-  httpClient = HttpClientBuilder.create.setDefaultRequestConfig(requestBuilder.build()).build
+class ApiConnection(userServerURL: String = ApiConnection.defaultServerURL,val timeout: Int = 1000) {
+
+  def removeTrailing(s: (String,Boolean)): (String,Boolean) = if(s._1.endsWith("/")) removeTrailing((s._1.substring(0, s._1.length - 1),false)) else (s+"/",true)
+
+  val serverURL: String = Iterator.iterate((serverURL,false))(removeTrailing).takeWhile(!_._2).toSeq.last._1
+
+  private val prefix: String = this.serverURL + ApiConnection.apiVersion + "/"
+
+  val requestBuilder: RequestConfig.Builder = RequestConfig.custom().setConnectTimeout(timeout).setConnectionRequestTimeout(timeout)
+
+  private var httpClient: CloseableHttpClient = HttpClientBuilder.create.setDefaultRequestConfig(requestBuilder.build()).build
 //  private var serverURL = null
 
-  private var httpClient: CloseableHttpClient = _
-  private var prefix: String = _
+  //private var httpClient: CloseableHttpClient = _
   private var username: String = ""
   private var uid = 0L
   private var displayName: String = ""

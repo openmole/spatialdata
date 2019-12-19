@@ -23,7 +23,9 @@ object GraphConversions {
     */
   def networkToJGraphT(network: Network, linkWeight: Link => Double = _.weight): (org.jgrapht.Graph[Int,DefaultWeightedEdge],Map[Int,Node],Map[(Int,Int),Link]) = {
     val g = new SimpleWeightedGraph[Int,DefaultWeightedEdge](classOf[DefaultWeightedEdge]) // mutable graph !
+    //println(network)
     network.links.foreach{ l =>
+      //println(l.e1.id+" - "+l.e2.id)
       Graphs.addEdgeWithVertices(g,l.e1.id,l.e2.id,linkWeight(l))
     }
     val nodeMap = network.nodes.map{n=>(n.id,n)}.toMap

@@ -7,7 +7,8 @@ object Test extends App {
   //TestCoupled.testRandom()
 
   // Network algorithms
-  //TestNetwork.testShortestPathImplementations()
+  //TestNetwork.testCycles
+  TestNetwork.testShortestPathImplementations()
   //TestNetwork.testPlanarization()
 
   // OSM
@@ -26,10 +27,11 @@ object Test extends App {
 
   // Synthetic networks
   //TestNetwork.testTreeMinDist
+  //TestNetwork.testRandomNetwork
 
   // Reaction Diffusion
   //TestReactionDiffusion.testRealDataCalibration
-  TestReactionDiffusion.testModel
+  //TestReactionDiffusion.testModel
   //TestReactionDiffusion.benchmarkImplementation
 
   // Synthetic grids

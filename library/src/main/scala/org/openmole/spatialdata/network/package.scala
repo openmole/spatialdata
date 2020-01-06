@@ -1,27 +1,9 @@
 package org.openmole.spatialdata
 
+import scala.collection.mutable.ArrayBuffer
+import scala.util.Random
+
 import org.locationtech.jts.geom.LineString
-import scalax.collection.Graph
-import scalax.collection.edge.WUnDiEdge
-
-import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
-import scala.util.Random
-import scalax.collection.{Graph, GraphEdge}
-import scalax.collection.edge.Implicits._
-import scalax.collection.GraphPredef._
-import scalax.collection.GraphEdge._
-import scalax.collection.GraphTraversal._
-import scalax.collection.edge.WUnDiEdge
-import org.openmole.spatialdata._
-
-import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
-import scala.collection.immutable
-import scala.util.Random
-
-import org.openmole.spatialdata.utils.math._
-
 
 /**
   * Network classes and functions
@@ -61,7 +43,7 @@ package object network {
     val ymin = network.nodes.map{_.y}.min;val ymax = network.nodes.map{_.y}.max
     def xcor(x: Double): Int = math.max(xmin.toDouble,math.min(xmax.toDouble,math.round(x))).toInt
     def ycor(y: Double): Int = math.max(ymin.toDouble,math.min(ymax.toDouble,math.round(y))).toInt
-    val res: Array[Array[Double]] = (xmin to xmax by 1.0).toArray.map{case _ => (ymin to ymax by 1.0).toArray.map{case _ =>0.0}}
+    val res: Array[Array[Double]] = (BigDecimal(xmin) to xmax by 1.0).toArray.map{case _ => (BigDecimal(ymin) to ymax by 1.0).toArray.map{case _ =>0.0}}
     network.links.toSeq.filter{_.weight>0.0}.foreach{case l =>
       val i1 = l.e1.x - xmin;val j1 = l.e1.y - ymin
       val i2 = l.e2.x - xmin;val j2 = l.e2.y - ymin
@@ -69,12 +51,12 @@ package object network {
       val jstep = (j1 - j2) match {case x if math.abs(x) < 1e-10 => 0.0 ;case _ => math.sin(math.atan((j2 - j1)/(i2 - i1)))*footPrintResolution}
       val nsteps = (i1 - i2) match {case x if math.abs(x) < 1e-10 => (j2 - j1)/jstep;case _ => (i2 - i1)/istep}
       var x = l.e1.x;var y = l.e1.y
-      (0.0 to nsteps by 1.0).foreach{_ =>
+      (BigDecimal(0.0) to nsteps by 1.0).foreach{_ =>
         for {
-          k1 <- - (linkwidth-1)/2 to (linkwidth-1)/2 by 1.0
-          k2 <-  - (linkwidth-1)/2 to (linkwidth-1)/2 by 1.0
+          k1 <- - BigDecimal((linkwidth-1)/2) to (linkwidth-1)/2 by 1.0
+          k2 <-  - BigDecimal((linkwidth-1)/2) to (linkwidth-1)/2 by 1.0
         } yield {
-          res(xcor(x+k1))(ycor(y+k2)) = 1.0
+          res(xcor(x+k1.toDouble))(ycor(y+k2.toDouble)) = 1.0
         }
 
         x = x + istep;y = y+ jstep

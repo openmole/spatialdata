@@ -1,4 +1,4 @@
-scalaVersion := "2.12.7"
+scalaVersion := "2.13.1"
 
 name := "spatialdata"
 
@@ -18,12 +18,12 @@ val geotoolsVersion = "21.0"
 
 libraryDependencies ++= Seq(
   "org.apache.commons" % "commons-math3" % "3.6.1",
-  "com.github.pathikrit" %% "better-files" % "3.5.0",
+  "com.github.pathikrit" %% "better-files" % "3.8.0",
   "com.vividsolutions" % "jts" % "1.13",
-  "org.openmole.library" %% "graph-core" % "1.12.5.1",
+  //"org.openmole.library" %% "graph-core" % "1.12.5.1", // graph-core not needed anymore
   "org.geotools" % "geotools" % geotoolsVersion exclude("javax.media", "jai_core") exclude("com.vividsolutions", "jts-core"),
   "org.geotools" % "gt-shapefile" % geotoolsVersion exclude("javax.media", "jai_core") exclude("com.vividsolutions", "jts-core"),
-  "com.github.tototoshi" %% "scala-csv" % "1.3.4",
+  "com.github.tototoshi" %% "scala-csv" % "1.3.6",
   "org.postgresql" % "postgresql" % "42.2.5",
   "org.mongodb" % "mongo-java-driver" % "3.10.0",
   "org.jgrapht" % "jgrapht-core" % "1.3.1",
@@ -50,7 +50,9 @@ enablePlugins(SbtOsgi)
 //lazy val omlplugin = Project("omlplugin", file("target/omlplugin")) enablePlugins SbtOsgi settings( // FIXME
 //  name := "spatialdata",
  //org.openmole.spatialdata.application.*
-  OsgiKeys.exportPackage := Seq("*;-split-package:=merge-first")//,
+  //OsgiKeys.exportPackage := Seq("*;-split-package:=merge-first")//,
+  // export only application
+  OsgiKeys.exportPackage := Seq("org.openmole.spatialdata.application")
   OsgiKeys.importPackage := Seq("*;resolution:=optional;-split-package:=merge-first")//,
 // test private package to have only application visible
   OsgiKeys.privatePackage := Seq("org.openmole.spatialdata.grid,org.openmole.spatialdata.network,org.openmole.spatialdata.run,org.openmole.spatialdata.test,org.openmole.spatialdata.utils,org.openmole.spatialdata.vector,!scala.*,!java.*,!monocle.*,!META-INF.*.RSA,!META-INF.*.SF,!META-INF.*.DSA,META-INF.services.*,META-INF.*,*")//,
@@ -60,12 +62,12 @@ enablePlugins(SbtOsgi)
 
 // publish fat jar
 // https://github.com/sbt/sbt-assembly#publishing-not-recommended
-lazy val assemble = Project("assembly", file("target/assemble")) settings (
+lazy val assemble = Project("assemble", file("target/assemble")) settings (
   assemblyMergeStrategy in assembly := {
     case PathList("META-INF", xs @ _*) => MergeStrategy.discard
     case x => MergeStrategy.last
   },
-  assemblyJarName in assembly := name+"_2.12.jar",
+  assemblyJarName in assembly := name+"_"+scalaVersion+".jar",
   artifact in (Compile, assembly) := {
     val art = (artifact in (Compile, assembly)).value
     art.withClassifier(Some("assembly"))

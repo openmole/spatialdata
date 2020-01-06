@@ -4,6 +4,7 @@ import org.locationtech.jts.geom._
 import org.locationtech.jts.geom.impl.CoordinateArraySequence
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 import scala.util.control.Breaks
 
 /**
@@ -19,7 +20,7 @@ class JtsGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
     while ( {
       i < nodes.size
     }) {
-      val node = nodes.get(i)
+      val node = nodes(i)
       coordinates(i) = new Coordinate(node.getX, node.getY)
 
       {
@@ -31,7 +32,7 @@ class JtsGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
   }
 
   def createPolygon(way: Way) = {
-    val coordinates = way.getNodes.asScala.map(node=>new Coordinate(node.getX, node.getY)).toArray
+    val coordinates = way.getNodes.map(node=>new Coordinate(node.getX, node.getY)).toArray
     if (!way.isPolygon) throw new RuntimeException("Way expected to be a polygon.")
     else geometryFactory.createPolygon(geometryFactory.createLinearRing(coordinates), null)
   }
@@ -44,7 +45,6 @@ class JtsGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
     */
   def createOuterWaysPolygon(relation: Relation) = {
     val lines = new java.util.ArrayList[java.util.List[Coordinate]](relation.getMembers.size)
-    import scala.collection.JavaConversions._
     for (member <- relation.getMembers) {
       if (!"outer".equalsIgnoreCase(member.getRole)) throw new RuntimeException
       val way = member.getObject.asInstanceOf[Way]
@@ -115,15 +115,14 @@ class JtsGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
     val linearRings = new java.util.ArrayList[LinearRing]
     val nodes = new java.util.ArrayList[Node]
     var firstNode: Node = null
-    import scala.collection.JavaConversions._
     for (membership <- relation.getMembers) {
       Breaks.breakable {
         if (!"outer".equalsIgnoreCase(membership.getRole)) Breaks.break //todo: continue is not supported// todo inner as holes!
         if (firstNode == null) {
           firstNode = membership.getObject.accept(new OsmObjectVisitor[Node]() {
-            override def visit(node: Node) = node
-            override def visit(way: Way) = way.getNodes.get(0)
-            override def visit(relation: Relation) = relation.accept(this)
+            override def visit(node: Node): Node = node
+            override def visit(way: Way): Node = way.getNodes()(0)
+            override def visit(relation: Relation): Node = relation.accept(this)
           })
         }
         val nextNodes = membership.getObject.accept(new NodesCollector)
@@ -187,7 +186,7 @@ class JtsGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
     def coordinateEquals(n1: Node, n2: Node) = n1.getLatitude == n2.getLatitude && n1.getLongitude == n2.getLongitude
   }
 
-  private class NodesCollector extends OsmObjectVisitor[java.util.List[Node]] {
+  private class NodesCollector extends OsmObjectVisitor[mutable.ArrayBuffer[Node]] {
     override def visit(node: Node) = {
       val nodes = new java.util.ArrayList[Node](1)
       nodes.add(node)
@@ -197,10 +196,9 @@ class JtsGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
     override def visit(way: Way) = way.getNodes
 
     override def visit(relation: Relation) = {
-      val lines = new java.util.ArrayList[java.util.List[Node]]
-      import scala.collection.JavaConversions._
+      val lines = new mutable.ArrayBuffer[mutable.ArrayBuffer[Node]]
       for (membership <- relation.getMembers) {
-        lines.add(membership.getObject.accept(new NodesCollector))
+        lines.append(membership.getObject.accept(new NodesCollector))
       }
       java.util.Collections.sort(lines, linesComparator)
       var nodesCount = 0

@@ -25,7 +25,7 @@ class OsmXmlWriter @throws[IOException]
     Option(upload) match {
       case Some(up) =>
         xml.write("' upload='")
-        xml.write(if (up) "true" else "false")
+        xml.write((if (up) "true" else "false").toString)
         xml.write("'")
       case None =>
     }
@@ -78,13 +78,13 @@ class OsmXmlWriter @throws[IOException]
 
   @throws[IOException]
   def write(root: PojoRoot): Unit = {
-    for (node <- root.getNodes.values.asScala) {
+    for (node <- root.getNodes.values) {
       write(node)
     }
-    for (way <- root.getWays.values.asScala) {
+    for (way <- root.getWays.values) {
       write(way)
     }
-    for (relation <- root.getRelations.values.asScala) {
+    for (relation <- root.getRelations.values) {
       write(relation)
     }
   }
@@ -92,12 +92,12 @@ class OsmXmlWriter @throws[IOException]
   @throws[IOException]
   def writeTags(osmObject: OsmObject): Unit = { // <tag k='landuse' v='farmland' />
     if (osmObject.getTags != null) {
-      import scala.collection.JavaConversions._
-      for (tag <- osmObject.getTags.entrySet) {
+
+      for (tag <- osmObject.getTags.toSeq) {
         xml.write("\t\t<tag k='")
-        xml.write(tag.getKey)
+        xml.write(tag._1)
         xml.write("' v='")
-        xml.write(StringEscapeUtils.escapeXml(tag.getValue))
+        xml.write(StringEscapeUtils.escapeXml(tag._2))
         xml.write("' />\n")
       }
     }
@@ -121,7 +121,6 @@ class OsmXmlWriter @throws[IOException]
   def write(way: Way): Unit = {
     writeObjectHead(way)
     xml.write(" >\n")
-    import scala.collection.JavaConversions._
     for (node <- way.getNodes) {
       xml.append("\t\t<nd ref='")
       xml.append(String.valueOf(node.getId))
@@ -149,7 +148,6 @@ class OsmXmlWriter @throws[IOException]
     writeObjectHead(relation)
     xml.write(" >\n")
     if (relation.getMembers != null) {
-      import scala.collection.JavaConversions._
       for (membership <- relation.getMembers) {
         xml.write("\t\t<member type='")
         xml.write(membership.getObject.accept(getOsmObjectTypeName))

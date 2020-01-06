@@ -2,37 +2,37 @@ package org.openmole.spatialdata.utils.osm
 
 import java.io.Serializable
 
+import scala.collection.mutable
+
 
 class PojoRoot extends AbstractRoot with Serializable {
-  private var nodes:java.util.Map[Long, Node] = new java.util.HashMap[Long, Node]()
-  private var ways:java.util.Map[Long, Way] = new java.util.HashMap[Long, Way]()
-  private var relations:java.util.Map[Long, Relation] = new java.util.HashMap[Long, Relation]()
+  private var nodes:mutable.Map[Long, Node] = new mutable.HashMap[Long, Node]()
+  private var ways:mutable.Map[Long, Way] = new mutable.HashMap[Long, Way]()
+  private var relations:mutable.Map[Long, Relation] = new mutable.HashMap[Long, Relation]()
 
   override def enumerateNodes = new Root.Enumerator[Node]() {
-    val iterator = getNodes.entrySet.iterator
-    override
-
-    def next: Node = return if (iterator.hasNext) iterator.next.getValue
+    val iterator = getNodes.iterator
+    override def next: Node = return if (iterator.hasNext) iterator.next._2
     else null
   }
 
   override def enumerateWays = //getWays.values().iterator
-    new Root.Enumerator[Way]() {val iterator = getWays.entrySet.iterator
+    new Root.Enumerator[Way]() {val iterator = getWays.iterator
     override def next: Way =
-      return if (iterator.hasNext) iterator.next.getValue else null
+      return if (iterator.hasNext) iterator.next._2 else null
   }
 
   override def enumerateRelations = new Root.Enumerator[Relation]() {
-    val iterator = getRelations.entrySet.iterator
-    override def next: Relation = return if (iterator.hasNext) iterator.next.getValue
+    val iterator = getRelations.iterator
+    override def next: Relation = return if (iterator.hasNext) iterator.next._2
     else null
   }
 
-  override def getNode(identity: Long) = getNodes.get(identity)
+  override def getNode(identity: Long) = getNodes.getOrElse(identity,null)
 
-  override def getWay(identity: Long) = getWays.get(identity)
+  override def getWay(identity: Long) = getWays.getOrElse(identity,null)
 
-  override def getRelation(identity: Long) = getRelations.get(identity)
+  override def getRelation(identity: Long) = getRelations.getOrElse(identity,null)
 
   override def remove(`object`: OsmObject): java.util.Set[OsmObject] = {
     val affectedRelations = `object`.accept(removeVisitor)
@@ -45,19 +45,17 @@ class PojoRoot extends AbstractRoot with Serializable {
     override def visit(node: Node) = {
       val affectedRelations = new java.util.HashSet[OsmObject](1024)
       if (node.getWaysMemberships != null) {
-        import scala.collection.JavaConversions._
         for (way <- node.getWaysMemberships) { // need to loop in case we visit this node multiple times, eg a polygon where this is start and stop
           while ( {
             way.getNodes.contains(node)
-          }) way.getNodes.remove(node)
+          }) way.getNodes.remove(way.getNodes.indexOf(node))
           affectedRelations.add(way)
         }
       }
       node.setWaysMemberships(null)
       if (node.getRelationMemberships != null) {
-        import scala.collection.JavaConversions._
         for (member <- node.getRelationMemberships) {
-          member.getRelation.getMembers.remove(member)
+          member.getRelation.getMembers.remove(member.getRelation.getMembers.indexOf(member))
           affectedRelations.add(member.getRelation)
         }
       }
@@ -69,17 +67,15 @@ class PojoRoot extends AbstractRoot with Serializable {
     override def visit(way: Way) = {
       val affectedRelations = new java.util.HashSet[OsmObject](1024)
       if (way.getNodes != null) {
-        import scala.collection.JavaConversions._
         for (node <- way.getNodes) {
-          node.getWaysMemberships.remove(way)
+          node.getWaysMemberships.remove(node.getWaysMemberships.indexOf(way))
           affectedRelations.add(node)
         }
         way.setNodes(null)
       }
       if (way.getRelationMemberships != null) {
-        import scala.collection.JavaConversions._
         for (member <- way.getRelationMemberships) {
-          member.getRelation.getMembers.remove(member)
+          member.getRelation.getMembers.remove(member.getRelation.getMembers.indexOf(member))
           affectedRelations.add(member.getRelation)
         }
         way.setRelationMemberships(null)
@@ -90,9 +86,8 @@ class PojoRoot extends AbstractRoot with Serializable {
     override def visit(relation: Relation) = {
       val affectedRelations = new java.util.HashSet[OsmObject](1024)
       if (relation.getMembers != null) {
-        import scala.collection.JavaConversions._
         for (member <- relation.getMembers) {
-          member.getObject.getRelationMemberships.remove(member)
+          member.getObject.getRelationMemberships.remove(member.getObject.getRelationMemberships.indexOf(member))
           if (member.getObject.getRelationMemberships.isEmpty) {
             member.getObject.setRelationMemberships(null)
             affectedRelations.add(member.getObject)
@@ -130,19 +125,19 @@ class PojoRoot extends AbstractRoot with Serializable {
 
   def getNodes = nodes
 
-  def setNodes(nodes: java.util.Map[Long, Node]) = {
+  def setNodes(nodes: mutable.Map[Long, Node]) = {
     this.nodes = nodes
   }
 
   def getWays = ways
 
-  def setWays(ways: java.util.Map[Long, Way]) = {
+  def setWays(ways: mutable.Map[Long, Way]) = {
     this.ways = ways
   }
 
   def getRelations = relations
 
-  def setRelations(relations: java.util.Map[Long, Relation]) = {
+  def setRelations(relations: mutable.Map[Long, Relation]) = {
     this.relations = relations
   }
 
@@ -150,10 +145,12 @@ class PojoRoot extends AbstractRoot with Serializable {
     * @param filter returns true if instance is to be removed from results
     * @return
     */
-  def filter(f: OsmObjectVisitor[Boolean]): java.util.ArrayList[OsmObject] = filter(gatherAllOsmObjects, f)
+  def filter(f: OsmObjectVisitor[Boolean]): Iterable[OsmObject] = filter(gatherAllOsmObjects, f)
 
-  def filter(input: java.util.Collection[OsmObject], filter: OsmObjectVisitor[Boolean]) = {
-    val response = new java.util.ArrayList[OsmObject](input)
+  def filter(input: Iterable[OsmObject], filter: OsmObjectVisitor[Boolean]): Iterable[OsmObject] =
+    input.filter(!_.accept(filter))
+  /*{
+    val response = new mutable.ArrayBuffer[OsmObject](input.toArray)
     val iterator = response.iterator
     while ( {
       iterator.hasNext
@@ -162,21 +159,20 @@ class PojoRoot extends AbstractRoot with Serializable {
       if (`object`.accept(filter)) iterator.remove()
     }
     response
-  }
+  }*/
 
-  def gatherAllOsmObjects = {
-    val objects = new java.util.HashSet[OsmObject](getWays.size + getRelations.size + getNodes.size)
+  def gatherAllOsmObjects: mutable.HashSet[OsmObject] = {
+    val objects = new mutable.HashSet[OsmObject](getWays.size + getRelations.size + getNodes.size,1.0)
     objects.addAll(getWays.values)
     objects.addAll(getRelations.values)
     objects.addAll(getNodes.values)
     objects
   }
 
-  def findNodeByLatitudeAndLongitude(latitude: Double, longitude: Double) = {
-    val nodes = new java.util.ArrayList[Node](100)
-    import scala.collection.JavaConversions._
+  def findNodeByLatitudeAndLongitude(latitude: Double, longitude: Double): mutable.ArrayBuffer[Node] = {
+    val nodes = new mutable.ArrayBuffer[Node](100)
     for (node <- getNodes.values) {
-      if (node.getLatitude == latitude && node.getLongitude == longitude) nodes.add(node)
+      if (node.getLatitude == latitude && node.getLongitude == longitude) nodes.append(node)
     }
     nodes
   }
@@ -188,7 +184,6 @@ class PojoRoot extends AbstractRoot with Serializable {
     * todo so an index is probably not possible.
     */
   def findFirstNodeByLatitudeAndLongitude(latitude: Double, longitude: Double): Node = {
-    import scala.collection.JavaConversions._
     for (node <- getNodes.values) {
       if (node.getLatitude == latitude && node.getLongitude == longitude) return node
     }

@@ -143,7 +143,7 @@ object GridMorphology {
     //val inversedNetwork = Network.gridToNetwork(world.map{_.map{case x => 1.0 - x}})
     val nw = cachedNetwork match {case None => network.gridToNetwork(world);case n => n.get}
     val components = GraphAlgorithms.connectedComponents(nw)
-    val avgblockarea = components.size match {case n if n == 0 => 0.0;case n => components.map{_.nodes.size}.sum/components.size}
+    val avgblockarea = components.size match {case n if n == 0 => 0.0;case _ => components.map{_.nodes.size}.sum/components.size.toDouble}
     //println("avgblockarea = "+avgblockarea)
     avgblockarea
   }
@@ -171,7 +171,7 @@ object GridMorphology {
     * @return
     */
   def avgDetour(world: Array[Array[Double]],cachedNetwork: Option[Network] = None,sampledPoints: Int=50)(implicit rng: Random): Double = {
-    if(world.flatten.sum==world.map{_.length}.sum){return(0.0)}
+    if(world.flatten.sum==world.map{_.length}.sum) return 0.0
     val nw = cachedNetwork match {case None => network.gridToNetwork(world);case n => n.get}
     // too costly to do all shortest paths => sample
     //val shortestPaths = Network.allPairsShortestPath(network)
@@ -181,11 +181,11 @@ object GridMorphology {
     val sampled = nw.nodes.sampleWithoutReplacement(sampledPoints)(rng) // FIXME no shuffling here?
     val paths = GraphAlgorithms.shortestPaths(nw,sampled) // rng is not used, sampling done before
 
-    val avgdetour = paths.filter{!_._2._3.isInfinite}.map{
+    // ! in scala 2.13 no more implicit conversion Map -> Seq
+    val avgdetour = paths.toSeq.filter{!_._2._3.isInfinite}.map{
       case (_,(nodes,_,d))=>
         val (n1,n2) = (nodes(0),nodes.last)
         val de = math.sqrt((n1.x-n2.x)*(n1.x-n2.x)+(n1.y-n2.y)*(n1.y-n2.y))
-        //println(d,de)
         d/de
     }.filter{!_.isNaN}.filter{!_.isInfinite}.sum / paths.size
     avgdetour
@@ -198,7 +198,7 @@ object GridMorphology {
     * @param world
     * @return
     */
-  def density(world: Array[Array[Double]]): Double = world.flatten.map{x => if(x>0.0)1.0 else 0.0}.sum / world.flatten.size
+  def density(world: Array[Array[Double]]): Double = world.flatten.map{x => if(x>0.0) 1.0 else 0.0}.sum / world.flatten.size
 
 
 
@@ -224,7 +224,7 @@ object GridMorphology {
     *   Le Néchet, F. (2015). De la forme urbaine à la structure métropolitaine: une typologie de la configuration interne des densités pour les principales métropoles européennes de l’Audit Urbain. Cybergeo: European Journal of Geography.
     *    - simplified as requires computation of average distance for each quantile considered
     */
-  def acentrism(matrix: Array[Array[Double]], quantiles: Array[Double] = (0.0 to 0.99 by 0.01).toArray): Double = {
+  def acentrism(matrix: Array[Array[Double]], quantiles: Array[Double] = Array.tabulate(100){n => n*0.01}): Double = {
     val popdists = quantiles.map{ q =>
       val posvalues = matrix.flatten.filter(_ > 0).sorted
       val qth = posvalues((q*posvalues.size).toInt)
@@ -247,7 +247,7 @@ object GridMorphology {
     val maxkernelsize = math.floor(math.min(matrix.length,matrix(0).length) / 4) - 1
     val rc = (1 to maxkernelsize.toInt by 1).map{k=>
       val convol: Array[Array[Double]] = Convolution.convolution2D(matrix,Array.fill(2*k.toInt+1){Array.fill(2*k.toInt+1)(1.0)})
-      val counts = convol.map(_.zipWithIndex).zipWithIndex.map{case (r,i) => r.map{case (d,j) => if (i%(2*k.toInt+1)==k.toInt&&j%(2*k.toInt+1)==k.toInt) if(d > 0.0) 1.0 else 0.0 else 0.0}}.flatten.sum
+      val counts = convol.map(_.zipWithIndex).zipWithIndex.map{case (r,i) => r.map{case (d,j) => val res: Double = if (i%(2*k.toInt+1)==k.toInt&&j%(2*k.toInt+1)==k.toInt) {if(d > 0.0) 1.0 else 0.0} else 0.0; res}}.flatten.sum
       (2*k.toInt+1,counts)
     }
     (0.0,0.0)
@@ -397,7 +397,7 @@ object GridMorphology {
           else math.pow(p - averagePop.toDouble, 2)
       }.sum
 
-    if (denominator == 0) 0
+    if (denominator == 0) 0.0
     else (matrix.flatten.length / totalWeight) * (numerator / denominator)
   }
 

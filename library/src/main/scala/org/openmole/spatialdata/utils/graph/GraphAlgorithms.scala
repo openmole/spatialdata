@@ -47,7 +47,11 @@ object GraphAlgorithms {
     * @tparam T
     * @return
     */
-  def shortestPaths(network: Network, vertices: Seq[Node], linkWeight: Link => Double = _.weight,method: ShortestPathMethod = DijkstraJGraphT()): ShortestPaths = {
+  def shortestPaths(network: Network,
+                    vertices: Seq[Node],
+                    linkWeight: Link => Double = _.weight,
+                    method: ShortestPathMethod = DijkstraJGraphT()
+                   ): ShortestPaths = {
     method match {
       case _ : DijkstraJGraphT => ShortestPathsAlgorithms.shortestPathsJGraphT(network, vertices, linkWeight)
       case _ : FloydWarshallJGraphT => ShortestPathsAlgorithms.allShortestPathsFloydWarshallJGraphT(network, linkWeight)

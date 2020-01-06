@@ -223,9 +223,8 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
 //                currentWay.setTags(null)
                 currentWay.setAttributes(null)
                 if (currentWay.getNodes != null) {
-                  import scala.collection.JavaConversions._
                   for (node <- currentWay.getNodes) {
-                    node.getWaysMemberships.remove(currentWay)
+                    node.getWaysMemberships.remove(node.getWaysMemberships.indexOf(currentWay))
                     root.add(node)
                   }
                 }
@@ -319,9 +318,9 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
                 else if (version > currentRelation.getVersion + 1 && !isAllowingMissingVersions) throw new OsmXmlParserException("Inconsistency, too great version found during modify relation.")
                 else if (version == currentRelation.getVersion) throw new OsmXmlParserException("Inconsistency, same version found during modify relation.")
                 if (currentRelation.getMembers != null) {
-                  import scala.collection.JavaConversions._
+
                   for (member <- currentRelation.getMembers) {
-                    member.getObject.getRelationMemberships.remove(member)
+                    member.getObject.getRelationMemberships.remove(member.getObject.getRelationMemberships.indexOf(member))
                     if (member.getObject.getRelationMemberships.isEmpty) member.getObject.setRelationMemberships(null)
                   }
                   currentRelation.setMembers(null)
@@ -349,9 +348,8 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
                 }
                 else if (version > relationToRemove.getVersion + 1 && !isAllowingMissingVersions) throw new OsmXmlParserException("Inconsistency, too great version found during delete relation.")
                 if (relationToRemove.getMembers != null) {
-                  import scala.collection.JavaConversions._
                   for (member <- relationToRemove.getMembers) {
-                    member.getObject.getRelationMemberships.remove(member)
+                    member.getObject.getRelationMemberships.remove(member.getObject.getRelationMemberships.indexOf(member))
                     if (member.getObject.getRelationMemberships.isEmpty) member.getObject.setRelationMemberships(null)
                   }
                   relationToRemove.setMembers(null)

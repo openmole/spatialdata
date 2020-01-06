@@ -4,6 +4,8 @@ import java.io.Serializable
 import java.util.{ArrayList, List}
 
 import scala.beans.BeanProperty
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 
 
@@ -24,57 +26,56 @@ abstract class OsmObject extends Serializable {
     */
   private var loaded = false
   protected var id = 0L
-  private var attributes:java.util.Map[String, String] = _
+  private var attributes: mutable.Map[String, String] = _
   private var version:Integer = _
   private var changeset = 0L
   private var uid = 0L
   private var user:String = _
   private var visible = false
   private var timestamp = 0L
-  private var tags:java.util.Map[String, String] = _
-  private var relationMemberships:java.util.List[RelationMembership] = _
+  private var tags: mutable.Map[String, String] = _
+  private var relationMemberships:mutable.ArrayBuffer[RelationMembership] = _
 
   def addRelationMembership(member: RelationMembership): Unit = {
-    if (relationMemberships == null) relationMemberships = new java.util.ArrayList[RelationMembership](5)
+    if (relationMemberships == null) relationMemberships = new ArrayBuffer[RelationMembership](5)
     else { // don't add membership to the same object twice
-      import scala.collection.JavaConversions._
       for (relationMembership <- relationMemberships) {
         if (relationMembership.getRelation == member.getRelation) return
       }
     }
-    relationMemberships.add(member)
+    relationMemberships.addOne(member)
   }
 
   def getAttributes = attributes
 
-  def setAttributes(attributes: java.util.Map[String, String]) = {
+  def setAttributes(attributes: mutable.Map[String, String]) = {
     this.attributes = attributes
   }
 
   def getRelationMemberships = relationMemberships
 
-  def setRelationMemberships(relationMemberships: java.util.List[RelationMembership]) = {
+  def setRelationMemberships(relationMemberships: mutable.ArrayBuffer[RelationMembership]) = {
     this.relationMemberships = relationMemberships
   }
 
   def getAttribute(key: String): String = {
     if (attributes == null) return null
-    attributes.get(key)
+    attributes.getOrElse(key,null)
   }
 
   def setAttribute(key: String, value: String) = {
-    if (attributes == null) attributes = new java.util.HashMap[String, String]()
+    if (attributes == null) attributes = new mutable.HashMap[String, String]
     attributes.put(key, value)
   }
 
   def getTag(key: String): String = {
     if (tags == null) return null
-    tags.get(key)
+    tags.getOrElse(key, null)
   }
 
   def setTag(key: String, value: String) = {
     if (tags == null) {
-      tags = new java.util.HashMap[String, String]()
+      tags = new mutable.HashMap[String, String]
     }
     tags.put(key, value)
   }
@@ -111,7 +112,7 @@ abstract class OsmObject extends Serializable {
 
   def getTags = tags
 
-  def setTags(tags: java.util.Map[String, String]) = {
+  def setTags(tags: mutable.Map[String, String]) = {
     this.tags = tags
   }
 
@@ -158,23 +159,22 @@ class Node() extends OsmObject with Serializable {
 
   private var latitude = .0
   private var longitude = .0
-  private var waysMemberships: java.util.List[Way] = _
+  private var waysMemberships: mutable.ArrayBuffer[Way] = _
 
   def addWayMembership(way: Way): Unit = {
-    if (waysMemberships == null) waysMemberships = new java.util.ArrayList[Way](5)
+    if (waysMemberships == null) waysMemberships = new mutable.ArrayBuffer[Way](5)
     else { // don't add membership to the same way twice
       // this happens for instance when this is the start and stop in a polygon.
-      import scala.collection.JavaConversions._
       for (wayMembership <- waysMemberships) {
         if (way == wayMembership) return
       }
     }
-    waysMemberships.add(way)
+    waysMemberships.append(way)
   }
 
   def getWaysMemberships = waysMemberships
 
-  def setWaysMemberships(waysMemberships: java.util.List[Way]) = {
+  def setWaysMemberships(waysMemberships: mutable.ArrayBuffer[Way]) = {
     this.waysMemberships = waysMemberships
   }
 
@@ -218,7 +218,7 @@ class Way extends OsmObject with Serializable {
   }
 
   @BeanProperty
-  var nodes: List[Node] = _
+  var nodes: mutable.ArrayBuffer[Node] = _
 
   /**
     * @return true if an enclosed polygon
@@ -227,14 +227,14 @@ class Way extends OsmObject with Serializable {
     if (!isLoaded) {
       throw new NotLoadedException(this)
     }
-    getNodes.size > 2 && getNodes.get(0) == getNodes.get(getNodes.size - 1)
+    getNodes.size > 2 && getNodes()(0) == getNodes()(getNodes.size - 1)
   }
 
   def addNode(node: Node): Way = {
     if (nodes == null) {
-      nodes = new ArrayList[Node](50)
+      nodes = new mutable.ArrayBuffer[Node](50)
     }
-    nodes.add(node)
+    nodes.append(node)
     this
   }
 
@@ -247,16 +247,16 @@ class Way extends OsmObject with Serializable {
 class Relation extends OsmObject with Serializable {
   override def accept[R](visitor: OsmObjectVisitor[R]) = visitor.visit(this)
 
-  private var members:java.util.List[RelationMembership] = null
+  private var members: mutable.ArrayBuffer[RelationMembership] = null
 
   def addMember(member: RelationMembership) = {
-    if (members == null) members = new java.util.ArrayList[RelationMembership](50)
-    members.add(member)
+    if (members == null) members = new mutable.ArrayBuffer[RelationMembership](50)
+    members.append(member)
   }
 
   def getMembers = members
 
-  def setMembers(members: java.util.List[RelationMembership]) = {
+  def setMembers(members: mutable.ArrayBuffer[RelationMembership]) = {
     this.members = members
   }
 

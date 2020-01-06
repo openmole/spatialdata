@@ -43,7 +43,7 @@ object APIExtractor {
         }
         way = e.next
       }
-      Seq(result: _*)
+      result.toSeq
     }
 
 
@@ -158,7 +158,7 @@ object APIExtractor {
       val fact = new JtsGeometryFactory()
       var way: Way = e.next
       while (way != null) {
-        val validway = tags.map{
+        val validway = tags.toSeq.map{
           case (tag,values) =>
             val waytag = way.getTag(tag)
             if(tag == null) false
@@ -174,7 +174,7 @@ object APIExtractor {
         }
         way = e.next
       }
-      Seq(result: _*)
+      result.toSeq
     }
 
     def getHighways(south: Double, west: Double, north: Double, east: Double,tags: Map[String,Seq[String]]): Seq[LineString] = {

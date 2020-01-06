@@ -27,16 +27,17 @@ object DensityPointsGenerator {
     DensityPointsGenerator(npoints,normalized,0.0,1.0,0.0,1.0)
   }
 
-  def densityPoints(generator: DensityPointsGenerator)(implicit rng: Random): Vector[Point2D] =
-    Stochastic.sampleWithReplacementBy[(Int,Int,Double)](
-      generator.densityGrid.zipWithIndex.flatMap{case (row,i)=> row.zipWithIndex.map{case (r,j) => (i,j,r)}},
+  def densityPoints(generator: DensityPointsGenerator)(implicit rng: Random): Vector[Point2D] = {
+    val flatGrid: Array[(Int, Int, Double)] = generator.densityGrid.zipWithIndex.flatMap { c: (Array[Double], Int) => c._1.zipWithIndex.map { case (r, j) => (c._2, j, r) } }
+    Stochastic.sampleWithReplacementBy[(Int, Int, Double)](
+      flatGrid,
       _._3,
       generator.npoints
-    ).map{ case (i,j,_) =>
-      val (rowstep,colstep) = (1.0 / generator.densityGrid.length.toDouble,1.0 / generator.densityGrid(0).length.toDouble)
-      ((i.toDouble + rng.nextDouble())*rowstep,(j.toDouble + rng.nextDouble())*colstep)
+    ).map { case (i, j, _) =>
+      val (rowstep, colstep) = (1.0 / generator.densityGrid.length.toDouble, 1.0 / generator.densityGrid(0).length.toDouble)
+      ((i.toDouble + rng.nextDouble()) * rowstep, (j.toDouble + rng.nextDouble()) * colstep)
     }
-
+  }
 
 }
 

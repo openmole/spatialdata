@@ -100,7 +100,7 @@ publishTo in ThisBuild := {
 }
 
 // TODO remove when clean version released
-publishConfiguration := publishConfiguration.value.withOverwrite(true)
+//publishConfiguration := publishConfiguration.value.withOverwrite(true)
 
 credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
 
@@ -135,8 +135,8 @@ import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 
 releaseProcess := Seq[ReleaseStep](
   checkSnapshotDependencies,
-  inquireVersions,
-  setReleaseVersion,
+  //inquireVersions,
+  //setReleaseVersion,
   tagRelease,
   releaseStepCommand("publishSigned"),
   //setNextVersion,

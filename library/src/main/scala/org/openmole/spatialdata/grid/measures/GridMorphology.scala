@@ -198,7 +198,7 @@ object GridMorphology {
     * @param world
     * @return
     */
-  def density(world: Array[Array[Double]]): Double = world.flatten.map{x => if(x>0.0) 1.0 else 0.0}.sum / world.flatten.size
+  def density(world: Array[Array[Double]]): Double = world.flatten.filter(_ > 0.0).map{_ => 1.0}.sum / world.flatten.size
 
 
 
@@ -245,10 +245,13 @@ object GridMorphology {
     */
   def fractalDimension(matrix: Array[Array[Double]]): (Double,Double) = {
     val maxkernelsize = math.floor(math.min(matrix.length,matrix(0).length) / 4) - 1
-    val rc = (1 to maxkernelsize.toInt by 1).map{k=>
-      val convol: Array[Array[Double]] = Convolution.convolution2D(matrix,Array.fill(2*k.toInt+1){Array.fill(2*k.toInt+1)(1.0)})
-      val counts = convol.map(_.zipWithIndex).zipWithIndex.map{case (r,i) => r.map{case (d,j) => val res: Double = if (i%(2*k.toInt+1)==k.toInt&&j%(2*k.toInt+1)==k.toInt) {if(d > 0.0) 1.0 else 0.0} else 0.0; res}}.flatten.sum
-      (2*k.toInt+1,counts)
+    val rc = (1 to maxkernelsize.toInt by 1).map{k: Int =>
+      val convol: Array[Array[Double]] = Convolution.convolution2D(matrix,Array.fill(2*k+1){Array.fill(2*k+1)(1.0)})
+      val counts = convol.map(_.zipWithIndex).zipWithIndex.map{
+        // FIXME this is terrible - find why scala2.13 consider full pattern matching not with return type but Any
+        case rowind: (Array[(Double,Int)],Int) => rowind._1.map{case (d,j) => var res = 0.0; if (rowind._2%(2*k+1)==k&&j%(2*k+1)==k) {if(d > 0.0) res = 1.0}; res}
+      }.flatten.sum
+      (2*k+1,counts)
     }
     (0.0,0.0)
   }
@@ -361,10 +364,13 @@ object GridMorphology {
   }
 
   def zipWithPosition(m :Array[Array[Double]]): Seq[(Double, (Int,Int))] = {
-    for {
-      (row, i) <- m.zipWithIndex
-      (content, j) <- row.zipWithIndex
-    } yield (content,(i, j))
+    // FIXME for ... yield also changed in 2.13 ?
+    m.zipWithIndex.map{
+      case (row,i) =>
+        row.zipWithIndex.map{
+          case (content,j) => (content,(i,j))
+        }
+    }.flatten.toSeq
   }
 
 

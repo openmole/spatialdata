@@ -83,7 +83,7 @@ object Statistics {
   def slope(matrix: Seq[Seq[Double]]): (Double,Double) = slope(matrix.flatten.toArray)
 
   def slope(values: Array[Double]): (Double,Double) = {
-    def distribution: Array[Double] = values.filter(_ > 0).sorted(Ordering.Double.reverse)
+    def distribution: Array[Double] = values.filter(_ > 0).sorted(Ordering.Double.TotalOrdering.reverse)
     def distributionLog: Array[Array[Double]] = distribution.zipWithIndex.map { case (q, i) => Array(log(i + 1), log(q)) }
     val simpleRegression = new SimpleRegression(true)
     simpleRegression.addData(distributionLog)

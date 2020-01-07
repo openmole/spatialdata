@@ -33,11 +33,16 @@ object Shapefile {
             //println(feature)
             geoms.append((feature.getDefaultGeometry.asInstanceOf[Geometry],attributes.map{feature.getAttribute(_).toString.toDouble}))
           }
-          geoms
+          geoms.toSeq
         }finally reader.close()
       } finally store.dispose()
   }
 
+  /**
+    * Get projection EPSG code for a given layer
+    * @param layer
+    * @return
+    */
   def getLayerEPSG(layer: String): String = {
     //val fsplit = layer.split("\\.").toSeq
     //fsplit.take(fsplit.length-1).mkString(".")+".prj")
@@ -47,6 +52,12 @@ object Shapefile {
     "EPSG:"+CRS.lookupEpsgCode(crs,true)
   }
 
+  /**
+    * Get layer CRS
+    * 
+    * @param layer
+    * @return
+    */
   def getLayerCRS(layer: String): CoordinateReferenceSystem = CRS.parseWKT(new BufferedReader(new FileReader(new File(layer.substring(0,layer.length-4)+".prj"))).readLine())
 
 

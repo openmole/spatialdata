@@ -36,7 +36,7 @@ object GraphAlgorithms {
   case class DijkstraJGraphT() extends ShortestPathMethod
   case class FloydWarshallJGraphT() extends ShortestPathMethod
   case class JohnsonJGraphT() extends ShortestPathMethod
-  case class ScalaGraph() extends ShortestPathMethod
+  //case class ScalaGraph() extends ShortestPathMethod
   case class FloydWarshall() extends ShortestPathMethod
 
   /**
@@ -55,7 +55,7 @@ object GraphAlgorithms {
     method match {
       case _ : DijkstraJGraphT => ShortestPathsAlgorithms.shortestPathsJGraphT(network, vertices, linkWeight)
       case _ : FloydWarshallJGraphT => ShortestPathsAlgorithms.allShortestPathsFloydWarshallJGraphT(network, linkWeight)
-      case _ : ScalaGraph => ShortestPathsAlgorithms.shortestPathsScalaGraph(network, vertices, linkWeight)
+      //case _ : ScalaGraph => ShortestPathsAlgorithms.shortestPathsScalaGraph(network, vertices, linkWeight)
       case _ : FloydWarshall => ShortestPathsAlgorithms.allPairsShortestPath(network, linkWeight)
       case _ : JohnsonJGraphT => ShortestPathsAlgorithms.allShortestPathsJohnsonJGraphT(network, linkWeight)
     }
@@ -247,7 +247,7 @@ object GraphAlgorithms {
               extractPath(currentPath, currentPathLinks, i, j)
               currentPath.append(revnodes(j))
             }
-            paths((revnodes(i), revnodes(j))) = (currentPath,currentPathLinks,currentPathLinks.map{_.weight}.sum)
+            paths((revnodes(i), revnodes(j))) = (currentPath.toSeq,currentPathLinks.toSeq,currentPathLinks.map{_.weight}.sum)
           }
         }
       }
@@ -306,7 +306,7 @@ object GraphAlgorithms {
       */
     def connectedComponentsJGraphT(network: Network): Seq[Network] = {
       val (g,nodeMap,_) = GraphConversions.networkToJGraphT(network)
-      new ConnectivityInspector(g).connectedSets().asScala.map{ nodeindices => network.subNetworkNodes(nodeindices.asScala.map(nodeMap(_)).toSet)}
+      new ConnectivityInspector(g).connectedSets().asScala.map{ nodeindices => network.subNetworkNodes(nodeindices.asScala.map(nodeMap(_)).toSet)}.toSeq
     }
 
 
@@ -363,7 +363,7 @@ object GraphAlgorithms {
         res.append(Network(currentcomponent._1.toSet, currentcomponent._2.toSet))
       }
 
-      res
+      res.toSeq
     }
 
 

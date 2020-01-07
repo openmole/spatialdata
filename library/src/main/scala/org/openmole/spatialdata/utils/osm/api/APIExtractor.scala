@@ -1,6 +1,7 @@
 package org.openmole.spatialdata.utils.osm.api
 
 import java.io.StringReader
+import java.sql.Connection
 import java.util.Locale
 
 import org.locationtech.jts.geom._
@@ -88,10 +89,10 @@ object APIExtractor {
           asPolygonSeq(res.enumerateWays)
         }
         case Postgresql(port) => {
-          PostgisConnection.initPostgis(database ="buildings",port = port)
+          implicit val connection: Connection = PostgisConnection.initPostgis(database ="buildings",port = port)
           val polygons = PostgisConnection.bboxRequest(west,south,east,north,"ways")
           if (spatialdata.DEBUG) println("retrieved via postgresql " + east + " n=" + north + " s=" + south + "w=" + west+" : "+polygons.size+" buildings")
-          PostgisConnection.closeConnection()
+          PostgisConnection.closeConnection
           polygons
         }
         case Mongo(port) => {

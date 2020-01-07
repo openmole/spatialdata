@@ -19,10 +19,13 @@ import scala.collection.mutable.ArrayBuffer
 
 object PostgisConnection {
 
-  // FIXME hte way it is written allows only one simulatneous connection
-  var connection: Connection = null
-
-  def initPostgis(database: String,port: Int = 5432): Unit = {
+  /**
+    * Initializes and returns a connection with local postgis database
+    * @param database
+    * @param port
+    * @return
+    */
+  def initPostgis(database: String,port: Int = 5432): Connection = {
     /*
     val params: java.util.Map[String,AnyRef] = new java.util.HashMap()
     params.put("dbtype", "postgis")
@@ -37,10 +40,14 @@ object PostgisConnection {
     val url = "jdbc:postgresql://localhost:"+port+"/"+database
     val props = new Properties
     props.setProperty("user","postgres")
-    connection = DriverManager.getConnection(url, props)
+    DriverManager.getConnection(url, props)
   }
 
-  def closeConnection(): Unit = connection.close()
+  /**
+    * Close the implicit Postgis connection
+    * @param connection
+    */
+  def closeConnection()(implicit connection: Connection): Unit = connection.close()
 
   /**
     * get polygons in a bbox
@@ -52,7 +59,7 @@ object PostgisConnection {
     * @return
     */
   // FIXME geotools postgis more performant ? for now via WKT
-  def bboxRequest(lonmin: Double,latmin: Double,lonmax: Double,latmax: Double,table: String): Seq[Polygon] = {
+  def bboxRequest(lonmin: Double,latmin: Double,lonmax: Double,latmax: Double,table: String)(implicit connection: Connection): Seq[Polygon] = {
 
     /*
     val ff: FilterFactory2  = CommonFactoryFinder.getFilterFactory2()
@@ -93,7 +100,7 @@ object PostgisConnection {
     rs.close()
     st.close()
 
-    res
+    res.toSeq
   }
 
 }

@@ -5,7 +5,7 @@ import org.openmole.spatialdata.network.measures.NetworkMeasures.ShortestPathsNe
 import org.openmole.spatialdata.network.synthetic.{RandomNetworkGenerator, TreeMinDistGenerator}
 import org.openmole.spatialdata.network.{Network, Node, ShortestPaths}
 import org.openmole.spatialdata.utils.graph.GraphAlgorithms
-import org.openmole.spatialdata.utils.graph.GraphAlgorithms.{DijkstraJGraphT, FloydWarshallJGraphT, ScalaGraph, shortestPaths}
+import org.openmole.spatialdata.utils.graph.GraphAlgorithms.{DijkstraJGraphT, FloydWarshallJGraphT, shortestPaths}
 import org.openmole.spatialdata.utils.{visualization, withTimer}
 
 import scala.util.Random
@@ -50,10 +50,10 @@ object TestNetwork {
       //val nodes = nw.nodes.sampleWithoutReplacement(10)
       val nw = nwgen.generateNetwork
       val nodes = nw.nodes.toSeq
-      val (sp1,t1) = withTimer[Network,ShortestPaths](nw => shortestPaths(nw,nodes,{l => l.length},ScalaGraph()))(nw)
+      //val (sp1,t1) = withTimer[Network,ShortestPaths](nw => shortestPaths(nw,nodes,{l => l.length},ScalaGraph()))(nw)
       val (sp2,t2) = withTimer[Network,ShortestPaths](nw => shortestPaths(nw,nodes,{l => l.length},DijkstraJGraphT()))(nw)
       val (sp3,t3) = withTimer[Network,ShortestPaths](nw => shortestPaths(nw,nodes,{l => l.length},FloydWarshallJGraphT()))(nw)
-      (sp1 |-| sp2,t1,t2,t3,nodes.size.toDouble)
+      (sp2 |-| sp2,0.0,t2,t3,nodes.size.toDouble)
       //(0.0,0.0,0.0,0.0,0.0)
     }
 

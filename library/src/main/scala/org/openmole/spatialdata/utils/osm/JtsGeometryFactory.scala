@@ -40,6 +40,8 @@ class JtsGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
   /**
     * Asserts that relation members are all outer ways that form a single polygon.
     *
+    *  FIXME function never used
+    *
     * @param relation
     * @return
     */
@@ -58,9 +60,7 @@ class JtsGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
     val sorted = new mutable.ArrayBuffer[mutable.ArrayBuffer[Coordinate]](lines.size)
     sorted.append(lines.remove(0))
     var iterations = 0
-    while ( {
-      !lines.isEmpty
-    }) {
+    while (lines.nonEmpty) {
       if ( {
         iterations += 1; iterations - 1
       } >= maxIterations) throw new RuntimeException("Eternal loop")
@@ -75,13 +75,12 @@ class JtsGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
           for (testLine <- sorted.toSeq) {
             if (testLine(testLine.size - 1) == line(0)) {
               sorted.append(line)
-              lineIterator.remove()
+              lines.remove(lines.indexOf(line)) // FIXME check if compatible with the iterator
               loop.break //todo: break is not supported
             }
-            else if (testLine(testLine.size - 1) == line.get(line.size - 1)) {
-              java.util.Collections.reverse(line)
-              sorted.add(line)
-              lineIterator.remove()
+            else if (testLine(testLine.size - 1) == line(line.size - 1)) {
+              sorted.append(line.reverse)
+              lines.remove(lines.indexOf(line)) // FIXME
               loop.break //todo: break is not supported
             }
           }

@@ -101,8 +101,8 @@ publishTo in ThisBuild := {
   else Some("releases" at nexus + "service/local/staging/deploy/maven2")
 }
 
-// TODO remove when clean version released
-//publishConfiguration := publishConfiguration.value.withOverwrite(true)
+// use to overwrite when publish non-snapshot if issue during a previous release tentative
+publishConfiguration := publishConfiguration.value.withOverwrite(true)
 
 credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
 

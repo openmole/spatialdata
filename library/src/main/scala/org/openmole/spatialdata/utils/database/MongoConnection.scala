@@ -62,7 +62,7 @@ object MongoConnection {
       //println(coords)
       res.append(geomfact.createPolygon(geomfact.createLinearRing(coords)))
     }
-    res
+    res.toSeq
   }
 
   def closeMongo(): Unit = mongoClient.close()

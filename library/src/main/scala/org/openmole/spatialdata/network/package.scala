@@ -14,7 +14,7 @@ import org.locationtech.jts.geom.LineString
 package object network {
 
   type ShortestPath = (Seq[Node],Seq[Link],Double)
-  type ShortestPaths = Map[(Node,Node),ShortestPath]
+  type ShortestPaths = Map[(Node,Node), (Seq[Node],Seq[Link],Double)]
 
   implicit class ShortestPathsDecorator(sp1: ShortestPaths){
     def |-|(sp2: ShortestPaths): Double =

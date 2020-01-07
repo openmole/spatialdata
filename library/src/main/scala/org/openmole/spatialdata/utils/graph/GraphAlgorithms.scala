@@ -73,7 +73,11 @@ object GraphAlgorithms {
       * @param linkWeight
       * @return
       */
-    def shortestPathsWithJGraphTAlgorithm(network: Network, vertices: Seq[Node],algorithm: Graph[Int,DefaultWeightedEdge] => ShortestPathAlgorithm[Int,DefaultWeightedEdge], linkWeight: Link => Double = _.weight): ShortestPaths = {
+    def shortestPathsWithJGraphTAlgorithm(network: Network,
+                                          vertices: Seq[Node],
+                                          algorithm: Graph[Int,DefaultWeightedEdge] => ShortestPathAlgorithm[Int,DefaultWeightedEdge],
+                                          linkWeight: Link => Double = _.weight
+                                         ): ShortestPaths = {
       val (g,nodeMap,linkMap) = GraphConversions.networkToJGraphT(network,linkWeight)
       (for {
         i <- network.nodes.toSeq
@@ -88,7 +92,7 @@ object GraphAlgorithms {
             path.getEdgeList.asScala.map { e => linkMap((g.getEdgeSource(e), g.getEdgeTarget(e))) },
             path.getWeight)
         }
-      })).toMap
+      })).toMap.asInstanceOf[ShortestPaths]
     }
 
 
@@ -118,6 +122,8 @@ object GraphAlgorithms {
     /**
       * Shortest paths - by default not a spatial network as weight function is only the weight
       *
+      *  -- DEPRECATED, use JGraphT instead --
+      *
       * FIXME works if the network is not connected but returns existing paths only
       * FIXME sampling should not be done here
       *
@@ -125,7 +131,7 @@ object GraphAlgorithms {
       * @param vertices
       * @return
       */
-    def shortestPathsScalaGraph(network: Network, vertices: Seq[Node], linkWeight: Link => Double = _.weight): ShortestPaths = {
+    /*def shortestPathsScalaGraph(network: Network, vertices: Seq[Node], linkWeight: Link => Double = _.weight): ShortestPaths = {
       //println("Computing shortest paths between vertices : "+vertices)
       val (g,nodeMap,linkMap) = GraphConversions.networkToScalaGraph(network, linkWeight)
       //val odnodes = if(pathSample==1.0) vertices else Stochastic.sampleWithoutReplacementBy[Node](vertices,v => 1.0 / vertices.length.toDouble, math.floor(pathSample*vertices.length).toInt)
@@ -144,7 +150,7 @@ object GraphAlgorithms {
         }
         else {(Seq.empty[Node],Seq.empty[Link],Double.PositiveInfinity)}
       })).toMap
-    }
+    }*/
 
 
 

@@ -44,19 +44,19 @@ class JtsGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
     * @return
     */
   def createOuterWaysPolygon(relation: Relation) = {
-    val lines = new java.util.ArrayList[java.util.List[Coordinate]](relation.getMembers.size)
+    val lines = new mutable.ArrayBuffer[mutable.ArrayBuffer[Coordinate]](relation.getMembers.size)
     for (member <- relation.getMembers) {
       if (!"outer".equalsIgnoreCase(member.getRole)) throw new RuntimeException
       val way = member.getObject.asInstanceOf[Way]
-      val line = new java.util.ArrayList[Coordinate](way.getNodes.size)
+      val line = new mutable.ArrayBuffer[Coordinate](way.getNodes.size)
       for (node <- way.getNodes) {
-        line.add(new Coordinate(node.getX, node.getY))
+        line.append(new Coordinate(node.getX, node.getY))
       }
-      lines.add(line)
+      lines.append(line)
     }
     val maxIterations = lines.size
-    val sorted = new java.util.ArrayList[java.util.List[Coordinate]](lines.size)
-    sorted.add(lines.remove(0))
+    val sorted = new mutable.ArrayBuffer[mutable.ArrayBuffer[Coordinate]](lines.size)
+    sorted.append(lines.remove(0))
     var iterations = 0
     while ( {
       !lines.isEmpty
@@ -72,13 +72,13 @@ class JtsGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
         var stop = false
         val loop = new Breaks;
         loop.breakable {
-          for (testLine <- new java.util.ArrayList[java.util.List[Coordinate]](sorted)) {
-            if (testLine.get(testLine.size - 1) == line.get(0)) {
-              sorted.add(line)
+          for (testLine <- sorted.toSeq) {
+            if (testLine(testLine.size - 1) == line(0)) {
+              sorted.append(line)
               lineIterator.remove()
               loop.break //todo: break is not supported
             }
-            else if (testLine.get(testLine.size - 1) == line.get(line.size - 1)) {
+            else if (testLine(testLine.size - 1) == line.get(line.size - 1)) {
               java.util.Collections.reverse(line)
               sorted.add(line)
               lineIterator.remove()
@@ -113,7 +113,7 @@ class JtsGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
     */
   def createMultiPolygon(relation: Relation) = {
     val linearRings = new java.util.ArrayList[LinearRing]
-    val nodes = new java.util.ArrayList[Node]
+    val nodes = new mutable.ArrayBuffer[Node]
     var firstNode: Node = null
     for (membership <- relation.getMembers) {
       Breaks.breakable {
@@ -128,26 +128,27 @@ class JtsGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
         val nextNodes = membership.getObject.accept(new NodesCollector)
         if (nodes.isEmpty) nodes.addAll(nextNodes)
         else {
-          val previousNode = nodes.get(nodes.size - 1)
-          if (nextNodes.get(0) == previousNode) nodes.addAll(nextNodes)
-          else if (nextNodes.get(nextNodes.size - 1) == previousNode) {
-            java.util.Collections.reverse(nextNodes)
-            nodes.addAll(nextNodes)
+          val previousNode = nodes(nodes.size - 1)
+          if (nextNodes(0) == previousNode) nodes.addAll(nextNodes)
+          else if (nextNodes(nextNodes.size - 1) == previousNode) {
+            //java.util.Collections.reverse(nextNodes)
+            // FIXME check this replacement
+            nodes.addAll(nextNodes.reverse)
           }
           else {
             System.out.println("previous" + previousNode)
-            System.out.println("first" + nextNodes.get(0))
-            System.out.println("last" + nextNodes.get(nextNodes.size - 1))
+            System.out.println("first" + nextNodes(0))
+            System.out.println("last" + nextNodes(nextNodes.size - 1))
             throw new RuntimeException("Non connected members in relation")
           }
         }
-        if (nodes.get(nodes.size - 1) == firstNode) {
+        if (nodes(nodes.size - 1) == firstNode) {
           val coordinates = new Array[Coordinate](nodes.size + 1)
           var i = 0
           while ( {
             i < nodes.size
           }) {
-            val node = nodes.get(i)
+            val node = nodes(i)
             coordinates(i) = new Coordinate(node.getX, node.getY)
 
             {
@@ -176,20 +177,24 @@ class JtsGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
     geometryFactory.createMultiPolygon(polygons)
   }
 
+  /*
   private val linesComparator = new java.util.Comparator[java.util.List[Node]]() {
     override def compare(l1: java.util.List[Node], l2: java.util.List[Node]) = if (coordinateEquals(l1.get(0), l2.get(l2.size - 1))) -1
     else if (coordinateEquals(l1.get(l1.size - 1), l2.get(0))) 1
     else 0
+  }*/
 
-    private
+  private def coordinateEquals(n1: Node, n2: Node) = n1.getLatitude == n2.getLatitude && n1.getLongitude == n2.getLongitude
 
-    def coordinateEquals(n1: Node, n2: Node) = n1.getLatitude == n2.getLatitude && n1.getLongitude == n2.getLongitude
-  }
+  private def compareLines(l1: mutable.ArrayBuffer[Node], l2: mutable.ArrayBuffer[Node]): Boolean =
+    if (coordinateEquals(l1(0), l2(l2.size - 1))) true
+    else if (coordinateEquals(l1(l1.size - 1), l2(0))) false
+    else true
 
   private class NodesCollector extends OsmObjectVisitor[mutable.ArrayBuffer[Node]] {
     override def visit(node: Node) = {
-      val nodes = new java.util.ArrayList[Node](1)
-      nodes.add(node)
+      val nodes = new mutable.ArrayBuffer[Node](1)
+      nodes.append(node)
       nodes
     }
 
@@ -200,12 +205,12 @@ class JtsGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
       for (membership <- relation.getMembers) {
         lines.append(membership.getObject.accept(new NodesCollector))
       }
-      java.util.Collections.sort(lines, linesComparator)
+      lines.sortInPlaceWith(compareLines)
       var nodesCount = 0
       for (line <- lines) {
         nodesCount += line.size
       }
-      val nodes = new java.util.ArrayList[Node](nodesCount)
+      val nodes = new mutable.ArrayBuffer[Node](nodesCount)
       for (line <- lines) {
         nodes.addAll(line)
       }

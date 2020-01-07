@@ -40,11 +40,17 @@ object OSMGridGenerator {
     val (ymin, ymax) = (ycoords.min, ycoords.max)
     val (xstep, ystep) = ((xmax - xmin) / (worldWidth+1), (ymax - ymin) / (worldWidth+1))
     val cells: Seq[((Int,Int),Double)] = for {
-      (x,i) <- (xmin to (xmax - xstep) by xstep).zipWithIndex
-      (y,j) <- (ymin to (ymax - ystep) by ystep).zipWithIndex
+      (x,i) <- (BigDecimal(xmin) to (xmax - xstep) by xstep).zipWithIndex
+      (y,j) <- (BigDecimal(ymin) to (ymax - ystep) by ystep).zipWithIndex
     } yield {
       // note : g is Negative of buildings -> inversed !
-      val value = Try(if(new GeometryFactory(g.getPrecisionModel,g.getSRID).createPolygon(Array(new Coordinate(x,y),new Coordinate(x+xstep,y),new Coordinate(x+xstep,y+ystep),new Coordinate(x,y+ystep),new Coordinate(x,y))).coveredBy(g)) 0.0 else 1.0)
+      val value = Try(if(
+        new GeometryFactory(g.getPrecisionModel,g.getSRID).createPolygon(
+          Array(new Coordinate(x.toDouble,y.toDouble),
+                new Coordinate((x+xstep).toDouble,y.toDouble),
+                new Coordinate((x+xstep).toDouble,(y+ystep).toDouble),
+                new Coordinate(x.toDouble,(y+ystep).toDouble),
+                new Coordinate(x.toDouble,y.toDouble))).coveredBy(g)) 0.0 else 1.0)
       if(value.isSuccess) ((i,j),value.get) else ((i,j),0.0)
     }
     val values = cells.toMap

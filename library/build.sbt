@@ -34,7 +34,7 @@ libraryDependencies ++= Seq(
 )
 
 
-
+/*
 lazy val osmrealmeasures = Project("osmrealmeasures", file("target/osmrealmeasures")) settings(
   mainClass in (Compile, packageBin) := Some("org.openmole.spatialdata.application.urbmorph.OSMRealMeasures")
 )
@@ -43,7 +43,7 @@ lazy val runtest = Project("runtest", file("target/test")) settings(
   mainClass in (Compile, packageBin) := Some("org.openmole.spatialdata.test.Test"),
   mainClass in run := Some("org.openmole.spatialdata.test.Test")
 )
-
+*/
 
 enablePlugins(SbtOsgi)
 
@@ -60,6 +60,7 @@ OsgiKeys.requireCapability := """osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8
 //)
 
 
+/*
 // publish fat jar
 // https://github.com/sbt/sbt-assembly#publishing-not-recommended
 lazy val assemble = Project("assemble", file("target/assemble")) settings (
@@ -74,6 +75,7 @@ lazy val assemble = Project("assemble", file("target/assemble")) settings (
   },
   addArtifact(artifact in (Compile, assembly), assembly)
 )
+*/
 
 
 /**

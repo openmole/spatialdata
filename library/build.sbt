@@ -50,13 +50,13 @@ enablePlugins(SbtOsgi)
 //lazy val omlplugin = Project("omlplugin", file("target/omlplugin")) enablePlugins SbtOsgi settings( // FIXME
 //  name := "spatialdata",
  //org.openmole.spatialdata.application.*
-  //OsgiKeys.exportPackage := Seq("*;-split-package:=merge-first")//,
-  // export only application
-  OsgiKeys.exportPackage := Seq("org.openmole.spatialdata.application")
-  OsgiKeys.importPackage := Seq("*;resolution:=optional;-split-package:=merge-first")//,
-// test private package to have only application visible
-  OsgiKeys.privatePackage := Seq("org.openmole.spatialdata.grid,org.openmole.spatialdata.network,org.openmole.spatialdata.run,org.openmole.spatialdata.test,org.openmole.spatialdata.utils,org.openmole.spatialdata.vector,!scala.*,!java.*,!monocle.*,!META-INF.*.RSA,!META-INF.*.SF,!META-INF.*.DSA,META-INF.services.*,META-INF.*,*")//,
-  OsgiKeys.requireCapability := """osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))""""
+OsgiKeys.exportPackage := Seq("*;-split-package:=merge-first")//,
+  // export only application ? NO for inclusion in OpenMOLE need more - BUT done in OML !
+  //OsgiKeys.exportPackage := Seq("org.openmole.spatialdata.application")
+OsgiKeys.importPackage := Seq("*;resolution:=optional;-split-package:=merge-first")//,
+  //OsgiKeys.privatePackage := Seq("org.openmole.spatialdata.grid,org.openmole.spatialdata.network,org.openmole.spatialdata.run,org.openmole.spatialdata.test,org.openmole.spatialdata.utils,org.openmole.spatialdata.vector,!scala.*,!java.*,!monocle.*,!META-INF.*.RSA,!META-INF.*.SF,!META-INF.*.DSA,META-INF.services.*,META-INF.*,*")//,
+OsgiKeys.privatePackage := Seq("!scala.*,!java.*,!monocle.*,!META-INF.*.RSA,!META-INF.*.SF,!META-INF.*.DSA,META-INF.services.*,META-INF.*,*")//,
+OsgiKeys.requireCapability := """osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))""""
 //)
 
 

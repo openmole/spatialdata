@@ -11,6 +11,7 @@ import org.apache.http.client.config.RequestConfig
 import org.apache.http.client.methods.{HttpGet, HttpPut}
 import org.apache.http.entity.StringEntity
 import org.apache.http.impl.client.{BasicCredentialsProvider, CloseableHttpClient, HttpClientBuilder}
+import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.utils.osm._
 import org.openmole.spatialdata.utils.osm.xml._
 
@@ -29,9 +30,9 @@ class ApiConnection(userServerURL: String = ApiConnection.defaultServerURL,val t
 
   def removeTrailing(s: (String,Boolean)): (String,Boolean) = if(s._1.endsWith("/")) removeTrailing((s._1.substring(0, s._1.length - 1),false)) else (s+"/",true)
 
-  val serverURL: String = Iterator.iterate((serverURL,false))(removeTrailing).takeWhile(!_._2).toSeq.last._1
+  val serverURL: String = Iterator.iterate((userServerURL,false))(removeTrailing).takeWhile(!_._2).toSeq.last._1
 
-  private val prefix: String = this.serverURL + ApiConnection.apiVersion + "/"
+  private val prefix: String = this.serverURL + "/" + ApiConnection.apiVersion + "/"
 
   val requestBuilder: RequestConfig.Builder = RequestConfig.custom().setConnectTimeout(timeout).setConnectionRequestTimeout(timeout)
 
@@ -103,8 +104,7 @@ class ApiConnection(userServerURL: String = ApiConnection.defaultServerURL,val t
     val right = df.format(east)
     val response = httpClient.execute(new HttpGet(prefix + "map?bbox=" + left + "," + bottom + "," + right + "," + top))
 
-    // FIXME logging
-    System.out.println(prefix + "map?bbox=" + left + "," + bottom + "," + right + "," + top)
+    utils.log(prefix + "map?bbox=" + left + "," + bottom + "," + right + "," + top)
 
     try {
       if (response.getStatusLine.getStatusCode != 200) throw new RuntimeException("HTTP status " + response.getStatusLine.getStatusCode + ", " + response.getStatusLine.getReasonPhrase)

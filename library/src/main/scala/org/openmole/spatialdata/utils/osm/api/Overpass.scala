@@ -1,6 +1,6 @@
 package org.openmole.spatialdata.utils.osm.api
 
-import java.io.{InputStreamReader, StringWriter}
+import java.io.{InputStreamReader, StringReader, StringWriter}
 import java.util
 
 import org.apache.commons.io.IOUtils
@@ -16,6 +16,28 @@ import org.openmole.spatialdata.utils.osm.xml.InstantiatedOsmXmlParser
 
 class Overpass extends HttpService {
   private var serverURL = "http://www.overpass-api.de/api/interpreter"
+
+
+  def get(south: Double, west: Double, north: Double, east: Double, hasBuildingKey: Boolean=true): PojoRoot = {
+    setUserAgent("Spatial Data extraction")
+    open()
+    val root = new PojoRoot
+    val parser = InstantiatedOsmXmlParser.newInstance
+    parser.setRoot(root)
+    parser.parse(new StringReader(execute(
+      s"""
+         |  <query type="way">
+         |    ${if(hasBuildingKey) "<has-kv k=\"building\" v=\"yes\"/>" else ""}
+         |    <bbox-query e="$east" n="$north" s="$south" w="$west"/>
+         |  </query>
+         |  <union>
+         |    <item />
+         |    <recurse type="way-node"/>
+         |  </union>
+         |  <print/>
+           """.stripMargin)))
+    root
+  }
 
   /**
     * 2013-07-28 Usage policy accept 10 000 requests or 5GB data per day using up to two threads.

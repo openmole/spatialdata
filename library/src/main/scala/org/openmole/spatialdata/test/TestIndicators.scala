@@ -1,10 +1,10 @@
 package org.openmole.spatialdata.test
 
 import better.files.File
-import org.openmole.spatialdata._
+import org.openmole.spatialdata.Implicits._
 import org.openmole.spatialdata.grid.measures.GridMorphology
 import org.openmole.spatialdata.grid.measures.GridMorphology.{AverageDistance, Moran}
-import org.openmole.spatialdata.grid.synthetic.ExpMixtureGenerator
+import org.openmole.spatialdata.grid.synthetic.ExpMixtureGridGenerator
 import org.openmole.spatialdata.utils.io.{CSV, PNG}
 import org.openmole.spatialdata.utils.math.{Convolution, Statistics}
 import org.openmole.spatialdata.utils.withTimer
@@ -20,7 +20,7 @@ object TestIndicators {
 
 
     //(0 to 20).foreach{_ =>
-      val grid = ExpMixtureGenerator(50,3,1.0,10.0,true).generateGrid
+      val grid = ExpMixtureGridGenerator(50,3,1.0,10.0,true).generateGrid
       val maxval = grid.flatten.max
       val ngrid = grid.map{_.map{case d => if(d / maxval > 0.6) 1.0 else 0.0}}
 
@@ -71,7 +71,7 @@ object TestIndicators {
 
     implicit val rng = new Random
 
-    val gen = ExpMixtureGenerator((20,40),10,1.0,10.0)
+    val gen = ExpMixtureGridGenerator((20,40),10,1.0,10.0)
 
     val indics = (1 to 100).map{i =>
       println(i)

@@ -3,14 +3,15 @@ package org.openmole.spatialdata.test
 import org.openmole.spatialdata.grid
 import org.openmole.spatialdata.grid.measures.GridMorphology
 import org.openmole.spatialdata.grid.real.{OSMGridGenerator, OSMGridSampling}
+import org.openmole.spatialdata.utils.visualization
 
 import scala.util.Random
 
 object TestOSM {
 
+  implicit val rng = new Random
 
   def testOSMGridSampling(): Unit = {
-    implicit val rng: Random = new Random
 
     //val grids = OSMGridSampling.sampleGridsInLayer("data/cities_europe.shp",100,200,50)
     val grids = OSMGridSampling.sampleGridsInLayer("data/cities_europe.shp",2,500,50)
@@ -27,8 +28,6 @@ object TestOSM {
 
   def testBuildingExtractor(): Unit = {
 
-    implicit val rng = new Random
-
     // -4.247058 48.45855
     //
     val lon = 14.865577//-4.247058 //4.215393//2.3396859//2.3646
@@ -39,8 +38,9 @@ object TestOSM {
 
 
     val g = OSMGridGenerator(lon,lat,shift,50).generateGrid
-    println(grid.gridToString(g))
-    println(GridMorphology(g))
+    //println(grid.gridToString(g))
+    //println(GridMorphology(g))
+    visualization.staticRasterVisualization(g)
 
     /*
     BuildingExtractor.getBuildingIntersection(48.82864, 2.36238, 48.83040, 2.36752).foreach(println)

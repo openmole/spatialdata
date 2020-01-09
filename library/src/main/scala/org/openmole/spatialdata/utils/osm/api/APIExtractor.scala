@@ -6,6 +6,7 @@ import java.util.Locale
 
 import org.locationtech.jts.geom._
 import org.openmole.spatialdata
+import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.utils.database.{MongoConnection, PostgisConnection}
 import org.openmole.spatialdata.utils.gis.GISUtils.WGS84toPseudoMercatorFilter
 import org.openmole.spatialdata.utils.gis.PoligonizerUtils
@@ -62,23 +63,7 @@ object APIExtractor {
       mode match {
         case OSMOverpass => {
           val overpass = new Overpass
-          overpass.setUserAgent("Spatial Data extraction")
-          overpass.open()
-          val root = new PojoRoot
-          val parser = InstantiatedOsmXmlParser.newInstance
-          parser.setRoot(root)
-          parser.parse(new StringReader(overpass.execute(
-            s"""
-               |  <query type="way">
-               |    <has-kv k="building" v="yes"/>
-               |    <bbox-query e="$east" n="$north" s="$south" w="$west"/>
-               |  </query>
-               |  <union>
-               |    <item />
-               |    <recurse type="way-node"/>
-               |  </union>
-               |  <print/>
-           """.stripMargin)))
+          val root = overpass.get(south, west, north, east)
           if (spatialdata.DEBUG) println("retrieved via overpass " + east + " n=" + north + " s=" + south + "w=" + west)
           asPolygonSeq(root.enumerateWays)
         }
@@ -154,6 +139,12 @@ object APIExtractor {
   object Highways {
 
 
+    /**
+      * Convert API result to a sequence of LineString
+      * @param e
+      * @param tags
+      * @return
+      */
     def asLineStringSeq(e: Root.Enumerator[Way], tags: Map[String,Seq[String]]): Seq[LineString] = {
       var result = scala.collection.mutable.Buffer[LineString]()
       val fact = new JtsGeometryFactory()
@@ -178,11 +169,39 @@ object APIExtractor {
       result.toSeq
     }
 
-    def getHighways(south: Double, west: Double, north: Double, east: Double,tags: Map[String,Seq[String]]): Seq[LineString] = {
+    /**
+      * Get highways from API
+      * @param south
+      * @param west
+      * @param north
+      * @param east
+      * @param tags
+      * @return
+      */
+    def getHighways(south: Double, west: Double, north: Double, east: Double,
+                    tags: Map[String,Seq[String]],
+                    mode: OSMAPIMode = OSMOverpass): Seq[LineString] = {
       Locale.setDefault(Locale.ENGLISH)
-      val api = new ApiConnection()
-      val root = api.get(south, west, north, east)
-      asLineStringSeq(root.enumerateWays,tags)
+      mode match {
+        case OSMOverpass => {
+          val overpass = new Overpass
+          // FIXME the k-v in overpass req is dirty this way
+          val root = overpass.get(south, west, north, east,hasBuildingKey=false)
+          val res = asLineStringSeq(root.enumerateWays,tags)
+          utils.log("Highways from overpass " +res)
+          res
+        }
+        case OSMDirect => {
+          val api = new ApiConnection()
+          val root = api.get(south, west, north, east)
+          val res = asLineStringSeq(root.enumerateWays,tags)
+          utils.log("Highways from OSM (API): "+res)
+          res
+        }
+        case _ => Seq.empty
+      }
     }
+
   }
+
 }

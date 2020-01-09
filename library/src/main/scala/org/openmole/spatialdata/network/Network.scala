@@ -2,7 +2,7 @@ package org.openmole.spatialdata.network
 
 import org.openmole.spatialdata.Point2D
 import org.openmole.spatialdata.utils.graph.GraphAlgorithms
-import org.openmole.spatialdata.utils._
+import org.openmole.spatialdata.utils.Implicits._
 import org.openmole.spatialdata.utils.graph.GraphAlgorithms.{DijkstraJGraphT, ShortestPathMethod}
 
 import scala.util.Random

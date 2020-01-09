@@ -1,7 +1,9 @@
 package org.openmole.spatialdata.test
 
-import org.openmole.spatialdata.utils._
+import org.openmole.spatialdata.Point2D
+import org.openmole.spatialdata.utils.Implicits._
 import org.openmole.spatialdata.network.measures.NetworkMeasures.ShortestPathsNetworkMeasures
+import org.openmole.spatialdata.network.real.OSMNetworkGenerator
 import org.openmole.spatialdata.network.synthetic.{RandomNetworkGenerator, TreeMinDistGenerator}
 import org.openmole.spatialdata.network.{Network, Node, ShortestPaths}
 import org.openmole.spatialdata.utils.graph.GraphAlgorithms
@@ -12,9 +14,35 @@ import scala.util.Random
 
 object TestNetwork {
 
+  implicit val rng = new Random
+
+
+  def testSimplification: Unit = {
+    val (lat,lon) = (51.5213835,-0.1347904)
+    val nw = OSMNetworkGenerator(lon,lat,10000,simplifySnapping = 0.02).generateNetwork
+    val (xmin,xmax,ymin,ymax) = (nw.nodes.map{_.x}.min,nw.nodes.map{_.x}.max,nw.nodes.map{_.y}.min,nw.nodes.map{_.y}.max)
+    def position(n: Node): Point2D = ((n.x - xmin)/(xmax-xmin),(n.y - ymin)/(ymax-ymin))
+    val simplified = GraphAlgorithms.SimplificationAlgorithm.simplifyNetwork(nw)
+    println("Nodes: "+nw.nodes.size+" ; Links: "+nw.nodes.size)
+    println("Simpl Nodes: "+simplified.nodes.size+" ; Simpl Links: "+simplified.nodes.size)
+    //visualization.staticNetworkVisualization(Seq(nw,simplified),nodePositioning = position)
+    visualization.staticNetworkVisualization(Seq(simplified),nodePositioning = position)
+  }
+
+
+  def testOSMNetwork: Unit = {
+    val (lat,lon) = (51.5213835,-0.1347904)
+    //val nw = OSMNetworkGenerator(lon,lat,5000).generateNetwork
+    val nw = OSMNetworkGenerator(lon,lat,10000,simplifySnapping = 0.02).generateNetwork
+    val (xmin,xmax,ymin,ymax) = (nw.nodes.map{_.x}.min,nw.nodes.map{_.x}.max,nw.nodes.map{_.y}.min,nw.nodes.map{_.y}.max)
+    def position(n: Node): Point2D = ((n.x - xmin)/(xmax-xmin),(n.y - ymin)/(ymax-ymin))
+    println("Nodes: "+nw.nodes.size+" ; Links: "+nw.nodes.size)
+    visualization.staticNetworkVisualization(Seq(nw),nodePositioning = position)
+  }
+
+
 
   def testCycles: Unit = {
-    implicit val rng = new Random
     val nw = RandomNetworkGenerator(10,15,true,false,false).generateNetwork
     val cycles = GraphAlgorithms.cycles(nw)
     val colorMap: Map[Node,Int] = cycles.zipWithIndex.flatMap{case (nk,k) => nk.nodes.toSeq.map{(_,k)}}.toMap
@@ -26,7 +54,6 @@ object TestNetwork {
 
 
   def testTreeMinDist: Unit = {
-    implicit val rng = new Random
     //val nw = TreeMinDistGenerator(200,connexificationAlgorithm = n => n.projectionConnect).generateNetwork
     val nw = TreeMinDistGenerator(200).generateNetwork
     //val nw = TreeMinDistGenerator(100).generateNetwork
@@ -41,7 +68,6 @@ object TestNetwork {
     * JGraphT in average around 10 times faster !
     */
   def testShortestPathImplementations(): Unit = {
-    implicit val rng = new Random
     //val nwgen = RandomNetworkGenerator(15,50,true,false,false)
     val nwgen = RandomNetworkGenerator(10,20,true,false,false)
 
@@ -66,7 +92,6 @@ object TestNetwork {
 
 
   def testPlanarization(): Unit = {
-    implicit val rng = new Random
     val nw = RandomNetworkGenerator(20,200,false,false,false).generateNetwork
     //val nw = GridNetworkGenerator(10).generateNetwork
 
@@ -86,7 +111,6 @@ object TestNetwork {
   }
 
   def testRandomNetwork(): Unit = {
-    implicit val rng = new Random
     val nw = RandomNetworkGenerator(15,10,true,false,false).generateNetwork
     visualization.staticNetworkVisualization(Seq(nw))
   }

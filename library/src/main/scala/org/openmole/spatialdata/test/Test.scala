@@ -7,12 +7,13 @@ object Test extends App {
   //TestCoupled.testRandom()
 
   // Network algorithms
+  TestNetwork.testSimplification
   //TestNetwork.testCycles
-  TestNetwork.testShortestPathImplementations()
+  //TestNetwork.testShortestPathImplementations()
   //TestNetwork.testPlanarization()
 
   // OSM
-  //TestOSM.testBuildingExtractor
+  //TestOSM.testBuildingExtractor()
   //TestOSM.testOSMGridSampling
 
   // Database
@@ -26,6 +27,7 @@ object Test extends App {
   //TestIndicators.testFFTConvolution
 
   // Synthetic networks
+  //TestNetwork.testOSMNetwork
   //TestNetwork.testTreeMinDist
   //TestNetwork.testRandomNetwork
 

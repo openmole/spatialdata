@@ -1,6 +1,6 @@
 package org.openmole.spatialdata.test
 
-import org.openmole.spatialdata._
+import org.openmole.spatialdata.Implicits._
 import org.openmole.spatialdata.grid.measures.GridMorphology
 import org.openmole.spatialdata.grid.synthetic.RandomGridGenerator
 import org.openmole.spatialdata.network.measures.NetworkMeasures

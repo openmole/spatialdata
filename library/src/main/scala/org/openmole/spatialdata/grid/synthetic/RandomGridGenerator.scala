@@ -2,6 +2,7 @@
 package org.openmole.spatialdata.grid.synthetic
 
 import org.openmole.spatialdata._
+import org.openmole.spatialdata.Implicits._
 import org.openmole.spatialdata.grid.GridGenerator
 
 import scala.util.Random
@@ -16,12 +17,12 @@ case class RandomGridGenerator(
                               /**
                                 * Rescaling factor (by default a probability density)
                                 */
-                              totalPopulation: Double = -1,
+                              totalPopulation: Double = -1.0,
 
                               /**
                                 * approximate proportion of empty cells
                                 */
-                              occupiedCells: Double = -1,
+                              occupiedCells: Double = -1.0,
 
                               /**
                                 * Number of layers
@@ -67,7 +68,9 @@ object RandomGridGenerator {
       case _ => if(rng.nextDouble()<occupied) rng.nextDouble() else 0.0
     }
     size match {
-      case Left(size)=>Array.fill(size, size)(randompop)
+      case Left(s) if s <= 0 => throw new IllegalArgumentException("Raster size should be positive")
+      case Left(s)=>Array.fill(s, s)(randompop)
+      case Right((w,h)) if w <= 0 || h <= 0 => throw new IllegalArgumentException("Raster size should be positive")
       case Right((w,h))=>Array.fill(w, h)(randompop)
     }
   }

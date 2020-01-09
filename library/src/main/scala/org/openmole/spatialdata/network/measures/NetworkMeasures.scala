@@ -5,6 +5,7 @@ import org.openmole.spatialdata.network.loading.ShortestPathsNetworkLoader
 import org.openmole.spatialdata.network.measures.NetworkMeasures.{ShortestPathsNetworkMeasures, SummaryNetworkMeasures}
 import org.openmole.spatialdata.utils.graph.GraphAlgorithms
 
+import scala.collection.mutable
 import scala.util.Random
 
 
@@ -32,6 +33,13 @@ object NetworkMeasures {
     val summary = SummaryNetworkMeasures(network)
     val shortest = ShortestPathsNetworkMeasures(network, pathSample)
     NetworkMeasures(Seq(summary,shortest), Some(summary),Some(shortest))
+  }
+
+  def degreeDistribution(network: Network): Map[Node,Int] = {
+    val countMap = new mutable.HashMap[Node,Int]
+    //network.nodes.foreach(countMap.put(_,0)) // not needed
+    network.links.foreach{l => countMap.put(l.e1,countMap.getOrElse(l.e1,0)+1); countMap.put(l.e2,countMap.getOrElse(l.e2,0)+1)}
+    countMap.toMap
   }
 
   sealed trait Measures

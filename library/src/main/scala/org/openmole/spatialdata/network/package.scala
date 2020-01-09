@@ -92,23 +92,6 @@ package object network {
 
 
 
-  /**
-    * import a network from gis linestrings
-    * @param lines
-    * @param snap
-    * @return
-    */
-  def fromGISLines(lines: Seq[LineString], snap: Double): Network = {
-    /*lines.zipWithIndex.map{
-      case (line,i) => line.getCoordinates.zip
-    }*/
-    // would require some kind of spatial index for efficiency ? -> do the snapping directly here using a hashmap with rounded coordinates
-    // (quite dirty)
-
-    // TODO
-    Network.empty
-  }
-
 
   /**
     * simplify a spatial network through snapping

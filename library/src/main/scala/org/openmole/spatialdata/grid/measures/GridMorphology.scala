@@ -8,7 +8,7 @@ import org.openmole.spatialdata.network._
 import org.openmole.spatialdata.utils.graph.GraphAlgorithms
 import org.openmole.spatialdata.utils.io.CSV
 import org.openmole.spatialdata.utils.math._
-import org.openmole.spatialdata.utils.TraversableDecorator
+import org.openmole.spatialdata.utils.Implicits._
 
 import scala.util.Random
 

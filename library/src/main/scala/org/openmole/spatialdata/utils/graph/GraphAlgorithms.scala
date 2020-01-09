@@ -7,6 +7,7 @@ import org.jgrapht.alg.shortestpath.{DijkstraShortestPath, FloydWarshallShortest
 import org.jgrapht.alg.interfaces._
 import org.jgrapht.graph.{DefaultWeightedEdge, SimpleWeightedGraph}
 import org.openmole.spatialdata.network._
+import org.openmole.spatialdata.network.measures.NetworkMeasures
 import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.utils.graph.GraphAlgorithms.ShortestPathMethod
 import org.openmole.spatialdata.utils.math.Stochastic
@@ -395,6 +396,52 @@ object GraphAlgorithms {
         Network(Link.getNodes(edges),edges)
       }
     }
+
+  }
+
+
+
+  object SimplificationAlgorithm {
+
+
+    /**
+      * Remove nodes with degree equal to two
+      * ! fails if network has self-loops
+      *
+      *
+      * @param network
+      * @param combineLength function to combine lengths
+      * @return
+      */
+    def simplifyNetwork(network: Network,
+                        combineLength: (Link,Link)=>Double = {case (l1,l2)=>l1.length+l2.length},
+                        combineWeights: (Link,Link)=>Double = {case (l1,l2)=>(l1.weight*l1.length + l2.weight*l2.length)/(l1.length+l2.length)}
+                       ): Network = {
+      val nodes = mutable.HashSet.from(network.nodes)
+      val links = mutable.HashSet.from(network.links)
+      val nodeLinkMap = new mutable.HashMap[Node,Set[Link]]
+      links.foreach{l => nodeLinkMap.put(l.e1,nodeLinkMap.getOrElse(l.e1,Set.empty[Link])++Set(l)); nodeLinkMap.put(l.e2,nodeLinkMap.getOrElse(l.e2,Set.empty[Link])++Set(l))}
+      val degrees = mutable.HashMap.from(NetworkMeasures.degreeDistribution(network)) // note: could not recompute degree, ~ same
+      while(degrees.values.count(_==2)>0){
+        // not performant to do a toSeq?
+        val toremove = degrees.toSeq.filter(_._2==2).head._1
+        nodes.remove(toremove)
+        degrees.remove(toremove)
+        val replacedlinks = nodeLinkMap(toremove).toSeq
+        nodeLinkMap.remove(toremove)
+        replacedlinks.foreach(l => links.remove(l))
+        val othernodes = replacedlinks.flatMap(l => Set(l.e1,l.e2)).filter(_!=toremove)
+        // this will fail if there are self loops
+        assert(othernodes.size==2,"In network simplification: removed vertice had not two neighbors")
+        val newlink = Link(othernodes(0),othernodes(1),combineWeights(replacedlinks(0),replacedlinks(1)),combineLength(replacedlinks(0),replacedlinks(1)),false)
+        links.add(newlink)
+        nodeLinkMap.put(othernodes(0),nodeLinkMap.getOrElse(othernodes(0),Set.empty[Link])++Set(newlink))
+        nodeLinkMap.put(othernodes(1),nodeLinkMap.getOrElse(othernodes(1),Set.empty[Link])++Set(newlink))
+        // no need to update the degree
+      }
+      Network(nodes.toSet,links.toSet)
+    }
+
 
   }
 

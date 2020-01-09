@@ -1,7 +1,7 @@
 
 package org.openmole.spatialdata.application.urbmorph
 
-import org.openmole.spatialdata._
+import org.openmole.spatialdata.Implicits._
 import org.openmole.spatialdata.grid.measures._
 import org.openmole.spatialdata.grid.synthetic._
 
@@ -63,7 +63,7 @@ case class GridGeneratorLauncher(
     val world: Array[Array[Double]] = generatorType match {
       case "random" => RandomGridGenerator(gridSize).generateGrid(rng).map{_.map{case d => if(d < randomDensity) 1.0 else 0.0}}
       case "expMixture" => {
-        val intgrid = ExpMixtureGenerator(gridSize,expMixtureCenters,1.0,expMixtureRadius).generateGrid(rng)
+        val intgrid = ExpMixtureGridGenerator(gridSize,expMixtureCenters,1.0,expMixtureRadius).generateGrid(rng)
         val maxval = intgrid.flatten.max
         intgrid.map{_.map{case d => if(d / maxval > expMixtureThreshold) 1.0 else 0.0}}
       }

@@ -28,9 +28,6 @@ package object spatialdata {
 
   type RasterDim = Either[Int,(Int,Int)]
 
-  implicit def rasterDimConversion(i:Int): RasterDim = Left(i)
-  implicit def rasterDimConversion(c:(Int,Int)): RasterDim = Right(c)
-
 
   /**
     * Point in 2D
@@ -47,4 +44,15 @@ package object spatialdata {
     * Spatial field
     */
   type SpatialField = Map[Point2D,Array[Double]]
+
+
+  object Implicits {
+
+    implicit def rasterDimConversion(i:Int): RasterDim = Left(i)
+    implicit def rasterDimConversion(c:(Int,Int)): RasterDim = Right(c)
+
+  }
+
+
+
 }

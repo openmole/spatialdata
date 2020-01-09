@@ -5,10 +5,10 @@ name := "spatialdata"
 organization := "org.openmole.library"
 
 resolvers ++= Seq(
-  "osgeo" at "http://download.osgeo.org/webdav/geotools",
-  "geosolutions" at "http://maven.geo-solutions.it",
-  "geotoolkit" at "http://maven.geotoolkit.org",
-  "apache" at "http://repo.maven.apache.org/maven2",
+  "osgeo" at "https://download.osgeo.org/webdav/geotools",
+  "geosolutions" at "https://maven.geo-solutions.it",
+  "geotoolkit" at "https://maven.geotoolkit.org",
+  "apache" at "https://repo.maven.apache.org/maven2",
   Resolver.sonatypeRepo("snapshots"),
   Resolver.sonatypeRepo("staging"),
   Resolver.mavenCentral

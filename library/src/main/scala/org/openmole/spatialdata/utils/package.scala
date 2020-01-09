@@ -9,14 +9,17 @@ import collection.JavaConverters._
 
 package object utils {
 
+  object Implicits {
 
-  implicit class TraversableDecorator[T](s: Traversable[T]){
+    implicit class TraversableDecorator[T](s: Traversable[T]) {
 
-    def sampleWithReplacement(samples: Int)(implicit rng: Random): Vector[T] = Stochastic.sampleWithReplacement(s, samples)
+      def sampleWithReplacement(samples: Int)(implicit rng: Random): Vector[T] = Stochastic.sampleWithReplacement(s, samples)
 
-    def sampleWithoutReplacement(samples: Int)(implicit rng: Random): Vector[T] = Stochastic.sampleWithoutReplacement(s, samples)
+      def sampleWithoutReplacement(samples: Int)(implicit rng: Random): Vector[T] = Stochastic.sampleWithoutReplacement(s, samples)
 
-    def shuffle(implicit rng: Random): Seq[T] = rng.shuffle(s.toSeq)
+      def shuffle(implicit rng: Random): Seq[T] = rng.shuffle(s.toSeq)
+
+    }
 
   }
 

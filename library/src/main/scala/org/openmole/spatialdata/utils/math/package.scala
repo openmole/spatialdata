@@ -6,4 +6,18 @@ package object math {
 
   def relSquare(x: Double,y: Double): Double = scala.math.pow(2*(x - y)/(x+y) ,2)
 
+  object Implicits {
+
+    implicit class IntCoordinateDecorator(p: (Int,Int)){
+      /**
+        * Lexicographic order
+        * @param p2
+        * @return
+        */
+      def <=(p2: (Int,Int)): Boolean = if(p._1 == p2._1) {p._2 <= p2._2} else p._1 < p2._1
+    }
+
+  }
+
+
 }

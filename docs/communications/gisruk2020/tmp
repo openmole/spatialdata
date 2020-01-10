@@ -1,0 +1,26 @@
+Spatialdata: a scala library for spatial sensitivity analysis
+J. Raimbault∗1,2,3, R. Reuillon2 and J. Perret4,2
+1Center for Advanced Spatial Analysis, University College London 2UPS CNRS 3611 ISC-PIF
+3UMR CNRS 8504 G ́eographie-cit ́es
+4LaSTIG STRUDEL, IGN, ENSG, Univ. Paris-Est
+Summary
+The sensitivity analysis and validation of simulation models require specific approaches in the case of spatial models. We describe a scala library providing such tools, including synthetic generators for urban configurations at different scales, spatial networks, and spatial point pro- cesses. These can be used to parametrize geosimulation models on synthetic configurations, and evaluate the sensitivity of model outcomes to spatial configuration. The library also includes methods to perturbate real data, and spatial statistics indicators, urban form indicators, and network indicators. It is embedded into the OpenMOLE platform for model exploration, foster- ing the application of such methods without technical constraints.
+KEYWORDS: Sensitivity analysis; Geosimulation; Spatial synthetic data; Model validation; Model exploration.
+1 Introduction
+Openshaw (1984)
+Kwan (2012)
+In the case of Land-use Transport interaction models, Thomas et al. (2018) show how the de- lineation of the urban area can significantly impact simulation outcomes. Banos (2012) studies the Schelling segregation model on networks, and shows that network structure strongly influences model behavior.
+2 Spatial sensitivity methods
+Reuillon et al. (2019) Reuillon et al. (2013) Passerat-Palmbach et al. (2017) workflow and repro- ducibility
+∗juste.raimbault@polytechnique.edu
+ 
+3 Applications
+Different applications of the library have already been described in the literature. Regarding the generation of synthetic data in itself,
+4 Discussion References
+Banos, A. (2012). Network effects in schelling’s model of segregation: new evidence from agent-based simulation. Environment and Planning B: Planning and Design, 39(2):393–405.
+Kwan, M.-P. (2012). The uncertain geographic context problem. Annals of the Association of American Geographers, 102(5):958–968.
+Openshaw, S. (1984). The modifiable areal unit problem. Concepts and techniques in modern geography.
+Passerat-Palmbach, J., Reuillon, R., Leclaire, M., Makropoulos, A., Robinson, E. C., Parisot, S., and Rueckert, D. (2017). Reproducible large-scale neuroimaging studies with the openmole workflow management system. Frontiers in neuroinformatics, 11:21.
+Reuillon, R., Leclaire, M., Raimbault, J., Arduin, H., Chapron, P., Ch ́erel, G., Delay, E., Lavall ́ee, P.-F., Passerat-Palmbach, J., Peigne, P., et al. (2019). Fostering the use of methods for geosim- ulation models sensitivity analysis and validation. In European Colloquium on Theoretical and Quantitative Geography 2019.
+Reuillon, R., Leclaire, M., and Rey-Coyrehourcq, S. (2013). Openmole, a workflow engine specifi- cally tailored for the distributed exploration of simulation models. Future Generation Computer Systems, 29(8):1981–1990.
+Thomas, I., Jones, J., Caruso, G., and Gerber, P. (2018). City delineation in european applications of luti models: review and tests. Transport Reviews, 38(1):6–32.

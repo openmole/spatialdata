@@ -1,0 +1,136 @@
+\documentclass[11pt]{article}
+\usepackage[left=25mm, right=25mm, top=25mm, bottom=25mm, includehead=true, includefoot=true]{geometry}
+
+\usepackage{graphicx}
+\usepackage{url}
+\usepackage{natbib} % For referencing
+\usepackage{authblk} % For author lists
+\usepackage[parfill]{parskip} % Line between paragraphs
+
+\pagenumbering{gobble} % Turn off page numbers
+
+% Make all headings the same size (11pt):
+\usepackage{sectsty}
+\sectionfont{\normalsize}
+\subsectionfont{\normalsize}
+\subsubsectionfont{\normalsize}
+\paragraphfont{\normalsize}
+
+
+\renewcommand{\abstractname}{Summary} % Make 'abstract' be called 'Summary'
+
+
+% This makes links and bookmarks in the pdf output (should be last usepackage command because it overrides lots of other commands)
+\usepackage[pdftex]{hyperref} 
+\hypersetup{pdfborder={0 0 0} } % This turns off the stupid colourful border around links
+
+
+
+% **************  TITLE AND AUTHOR INFORMATION **************
+
+\title{Spatialdata: a scala library for spatial sensitivity analysis}
+
+\author[1,2,3]{J. Raimbault\thanks{juste.raimbault@polytechnique.edu}}
+\author[2]{R. Reuillon}
+\author[4,2]{J. Perret}
+\affil[1]{Center for Advanced Spatial Analysis, University College London}
+\affil[2]{UPS CNRS 3611 ISC-PIF}
+\affil[3]{UMR CNRS 8504 G{\'e}ographie-cit{\'e}s}
+\affil[4]{LaSTIG STRUDEL, IGN, ENSG, Univ. Paris-Est}
+
+\date{}
+
+\renewcommand\Authands{ and } % correct last comma in author list
+
+\begin{document}
+
+\maketitle
+
+% **************  ABSTRACT/SUMMARY  **************
+
+\begin{abstract}
+%\centering
+The sensitivity analysis and validation of simulation models require specific approaches in the case of spatial models. We describe a scala library providing such tools, including synthetic generators for urban configurations at different scales, spatial networks, and spatial point processes. These can be used to parametrize geosimulation models on synthetic configurations, and evaluate the sensitivity of model outcomes to spatial configuration. The library also includes methods to perturbate real data, and spatial statistics indicators, urban form indicators, and network indicators. It is embedded into the OpenMOLE platform for model exploration, fostering the application of such methods without technical constraints.
+\medskip\\ {\bf KEYWORDS:} Sensitivity analysis; Geosimulation; Spatial synthetic data; Model validation; Model exploration.
+
+\end{abstract}
+
+% **************  MAIN BODY OF THE PAPER **************
+
+\section{Introduction}
+
+
+The sensitivity of geographical analyses to the spatial structure of data is well known since the Modifiable Areal Unit Problem was put forward by \cite{openshaw1984modifiable}. This type of issue has been generalized to various aspects since, including 
+
+\cite{kwan2012uncertain}
+
+
+In the case of Land-use Transport interaction models, \cite{thomas2018city} show how the delineation of the urban area can significantly impact simulation outcomes. \cite{banos2012network} studies the Schelling segregation model on networks, and shows that network structure strongly influences model behavior.
+
+\cite{smith2009improving} spatial synthetic data microsimulation
+
+
+\section{Spatial sensitivity methods}
+
+
+% Integration into OpenMOLE
+\cite{reuillon2019fostering}
+\cite{reuillon2013openmole}
+\cite{passerat2017reproducible} workflow and reproducibility
+
+
+\section{Applications}
+
+Different applications of the library have already been described in the literature. Regarding the generation of synthetic data in itself, 
+
+
+
+\section{Discussion}
+
+
+
+% **************  REFERENCES **************
+
+\bibliographystyle{apa}
+\bibliography{biblio.bib}
+
+\end{document}
+
+
+%
+%
+%\begin{table}[htdp]
+%\caption{GISRUK Conferences}
+%\begin{center}
+%\begin{tabular}{c|c}
+%\hline 
+%Year	 & City \\
+%\hline 
+%2007 & Maynooth \\
+%2008 & Manchester \\
+%2009 & Durham \\
+%2010 & UCL \\
+%2011 & Portsmouth \\
+%2012 & Lancaster\\ 
+%\hline
+%\end{tabular}
+%\end{center}
+%\label{first_table}
+%\end{table}%
+%
+%Equations should be centred on the page and numbered consecutively in the right-hand margin, as below. They should be referred to in the text as Equation~\ref{first_equation}. 
+%
+%\begin{equation}
+%E=mc^2
+%\label{first_equation}
+%\end{equation}
+%
+%Figures should be presented as an integral part of the paper and should be referred to as Figure~\ref{first_figure} in the text.
+%
+%\begin{figure}[htbp] \begin{center} 
+%\resizebox{0.3\textwidth}{!}{ 
+%	\includegraphics{lancaster.png}
+%} \caption{Location of Lancaster University} \label{first_figure} \end{center} \end{figure} %
+%
+%
+%

@@ -60,28 +60,33 @@ The sensitivity analysis and validation of simulation models require specific ap
 \section{Introduction}
 
 
-The sensitivity of geographical analyses to the spatial structure of data is well known since the Modifiable Areal Unit Problem was put forward by \cite{openshaw1984modifiable}. This type of issue has been generalized to various aspects since, including 
+The sensitivity of geographical analyses to the spatial structure of data is well known since the Modifiable Areal Unit Problem was put forward by \cite{openshaw1984modifiable}. This type of issue has been generalized to various aspects since, including temporal granularity \citep{cheng2014modifiable} or the geographical context more generally \citep{kwan2012uncertain}. When studying geosimulation models \citep{benenson2004geosimulation}, similar issues must be taken into account, extending classical sensitivity analysis methods \citep{saltelli2004sensitivity} to what can be understood as \emph{Spatial Sensitivity Analysis} as proposed by \cite{raimbault2019space}.
 
-\cite{kwan2012uncertain}
+Several studies showed the importance of that approach. For example, in the case of Land-use Transport interaction models, \cite{thomas2018city} show how the delineation of the urban area can significantly impact simulation outcomes. \cite{banos2012network} studies the Schelling segregation model on networks, and shows that network structure strongly influences model behavior. The spatial resolution in raster configurations can also change results \citep{singh2007schelling}.
 
-
-In the case of Land-use Transport interaction models, \cite{thomas2018city} show how the delineation of the urban area can significantly impact simulation outcomes. \cite{banos2012network} studies the Schelling segregation model on networks, and shows that network structure strongly influences model behavior.
-
-\cite{smith2009improving} spatial synthetic data microsimulation
+On the other hand, the use of spatial synthetic data generation is generally bound to model parametrization without a particular focus on sensitivity analysis, such as in microsimulation models \citep{smith2009improving}, spatialized social networks \citep{barrett2009generation}, or  
 
 
 \section{Spatial sensitivity methods}
 
+
+\paragraph{Implementation and integration in OpenMOLE}
 
 % Integration into OpenMOLE
 \cite{reuillon2019fostering}
 \cite{reuillon2013openmole}
 \cite{passerat2017reproducible} workflow and reproducibility
 
+The library is open source under a Gnu GPL License and available on github at \url{https://github.com/openmole/spatialdata/}.
 
 \section{Applications}
 
 Different applications of the library have already been described in the literature. Regarding the generation of synthetic data in itself, 
+
+
+\cite{raimbault2019second}
+
+\cite{raimbault2019space}
 
 
 

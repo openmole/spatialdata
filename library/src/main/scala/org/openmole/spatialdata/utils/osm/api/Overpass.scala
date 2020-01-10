@@ -10,6 +10,7 @@ import org.apache.http.client.methods.HttpPost
 import org.apache.http.message.BasicNameValuePair
 import org.openmole.spatialdata.utils.http.HttpService
 import APIExtractor.Buildings.asPolygonSeq
+import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.utils.osm._
 import org.openmole.spatialdata.utils.osm.xml.InstantiatedOsmXmlParser
 
@@ -19,6 +20,7 @@ class Overpass extends HttpService {
 
 
   def get(south: Double, west: Double, north: Double, east: Double, hasBuildingKey: Boolean=true): PojoRoot = {
+    utils.log(s"Getting OSM data from Overpass API for bbox $east $north $south $west")
     setUserAgent("Spatial Data extraction")
     open()
     val root = new PojoRoot

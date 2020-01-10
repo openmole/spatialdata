@@ -34,16 +34,16 @@ libraryDependencies ++= Seq(
 )
 
 
-/*
-lazy val osmrealmeasures = Project("osmrealmeasures", file("target/osmrealmeasures")) settings(
-  mainClass in (Compile, packageBin) := Some("org.openmole.spatialdata.application.urbmorph.OSMRealMeasures")
-)
 
-lazy val runtest = Project("runtest", file("target/test")) settings(
-  mainClass in (Compile, packageBin) := Some("org.openmole.spatialdata.test.Test"),
+//lazy val osmrealmeasures = Project("osmrealmeasures", file("target/osmrealmeasures")) settings(
+//  mainClass in (Compile, packageBin) := Some("org.openmole.spatialdata.application.urbmorph.OSMRealMeasures")
+//)
+
+//lazy val runtest = Project("runtest", file("target/test")) settings(
+//  mainClass in (Compile, packageBin) := Some("org.openmole.spatialdata.test.Test"),
   mainClass in run := Some("org.openmole.spatialdata.test.Test")
-)
-*/
+//)
+
 
 enablePlugins(SbtOsgi)
 

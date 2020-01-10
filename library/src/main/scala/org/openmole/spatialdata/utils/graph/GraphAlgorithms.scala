@@ -407,7 +407,7 @@ object GraphAlgorithms {
     /**
       * Remove nodes with degree equal to two
       * ! fails if network has self-loops
-      *
+      * implemented iteratively with mutable Sets for performance
       *
       * @param network
       * @param combineLength function to combine lengths
@@ -426,15 +426,27 @@ object GraphAlgorithms {
         // not performant to do a toSeq?
         val toremove = degrees.toSeq.filter(_._2==2).head._1
         nodes.remove(toremove)
+        //println("degree="+degrees(toremove))
         degrees.remove(toremove)
         val replacedlinks = nodeLinkMap(toremove).toSeq
+        //println("toremove : "+toremove)
+        //println("replaced links : "+replacedlinks)
         nodeLinkMap.remove(toremove)
-        replacedlinks.foreach(l => links.remove(l))
+        replacedlinks.foreach{l =>
+          links.remove(l)
+          nodeLinkMap.put(l.e1,nodeLinkMap.getOrElse(l.e1,Set(l))--Set(l))
+          nodeLinkMap.put(l.e2,nodeLinkMap.getOrElse(l.e2,Set(l))--Set(l))
+        }
+
         val othernodes = replacedlinks.flatMap(l => Set(l.e1,l.e2)).filter(_!=toremove)
+        //println("othernodes : "+othernodes)
         // this will fail if there are self loops
-        assert(othernodes.size==2,"In network simplification: removed vertice had not two neighbors")
+        //assert(othernodes.size==2,"In network simplification: removed vertice had not two neighbors")
         val newlink = Link(othernodes(0),othernodes(1),combineWeights(replacedlinks(0),replacedlinks(1)),combineLength(replacedlinks(0),replacedlinks(1)),false)
         links.add(newlink)
+        //println("new link : "+newlink+"\n")
+        assert(othernodes.size==2,"In network simplification: removed vertice had not two neighbors")
+
         nodeLinkMap.put(othernodes(0),nodeLinkMap.getOrElse(othernodes(0),Set.empty[Link])++Set(newlink))
         nodeLinkMap.put(othernodes(1),nodeLinkMap.getOrElse(othernodes(1),Set.empty[Link])++Set(newlink))
         // no need to update the degree

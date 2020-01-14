@@ -19,7 +19,7 @@ object TestNetwork {
 
   def testSimplification: Unit = {
     val (lat,lon) = (51.5213835,-0.1347904)
-    val nw = OSMNetworkGenerator(lon,lat,20000,simplifySnapping = 0.02).generateNetwork
+    val nw = OSMNetworkGenerator(lon,lat,20000,simplifySnapping = 0.01).generateNetwork
     val (xmin,xmax,ymin,ymax) = (nw.nodes.map{_.x}.min,nw.nodes.map{_.x}.max,nw.nodes.map{_.y}.min,nw.nodes.map{_.y}.max)
     def position(n: Node): Point2D = ((n.x - xmin)/(xmax-xmin),(n.y - ymin)/(ymax-ymin))
     val simplified = GraphAlgorithms.SimplificationAlgorithm.simplifyNetwork(nw)

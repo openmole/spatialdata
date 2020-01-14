@@ -6,6 +6,8 @@ package object math {
 
   def relSquare(x: Double,y: Double): Double = scala.math.pow(2*(x - y)/(x+y) ,2)
 
+  def nonEmptyPoints(x: Array[Array[Double]]): Boolean = x.length>0&x(0).length>0&(x.map{_.length}.toSet.size==1)
+
   object Implicits {
 
     implicit class IntCoordinateDecorator(p: (Int,Int)){

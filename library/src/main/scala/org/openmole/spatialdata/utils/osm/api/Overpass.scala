@@ -19,25 +19,27 @@ class Overpass extends HttpService {
   private var serverURL = "http://www.overpass-api.de/api/interpreter"
 
 
-  def get(south: Double, west: Double, north: Double, east: Double, hasBuildingKey: Boolean=true): PojoRoot = {
+  def get(south: Double, west: Double, north: Double, east: Double,
+          hasKeyValue: (String,Seq[String])=("",Seq(""))): PojoRoot = {
     utils.log(s"Getting OSM data from Overpass API for bbox $east $north $south $west")
     setUserAgent("Spatial Data extraction")
     open()
     val root = new PojoRoot
     val parser = InstantiatedOsmXmlParser.newInstance
     parser.setRoot(root)
-    parser.parse(new StringReader(execute(
-      s"""
-         |  <query type="way">
-         |    ${if(hasBuildingKey) "<has-kv k=\"building\" v=\"yes\"/>" else ""}
-         |    <bbox-query e="$east" n="$north" s="$south" w="$west"/>
-         |  </query>
-         |  <union>
-         |    <item />
-         |    <recurse type="way-node"/>
-         |  </union>
-         |  <print/>
-           """.stripMargin)))
+    val query = s"""
+                   |  <query type="way">
+                   |    ${if(hasKeyValue._1.length>0) "<has-kv k=\"" else ""}${hasKeyValue._1}${if(hasKeyValue._1.length>0) "\" v=\"" else ""}${hasKeyValue._2.mkString("|")}${if(hasKeyValue._1.length>0)"\"/>" else ""}
+                   |    <bbox-query e="$east" n="$north" s="$south" w="$west"/>
+                   |  </query>
+                   |  <union>
+                   |    <item />
+                   |    <recurse type="way-node"/>
+                   |  </union>
+                   |  <print/>
+           """.stripMargin
+    //println(query)
+    parser.parse(new StringReader(execute(query)))
     root
   }
 

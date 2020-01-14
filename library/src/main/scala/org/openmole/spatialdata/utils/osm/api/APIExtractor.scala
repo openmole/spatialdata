@@ -63,27 +63,27 @@ object APIExtractor {
       mode match {
         case OSMOverpass => {
           val overpass = new Overpass
-          val root = overpass.get(south, west, north, east)
-          if (spatialdata.DEBUG) println("retrieved via overpass " + east + " n=" + north + " s=" + south + "w=" + west)
+          val root = overpass.get(south, west, north, east, hasKeyValue=("building",Seq("yes")))
+          utils.log("retrieved via overpass " + east + " n=" + north + " s=" + south + "w=" + west)
           asPolygonSeq(root.enumerateWays)
         }
         case OSMDirect => {
           val api = new ApiConnection()
           val res = api.get(south, west, north, east)
-          if (spatialdata.DEBUG) println("retrieved via standard api " + east + " n=" + north + " s=" + south + "w=" + west)
+          utils.log("retrieved via standard api " + east + " n=" + north + " s=" + south + "w=" + west)
           asPolygonSeq(res.enumerateWays)
         }
         case Postgresql(port) => {
           implicit val connection: Connection = PostgisConnection.initPostgis(database ="buildings",port = port)
           val polygons = PostgisConnection.bboxRequest(west,south,east,north,"ways")
-          if (spatialdata.DEBUG) println("retrieved via postgresql " + east + " n=" + north + " s=" + south + "w=" + west+" : "+polygons.size+" buildings")
+          utils.log("retrieved via postgresql " + east + " n=" + north + " s=" + south + "w=" + west+" : "+polygons.size+" buildings")
           PostgisConnection.closeConnection
           polygons
         }
         case Mongo(port) => {
           MongoConnection.initMongo(database = "buildings",port=port)
           val polygons = MongoConnection.bboxRequest(west,south,east,north,"buildings")
-          if (spatialdata.DEBUG) println("retrieved via mongo " + east + " n=" + north + " s=" + south + "w=" + west+" : "+polygons.size+" buildings")
+          utils.log("retrieved via mongo " + east + " n=" + north + " s=" + south + "w=" + west+" : "+polygons.size+" buildings")
           MongoConnection.closeMongo()
           polygons
         }
@@ -185,8 +185,11 @@ object APIExtractor {
       mode match {
         case OSMOverpass => {
           val overpass = new Overpass
-          // FIXME the k-v in overpass req is dirty this way
-          val root = overpass.get(south, west, north, east,hasBuildingKey=false)
+          // if only one tag requested, use as a filter in the overpass request
+          val root = overpass.get(south, west, north, east,
+            // FIXME the has-kv with | does not work for highway
+            hasKeyValue=("",Seq("")) //if (tags.size==1) tags.toSeq(0) else ("",Seq(""))
+          )
           val res = asLineStringSeq(root.enumerateWays,tags)
           utils.log("Highways from overpass " +res)
           res

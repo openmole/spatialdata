@@ -154,6 +154,27 @@ object Statistics {
   def discreteChoicesProba(state: Array[Array[Double]], beta: Array[Double]): Array[Double] = discreteChoicesProbaTime(state,{_ => beta})(0)
 
 
+  /**
+    * L2 discrepancy
+    * @param points
+    * @return
+    */
+  def discrepancyL2(points: Array[Array[Double]]): Double = {
+    assert(nonEmptyPoints(points),"Discrepancy must be computed on non empty vectors in the same space")
+    val (n,d) = (points.length,points(0).length)
+    // rescale the data
+    val (mins,maxs) = points.transpose.map{col => (col.min,col.max)}.unzip
+    val npoints = points.map{_.zip(mins).zip(maxs).map{case ((x,mi),ma) => (x - mi) / (ma - mi)}}
+    // s1 = sum_i (Prod_j (x_ij * (1 - x_ij)))
+    val s1 = npoints.map{_.map{xij => xij*(1 - xij)}.product}.sum
+    // s2 = sum_{i,k} {Prod_d (1 - max(X_ij, X_kj)) * min(X_ij, X_kj)}
+    val s2 = points.map{xi => xi.zip(points).map{case (xij,xk) => xk.map{xkj => (1 - math.max(xij,xkj))*math.min(xij,xkj)}.product}}.flatten.sum
+    math.sqrt(math.pow(12.0,-d) - (((2^(1 - d))/n) * s1) + ((1/n^2) * s2))
+  }
+
+
+
+
 
 
 }

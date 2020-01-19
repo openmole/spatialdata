@@ -2,7 +2,7 @@ package org.openmole.spatialdata.vector.measures
 
 import com.vividsolutions.jts.geom.GeometryFactory
 import org.apache.commons.math3.linear.MatrixUtils
-import org.openmole.spatialdata._
+import org.openmole.spatialdata.vector.Point
 import org.openmole.spatialdata.utils.gis.GeometryUtils
 import org.openmole.spatialdata.utils.math.Statistics
 
@@ -27,7 +27,7 @@ object Spatstat {
     * @param q
     * @return
     */
-  def spatialMoment(pi: Array[Point2D],x: Array[Double],p: Int = 0,q: Int = 0,filter: Double => Boolean = _ => true): Double = {
+  def spatialMoment(pi: Array[Point],x: Array[Double],p: Int = 0,q: Int = 0,filter: Double => Boolean = _ => true): Double = {
     val (pf,xf) = pi.zip(x).filter{case (p,xx)=>filter(xx)}.unzip
     val centroid = GeometryUtils.convexHullCentroid(pi)
 
@@ -60,7 +60,7 @@ object Spatstat {
     * @param filter optional filter function
     * @return
     */
-  def moran(pi: Array[Point2D],x: Array[Double],weightFunction: Array[Point2D]=> Array[Array[Double]] = spatialWeights,filter: Double => Boolean = _ => true): Double = {
+  def moran(pi: Array[Point],x: Array[Double],weightFunction: Array[Point]=> Array[Array[Double]] = spatialWeights,filter: Double => Boolean = _ => true): Double = {
     val (pf,xf) = pi.zip(x).filter{case (p,xx)=>filter(xx)}.unzip
     val n = pf.length
     val weights: Array[Double] = weightFunction(pf).flatten
@@ -78,7 +78,7 @@ object Spatstat {
     * @param pi
     * @param x
     */
-  def moran(pi: Array[Array[Double]],x: Array[Double]): Double = moran(pi.map{case a => (a(0),a(1)).asInstanceOf[Point2D]},x)
+  def moran(pi: Array[Array[Double]],x: Array[Double]): Double = moran(pi.map{case a => (a(0),a(1))},x)
 
 
   /**
@@ -91,8 +91,8 @@ object Spatstat {
     * @param filter
     * @return
     */
-  def averageDistance(pi: Array[Point2D],x: Array[Double],filter: Double => Boolean = _ => true): Double = {
-    val (pf,xf): (Array[Point2D],Array[Double]) = pi.zip(x).filter{case (p,xx)=>filter(xx)}.unzip
+  def averageDistance(pi: Array[Point],x: Array[Double],filter: Double => Boolean = _ => true): Double = {
+    val (pf,xf): (Array[Point],Array[Double]) = pi.zip(x).filter{case (p,xx)=>filter(xx)}.unzip
     val n = pf.length
     val dmat = euclidianDistanceMatrix(pf)
     val dmax = dmat.flatten.max
@@ -109,7 +109,7 @@ object Spatstat {
     * @param pi
     * @return
     */
-  def spatialWeights(pi:Array[Point2D]): Array[Array[Double]] = {
+  def spatialWeights(pi:Array[Point]): Array[Array[Double]] = {
     val dmat = euclidianDistanceMatrix(pi)
     dmat.map{_.map{_ match {case 0.0 => 0.0; case d => 1.0/d}}}
   }
@@ -121,7 +121,7 @@ object Spatstat {
     *
     *  FIXME unoptimal, + already coded with great circle dist in geotools
     */
-  def euclidianDistanceMatrix(pi: Array[Point2D]): Array[Array[Double]] = {
+  def euclidianDistanceMatrix(pi: Array[Point]): Array[Array[Double]] = {
     val n = pi.length
     val xcoords = MatrixUtils.createRealMatrix(Array.fill(n)(pi.map(_._1)))
     val ycoords = MatrixUtils.createRealMatrix(Array.fill(n)(pi.map(_._2)))
@@ -148,7 +148,7 @@ object Spatstat {
     * @param radiusValues function giving radius values as a function of number of samples - note : radius are normalized to maximal distance such that K(1) = 1/pi
     * @return K(r) as a map
     */
-  def ripleyKFunction(pi: Array[Point2D],
+  def ripleyKFunction(pi: Array[Point],
                       radiusSamples: Int = 50,
                       radiusValues: Int => Array[Double] = {s => Array.tabulate(s){i => (i+1)*1.0/s}}//,
                      // TODO generic edge correction implementation
@@ -161,7 +161,7 @@ object Spatstat {
     val dmax = distmat.map{_.max}.max
 
     rvalues.map{ r =>
-      (r,area*distmat.map{_.map{d => if(d/dmax <= r) 1.0 else 0.0}.sum}.sum / (n*(n-1)))
+      (r,area*distmat.map{_.filter{d => d/dmax <= r}.map{_ => 1.0}.sum}.sum / (n*(n-1)))
     }.toMap
   }
 
@@ -174,7 +174,7 @@ object Spatstat {
     * @param radiusValues
     * @return
     */
-  def pairCorrelationFunction(pi: Array[Point2D],
+  def pairCorrelationFunction(pi: Array[Point],
                               radiusSamples: Int = 50,
                               radiusValues: Int => Array[Double] = {s => Array.tabulate(s){i => (i+1)*1.0/s}}
                              ): Map[Double,Double] = {
@@ -253,7 +253,7 @@ case class SummarySpatialStatistics(
 
 object SummarySpatialStatistics {
 
-  def apply(values: Array[Double],points: Array[Point2D],modeCondition: Double=> Boolean = _ => false,histBreaks: Int = 50): SummarySpatialStatistics = {
+  def apply(values: Array[Double],points: Array[Point],modeCondition: Double=> Boolean = _ => false,histBreaks: Int = 50): SummarySpatialStatistics = {
     /*
     println("Moment 1 = "+Statistics.moment(values,1,filter = !_.isNaN))
     println("Moment 2 = "+Statistics.moment(values,2,filter = !_.isNaN))

@@ -6,7 +6,7 @@ import org.geotools.geometry.jts.JTS
 import org.geotools.referencing.CRS
 import org.opengis.referencing.crs.CoordinateReferenceSystem
 
-import org.openmole.spatialdata
+import org.openmole.spatialdata.vector.Point
 
 object GISUtils {
 
@@ -74,7 +74,7 @@ object GISUtils {
     * @param targetCRS
     * @return
     */
-  def transform(points: Seq[spatialdata.Coordinate],sourceCRS: String,targetCRS: String): Seq[spatialdata.Coordinate] = {
+  def transform(points: Seq[Point],sourceCRS: String,targetCRS: String): Seq[Point] = {
     val source = CRS.decode(sourceCRS)
     val target = CRS.decode(targetCRS)
     val transform = CRS.findMathTransform(source, target, true)
@@ -86,7 +86,7 @@ object GISUtils {
     }
   }
 
-  def transform(points: Seq[spatialdata.Coordinate],source: CoordinateReferenceSystem,target: CoordinateReferenceSystem): Seq[spatialdata.Coordinate] = {
+  def transform(points: Seq[Point],source: CoordinateReferenceSystem,target: CoordinateReferenceSystem): Seq[Point] = {
 
     val transform = CRS.findMathTransform(source, target, true)
     val geomFactory = new GeometryFactory

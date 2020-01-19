@@ -1,7 +1,7 @@
 package org.openmole.spatialdata.utils.io
 
 import better.files.File
-import org.openmole.spatialdata.RasterLayerData
+import org.openmole.spatialdata.grid.RasterLayerData
 import javax.imageio.ImageIO
 import java.io.IOException
 import java.awt.image.BufferedImage

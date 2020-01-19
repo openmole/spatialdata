@@ -3,6 +3,7 @@ package org.openmole.spatialdata.utils.gis
 import org.locationtech.jts.geom.LineString
 import org.openmole.spatialdata.network.{Link, Network, Node}
 import org.openmole.spatialdata.utils.math.Implicits._
+import org.openmole.spatialdata.vector.{Lines, Points}
 
 object GISNetwork {
 
@@ -17,15 +18,15 @@ object GISNetwork {
     * @param snap spatial tolerance for node aggregation
     * @return
     */
-  def networkFromGISLinesGridSnapping(lines: Seq[LineString], snap: Double): Network = {
-    val envelopes = lines.map{l => val env =l.getEnvelopeInternal; (env.getMinX,env.getMaxX,env.getMinY,env.getMaxY)}
+  def networkFromGISLinesGridSnapping(lines: Lines, snap: Double): Network = {
+    val envelopes = lines.lines.map{l => val env =l.getEnvelopeInternal; (env.getMinX,env.getMaxX,env.getMinY,env.getMaxY)}
     val (xmin,xmax,ymin,ymax) = (envelopes.map{_._1}.min,envelopes.map{_._2}.max,envelopes.map{_._3}.min,envelopes.map{_._4}.max)
     def icoord(x: Double): Int = math.floor((x - xmin)/(snap*(xmax-xmin))).toInt
     def jcoord(y: Double): Int = math.floor((y - ymin)/(snap*(ymax-ymin))).toInt
     // implement in a functional way - different performance than with a mutable HashMap?
-    def addLine(state: (Seq[LineString],Set[(Int,Int)],Set[(Int,Int,Int,Int)])): (Seq[LineString],Set[(Int,Int)],Set[(Int,Int,Int,Int)]) = {
-      if (state._1.isEmpty) return state // nothing to add
-      val coords = state._1.head.getCoordinates
+    def addLine(state: (Lines,Set[(Int,Int)],Set[(Int,Int,Int,Int)])): (Lines,Set[(Int,Int)],Set[(Int,Int,Int,Int)]) = {
+      if (state._1.lines.isEmpty) return state // nothing to add
+      val coords = state._1.lines.head.getCoordinates
       val links: Set[(Int,Int,Int,Int)] = coords.dropRight(1).zip(coords.tail).map{
         case (p1,p2) =>
           val (i1,j1,i2,j2) = (icoord(p1.x),jcoord(p1.y),icoord(p2.x),jcoord(p2.y))
@@ -37,9 +38,20 @@ object GISNetwork {
       (state._1.tail,state._2++nodes,state._3++links)
     }
     // all nodes are in the links by construction
-    val (_,_,alllinks) = Iterator.iterate((lines,Set.empty[(Int,Int)],Set.empty[(Int,Int,Int,Int)]))(addLine).takeWhile(_._1.nonEmpty).toSeq.last
+    val (_,_,alllinks) = Iterator.iterate((lines,Set.empty[(Int,Int)],Set.empty[(Int,Int,Int,Int)]))(addLine).takeWhile(_._1.lines.nonEmpty).toSeq.last
     // correct indexation of node done in the constructor
     Network(alllinks.map{l => Link(Node(0,xmin+l._1*snap,ymin+l._2*snap),Node(0,xmin+l._3*snap,ymin+l._4*snap))})
+  }
+
+
+  /**
+    * Given a network from GIS lines, adds "station" nodes attributes
+    * (rq: the function is generic to any attribute and any additional node layer)
+    * @param network
+    * @return
+    */
+  def addStationNodes(network: Network, attributeNodes: Points): Network = {
+    Network.empty
   }
 
 

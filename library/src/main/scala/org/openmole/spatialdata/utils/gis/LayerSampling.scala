@@ -2,7 +2,7 @@ package org.openmole.spatialdata.utils.gis
 
 import com.vividsolutions.jts.geom.{GeometryCollection, MultiPolygon, Polygon}
 import com.vividsolutions.jts.triangulate.ConformingDelaunayTriangulationBuilder
-import org.openmole.spatialdata._
+import org.openmole.spatialdata.vector.Point
 import org.openmole.spatialdata.utils.io.Shapefile
 
 import scala.util.{Random, Try}
@@ -26,7 +26,7 @@ object LayerSampling {
     * @param weightAttribute
     * @return
     */
-  def samplePointsInLayer(layer: String,nPoints: Int,weightAttribute: String = "")(implicit rng: Random): Seq[Coordinate] = {
+  def samplePointsInLayer(layer: String,nPoints: Int,weightAttribute: String = "")(implicit rng: Random): Seq[Point] = {
     val polygons = weightAttribute match {
       case s if s.length > 0 => Shapefile.readGeometry(layer,Array(weightAttribute))
       case _ => Shapefile.readGeometry(layer).map{case (g,_)=>(g,Array(1.0))}
@@ -35,11 +35,11 @@ object LayerSampling {
     val s = attrs.sum
     val weights = attrs.map{_/s}
 
-    val pointTries: Seq[Try[Coordinate]] = for{_ <- 1 to nPoints } yield {
+    val pointTries: Seq[Try[Point]] = for{_ <- 1 to nPoints } yield {
       val r = rng.nextDouble()
       var ss=0.0
       // Delaunay triangulation sometimes fails when enforcing constraints (too fine geometries ?) => wrap in Try
-      Try[Coordinate]{PolygonSampler(polygons(weights.map{case w => {ss = ss + w ; ss > r} }.zipWithIndex.filter{_._1}.head._2)._1.asInstanceOf[MultiPolygon]).
+      Try[Point]{PolygonSampler(polygons(weights.map{case w => {ss = ss + w ; ss > r} }.zipWithIndex.filter{_._1}.head._2)._1.asInstanceOf[MultiPolygon]).
         sample}
     }
     pointTries.flatMap(_.toOption)

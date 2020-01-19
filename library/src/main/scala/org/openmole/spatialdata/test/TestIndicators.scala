@@ -1,7 +1,7 @@
 package org.openmole.spatialdata.test
 
 import better.files.File
-import org.openmole.spatialdata.Implicits._
+import org.openmole.spatialdata.grid.Implicits._
 import org.openmole.spatialdata.grid.measures.GridMorphology
 import org.openmole.spatialdata.grid.measures.GridMorphology.{AverageDistance, Moran}
 import org.openmole.spatialdata.grid.synthetic.ExpMixtureGridGenerator
@@ -86,16 +86,6 @@ object TestIndicators {
     println(indics.map{d => scala.math.abs(d._1.moran - d._2._1)+scala.math.abs(d._1.avgDistance - d._2._2)}.sum)
     println(indics.map{_._3}.sum/indics.length.toDouble)
     println(indics.map{_._4}.sum/indics.length.toDouble)
-
-    /*
-    import org.dianahep.histogrammar._
-    import org.dianahep.histogrammar.ascii._
-
-    val hist = Bin(50,morans.min,morans.max,{d: Double=>d})
-    for (d <- morans) hist.fill(d)
-    println(hist.ascii)
-*/
-
 
   }
 

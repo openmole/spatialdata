@@ -1,6 +1,6 @@
 package org.openmole.spatialdata.network
 
-import org.openmole.spatialdata.Point2D
+import org.openmole.spatialdata.vector.Point
 
 
 
@@ -9,7 +9,9 @@ import org.openmole.spatialdata.Point2D
   * @param id // note: how to impose comparison only on positions? -> all ids to 0?
   * @param position point in a 2D space
   */
-case class Node(id: Int, position: Point2D) {
+case class Node(id: Int,
+                position: Point
+               ) {
   def x: Double = position._1
   def y: Double = position._2
 

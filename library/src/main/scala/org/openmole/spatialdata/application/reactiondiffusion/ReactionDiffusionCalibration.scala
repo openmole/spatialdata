@@ -1,7 +1,8 @@
 package org.openmole.spatialdata.application.reactiondiffusion
 
+import org.openmole.spatialdata.grid._
 import org.openmole.spatialdata.grid.synthetic.ReactionDiffusionGridGenerator
-import org.openmole.spatialdata.Implicits._
+import org.openmole.spatialdata.grid.Implicits._
 import org.openmole.spatialdata.grid.measures.GridMorphology
 import org.openmole.spatialdata.grid.measures.GridMorphology.{AverageDistance, Entropy, Moran, Slope}
 import org.openmole.spatialdata.utils.math._

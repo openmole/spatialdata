@@ -2,7 +2,7 @@
 package org.openmole.spatialdata.grid.synthetic
 
 import org.openmole.spatialdata._
-import org.openmole.spatialdata.grid.GridGenerator
+import org.openmole.spatialdata.grid._
 import org.openmole.spatialdata.network._
 import org.openmole.spatialdata.network.synthetic.PercolationNetworkGenerator
 

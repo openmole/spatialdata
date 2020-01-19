@@ -1,7 +1,7 @@
 
 package org.openmole.spatialdata.grid.synthetic
 
-import org.openmole.spatialdata._
+import org.openmole.spatialdata.grid._
 import org.openmole.spatialdata.grid.GridGenerator
 
 import scala.runtime.RichDouble
@@ -40,10 +40,17 @@ case class ReactionDiffusionGridGenerator(
 object ReactionDiffusionGridGenerator {
 
 
-
   /**
     * Reaction diffusion grid generation
-    * @param gridSize
+    * @param size grid size
+    * @param growthRate growth rate N_G
+    * @param totalPopulation total population P_m
+    * @param alphaAtt strength of preferential attachment
+    * @param diffusion strength of diffusion
+    * @param diffusionSteps number of diffusion steps
+    * @param initialConfiguration optional initial configuration
+    * @param iterImpl use the iterative implementation
+    * @param rng rng
     * @return
     */
   def reactionDiffusionGrid(size: RasterDim, growthRate: Double, totalPopulation: Double, alphaAtt: Double, diffusion: Double, diffusionSteps: Int, initialConfiguration: Option[Seq[Seq[Double]]] = None,iterImpl: Boolean = true)(implicit rng: Random): Array[Array[Double]] = {
@@ -92,7 +99,7 @@ object ReactionDiffusionGridGenerator {
               j = height - 1; i = i - 1
             } else {
               j = j - 1
-            };
+            }
             arrayVals(i)(j) = arrayVals(i)(j) + 1
           }
         }else {
@@ -171,7 +178,7 @@ object ReactionDiffusionGridGenerator {
 
       stepdeltapop = population - prevpop
       steps = steps + 1
-      if (steps%1000==0) println(s"${steps}: Prop ${population / totalPopulation} ;Increase = ${(prediffpop - prevpop)/deltapop} ; diff ${(prediffpop-population)/deltapop}")
+      if (steps%1000==0) println(s"$steps: Prop ${population / totalPopulation} ;Increase = ${(prediffpop - prevpop)/deltapop} ; diff ${(prediffpop-population)/deltapop}")
       //println("NaNs % = "+arrayVals.flatten.filter(_.isNaN).length.toDouble / arrayVals.flatten.length.toDouble)
 
 
@@ -184,7 +191,8 @@ object ReactionDiffusionGridGenerator {
     *
     *  FIXME can be done with convolution
     *
-    * @param a
+    * @param a matrix to diffuse
+    * @param alpha strength of diffusion
     */
   def diffuse(a: Array[Array[Double]], alpha: Double): Array[Array[Double]] = {
     val newVals = a.clone()

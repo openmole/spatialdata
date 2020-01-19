@@ -1,6 +1,6 @@
 package org.openmole.spatialdata.vector
 
-import org.openmole.spatialdata.SpatialField
+import org.openmole.spatialdata.vector.SpatialField
 
 import scala.util.Random
 

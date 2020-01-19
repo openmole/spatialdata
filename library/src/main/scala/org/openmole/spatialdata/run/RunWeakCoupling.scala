@@ -50,7 +50,7 @@ object RunWeakCoupling {
         nwmeasures.summary.get.totalLength,
         nwmeasures.summary.get.weakComponents
       )
-      println(res(6)+" ; "+res(7)+" ; "+res(8)+" ; "+res(11))
+      println(s"${res(6)} ; ${res(7)} ; ${res(8)} ; ${res(11)}")
       res
     }
 

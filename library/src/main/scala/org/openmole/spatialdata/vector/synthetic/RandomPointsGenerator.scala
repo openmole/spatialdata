@@ -1,6 +1,6 @@
 package org.openmole.spatialdata.vector.synthetic
 
-import org.openmole.spatialdata._
+import org.openmole.spatialdata.vector._
 import org.openmole.spatialdata.vector.PointsGenerator
 import org.openmole.spatialdata.utils.math
 
@@ -26,7 +26,7 @@ case class RandomPointsGenerator(
 
 object RandomPointsGenerator {
 
-  def randomPoints(generator: RandomPointsGenerator)(implicit rng: Random): Vector[Point2D] =
+  def randomPoints(generator: RandomPointsGenerator)(implicit rng: Random): Vector[Point] =
     //Array.fill(generator.npoints){(math.digits(generator.xmin + (generator.xmax - generator.xmin)*rng.nextDouble,4),
     //  math.digits(generator.ymin + (generator.ymax - generator.ymin)*rng.nextDouble,4))}
     Vector.fill(generator.npoints){(generator.xmin + (generator.xmax - generator.xmin)*rng.nextDouble,

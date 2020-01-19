@@ -1,6 +1,7 @@
 package org.openmole.spatialdata.vector.synthetic
 
-import org.openmole.spatialdata.{Point2D, RasterLayerData}
+import org.openmole.spatialdata.vector.Point
+import org.openmole.spatialdata.grid.RasterLayerData
 import org.openmole.spatialdata.vector.PointsGenerator
 import org.openmole.spatialdata.utils.math.Stochastic
 
@@ -14,7 +15,7 @@ case class DensityPointsGenerator(
                                   ymin: Double = 0.0,
                                   ymax: Double = 1.0
                                 ) extends PointsGenerator {
-  override def generatePoints(implicit rng: Random): Vector[Point2D] = DensityPointsGenerator.densityPoints(this)(rng)
+  override def generatePoints(implicit rng: Random): Vector[Point] = DensityPointsGenerator.densityPoints(this)(rng)
 }
 
 
@@ -27,7 +28,7 @@ object DensityPointsGenerator {
     DensityPointsGenerator(npoints,normalized,0.0,1.0,0.0,1.0)
   }
 
-  def densityPoints(generator: DensityPointsGenerator)(implicit rng: Random): Vector[Point2D] = {
+  def densityPoints(generator: DensityPointsGenerator)(implicit rng: Random): Vector[Point] = {
     val flatGrid: Array[(Int, Int, Double)] = generator.densityGrid.zipWithIndex.flatMap { c: (Array[Double], Int) => c._1.zipWithIndex.map { case (r, j) => (c._2, j, r) } }
     Stochastic.sampleWithReplacementBy[(Int, Int, Double)](
       flatGrid,

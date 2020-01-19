@@ -1,6 +1,6 @@
 package org.openmole.spatialdata.network.synthetic
 
-import org.openmole.spatialdata.Point2D
+import org.openmole.spatialdata.vector.Point
 import org.openmole.spatialdata.network.{Network, NetworkGenerator}
 import org.openmole.spatialdata.vector.synthetic.RandomPointsGenerator
 
@@ -13,7 +13,7 @@ import scala.util.Random
   */
 case class TreeMinDistGenerator(
                                 nnodes: Int,
-                                points: Seq[Point2D] = Seq.empty,
+                                points: Seq[Point] = Seq.empty,
                                 connexificationAlgorithm: Network => Network = n => n.weakComponentConnect
                                ) extends NetworkGenerator {
 
@@ -25,7 +25,7 @@ case class TreeMinDistGenerator(
 
 object TreeMinDistGenerator {
 
-  def treeMinDistNetwork(nodes: Int, points: Seq[Point2D],connexificationAlgorithm: Network => Network)(implicit rng: Random): Network = {
+  def treeMinDistNetwork(nodes: Int, points: Seq[Point],connexificationAlgorithm: Network => Network)(implicit rng: Random): Network = {
     val coords = if(points.isEmpty) RandomPointsGenerator(nodes).generatePoints else points
     connexificationAlgorithm(Network(coords))
   }

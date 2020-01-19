@@ -2,7 +2,7 @@
 package org.openmole.spatialdata.grid.real
 
 import org.locationtech.jts.geom._
-import org.openmole.spatialdata.RasterLayerData
+import org.openmole.spatialdata.grid.RasterLayerData
 import org.openmole.spatialdata.grid.GridGenerator
 import org.openmole.spatialdata.utils.gis.GISUtils
 import org.openmole.spatialdata.utils.osm.api.APIExtractor

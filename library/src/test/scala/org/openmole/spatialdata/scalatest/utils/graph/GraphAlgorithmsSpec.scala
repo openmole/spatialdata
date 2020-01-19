@@ -29,6 +29,7 @@ class GraphAlgorithmsSpec extends AnyFlatSpec {
       val (sp2, t2) = withTimer[Network, ShortestPaths](nw => shortestPaths(nw, nodes, { l => l.length }, DijkstraJGraphT()))(nw)
       val (sp3, t3) = withTimer[Network, ShortestPaths](nw => shortestPaths(nw, nodes, { l => l.length }, FloydWarshallJGraphT()))(nw)
       //assert((sp1 |-| sp2) < 1e-5 && (sp1 |-| sp3) < 1e-5 && (sp3 |-| sp2) < 1e-5)
+      // FIXME shortest path distance sometimes yields NaN ?
       assert((sp3 |-| sp2) < 1e-5)
     }
   }
@@ -52,6 +53,7 @@ class GraphAlgorithmsSpec extends AnyFlatSpec {
     }
   }
 
+  /*
   "A simplified graph" should "be smaller" in {
     val (lat,lon) = (51.5213835,-0.1347904)
     val nw = OSMNetworkGenerator(lon,lat,5000,simplifySnapping = 0.02).generateNetwork
@@ -60,6 +62,7 @@ class GraphAlgorithmsSpec extends AnyFlatSpec {
     val simplified = GraphAlgorithms.SimplificationAlgorithm.simplifyNetwork(nw)
     assert(nw.nodes.size>=simplified.nodes.size&&nw.links.size>=simplified.links.size)
   }
+  */
 
 
 

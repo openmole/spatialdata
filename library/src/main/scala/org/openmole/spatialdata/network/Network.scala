@@ -1,6 +1,6 @@
 package org.openmole.spatialdata.network
 
-import org.openmole.spatialdata.Point2D
+import org.openmole.spatialdata.vector.Point
 import org.openmole.spatialdata.utils.graph.GraphAlgorithms
 import org.openmole.spatialdata.utils.Implicits._
 import org.openmole.spatialdata.utils.graph.GraphAlgorithms.{DijkstraJGraphT, ShortestPathMethod}
@@ -294,7 +294,7 @@ object Network {
     * @param points
     * @return
     */
-  def apply(points: Seq[Point2D]): Network = Network(points.zipWithIndex.map{case (p,i) => Node(i,p)}.toSet, Set.empty[Link])
+  def apply(points: Seq[Point]): Network = Network(points.zipWithIndex.map{case (p,i) => Node(i,p)}.toSet, Set.empty[Link])
 
 
   /**

@@ -1,6 +1,6 @@
 package org.openmole.spatialdata.utils.math
 
-import org.openmole.spatialdata.RasterDim
+import org.openmole.spatialdata.grid.RasterDim
 
 import scala.util.Random
 
@@ -17,16 +17,16 @@ object KernelMixture {
                    ): Array[Array[Double]] //Seq[Seq[(Double,(Int,Int))]]
   = {
     //val vals = Seq.fill(worldSize,worldSize)(0.0)
-    val w = worldSize match {case Left(l) => l; case Right((w,_)) => w}
-    val h = worldSize match {case Left(l) => l; case Right((_,h)) => h}
+    val w = worldSize match {case Left(l) => l; case Right((ww,_)) => ww}
+    val h = worldSize match {case Left(l) => l; case Right((_,hh)) => hh}
     val vals = Array.fill(w,h)(0.0)
     val coords = centers match {
       case Left(i) => Seq.fill(i){(rng.nextInt(w),rng.nextInt(h))}
       case Right(c) => c
     }
-    for(i<- 0 to w-1; j<- 0 to h-1){
+    for(i<- 0 until w; j<- 0 until h){
       for(c <- coords){
-        vals(i)(j) = vals(i)(j) + kernel((i - c._1),(j - c._2))
+        vals(i)(j) = vals(i)(j) + kernel(i - c._1,j - c._2)
       }
     }
     //array to seq

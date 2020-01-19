@@ -1,6 +1,6 @@
 package org.openmole.spatialdata.grid.real
 
-import org.openmole.spatialdata.RasterLayerData
+import org.openmole.spatialdata.grid.RasterLayerData
 import org.openmole.spatialdata.grid.GridGenerator
 import org.openmole.spatialdata.utils.io.CSV
 

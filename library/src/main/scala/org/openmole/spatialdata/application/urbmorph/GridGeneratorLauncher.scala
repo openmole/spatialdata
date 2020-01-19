@@ -1,7 +1,7 @@
 
 package org.openmole.spatialdata.application.urbmorph
 
-import org.openmole.spatialdata.Implicits._
+import org.openmole.spatialdata.grid.Implicits._
 import org.openmole.spatialdata.grid.measures._
 import org.openmole.spatialdata.grid.synthetic._
 

@@ -1,6 +1,7 @@
 package org.openmole.spatialdata.utils
 
-import org.openmole.spatialdata.{RasterLayerData, _}
+import org.openmole.spatialdata.grid._
+import org.openmole.spatialdata.vector.Point
 import org.openmole.spatialdata.network.{Network, Node}
 import javax.swing._
 import java.awt._
@@ -24,7 +25,7 @@ package object visualization {
                           withLabel: Boolean = true,
                           edgeColors: Seq[Int] = Seq.empty ,
                           nodeColorClasses: Node => Int = {_ => 0},
-                          nodePositioning: Node => Point2D = {n => n.position}
+                          nodePositioning: Node => Point = {n => n.position}
                          ) extends JFrame() {
     def init: Unit = {
       frameInit()
@@ -77,7 +78,7 @@ package object visualization {
                                  withLabel: Boolean = false,
                                  edgeColors: Seq[Int] = Seq.empty,
                                  nodeColorClasses: Node=>Int={_ => 0},
-                                 nodePositioning: Node => Point2D = {n => n.position}
+                                 nodePositioning: Node => Point = {n => n.position}
                                 ): Unit = {
     val frame = NetworkFrame(networks = networks,withLabel=withLabel,edgeColors=edgeColors,nodeColorClasses=nodeColorClasses,nodePositioning=nodePositioning)
     frame.init

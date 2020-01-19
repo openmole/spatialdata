@@ -13,6 +13,7 @@ import org.openmole.spatialdata.utils.gis.PoligonizerUtils
 import org.openmole.spatialdata.utils.osm.JtsGeometryFactory
 import org.openmole.spatialdata.utils.osm._
 import org.openmole.spatialdata.utils.osm.xml.InstantiatedOsmXmlParser
+import org.openmole.spatialdata.vector.Points
 
 import scala.util.Try
 
@@ -146,7 +147,7 @@ object APIExtractor {
       * @return
       */
     def asLineStringSeq(e: Root.Enumerator[Way], tags: Map[String,Seq[String]]): Seq[LineString] = {
-      var result = scala.collection.mutable.Buffer[LineString]()
+      val result = scala.collection.mutable.Buffer[LineString]()
       val fact = new JtsGeometryFactory()
       var way: Way = e.next
       while (way != null) {
@@ -176,7 +177,8 @@ object APIExtractor {
       * @param north
       * @param east
       * @param tags
-      * @return
+      * @return FIXME should return Lines with specified attributes
+      *
       */
     def getHighways(south: Double, west: Double, north: Double, east: Double,
                     tags: Map[String,Seq[String]],
@@ -206,5 +208,81 @@ object APIExtractor {
     }
 
   }
+
+
+  object Points {
+
+    /**
+      * OSM Node enumerator to Points
+      * @param root
+      * @param tags
+      * @return
+      */
+    def asPoints(root: Root.Enumerator[Node], tags: Map[String,Seq[String]]): org.openmole.spatialdata.vector.Points = {
+      val result = scala.collection.mutable.Buffer[Point]()
+      val fact = new JtsGeometryFactory()
+      var node: Node = root.next
+      while (node != null) {
+        val validnode = tags.toSeq.map{
+          case (tag,values) =>
+            val nodetag = node.getTag(tag)
+            if(tag == null) false
+            else {
+              values.contains(nodetag)
+            }
+        }.reduce(_&_)
+        if (validnode) {
+          val potentialPoint = Try(fact.createPoint(node))
+          if (potentialPoint.isSuccess) {
+            result += potentialPoint.get
+          }
+        }
+        node = root.next
+      }
+      org.openmole.spatialdata.vector.Points(result.toSeq, Map.empty)
+    }
+
+
+    /**
+      * Get points from API
+      * @param south
+      * @param west
+      * @param north
+      * @param east
+      * @param tags
+      * @param mode
+      * @return
+      */
+    def getPoints(south: Double, west: Double, north: Double, east: Double,
+                  tags: Map[String,Seq[String]],
+                  mode: OSMAPIMode = OSMOverpass
+                 ): Points = {
+      Locale.setDefault(Locale.ENGLISH)
+      mode match {
+        case OSMOverpass => {
+          val overpass = new Overpass
+          // if only one tag requested, use as a filter in the overpass request
+          val root = overpass.get(south, west, north, east,
+            // FIXME the has-kv with | does not work for highway
+            hasKeyValue=("",Seq("")) //if (tags.size==1) tags.toSeq(0) else ("",Seq(""))
+          )
+          val res = asPoints(root.enumerateNodes,tags)
+          utils.log("Nodes from overpass " +res)
+          res
+        }
+        case OSMDirect => {
+          val api = new ApiConnection()
+          val root = api.get(south, west, north, east)
+          val res = asPoints(root.enumerateNodes,tags)
+          utils.log("Nodes from OSM (API): "+res)
+          res
+        }
+        case _ => org.openmole.spatialdata.vector.Points.empty
+      }
+    }
+
+
+  }
+
 
 }

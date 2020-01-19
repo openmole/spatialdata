@@ -1,7 +1,7 @@
 
 package org.openmole.spatialdata.grid.synthetic
 
-import org.openmole.spatialdata._
+import org.openmole.spatialdata.grid._
 import org.openmole.spatialdata.grid.GridGenerator
 
 import scala.util.Random
@@ -63,12 +63,12 @@ object BlocksGridGenerator {
     val w = size match {case Left(l) => l; case Right((w,_)) => w}
     val h = size match {case Left(l) => l; case Right((_,h)) => h}
     val vals = Array.fill(w,h)(0.0)
-    for(_ <- 0 to blocks - 1){
+    for(_ <- 0 until blocks){
       val (i,j) = (rng.nextInt(w),rng.nextInt(h))
       val (ww,hh) = (minsize + rng.nextInt(maxsize-minsize + 1),minsize + rng.nextInt(maxsize-minsize + 1))
       // convention : if even, center on bottom right corner
-      for(di <- 0 to ww - 1 ){
-        for(dj <- 0 to hh - 1){
+      for(di <- 0 until ww){
+        for(dj <- 0 until hh){
           val (k,l) = (i - ww / 2 + di,j - hh / 2 + dj)
           if(k>=0&l>=0&k<w&l<h){vals(k)(l) = vals(k)(l) + 1.0}
         }

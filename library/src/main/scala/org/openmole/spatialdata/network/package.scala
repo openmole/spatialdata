@@ -3,6 +3,8 @@ package org.openmole.spatialdata
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
+import org.openmole.spatialdata.grid.RasterLayerData
+
 import org.locationtech.jts.geom.LineString
 
 /**

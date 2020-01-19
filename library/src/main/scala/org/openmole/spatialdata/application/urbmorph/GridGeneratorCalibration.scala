@@ -2,7 +2,7 @@ package org.openmole.spatialdata.application.urbmorph
 
 import org.openmole.spatialdata.grid.measures.GridMorphology
 import org.openmole.spatialdata.grid.synthetic._
-import org.openmole.spatialdata.Implicits._
+import org.openmole.spatialdata.grid.Implicits._
 
 import scala.util.Random
 
@@ -65,7 +65,7 @@ object GridGeneratorCalibration {
                                              ) extends Calibration {
     override def calibrate(projection: GridMorphology => Array[Double], objective: Array[Double] => Double)(implicit rng: Random): Double = {
       val intgrid = ExpMixtureGridGenerator(gridSize,expCenters,1.0,expRadius).generateGrid(rng)
-      val maxval = intgrid.flatten.max
+      val maxval = intgrid.flatten.max(Ordering.Double.TotalOrdering)
       objective(projection(GridMorphology(intgrid.map{_.map{case d => if(d / maxval > expThreshold) 1.0 else 0.0}})))
     }
   }

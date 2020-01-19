@@ -2,7 +2,7 @@ package org.openmole.spatialdata.vector.measures
 
 import org.apache.commons.math3.stat.regression._
 import org.apache.commons.math3.linear._
-import org.openmole.spatialdata.Point2D
+import org.openmole.spatialdata.vector.Point
 
 
 object GWR {
@@ -24,7 +24,7 @@ object GWR {
     * @param points
     * @return
     */
-  def basicGWR(yvalues: Array[Double],xvalues: Array[Array[Double]], points: Array[Point2D], bandwidth: Double, kernel: (Double,Double) => Double): GWRResult = {
+  def basicGWR(yvalues: Array[Double],xvalues: Array[Array[Double]], points: Array[Point], bandwidth: Double, kernel: (Double,Double) => Double): GWRResult = {
     //val reg = new OLSMultipleLinearRegression()
     //reg.newSampleData(yvalues,xvalues)
     //GWRResult(Array(reg.estimateRegressionParameters()))

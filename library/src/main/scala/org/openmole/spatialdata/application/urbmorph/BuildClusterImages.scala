@@ -29,7 +29,7 @@ object BuildClusterImages extends App {
     }
     clusters.foreach {
       case (cluster, _) =>
-        val values = valuesWithDistance.filter(_._4 == cluster).sortBy(_._5).take(10)
+        val values = valuesWithDistance.filter(_._4 == cluster).sortBy(_._5)(Ordering.Double.TotalOrdering).take(10)
         val directory = outputDir / cluster.toString
         directory.createDirectories()
         values.foreach{
@@ -77,14 +77,14 @@ object BuildClusterImages extends App {
         val percolationProba = line("percolationProba").toDouble
 
         val proj = projection(GridMorphology(height,width,area,moran,avgDistance,0.0,(0.0,0.0),density,components,avgDetour,avgBlockArea,avgComponentArea,fullDilationSteps,fullErosionSteps,fullClosingSteps,fullOpeningSteps))
-        val (cluster, distanceToCluster) = clusters.map{case (c, (pc1, pc2)) => (c, sqDistance((proj(0), proj(1)), (pc1, pc2)))}.minBy(_._2)
+        val (cluster, distanceToCluster) = clusters.map{case (c, (pc1, pc2)) => (c, sqDistance((proj(0), proj(1)), (pc1, pc2)))}.minBy(_._2)(Ordering.Double.TotalOrdering)
         println(s"distance to cluster $cluster = $distanceToCluster")
         (cluster, distanceToCluster, width, height, size, replication, generator, randomDensity, blocksNumber, blocksMinSize, blocksMaxSize, expMixtureCenters, expMixtureRadius, expMixtureThreshold, percolationBordPoints, percolationLinkWidth, percolationProba)
       }
     }
     clusters.foreach {
       case (cluster, _) =>
-        val values = valuesWithDistance.filter(_._1 == cluster).sortBy(_._2).take(10)
+        val values = valuesWithDistance.filter(_._1 == cluster).sortBy(_._2)(Ordering.Double.TotalOrdering).take(10)
         val directory = outputDir / cluster.toString
         directory.createDirectories()
         values.foreach{

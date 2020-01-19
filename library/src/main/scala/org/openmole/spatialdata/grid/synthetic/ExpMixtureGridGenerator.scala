@@ -2,46 +2,33 @@
 package org.openmole.spatialdata.grid.synthetic
 
 import org.openmole.spatialdata.grid.GridGenerator
-import org.openmole.spatialdata._
+import org.openmole.spatialdata.grid._
+import org.openmole.spatialdata.vector._
 import org.openmole.spatialdata.utils.math.KernelMixture
 
 import scala.util.Random
 import math._
 
 
+/**
+  *
+  * @param size grid size
+  * @param centers Number of centers
+  * @param maxValue Value of the exp at 0
+  * @param kernelRadius Radius of the exp kernel
+  * @param normalized Should the distribution be normalized TODO not really useful ?
+  * @param centerCoordinates optional coordinates of centers
+  */
 case class ExpMixtureGridGenerator(
-                          /**
-                            * size
-                            */
                         size: RasterDim,
-
-                          /**
-                            * Number of centers
-                            */
-                          centers: Int,
-
-                          /**
-                            * Value of the exp at 0
-                            */
-                          maxValue: Double,
-
-                          /**
-                            * Radius of the exp kernel
-                            */
-                          kernelRadius: Double,
-
-                          /**
-                            * Should the distribution be normalized
-                            */
-                              // TODO not really useful ?
-                          normalized: Boolean = false,
-
-                          centerCoordinates: Seq[Point2D] = Seq.empty
-
+                        centers: Int,
+                        maxValue: Double,
+                        kernelRadius: Double,
+                        normalized: Boolean = false,
+                        centerCoordinates: Seq[Point] = Seq.empty
                         ) extends GridGenerator {
 
   override def generateGrid(implicit rng: Random): RasterLayerData[Double] = {
-    //println("Exp mixture grid of size "+size+" ; "+centers+" ; "+maxValue+" ; "+kernelRadius)
     def expKernel(x: Double, y: Double): Double = maxValue*exp(-sqrt(pow(x,2.0)+pow(y,2.0))/kernelRadius)
     val eithcenters = centerCoordinates.size match {case 0 => Left(centers);case _ => Right(centerCoordinates.map(c => (c._1.toInt,c._2.toInt)))}
     KernelMixture.kernelMixture(size,eithcenters,expKernel,rng)
@@ -97,7 +84,7 @@ object ExpMixtureGridGenerator {
                                  maxValues:    Either[Double, Seq[Double]],
                                  kernelRadius: Either[Double, Seq[Double]],
                                  rng:          scala.util.Random
-                               ): (RasterData[Double], Seq[Point2D]) = {
+                               ): (RasterData[Double], Seq[Point]) = {
     // grid dimensions
     val dims: (Int, Int) = gridSize match {
       case Left(s)  ⇒ (s, s)
@@ -119,7 +106,7 @@ object ExpMixtureGridGenerator {
     val layerdim = maxVals.size
 
     // generate centers
-    val centers = Seq.fill[Point2D](nCenters) {
+    val centers = Seq.fill[Point](nCenters) {
       (rng.nextInt(dims._1).toDouble, rng.nextInt(dims._2).toDouble)
     }
 
@@ -128,8 +115,8 @@ object ExpMixtureGridGenerator {
       Array.fill(dims._1, dims._2)(0.0)
     }
 
-    for (k ← 0 to layerdim - 1; i ← 0 to dims._1 - 1; j ← 0 to dims._2 - 1; c ← 0 to nCenters - 1) {
-      raster(k)(i)(j) = raster(k)(i)(j) + maxVals(k) * math.exp(-math.sqrt(math.pow((i - centers(c)._1), 2) + math.pow((j - centers(c)._2), 2)) / radiuses(k))
+    for (k ← 0 until layerdim; i ← 0 until dims._1; j ← 0 until dims._2; c ← 0 until nCenters) {
+      raster(k)(i)(j) = raster(k)(i)(j) + maxVals(k) * math.exp(-math.sqrt(math.pow(i - centers(c)._1, 2) + math.pow(j - centers(c)._2, 2)) / radiuses(k))
     }
     (raster, centers)
   }

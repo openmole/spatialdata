@@ -1,6 +1,6 @@
 package org.openmole.spatialdata.grid.real
 
-import org.openmole.spatialdata.RasterLayerData
+import org.openmole.spatialdata.grid.RasterLayerData
 import org.openmole.spatialdata.utils.gis.{GISUtils, LayerSampling}
 import org.openmole.spatialdata.utils.io.Shapefile
 import org.openmole.spatialdata.utils.osm.api.APIExtractor.{OSMAPIMode, OSMOverpass}

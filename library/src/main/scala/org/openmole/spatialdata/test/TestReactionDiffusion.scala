@@ -1,7 +1,7 @@
 package org.openmole.spatialdata.test
 
 import org.apache.commons.math3.stat.inference.KolmogorovSmirnovTest
-import org.openmole.spatialdata.Implicits._
+import org.openmole.spatialdata.grid.Implicits._
 import org.openmole.spatialdata.application.reactiondiffusion.ReactionDiffusionCalibration
 import org.openmole.spatialdata.grid.measures.GridMorphology
 import org.openmole.spatialdata.grid.measures.GridMorphology.{AverageDistance, Entropy, Moran, Slope}

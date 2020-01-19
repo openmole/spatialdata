@@ -1,6 +1,6 @@
 package org.openmole.spatialdata.grid
 
-import org.openmole.spatialdata.RasterLayerData
+import org.openmole.spatialdata.grid.RasterLayerData
 
 /**
   * Perturbate a grid

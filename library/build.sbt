@@ -44,6 +44,7 @@ libraryDependencies ++= Seq(
   mainClass in run := Some("org.openmole.spatialdata.test.Test")
 //)
 
+scalacOptions in ThisBuild ++= Seq("-unchecked", "-deprecation")
 
 enablePlugins(SbtOsgi)
 

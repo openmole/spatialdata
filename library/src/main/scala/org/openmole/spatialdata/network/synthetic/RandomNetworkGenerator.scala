@@ -1,34 +1,28 @@
 package org.openmole.spatialdata.network.synthetic
 
-import org.openmole.spatialdata.Point2D
+import org.openmole.spatialdata.vector.Point
 import org.openmole.spatialdata.network._
 import org.openmole.spatialdata.vector.synthetic.RandomPointsGenerator
-import org.openmole.spatialdata.utils._
 import org.openmole.spatialdata.utils.math.Stochastic
 
 import scala.util.Random
 
+/**
+  *
+  * @param nnodes number of nodes
+  * @param nlinks number of links
+  * @param planarize planarize the final network
+  * @param directed is the network directed
+  * @param withIndex should the nodes be indexed
+  * @param points optional nodes
+  */
 case class RandomNetworkGenerator(
-                                   /**
-                                     * number of nodes
-                                     */
                                    nnodes: Int = 0,
-
-                                   /**
-                                     * number of links
-                                     */
                                    nlinks: Int,
-
-                                   /**
-                                     * planarize the final network
-                                     */
                                    planarize: Boolean = false,
-
                                    directed: Boolean = false,
-
                                    withIndex: Boolean = true,
-
-                                   points: Seq[Point2D] = Seq.empty
+                                   points: Seq[Point] = Seq.empty
                                  ) extends NetworkGenerator {
    override def generateNetwork(implicit rng: Random): Network = RandomNetworkGenerator.randomNetwork(nnodes,nlinks,planarize,directed,withIndex,points)
 }
@@ -38,8 +32,8 @@ object RandomNetworkGenerator {
 
   /**
     * planar undirected
-    * @param points
-    * @param nlinks
+    * @param points nodes
+    * @param nlinks number of links
     * @return
     */
   def apply(points: Seq[(Double,Double)], nlinks: Int): RandomNetworkGenerator = RandomNetworkGenerator(0,nlinks,true,false,false,points)
@@ -48,11 +42,11 @@ object RandomNetworkGenerator {
 
   /**
     * basic random euclidian network (no planarisation)
-    * @param nnodes
-    * @param nlinks
+    * @param nnodes number of nodes
+    * @param nlinks number of links
     * @return
     */
-  def randomNetwork(nnodes: Int,nlinks: Int,planar: Boolean,directed: Boolean,withIndex: Boolean, points: Seq[Point2D])(implicit rng: Random): Network = {
+  def randomNetwork(nnodes: Int,nlinks: Int,planar: Boolean,directed: Boolean,withIndex: Boolean, points: Seq[Point])(implicit rng: Random): Network = {
     if (nnodes==0) Network.empty else {
       val coords = if (points.isEmpty) RandomPointsGenerator(nnodes).generatePoints else points
       val nodes = if (withIndex) Network(coords.zipWithIndex.map { case ((x, y), id) => Node(id, x, y) }.toSet, Set.empty[Link]) else Network(coords.map { case (x, y) => Node(0, x, y) }.toSet, Set.empty[Link])

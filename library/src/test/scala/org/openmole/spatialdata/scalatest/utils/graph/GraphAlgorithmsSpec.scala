@@ -1,6 +1,6 @@
 package org.openmole.spatialdata.scalatest.utils.graph
 
-import org.openmole.spatialdata.Point2D
+import org.openmole.spatialdata.vector.Point
 import org.openmole.spatialdata.network.real.OSMNetworkGenerator
 import org.openmole.spatialdata.network.{Network, Node, ShortestPaths}
 import org.openmole.spatialdata.network.synthetic.{RandomNetworkGenerator, TreeMinDistGenerator}
@@ -58,7 +58,7 @@ class GraphAlgorithmsSpec extends AnyFlatSpec {
     val (lat,lon) = (51.5213835,-0.1347904)
     val nw = OSMNetworkGenerator(lon,lat,5000,simplifySnapping = 0.02).generateNetwork
     val (xmin,xmax,ymin,ymax) = (nw.nodes.map{_.x}.min,nw.nodes.map{_.x}.max,nw.nodes.map{_.y}.min,nw.nodes.map{_.y}.max)
-    def position(n: Node): Point2D = ((n.x - xmin)/(xmax-xmin),(n.y - ymin)/(ymax-ymin))
+    def position(n: Node): Point = ((n.x - xmin)/(xmax-xmin),(n.y - ymin)/(ymax-ymin))
     val simplified = GraphAlgorithms.SimplificationAlgorithm.simplifyNetwork(nw)
     assert(nw.nodes.size>=simplified.nodes.size&&nw.links.size>=simplified.links.size)
   }

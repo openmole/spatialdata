@@ -5,17 +5,14 @@ import org.jgrapht.alg.connectivity.ConnectivityInspector
 import org.jgrapht.alg.cycle.PatonCycleBase
 import org.jgrapht.alg.shortestpath.{DijkstraShortestPath, FloydWarshallShortestPaths, JohnsonShortestPaths}
 import org.jgrapht.alg.interfaces._
-import org.jgrapht.graph.{DefaultWeightedEdge, SimpleWeightedGraph}
+import org.jgrapht.graph.DefaultWeightedEdge
 import org.openmole.spatialdata.network._
 import org.openmole.spatialdata.network.measures.NetworkMeasures
 import org.openmole.spatialdata.utils
-import org.openmole.spatialdata.utils.graph.GraphAlgorithms.ShortestPathMethod
-import org.openmole.spatialdata.utils.math.Stochastic
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import scala.util.Random
-import collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 /**
   * Libraries to test:
@@ -42,10 +39,11 @@ object GraphAlgorithms {
 
   /**
     * Shortest paths
-    * @param network
-    * @param vertices
-    * @param linkWeight
-    * @tparam T
+    *
+    * @param network network
+    * @param vertices from/to vertices
+    * @param linkWeight link weight function
+    * @param method method to use
     * @return
     */
   def shortestPaths(network: Network,
@@ -219,7 +217,7 @@ object GraphAlgorithms {
 
 
       // Helper function to carve out paths from the next vertex matrix.
-      def extractPath(path: ArrayBuffer[Node],pathLinks: ArrayBuffer[Link], i: Int, j: Int) {
+      def extractPath(path: ArrayBuffer[Node],pathLinks: ArrayBuffer[Link], i: Int, j: Int): Unit = {
         if (ds(i)(j) == inf) return
         val k = ns(i)(j)
         if (k != -1) {

@@ -7,8 +7,9 @@ import org.locationtech.jts.geom._
 import org.locationtech.jts.geom.util.LinearComponentExtracter
 import org.locationtech.jts.operation.polygonize.Polygonizer
 import org.locationtech.jts.precision.GeometryPrecisionReducer
+import org.openmole.spatialdata.utils
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 object PoligonizerUtils {
   private val fact = new GeometryFactory()
@@ -35,7 +36,7 @@ object PoligonizerUtils {
   }
 
   private def addFeatures(p: Polygonizer, inputFeatures: Seq[Geometry], pm: PrecisionModel = new PrecisionModel(100)) = {
-    if (DEBUG) println(Calendar.getInstance.getTime + " node lines")
+    //utils.log(s"${Calendar.getInstance.getTime} node lines")
     val reduced = inputFeatures.map(GeometryPrecisionReducer.reduce(_, pm))
     // extract linear components from input geometries
     val lines = getLines(reduced)
@@ -46,40 +47,40 @@ object PoligonizerUtils {
         nodeLines(geoms.asJava)
       case ls: LineString => ls
     }
-    if (DEBUG) println(Calendar.getInstance.getTime + " insert lines")
+    //utils.log(s"${Calendar.getInstance.getTime} insert lines")
     p.add(nodedLines)
   }
 
   def getPolygons(features: Seq[Geometry]) = {
     val polygonizer = new Polygonizer
     addFeatures(polygonizer, features)
-    if (DEBUG) println(Calendar.getInstance.getTime + " now with the real stuff")
+    if (DEBUG) println(s"${Calendar.getInstance.getTime} now with the real stuff")
     val result = polygonizer.getPolygons.asScala.toSeq.map(_.asInstanceOf[Geometry])
-    if (DEBUG) println(Calendar.getInstance.getTime + " all done now")
+    if (DEBUG) println(s"${Calendar.getInstance.getTime} all done now")
     result
   }
 
   def getPolygonIntersection(features: Seq[Geometry], mask: Geometry) = {
     val polygonizer = new Polygonizer
     addFeatures(polygonizer, features :+ mask)
-    if (DEBUG) println(Calendar.getInstance.getTime + " now with the real stuff")
+    if (DEBUG) println(s"${Calendar.getInstance.getTime} now with the real stuff")
     val result = polygonizer.getPolygons.asScala.toSeq.map(_.asInstanceOf[Polygon]).filter{p=>
       val coord = p.getInteriorPoint
       mask.contains(coord) && features.exists(_.contains(coord))
     }
-    if (DEBUG) println(Calendar.getInstance.getTime + " all done now")
+    if (DEBUG) println(s"${Calendar.getInstance.getTime} all done now")
     result
   }
 
   def getPolygonDifference(features: Seq[Geometry], mask: Geometry) = {
     val polygonizer = new Polygonizer
     addFeatures(polygonizer, features :+ mask)
-    if (DEBUG) println(Calendar.getInstance.getTime + " now with the real stuff")
+    if (DEBUG) println(s"${Calendar.getInstance.getTime} now with the real stuff")
     val result = polygonizer.getPolygons.asScala.toSeq.map(_.asInstanceOf[Polygon]).filter{p=>
       val coord = p.getInteriorPoint
       mask.intersects(coord) && !features.exists(_.intersects(coord))
     }
-    if (DEBUG) println(Calendar.getInstance.getTime + " all done now")
+    if (DEBUG) println(s"${Calendar.getInstance.getTime} all done now")
     result
   }
 }

@@ -1,6 +1,6 @@
 package org.openmole.spatialdata.scalatest.grid.synthetic
 
-import org.openmole.spatialdata.Implicits._
+import org.openmole.spatialdata.grid.Implicits._
 import org.openmole.spatialdata.grid.synthetic.RandomGridGenerator
 import org.scalatest.flatspec.AnyFlatSpec
 

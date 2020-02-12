@@ -9,6 +9,6 @@ trait FittedSpIntModel extends SpatialInteractionModel {
 
 object FittedSpIntModel {
 
-  def poissonFit: SpatialInteractionModel => SpatialInteractionModel = _ => _
+  //def poissonFit: SpatialInteractionModel => SpatialInteractionModel = _ => _
 
 }

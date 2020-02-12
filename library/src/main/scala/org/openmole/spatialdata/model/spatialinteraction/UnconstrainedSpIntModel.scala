@@ -18,7 +18,7 @@ case class UnconstrainedSpIntModel(
                                   originValues: SpatialField,
                                   destinationValues: SpatialField,
                                   predictedFlows: Matrix,
-                                  fit: SpatialInteractionModel => SpatialInteractionModel = FittedSpIntModel.poissonFit
+                                  fit: SpatialInteractionModel => SpatialInteractionModel = {s: SpatialInteractionModel => s}//FittedSpIntModel.poissonFit
                                   ) extends FittedSpIntModel {
 
 }

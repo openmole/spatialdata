@@ -228,7 +228,7 @@ object GridMorphology {
     */
   def acentrism(matrix: Array[Array[Double]], quantiles: Array[Double] = Array.tabulate(100){n => n*0.01}): Double = {
     val popdists = quantiles.map{ q =>
-      val posvalues = matrix.flatten.filter(_ > 0).sorted
+      val posvalues = matrix.flatten.filter(_ > 0).sorted(Ordering.Double.TotalOrdering)
       val qth = posvalues((q*posvalues.size).toInt)
       val filteredmat = matrix.map(_.map{d => if (d < qth) 0.0 else d})
       (posvalues.sum,distanceMean(filteredmat,normalize = false))

@@ -9,6 +9,9 @@ resolvers ++= Seq(
   "geosolutions" at "https://maven.geo-solutions.it",
   "geotoolkit" at "https://maven.geotoolkit.org",
   "apache" at "https://repo.maven.apache.org/maven2",
+  // gephi resolvers
+  //"NetBeans" at "https://bits.netbeans.org/nexus/content/groups/netbeans/",
+  //"gephi-thirdparty" at "https://raw.github.com/gephi/gephi/mvn-thirdparty-repo/",
   Resolver.sonatypeRepo("snapshots"),
   Resolver.sonatypeRepo("staging"),
   Resolver.mavenCentral
@@ -30,7 +33,8 @@ libraryDependencies ++= Seq(
   "org.apache.httpcomponents" % "httpclient" % "4.3.5",
   "commons-io" % "commons-io" % "2.3",
   "org.apache.commons" % "commons-lang3" % "3.1",
-  "it.uniroma1.dis.wsngroup.gexf4j" % "gexf4j" % "1.0.0"
+  "it.uniroma1.dis.wsngroup.gexf4j" % "gexf4j" % "1.0.0"//,
+  //"org.gephi" % "gephi-toolkit" % "0.9.2" // full gephi lib is 68Mo ! maybe not a good idea to use it
 )
 
 

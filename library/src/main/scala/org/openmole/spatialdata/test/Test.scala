@@ -7,7 +7,7 @@ object Test extends App {
   //TestCoupled.testRandom()
 
   // Network algorithms
-  TestNetwork.testSimplification
+  //TestNetwork.testSimplification
   //TestNetwork.testCycles
   //TestNetwork.testShortestPathImplementations()
   //TestNetwork.testPlanarization()
@@ -48,6 +48,7 @@ object Test extends App {
   //TestMaths.testConvolution2D
 
   // Utils
+  TestUtils.testBinaryIO
   //TestUtils.testSampling
   //TestUtils.testCSV
   //TestPNG.testPNG()

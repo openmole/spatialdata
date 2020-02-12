@@ -8,6 +8,8 @@ import scala.math.{Ordering, log}
 
 object Statistics {
 
+  implicit val doubleOrdering = Ordering.Double.TotalOrdering
+
 
   /**
     * Unbiased moment at a given order
@@ -144,8 +146,8 @@ object Statistics {
   }*/
 
   def discreteChoicesProbaTime(state: Array[Array[Double]],beta: Int => Array[Double]): Int => Array[Double] = {
-    t =>
-      Matrix.toFlatArray(Matrix.fromArray(state).multiply(Matrix.fromColumnArray(beta(t))))
+    t => Array.empty
+      //Matrix.toFlatArray(Matrix.fromArray(state).multiply(Matrix.fromColumnArray(beta(t))))
   }
 
 

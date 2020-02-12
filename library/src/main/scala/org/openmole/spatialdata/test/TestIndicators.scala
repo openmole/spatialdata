@@ -21,7 +21,7 @@ object TestIndicators {
 
     //(0 to 20).foreach{_ =>
       val grid = ExpMixtureGridGenerator(50,3,1.0,10.0,true).generateGrid
-      val maxval = grid.flatten.max
+      val maxval = grid.flatten.max(Ordering.Double.TotalOrdering)
       val ngrid = grid.map{_.map{case d => if(d / maxval > 0.6) 1.0 else 0.0}}
 
     PNG.write(ngrid, File("data") / "test/grid.png")

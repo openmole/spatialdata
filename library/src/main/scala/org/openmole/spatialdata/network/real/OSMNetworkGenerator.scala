@@ -22,6 +22,7 @@ case class OSMNetworkGenerator(
                               lon: Double,
                               lat: Double,
                               windowSize:Double,
+                              // for railway tags: https://wiki.openstreetmap.org/wiki/Key:railway
                               tags: Map[String,Seq[String]] = Map("highway"->Seq("motorway","trunk","primary","secondary","tertiary")), // unclassified
                               simplifySnapping: Double = 1e-6,
                               stationNodesTags: Option[Map[String,Seq[String]]] = None

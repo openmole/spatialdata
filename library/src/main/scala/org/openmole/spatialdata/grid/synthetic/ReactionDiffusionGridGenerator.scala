@@ -84,7 +84,7 @@ object ReactionDiffusionGridGenerator {
         val ptot = oldPop.flatten.filter(!_.isNaN).sum
 
         if (iterImpl) {
-          for (_ ← 1 to growthRate.toInt) {
+          for (_ <- 1 to growthRate.toInt) {
             var s = 0.0; val r = rng.nextDouble(); var i = 0; var j = 0
             //draw the cell from cumulative distrib
             while (s < r) {
@@ -169,7 +169,7 @@ object ReactionDiffusionGridGenerator {
 
       // diffuse
       val prediffpop = arrayVals.flatten.filter(!_.isNaN).sum
-      for (_ ← 1 to diffusionSteps) {
+      for (_ <- 1 to diffusionSteps) {
         arrayVals = diffuse(arrayVals, diffusion)
       }
 
@@ -198,7 +198,7 @@ object ReactionDiffusionGridGenerator {
     val newVals = a.clone()
     val (height,width) = (a.length,a(0).length)
 
-    for (i ← a.indices; j ← a(0).indices) {
+    for (i <- a.indices; j <- a(0).indices) {
       // diffuse in neigh cells
       val d = a(i)(j)
       if (!d.isNaN) {

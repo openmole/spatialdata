@@ -1,0 +1,2 @@
+geojson2mongo.sh pbf/europe-latest.geojson.tmp $DB 1000000
+

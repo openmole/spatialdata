@@ -1,0 +1,15 @@
+???/spatialdata-osm-pbf
+
+total 232G
+-rw-r--r-- 1 juste juste 2,1M févr.  6 19:36 andorra-latest.geojson
+-rw-r--r-- 1 juste juste 2,1M févr.  6 19:18 andorra-latest.geojson.tmp
+-rw-r--r-- 1 juste juste 1,5M févr.  6 19:36 andorra-latest.osm.pbf
+-rw-r--r-- 1 juste juste 242K févr.  6 19:18 andorra-latest.osm.tmp.pbf
+-rw-r--r-- 1 juste juste 103G févr.  6 23:58 europe-latest.geojson
+-rw-r--r-- 1 juste juste 103G févr.  6 19:18 europe-latest.geojson.tmp
+-rw-r--r-- 1 juste juste  20G févr.  6 15:01 europe-latest.osm.pbf
+-rw-r--r-- 1 juste juste 7,3G févr.  6 19:36 europe-latest.osm.tmp.pbf
+-rw-r--r-- 1 juste juste 294M févr.  6 19:37 test2.geojson
+-rw-r--r-- 1 juste juste  27M févr.  6 15:01 test.geojson
+-rw-r--r-- 1 juste juste  27M févr.  6 19:18 test.geojson.tmp
+

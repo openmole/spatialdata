@@ -1,76 +1,155 @@
-scalaVersion := "2.12.7"
-//scalaVersion := "2.11.8"
+scalaVersion := "2.13.1"
 
 name := "spatialdata"
 
-organization := "org.openmole"
-
-version := "0.1-SNAPSHOT"
+organization := "org.openmole.library"
 
 resolvers ++= Seq(
-  "osgeo" at "http://download.osgeo.org/webdav/geotools",
-  "geosolutions" at "http://maven.geo-solutions.it",
-  "geotoolkit" at "http://maven.geotoolkit.org",
-  "apache" at "http://repo.maven.apache.org/maven2",
+  "osgeo" at "https://download.osgeo.org/webdav/geotools",
+  "geosolutions" at "https://maven.geo-solutions.it",
+  "geotoolkit" at "https://maven.geotoolkit.org",
+  "apache" at "https://repo.maven.apache.org/maven2",
+  // gephi resolvers
+  //"NetBeans" at "https://bits.netbeans.org/nexus/content/groups/netbeans/",
+  //"gephi-thirdparty" at "https://raw.github.com/gephi/gephi/mvn-thirdparty-repo/",
   Resolver.sonatypeRepo("snapshots"),
   Resolver.sonatypeRepo("staging"),
-  //Resolver.mavenLocal, // remove constraint of locally publishing librairies => copies in lib
-  Resolver.mavenCentral,
-  "Local Maven Repository" at "file:"+(new java.io.File(".")).getAbsolutePath+"/lib/maven",
-  //Resolver.sbtIvyRepo("file:"+(new java.io.File(".")).getAbsolutePath+"/lib/ivy")
-    Resolver.file("Local ivy", file( (new java.io.File(".")).getAbsolutePath+"/lib/ivy"))(Resolver.ivyStylePatterns)
-
+  Resolver.mavenCentral
 )
 
-val osmCommonVersion = "0.0.3-SNAPSHOT"
-val geotoolsVersion = "18.4"
+val geotoolsVersion = "21.0"
 
 libraryDependencies ++= Seq(
   "org.apache.commons" % "commons-math3" % "3.6.1",
-  "com.github.pathikrit" %% "better-files" % "3.5.0",
-  "org.diana-hep" %% "histogrammar" % "1.0.4",// to publish locally as 2.12: pull from https://github.com/histogrammar/histogrammar-scala, add scala-2.12 in core/pom.xml and mvn install locally
+  "com.github.pathikrit" %% "better-files" % "3.8.0",
   "com.vividsolutions" % "jts" % "1.13",
-  "org.scala-graph" %% "graph-core" % "1.12.6-SNAPSHOT",
-//  "se.kodapan.osm.common" % "core" % osmCommonVersion exclude("com.vividsolutions","jts"),
-//  "se.kodapan.osm.common" % "java" % osmCommonVersion exclude("com.vividsolutions","jts"),
-//  "se.kodapan.osm.common" % "jts" % osmCommonVersion exclude("com.vividsolutions","jts"),
+  //"org.openmole.library" %% "graph-core" % "1.12.5.1", // graph-core not needed anymore
   "org.geotools" % "geotools" % geotoolsVersion exclude("javax.media", "jai_core") exclude("com.vividsolutions", "jts-core"),
   "org.geotools" % "gt-shapefile" % geotoolsVersion exclude("javax.media", "jai_core") exclude("com.vividsolutions", "jts-core"),
-//  "org.geotools" % "gt-postgis" % "2.7.5" exclude("javax.media", "jai_core") exclude("com.vividsolutions", "jts-core"), // does not exist
-  "com.github.tototoshi" %% "scala-csv" % "1.3.4",
-  //"javax.media" % "jai_core" % "1.1.3" //from "http://download.osgeo.org/webdav/geotools/javax/media/jai_core/1.1.3/jai_core-1.1.3.jar"
-  //"mysql" % "mysql-connector-java" % "8.0.14"
+  "com.github.tototoshi" %% "scala-csv" % "1.3.6",
   "org.postgresql" % "postgresql" % "42.2.5",
-  "org.mongodb" % "mongo-java-driver" % "3.10.0"
-
+  "org.mongodb" % "mongo-java-driver" % "3.10.0",
+  "org.jgrapht" % "jgrapht-core" % "1.3.1",
+  "org.apache.httpcomponents" % "httpclient" % "4.3.5",
+  "commons-io" % "commons-io" % "2.3",
+  "org.apache.commons" % "commons-lang3" % "3.1",
+  "it.uniroma1.dis.wsngroup.gexf4j" % "gexf4j" % "1.0.0"//,
+  //"org.gephi" % "gephi-toolkit" % "0.9.2" // full gephi lib is 68Mo ! maybe not a good idea to use it
 )
 
 
 
-enablePlugins(SbtOsgi)
-
-//lazy val omlplugin = Project("omlplugin", file("src")) settings(
-  OsgiKeys.exportPackage := Seq("spatialdata.*;-split-package:=merge-first")
-  OsgiKeys.importPackage := Seq("*;resolution:=optional")
-  OsgiKeys.privatePackage := Seq("!scala.*,!java.*,!monocle.*,!META-INF.*.RSA,!META-INF.*.SF,!META-INF.*.DSA,META-INF.services.*,META-INF.*,*")
-// FilteredSet,scala.collection.FilterableSet,scala.collection.EqSetFacade
-//OsgiKeys.embeddedJars := Seq(new java.io.File("/Users/juste/.ivy2/cache/org.scala-graph/graph-core_2.12/jars/graph-core_2.12-1.12.5.jar"))
-  OsgiKeys.requireCapability := """osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))""""
+//lazy val osmrealmeasures = Project("osmrealmeasures", file("target/osmrealmeasures")) settings(
+//  mainClass in (Compile, packageBin) := Some("org.openmole.spatialdata.application.urbmorph.OSMRealMeasures")
 //)
 
-//excludeFilter in unmanagedSources := HiddenFileFilter || "*kodapan*"
+//lazy val runtest = Project("runtest", file("target/test")) settings(
+//  mainClass in (Compile, packageBin) := Some("org.openmole.spatialdata.test.Test"),
+  mainClass in run := Some("org.openmole.spatialdata.test.Test")
+//)
 
-libraryDependencies += "org.apache.httpcomponents" % "httpclient" % "4.3.5"
-libraryDependencies += "commons-io" % "commons-io" % "2.3"
-libraryDependencies += "org.apache.commons" % "commons-lang3" % "3.1"
+scalacOptions in ThisBuild ++= Seq("-unchecked", "-deprecation")
 
+enablePlugins(SbtOsgi)
 
-mainClass in (Compile, packageBin) := Some("spatialdata.osm.OSMRealMeasures")
-//mainClass in (Compile, packageBin) := Some("spatialdata.test.Test")
+//lazy val omlplugin = Project("omlplugin", file("target/omlplugin")) enablePlugins SbtOsgi settings( // FIXME
+//  name := "spatialdata",
+ //org.openmole.spatialdata.application.*
+OsgiKeys.exportPackage := Seq("*;-split-package:=merge-first")//,
+  // export only application ? NO for inclusion in OpenMOLE need more - BUT done in OML !
+  //OsgiKeys.exportPackage := Seq("org.openmole.spatialdata.application")
+OsgiKeys.importPackage := Seq("*;resolution:=optional;-split-package:=merge-first")//,
+  //OsgiKeys.privatePackage := Seq("org.openmole.spatialdata.grid,org.openmole.spatialdata.network,org.openmole.spatialdata.run,org.openmole.spatialdata.test,org.openmole.spatialdata.utils,org.openmole.spatialdata.vector,!scala.*,!java.*,!monocle.*,!META-INF.*.RSA,!META-INF.*.SF,!META-INF.*.DSA,META-INF.services.*,META-INF.*,*")//,
+OsgiKeys.privatePackage := Seq("!scala.*,!java.*,!monocle.*,!META-INF.*.RSA,!META-INF.*.SF,!META-INF.*.DSA,META-INF.services.*,META-INF.*,*")//,
+OsgiKeys.requireCapability := """osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))""""
+//)
+
 
 /*
-assemblyMergeStrategy in assembly := {
-  case PathList("META-INF", xs @ _*) => MergeStrategy.discard
-  case x => MergeStrategy.last
-}
+// publish fat jar
+// https://github.com/sbt/sbt-assembly#publishing-not-recommended
+lazy val assemble = Project("assemble", file("target/assemble")) settings (
+  assemblyMergeStrategy in assembly := {
+    case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+    case x => MergeStrategy.last
+  },
+  assemblyJarName in assembly := name+"_"+scalaVersion+".jar",
+  artifact in (Compile, assembly) := {
+    val art = (artifact in (Compile, assembly)).value
+    art.withClassifier(Some("assembly"))
+  },
+  addArtifact(artifact in (Compile, assembly), assembly)
+)
 */
+
+
+/**
+  * Testing with scalatest
+  */
+
+libraryDependencies += "org.scalactic" %% "scalactic" % "3.1.0"
+libraryDependencies += "org.scalatest" %% "scalatest" % "3.1.0" //% "test"
+
+
+
+/**
+  * Publishing
+  */
+
+useGpg := true
+
+publishMavenStyle in ThisBuild := true
+
+publishTo in ThisBuild := {
+  val nexus = "https://oss.sonatype.org/"
+  if (isSnapshot.value) Some("snapshots" at nexus + "content/repositories/snapshots")
+  else Some("releases" at nexus + "service/local/staging/deploy/maven2")
+}
+
+// use to overwrite when publish non-snapshot if issue during a previous release tentative
+publishConfiguration := publishConfiguration.value.withOverwrite(true)
+
+credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
+
+licenses in ThisBuild := Seq("Affero GPLv3" -> url("http://www.gnu.org/licenses/"))
+
+homepage in ThisBuild := Some(url("https://github.com/openmole/spatialdata"))
+
+scmInfo in ThisBuild := Some(ScmInfo(url("https://github.com/openmole/spatialdata.git"), "scm:git:git@github.com:openmole/spatialdata.git"))
+
+pomExtra in ThisBuild := (
+  <developers>
+    <developer>
+      <id>justeraimbault</id>
+      <name>Juste Raimbault</name>
+    </developer>
+    <developer>
+      <id>julienperret</id>
+      <name>Julien Perret</name>
+    </developer>
+  </developers>
+  )
+
+/**
+  * Releasing
+  */
+
+
+sonatypeProfileName := "org.openmole"
+
+import sbt.enablePlugins
+import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
+
+releaseProcess := Seq[ReleaseStep](
+  checkSnapshotDependencies,
+  inquireVersions,
+  setReleaseVersion,
+  tagRelease,
+  releaseStepCommand("publishSigned"),
+  //setNextVersion,
+  //commitNextVersion,
+  releaseStepCommand("sonatypeRelease")
+  //releaseStepCommand("sonatypeReleaseAll")//,
+  //pushChanges
+)
+

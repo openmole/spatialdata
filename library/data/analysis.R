@@ -50,6 +50,7 @@ for(j in 1:ncol(morph)){morph[,j]=(morph[,j]-min(morph[,j]))/(max(morph[,j])-min
 pca = prcomp(morph)
 summary(pca)
 pcs = as.matrix(morph)%*%pca$rotation
+realrotation = pca$rotation
 # export pc rotation
 write.table(pca$rotation,file="calib/pca.csv",quote = F,sep=',',col.names = F,row.names=F)
 
@@ -105,7 +106,9 @@ k=4
 km = kmeans(real[,c('PC1','PC2')],k,iter.max = 1000,nstart=5000)
 
 g=ggplot(data.frame(real[,c('PC1','PC2')],cluster=km$cluster),aes(x=PC1,y=PC2,color=as.character(cluster)))
-g+geom_point(alpha=0.6)+scale_color_discrete(name="Cluster")+stdtheme
+g+geom_point(alpha=0.6)+
+  geom_point(data=as.data.frame(km$centers),aes(x=PC1,y=PC2),inherit.aes = F,col='black',pch='+',size=2)+
+  scale_color_discrete(name="Cluster")+stdtheme
 ggsave(file=paste0('res/real/clustPC1-PC2_k',k,'_points-colcluster.png'),width=22,height=20,units='cm')
 
 # export center coords : directly with models names
@@ -115,6 +118,7 @@ write.table(objdata,file='calib/objectives.csv',sep=" ",col.names = F,row.names 
 
 
 real$cluster = km$cluster
+realcenters = km$centers
 
 # save real
 write.table(real,file='morpho/realpoints.csv',row.names = F,sep=',')
@@ -158,11 +162,14 @@ umzprofiles$diversity = 1 - (umzprofiles$clust1^2 + umzprofiles$clust2^2 + umzpr
 cor(umzprofiles[,c("clust1","clust2","clust3","clust4","diversity","Area","Pop1961","Pop1971","Pop1981","Pop1991","Pop2001","Pop2011","X","Y")])
 # -> correlations between X,Y and cluster profiles !
 # TODO check Fisher intervals for interesting correlations
+cor.test(umzprofiles$diversity,umzprofiles$X)
+
+cor.test(umzprofiles$diversity,umzprofiles$Y)
 
 summary(as.factor(as.character(umzprofiles$Country)))
 # TODO include
 
-chisq.test(cut(umzprofiles$diversity,10),umzprofiles$Country)
+chisq.test(cut(umzprofiles$diversity,50),umzprofiles$Country)
 # -> ultra shitty p-value
 
 
@@ -181,7 +188,7 @@ res=res[apply(res[,indics],1,function(r){length(which(is.na(r)))==0}),]
 # filter as for real
 res = res[res$density>0.05&res$density<0.8,]
 
-params=c("blocksMaxSize","blocksMinSize","blocksNumber","expMixtureCenters","expMixtureRadius","expMixtureThreshold","generator","percolationBordPoints","percolationLinkWidth","percolationProba","randomDensity")
+params=c("generator","blocksMaxSize","blocksMinSize","blocksNumber","expMixtureCenters","expMixtureRadius","expMixtureThreshold","percolationBordPoints","percolationLinkWidth","percolationProba","randomDensity","replication","id")
 
 summary(res)
 #summary(res[res$generator=="percolation",params]) # for boundaries of calibration
@@ -200,12 +207,28 @@ summary(pca)
 
 # intra-run variability
 
+sres = res[,c(indics,'id','generator')] %>% group_by(id,generator) %>% summarize(
+  sdMoran=sd(moran),meanMoran=mean(moran),sharpeMoran=abs(meanMoran/sdMoran),
+  sdAvgDistance=sd(avgDistance),meanAvgDistance=mean(avgDistance),sharpeAvgDistance=meanAvgDistance/sdAvgDistance,
+  sdDensity=sd(density),meanDensity=mean(density),sharpeDensity=meanDensity/sdDensity,
+  sdComponents=sd(components),meanComponents=mean(components),sharpeComponents=meanComponents/sdComponents,
+  sdAvgDetour=sd(avgDetour),meanAvgDetour=mean(avgDetour),sharpeAvgDetour=meanAvgDetour/sdAvgDetour,
+  sdAvgBlockArea=sd(avgBlockArea),meanAvgBlockArea=mean(avgBlockArea),sharpeAvgBlockArea=meanAvgBlockArea/sdAvgBlockArea,
+  sdAvgComponentArea=sd(avgComponentArea),meanAvgComponentArea=mean(avgComponentArea),sharpeAvgComponentArea=meanAvgComponentArea/sdAvgComponentArea,
+  sdFullDilationSteps=sd(fullDilationSteps),meanFullDilationSteps=mean(fullDilationSteps),sharpeFullDilationSteps=meanFullDilationSteps/sdFullDilationSteps,
+  sdFullErosionSteps=sd(fullErosionSteps),meanFullErosionSteps=mean(fullErosionSteps),sharpeFullErosionSteps=meanFullErosionSteps/sdFullErosionSteps
+)
+
+sres=sres[apply(sres,1,function(r){length(which(is.na(r)))==0}),]
+#sres=sres[apply(sres,1,function(r){length(which(r<1e-8))==0}),]
+summary(sres)
 
 
 
 
 ######
-all = rbind(cbind(real[,c(indics,"lon","lat")],generator=rep("real",nrow(real))),cbind(res[,c(indics,"generator")],lon=rep(0,nrow(res)),lat=rep(0,nrow(res))))
+dummyParams = data.frame(matrix(0,nrow(real),length(params)-1));names(dummyParams)<-params[-1]
+all = rbind(cbind(real[,c(indics,"lon","lat")],generator=rep("real",nrow(real)),dummyParams),cbind(res[,c(indics,params)],lon=rep(0,nrow(res)),lat=rep(0,nrow(res))))
 
 morph=all[,indics]
 for(j in 1:ncol(morph)){morph[,j]=(morph[,j]-min(morph[,j]))/(max(morph[,j])-min(morph[,j]))}
@@ -214,15 +237,95 @@ summary(pca)
 pcs = as.matrix(morph)%*%pca$rotation
 all = cbind(all,pcs)
 
+#
+rotcentroids = (as.matrix(cbind(km$centers,matrix(0,nrow = nrow(km$centers),ncol=length(indics)-ncol(km$centers))))%*%realrotation)%*%pca$rotation
 
 g=ggplot(all,aes(x=PC1,y=PC2,color=generator,#size=ifelse(generator=="real",0.01,0.00005),
                  pch=ifelse(generator=="real",'+','.'),
                  alpha=ifelse(generator=="real",0.5,0.01)))
-g+geom_point()+scale_shape_discrete(guide=FALSE)+scale_alpha_continuous(guide=FALSE)+stdtheme
+g+geom_point()+
+  geom_point(data=as.data.frame(rotcentroids[,c('PC1','PC2')]),aes(x=PC1,y=PC2),inherit.aes = F,col='black',pch='+')+
+  scale_shape_discrete(guide=FALSE)+scale_alpha_continuous(guide=FALSE)+stdtheme
 ggsave(file=paste0(resdir,'lhscalib.png'),width=32,height=30,units='cm')
 
 
+
+# plot projected in REAL principal component space
+normalized = all[,indics]
+for(j in 1:ncol(normalized)){normalized[,j]=(normalized[,j]-min(mins[j]))/(maxs[j]-mins[j])}
+rotated=cbind(as.data.frame(as.matrix(normalized)%*%realrotation),generator = all[,c("generator")])
+# reorder factor
+#rotated$generator<-factor(rotated$generator,levels=rotated$generator)
+#rotated=rotated[sample(1:nrow(rotated),1000),]
+g=ggplot(rotated[rotated$generator!='real',],aes(x=PC1,y=PC2,color=generator)) #size=ifelse(generator=="real",0.01,0.00005),
+                 #shape=ifelse(generator=="real","d","a"),
+                 #alpha=ifelse(generator=="real",0.5,0.01)))
+g+geom_point(alpha = 0.5,pch='+',size=1.6)+
+  geom_point(data=rotated[rotated$generator=='real',],aes(x=PC1,y=PC2),inherit.aes = F,col='blue',size=1.5,alpha=0.8,pch='+')+
+  geom_point(data=data.frame(realcenters[,c('PC1','PC2')]),aes(x=PC1,y=PC2,shape="a"),inherit.aes = F,fill='black',size=3)+
+  geom_text(data=data.frame(realcenters[,c('PC1','PC2')],label=1:4),aes(x=PC1,y=PC2,label=label),hjust=2, vjust=2,inherit.aes = F,size=6)+
+  scale_shape_discrete(guide=FALSE,solid=T)+scale_alpha_continuous(guide=FALSE)+
+  scale_color_discrete()+
+  #discrete_scale(aes(size=10),breaks=c("blocks","random","percolation","expMixture"),labels=c("blocks","random","percolation","expMixture"),scale_name="Generator")+
+  stdtheme
+ggsave(file=paste0(resdir,'lhscalib_projrealpcs.png'),width=32,height=30,units='cm')
+
+
+
 ## TODO : additional plots calibration objectives and fitted pops ; plus extreme points with close simulated.
+
+
+
+###### closest sim points
+
+for(objnum in 1:nrow(km$centers)){
+  o1=km$centers[objnum,1];o2=km$centers[objnum,2]
+  show(paste0(objnum,' pc1 = ',o1,' ; pc2 = ',o2))
+  for(generator in unique(as.character(res$generator))){
+  show(paste0('generator = ',generator))
+  dists = apply(rotated[rotated$generator==generator,c('PC1','PC2')],1,function(r){sqrt((r[1]-o1)^2+(r[2]-o2)^2)})
+  allgen = all[all$generator==generator,]
+  allgen$dists = dists
+  sallgens = allgen %>% group_by(id) %>% summarise(count=n(),distsd=sd(dists),dist=mean(dists))
+  sallgens = sallgens[sallgens$count==100,]# !
+  show(sallgens[sallgens$dist==min(sallgens$dist),])
+}
+}
+
+#### closest real points
+for(objnum in 1:nrow(km$centers)){
+  o1=km$centers[objnum,1];o2=km$centers[objnum,2]
+  show(paste0(objnum,' pc1 = ',o1,' ; pc2 = ',o2))
+  dists = apply(rotated[rotated$generator=='real',c('PC1','PC2')],1,function(r){sqrt((r[1]-o1)^2+(r[2]-o2)^2)})
+  allgen = all[all$generator=='real',]
+  show(paste0(' min = ',min(dists)))
+  show(allgen[dists<quantile(dists,0.001),c('lon','lat')])
+}
+
+
+
+##### closest in neighborhood of each objective
+# for(objnum in 1:nrow(km$centers)){
+#   o1=km$centers[objnum,1];o2=km$centers[objnum,2]
+#   show(paste0(objnum,' pc1 = ',o1,' ; pc2 = ',o2))
+#   dists = apply(rotated[rotated$generator=='real',c('PC1','PC2')],1,function(r){sqrt((r[1]-o1)^2+(r[2]-o2)^2)})
+#   allgen = all[all$generator=='real',]
+#   realpoints = allgen[dists<0.02,]
+#   
+#   dists = apply(rotated[rotated$generator!='real',c('PC1','PC2')],1,function(r){sqrt((r[1]-o1)^2+(r[2]-o2)^2)})
+#   allgen = all[all$generator!='real',]
+#   simpoints = allgen[dists<0.02,]
+#   
+#   full=rbind(realpoints,simpoints)
+#   d = as.matrix(dist(full))
+#   diag(d)<-Inf
+#   
+#   rowmins = apply(d[(nrow(realpoints)+1):nrow(full),1:nrow(realpoints)],1,min)
+#   rowminind=which(rowmins==min(rowmins))
+#   show(simpoints[rowminind,])
+#   
+#   colmin = d[(nrow(realpoints)+rowminind),1:nrow(realpoints)]
+# }
 
 
 

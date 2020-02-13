@@ -1,0 +1,88 @@
+
+
+
+1 pc1 = -0.401568005874794 ; pc2 = -0.139034657366536"
+[1] "generator = blocks"
+# A tibble: 1 x 4
+     id count distsd  dist
+  <dbl> <int>  <dbl> <dbl>
+1   998   100 0.0635 0.106
+[1] "generator = random"
+# A tibble: 1 x 4
+     id count distsd  dist
+  <dbl> <int>  <dbl> <dbl>
+1  1617   100 0.0110 0.424
+[1] "generator = percolation"
+# A tibble: 1 x 4
+     id count distsd  dist
+  <dbl> <int>  <dbl> <dbl>
+1   159   100 0.0195 0.325
+[1] "generator = expMixture"
+# A tibble: 1 x 4
+     id count distsd  dist
+  <dbl> <int>  <dbl> <dbl>
+1  1191   100  0.101 0.303
+[1] "2 pc1 = 0.307899227735927 ; pc2 = -0.357540683059979"
+[1] "generator = blocks"
+# A tibble: 1 x 4
+     id count distsd  dist
+  <dbl> <int>  <dbl> <dbl>
+1   182   100 0.0993 0.164
+[1] "generator = random"
+# A tibble: 1 x 4
+     id count distsd  dist
+  <dbl> <int>  <dbl> <dbl>
+1  1655   100 0.0224 0.809
+[1] "generator = percolation"
+# A tibble: 1 x 4
+     id count distsd  dist
+  <dbl> <int>  <dbl> <dbl>
+1  1379   100 0.0194 0.947
+[1] "generator = expMixture"
+# A tibble: 1 x 4
+     id count distsd  dist
+  <dbl> <int>  <dbl> <dbl>
+1   218   100  0.141 0.184
+[1] "3 pc1 = -0.00169022591544116 ; pc2 = -0.0933680483743268"
+[1] "generator = blocks"
+# A tibble: 1 x 4
+     id count distsd   dist
+  <dbl> <int>  <dbl>  <dbl>
+1   324   100 0.0541 0.0950
+[1] "generator = random"
+# A tibble: 1 x 4
+     id count distsd  dist
+  <dbl> <int>  <dbl> <dbl>
+1  1655   100 0.0193 0.428
+[1] "generator = percolation"
+# A tibble: 1 x 4
+     id count distsd  dist
+  <dbl> <int>  <dbl> <dbl>
+1  1379   100 0.0194 0.541
+[1] "generator = expMixture"
+# A tibble: 1 x 4
+     id count distsd  dist
+  <dbl> <int>  <dbl> <dbl>
+1  1021   100 0.0649 0.109
+[1] "4 pc1 = -0.773530217615314 ; pc2 = -0.294339386091329"
+[1] "generator = blocks"
+# A tibble: 1 x 4
+     id count distsd  dist
+  <dbl> <int>  <dbl> <dbl>
+1  1355   100 0.0776 0.311
+[1] "generator = random"
+# A tibble: 1 x 4
+     id count  distsd  dist
+  <dbl> <int>   <dbl> <dbl>
+1   510   100 0.00580 0.515
+[1] "generator = percolation"
+# A tibble: 1 x 4
+     id count distsd   dist
+  <dbl> <int>  <dbl>  <dbl>
+1   660   100 0.0258 0.0836
+[1] "generator = expMixture"
+# A tibble: 1 x 4
+     id count distsd  dist
+  <dbl> <int>  <dbl> <dbl>
+1   408   100  0.149 0.589
+

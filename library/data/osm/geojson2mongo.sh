@@ -7,6 +7,8 @@ FILE=$1
 DB=$2
 CHUNKSIZE=$3
 
+
+# FIXME commented as rerun a WIP (failed import) - uncomment for a full run
 #rm -rf tmp
 #mkdir tmp
 

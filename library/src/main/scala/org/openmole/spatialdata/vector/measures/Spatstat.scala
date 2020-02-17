@@ -125,9 +125,18 @@ object Spatstat {
     val n = pi.length
     val xcoords = MatrixUtils.createRealMatrix(Array.fill(n)(pi.map(_._1)))
     val ycoords = MatrixUtils.createRealMatrix(Array.fill(n)(pi.map(_._2)))
-    MatrixUtils.createRealMatrix(xcoords.subtract(xcoords.transpose()).getData.map(_.map{case x => x*x})).add(MatrixUtils.createRealMatrix(xcoords.subtract(ycoords.transpose()).getData.map(_.map{case x => x*x}))).getData.map{_.map{math.sqrt(_)}}
+    MatrixUtils.createRealMatrix(xcoords.subtract(xcoords.transpose()).getData.map(_.map{case x => x*x})).add(MatrixUtils.createRealMatrix(ycoords.subtract(ycoords.transpose()).getData.map(_.map{case x => x*x}))).getData.map{_.map{math.sqrt(_)}}
   }
 
+  def euclidianDistanceMatrix(pi: Array[Point], pj: Array[Point]): Array[Array[Double]] = {
+    val (n,p) = (pi.length, pj.length)
+    val xj = MatrixUtils.createRealMatrix(Array.fill(n)(pj.map(_._1)))
+    val xi = MatrixUtils.createRealMatrix(Array.fill(p)(pi.map(_._1))).transpose()
+    val yj = MatrixUtils.createRealMatrix(Array.fill(n)(pj.map(_._2)))
+    val yi = MatrixUtils.createRealMatrix(Array.fill(p)(pi.map(_._2))).transpose()
+    MatrixUtils.createRealMatrix(xi.subtract(xj).getData.map(_.map{case x => x*x})).
+      add(MatrixUtils.createRealMatrix(yi.subtract(yj.transpose()).getData.map(_.map{case x => x*x}))).getData.map{_.map{math.sqrt}}
+  }
 
 
 

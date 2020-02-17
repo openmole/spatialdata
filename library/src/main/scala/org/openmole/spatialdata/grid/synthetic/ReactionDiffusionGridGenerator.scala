@@ -76,11 +76,11 @@ object ReactionDiffusionGridGenerator {
       // add new population following pref att rule
       if (population == 0) {
         //choose random patch - if Nan a few will be lost
-        for (_ ← 1 to growthRate.toInt) { val i = rng.nextInt(width); val j = rng.nextInt(height); arrayVals(i)(j) = arrayVals(i)(j) + 1 }
+        for (_ <- 1 to growthRate.toInt) { val i = rng.nextInt(width); val j = rng.nextInt(height); arrayVals(i)(j) = arrayVals(i)(j) + 1 }
       }
       else {
 
-        val oldPop: Array[Array[Double]] = arrayVals.map { _.map { case x ⇒ math.pow(x / population, alphaAtt) } }
+        val oldPop: Array[Array[Double]] = arrayVals.map { _.map { case x => math.pow(x / population, alphaAtt) } }
         val ptot = oldPop.flatten.filter(!_.isNaN).sum
 
         if (iterImpl) {

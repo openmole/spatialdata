@@ -1,6 +1,6 @@
 package org.openmole.spatialdata.model.spatialinteraction
 
-import org.openmole.spatialdata.utils.math.Matrix
+import org.openmole.spatialdata.utils.math.{EmptyMatrix, Matrix}
 import org.openmole.spatialdata.vector.SpatialField
 
 
@@ -23,18 +23,36 @@ trait SpatialInteractionModel {
 
   def observedFlows: Matrix
   def distances: Matrix
-  def originValues: SpatialField
-  def destinationValues: SpatialField
+  def originValues: SpatialField[Double]
+  def destinationValues: SpatialField[Double]
   def predictedFlows: Matrix
-
-
 
 }
 
 object SpatialInteractionModel {
 
+  val empty = new SpatialInteractionModel {
+    def observedFlows = EmptyMatrix()
+    def distances = EmptyMatrix()
+    def originValues: SpatialField[Double] = Map.empty
+    def destinationValues: SpatialField[Double] = Map.empty
+    def predictedFlows: Matrix = EmptyMatrix()
+  }
   //implicit class asFunctionDecorator(m: SpatialInteractionModel){
   //   def asFunction: Matrix => SpatialField => SpatialField => Matrix => Matrix = ???
   //}
+
+  /*
+  // not useful: use SpatialInteractionData
+  def apply(observed: Matrix,dists: Matrix, origin: SpatialField, destination: SpatialField): SpatialInteractionModel =
+    new SpatialInteractionModel{
+      def observedFlows =observed
+      def distances = dists
+      def originValues = origin
+      def destinationValues = destination
+      def predictedFlows = EmptyMatrix()
+    }
+    */
+
 
 }

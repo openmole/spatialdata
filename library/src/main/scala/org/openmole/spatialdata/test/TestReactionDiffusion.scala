@@ -44,7 +44,7 @@ object TestReactionDiffusion {
       (calib,r,t)
     }
 
-    val best = res.minBy(_._2)
+    val best = res.minBy(_._2)(Ordering.Double.TotalOrdering)
 
     println(s"Best is err = ${best._2}")
     println(s"Avg time = ${res.map{_._3}.sum/res.length}")

@@ -58,7 +58,7 @@ object AbstractStreamingInstantiatedOsmXmlParser {
     def getAttributeLocalName(index: Int): String
 
     @throws[StreamException]
-    def close()
+    def close(): Unit
   }
 
 }

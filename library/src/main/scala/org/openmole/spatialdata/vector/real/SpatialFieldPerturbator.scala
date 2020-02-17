@@ -6,6 +6,6 @@ import scala.util.Random
 
 trait SpatialFieldPerturbator {
 
-  def perturbateSpatialField(field: SpatialField)(implicit rng: Random): SpatialField
+  def perturbateSpatialField(field: SpatialField[Double])(implicit rng: Random): SpatialField[Double]
 
 }

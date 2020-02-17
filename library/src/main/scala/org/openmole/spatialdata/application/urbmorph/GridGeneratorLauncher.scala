@@ -64,12 +64,12 @@ case class GridGeneratorLauncher(
       case "random" => RandomGridGenerator(gridSize).generateGrid(rng).map{_.map{case d => if(d < randomDensity) 1.0 else 0.0}}
       case "expMixture" => {
         val intgrid = ExpMixtureGridGenerator(gridSize,expMixtureCenters,1.0,expMixtureRadius).generateGrid(rng)
-        val maxval = intgrid.flatten.max
+        val maxval = intgrid.flatten.max(Ordering.Double.TotalOrdering)
         intgrid.map{_.map{case d => if(d / maxval > expMixtureThreshold) 1.0 else 0.0}}
       }
       case "blocks" => BlocksGridGenerator(gridSize,blocksNumber,blocksMinSize,blocksMaxSize).generateGrid(rng).map{_.map{case d => if(d> 0.0) 1.0 else 0.0}}
       case "percolation" => PercolationGridGenerator(gridSize,percolationProba,percolationBordPoints,percolationLinkWidth,10000).generateGrid(rng)
-      case _             ⇒ { assert(false, "Error : the requested generator does not exist"); Array.empty }
+      case _             => { assert(false, "Error : the requested generator does not exist"); Array.empty }
     }
     if (GridGeneratorLauncher.density(world) > 0.8) GridGeneratorLauncher.emptyGrid(world) else world
   }
@@ -89,9 +89,9 @@ case class GridGeneratorLauncher(
 
 object GridGeneratorLauncher {
 
-  def density(world: Array[Array[Double]]): Double = world.flatten.map { x ⇒ if (x > 0.0) 1.0 else 0.0 }.sum / world.flatten.size
+  def density(world: Array[Array[Double]]): Double = world.flatten.map { x => if (x > 0.0) 1.0 else 0.0 }.sum / world.flatten.size
 
-  def emptyGrid(array: Array[Array[Double]]): Array[Array[Double]] = Array.tabulate(array.length)(i ⇒ Array.fill(array(i).length)(0.0))
+  def emptyGrid(array: Array[Array[Double]]): Array[Array[Double]] = Array.tabulate(array.length)(i => Array.fill(array(i).length)(0.0))
 
 
 }

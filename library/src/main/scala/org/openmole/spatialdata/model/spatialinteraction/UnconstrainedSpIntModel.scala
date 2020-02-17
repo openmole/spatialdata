@@ -15,8 +15,8 @@ import org.openmole.spatialdata.vector.SpatialField
 case class UnconstrainedSpIntModel(
                                   observedFlows: Matrix,
                                   distances: Matrix,
-                                  originValues: SpatialField,
-                                  destinationValues: SpatialField,
+                                  originValues: SpatialField[Double],
+                                  destinationValues: SpatialField[Double],
                                   predictedFlows: Matrix,
                                   fit: SpatialInteractionModel => SpatialInteractionModel = {s: SpatialInteractionModel => s}//FittedSpIntModel.poissonFit
                                   ) extends FittedSpIntModel {

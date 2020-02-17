@@ -1,6 +1,9 @@
 
 package org.openmole.spatialdata
 
+import org.openmole.spatialdata.utils.math.Matrix
+import org.openmole.spatialdata.vector.SpatialField
+
 
 package object grid {
 
@@ -47,6 +50,25 @@ package object grid {
 
     implicit def rasterDimConversion(i:Int): RasterDim = Left(i)
     implicit def rasterDimConversion(c:(Int,Int)): RasterDim = Right(c)
+
+    implicit class RasterLayerDataDecorator(r: RasterLayerData[Double]){
+      // decorate only RasterLayerData[Double] because does not compile with generic type (missing class tag)
+
+      /**
+        * Convert centers of raster cells to points with associated cell value
+        * @return
+        */
+      def asSpatialField: SpatialField[Double] = r.zipWithIndex.map{case (row,i) => row.zipWithIndex.map{case (v,j) => ((i+0.5,j+0.5),Array(v))}}.flatten.toMap
+
+      /**
+        * Euclidian distance matrix between centers of the raster cells - indexing
+        * @return
+        */
+      /*def distanceMatrix: Matrix = {
+        // FIXME not needed, use conversion to spatial field and SpatStat.euclidianDistanceMatrix
+      }*/
+    }
+
 
   }
 

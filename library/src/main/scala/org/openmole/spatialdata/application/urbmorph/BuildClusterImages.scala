@@ -12,7 +12,12 @@ import scala.util.Random
 
 object BuildClusterImages extends App {
   def sqDistance(p1: (Double, Double), p2: (Double, Double)) = Math.pow(p1._1 - p2._1, 2) + Math.pow(p1._2 - p2._2, 2)
-  def buildClusterImagesReal(file: File, outputDir: File, clusters: Map[Int, (Double, Double)], worldWidth: Int = 500, mode: OSMAPIMode = OSMOverpass)(implicit rng: Random) {
+  def buildClusterImagesReal(file: File,
+                             outputDir: File,
+                             clusters: Map[Int, (Double, Double)],
+                             worldWidth: Int = 500,
+                             mode: OSMAPIMode = OSMOverpass
+                            )(implicit rng: Random): Unit = {
     val reader = CSVReader.open(file.toJava)
     val valuesWithDistance = reader.allWithHeaders().map {
       line => {
@@ -40,7 +45,7 @@ object BuildClusterImages extends App {
     }
     reader.close()
   }
-  def buildClusterImagesGenerators(file: File, outputDir: File, clusters: Map[Int, (Double, Double)], rotationFile: File, normFile: File)(implicit rng: Random) {
+  def buildClusterImagesGenerators(file: File, outputDir: File, clusters: Map[Int, (Double, Double)], rotationFile: File, normFile: File)(implicit rng: Random): Unit =  {
     val reader = CSVReader.open(file.toJava)
     val rotation = Source.fromFile(rotationFile.toJava).getLines().toArray.map{_.split(",").map{_.toDouble}}
     val normalization = Source.fromFile(normFile.toJava).getLines().toArray.map{_.split(",").map{_.toDouble}}

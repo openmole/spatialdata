@@ -60,9 +60,9 @@ object ExpMixtureGridGenerator {
     val centers = Array.fill[Int](nCenters, 2) {
       rng.nextInt(gridSize)
     }
-    for (i ← 0 to gridSize - 1; j ← 0 to gridSize - 1) {
-      for (c ← 0 to nCenters - 1) {
-        arrayVals(i)(j) = arrayVals(i)(j) + maxValue * math.exp(-math.sqrt(math.pow((i - centers(c)(0)), 2) + math.pow((j - centers(c)(1)), 2)) / kernelRadius)
+    for (i <- 0 until gridSize; j <- 0 until gridSize) {
+      for (c <- 0 until nCenters) {
+        arrayVals(i)(j) = arrayVals(i)(j) + maxValue * math.exp(-math.sqrt(math.pow(i - centers(c)(0), 2) + math.pow(j - centers(c)(1), 2)) / kernelRadius)
       }
     }
     arrayVals
@@ -87,18 +87,18 @@ object ExpMixtureGridGenerator {
                                ): (RasterData[Double], Seq[Point]) = {
     // grid dimensions
     val dims: (Int, Int) = gridSize match {
-      case Left(s)  ⇒ (s, s)
-      case Right(d) ⇒ d
+      case Left(s)  => (s, s)
+      case Right(d) => d
     }
 
     // ensure parameters consistency
     val maxVals = maxValues match {
-      case Left(d)   ⇒ Seq(d)
-      case Right(dd) ⇒ dd
+      case Left(d)   => Seq(d)
+      case Right(dd) => dd
     }
     val radiuses = kernelRadius match {
-      case Left(d)   ⇒ Seq(d)
-      case Right(dd) ⇒ dd
+      case Left(d)   => Seq(d)
+      case Right(dd) => dd
     }
 
     //if (maxVals.size != radiuses.size) throw new UserBadDataError("Wrong input parameters")
@@ -115,7 +115,7 @@ object ExpMixtureGridGenerator {
       Array.fill(dims._1, dims._2)(0.0)
     }
 
-    for (k ← 0 until layerdim; i ← 0 until dims._1; j ← 0 until dims._2; c ← 0 until nCenters) {
+    for (k <- 0 until layerdim; i <- 0 until dims._1; j <- 0 until dims._2; c <- 0 until nCenters) {
       raster(k)(i)(j) = raster(k)(i)(j) + maxVals(k) * math.exp(-math.sqrt(math.pow(i - centers(c)._1, 2) + math.pow(j - centers(c)._2, 2)) / radiuses(k))
     }
     (raster, centers)

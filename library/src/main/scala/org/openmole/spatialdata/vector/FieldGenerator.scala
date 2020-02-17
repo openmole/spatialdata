@@ -4,6 +4,6 @@ import org.openmole.spatialdata.vector.SpatialField
 
 import scala.util.Random
 
-trait FieldGenerator {
-  def generateField(implicit rng: Random): SpatialField
+trait FieldGenerator[N] {
+  def generateField(implicit rng: Random): SpatialField[N]
 }

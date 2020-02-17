@@ -2,6 +2,9 @@ package org.openmole.spatialdata.test
 
 object Test extends App {
 
+  // Spatial interaction models
+  TestSpatialInteraction.testSyntheticFlows
+
   // Coupled network / grid
   //TestCoupled.testWeakCouplingNodePositions()
   //TestCoupled.testRandom()
@@ -48,7 +51,8 @@ object Test extends App {
   //TestMaths.testConvolution2D
 
   // Utils
-  TestUtils.testBinaryIO
+  //TestUtils.testCSVMatrix
+  //TestUtils.testBinaryIO
   //TestUtils.testSampling
   //TestUtils.testCSV
   //TestPNG.testPNG()

@@ -7,8 +7,8 @@ import org.openmole.spatialdata.vector.SpatialField
 case class QUANT(
                 observedFlows: Seq[Matrix],
                 distances: Seq[Matrix],
-                originValues: SpatialField,
-                destinationValues: SpatialField
+                originValues: SpatialField[Double],
+                destinationValues: SpatialField[Double]
                 )
 
 

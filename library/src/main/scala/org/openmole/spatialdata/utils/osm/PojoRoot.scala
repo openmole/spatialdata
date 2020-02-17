@@ -99,7 +99,7 @@ class PojoRoot extends AbstractRoot with Serializable {
     }
   }
 
-  @SerialVersionUID(1l)
+  @SerialVersionUID(1L)
   class AddVisitor extends OsmObjectVisitor[Void] with Serializable {
     override def visit(node: Node) = {
       getNodes.put(node.getId, node)

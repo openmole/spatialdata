@@ -8,6 +8,6 @@ case class DiscreteCorrelatedSpatialFieldPerturbator(
 
                                                     ) extends SpatialFieldPerturbator {
 
-  override def perturbateSpatialField(field: SpatialField)(implicit rng: Random): SpatialField = field
+  override def perturbateSpatialField(field: SpatialField[Double])(implicit rng: Random): SpatialField[Double] = field
 
 }

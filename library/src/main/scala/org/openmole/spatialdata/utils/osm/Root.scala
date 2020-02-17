@@ -9,7 +9,7 @@ object Root {
 
 
 trait Root {
-  def add(osmObject: OsmObject)
+  def add(osmObject: OsmObject): Unit
 
   def getNode(identity: Long): Node
 

@@ -66,6 +66,8 @@ case class Node(id: Int,
 
 object Node {
   def apply(id: Int,x: Double,y: Double): Node = Node(id,(x,y))
+
+  def apply(p: Point): Node = Node(0,p)
 }
 
 

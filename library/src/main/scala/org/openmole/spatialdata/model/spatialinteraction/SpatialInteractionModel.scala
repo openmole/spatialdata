@@ -1,5 +1,6 @@
 package org.openmole.spatialdata.model.spatialinteraction
 
+import org.openmole.spatialdata.network.{Link, Node}
 import org.openmole.spatialdata.utils.math.{EmptyMatrix, Matrix}
 import org.openmole.spatialdata.vector.SpatialField
 
@@ -26,6 +27,12 @@ trait SpatialInteractionModel {
   def originValues: SpatialField[Double]
   def destinationValues: SpatialField[Double]
   def predictedFlows: Matrix
+
+
+  def flowsAsLinks: Seq[Link] = originValues.keys.zipWithIndex.map{case (oi,i) => destinationValues.keys.zipWithIndex.map{
+    case (dj,j) => Link(Node(oi),Node(dj),weight = observedFlows.get(i,j))
+  }.toSeq}.toSeq.flatten
+
 
 }
 

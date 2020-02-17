@@ -16,6 +16,8 @@ object TestNetwork {
 
   implicit val rng = new Random
 
+  implicit val doubleOrdering = Ordering.Double.TotalOrdering
+
 
   def testSimplification: Unit = {
     val (lat,lon) = (51.5213835,-0.1347904)

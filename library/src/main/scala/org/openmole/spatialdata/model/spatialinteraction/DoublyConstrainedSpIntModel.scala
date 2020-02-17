@@ -37,19 +37,24 @@ object DoublyConstrainedSpIntModel {
       * @return
       */
     def iterateWeights(state: (Matrix,Matrix,Double)): (Matrix,Matrix,Double) = {
-      val prevOriginWeight = state._1
+      val prevOriginWeights = state._1
       val prevDestWeights = state._2
       //utils.log("Prev orig weights: "+prevOriginWeight+" ; Prev dest weights: "+prevDestWeights)
-      println(s"avg ow = ${prevOriginWeight.values.flatten.sum/prevOriginWeight.values.flatten.length}")
+      println(s"avg ow = ${prevOriginWeights.values.flatten.sum/prevOriginWeights.values.flatten.length}")
       println(s"avg dw = ${prevDestWeights.values.flatten.sum/prevDestWeights.values.flatten.length}")
-      val originWeights = (costMatrix %*% (prevDestWeights * origin)).map(1/_)
-      val destWeights = (costMatrix %*% (prevOriginWeight * destination)).map(1/_)
-      val epsilon = ((prevOriginWeight - originWeights).map(math.abs).values.flatten.sum/(prevOriginWeight.values.flatten.sum + originWeights.values.flatten.sum)) + ((prevDestWeights - destWeights).map(math.abs).values.flatten.sum/(prevDestWeights.values.flatten.sum + destWeights.values.flatten.sum))
+      val originWeightsUnnorm = (costMatrix %*% (prevDestWeights * origin)).map(1/_)
+      val destWeightsUnnorm = (costMatrix %*% (prevOriginWeights * destination)).map(1/_)
+      val (otot,dtot) = (originWeightsUnnorm.sum,destWeightsUnnorm.sum)
+      val (originWeights,destWeights) = (originWeightsUnnorm.map(_ / otot),destWeightsUnnorm.map(_ / dtot))
+      val epsilon = ((prevOriginWeights - originWeights).map(math.abs).values.flatten.sum/(prevOriginWeights.values.flatten.sum + originWeights.values.flatten.sum)) + ((prevDestWeights - destWeights).map(math.abs).values.flatten.sum/(prevDestWeights.values.flatten.sum + destWeights.values.flatten.sum))
       utils.log("Doubly constrained flows: epsilon = "+epsilon)
       (originWeights,destWeights,epsilon)
     }
     val (ow,dw,_) = Iterator.iterate((initialOriginWeights,initialDestinationWeights,Double.MaxValue.toDouble))(iterateWeights).takeWhile(_._3>tolerance).toSeq.last
-    Matrix.cbind(Array.fill(destination.nrows)(ow*origin))*Matrix.rbind(Array.fill(origin.nrows)(dw*destination))*costMatrix
+    //Matrix.cbind(Array.fill(destination.nrows)(ow*origin))*Matrix.rbind(Array.fill(origin.nrows)((dw*destination).transpose))*costMatrix
+    val ocol = (ow*origin).values.flatten
+    val drow = (dw*destination).values.flatten
+    Matrix(Array.fill(drow.length)(ocol).transpose)*Matrix(Array.fill(ocol.length)(drow))*costMatrix
   }
 
 

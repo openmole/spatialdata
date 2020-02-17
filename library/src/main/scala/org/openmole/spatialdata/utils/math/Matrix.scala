@@ -38,6 +38,11 @@ sealed trait Matrix {
   //def inverse: Matrix // should use pseudo inverse or restrict?
   def determinant: Double
 
+  def sum: Double = values.flatten.sum
+  def mean: Double = values.flatten.sum/(nrows*ncols)
+  def min: Double = values.flatten.min(Ordering.Double.TotalOrdering)
+  def max: Double = values.flatten.max(Ordering.Double.TotalOrdering)
+
 }
 
 /**
@@ -87,18 +92,21 @@ object Matrix {
   /**
     * Row bind two matrices
     * FIXME rewrite specific for sparse mats
+    *
+    * FIXME need to test these
+    *
     * @param a1
     * @param a2
     * @return
     */
-  def rbind(a1: Matrix, a2: Matrix): Matrix = Matrix(a1.values++a2.values)
+  //def rbind(a1: Matrix, a2: Matrix): Matrix = Matrix(a1.values++a2.values)
 
   /**
     * Row bind several matrices
     * @param a
     * @return
     */
-  def rbind(a: Array[Matrix]): Matrix = a.reduce(rbind)
+  //def rbind(a: Array[Matrix]): Matrix = a.reduce(rbind)
 
   /**
     * Column bind two matrices
@@ -106,14 +114,14 @@ object Matrix {
     * @param a2
     * @return
     */
-  def cbind(a1: Matrix, a2: Matrix): Matrix = Matrix((a1.values.transpose++a2.values.transpose).transpose)
+  //def cbind(a1: Matrix, a2: Matrix): Matrix = Matrix((a1.values.transpose++a2.values.transpose).transpose)
 
   /**
     * Column bind several matrices
     * @param a
     * @return
     */
-  def cbind(a: Array[Matrix]): Matrix = a.reduce(cbind)
+  //def cbind(a: Array[Matrix]): Matrix = a.reduce(cbind)
 
 
 }

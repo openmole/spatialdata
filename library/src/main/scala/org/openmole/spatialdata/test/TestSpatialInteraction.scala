@@ -1,6 +1,7 @@
 package org.openmole.spatialdata.test
 
 import org.openmole.spatialdata.model.spatialinteraction.synthetic.PolycentricGridGravityFlowsGenerator
+import org.openmole.spatialdata.utils.visualization
 
 import scala.util.Random
 
@@ -21,6 +22,11 @@ object TestSpatialInteraction {
       destinationExponent = 1.5,
       costFunction = {d => math.exp(- d / 10.0)}
     ).generateFlows
+
+    // vis is bad - need some filtering + coords adjustement
+    //visualization.staticFlowsVisualization(syntheticFlows)
+
+    println(s"Avg flow = ${syntheticFlows.observedFlows.mean}")
 
   }
 

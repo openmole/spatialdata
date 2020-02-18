@@ -33,8 +33,10 @@ libraryDependencies ++= Seq(
   "org.apache.httpcomponents" % "httpclient" % "4.3.5",
   "commons-io" % "commons-io" % "2.3",
   "org.apache.commons" % "commons-lang3" % "3.1",
-  "it.uniroma1.dis.wsngroup.gexf4j" % "gexf4j" % "1.0.0"//,
-  //"org.gephi" % "gephi-toolkit" % "0.9.2" // full gephi lib is 68Mo ! maybe not a good idea to use it
+  "it.uniroma1.dis.wsngroup.gexf4j" % "gexf4j" % "1.0.0",
+  //"org.gephi" % "gephi-toolkit" % "0.9.2" // full gephi lib is 68Mo ! totally a bad idea to use it
+  "org.scalanlp" %% "breeze" % "1.0"
+
 )
 
 

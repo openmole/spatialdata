@@ -2,7 +2,8 @@ package org.openmole.spatialdata.utils.math
 
 import org.apache.commons.math3.linear
 import org.apache.commons.math3.linear.LUDecomposition
-
+import breeze.linalg
+import breeze.linalg.CSCMatrix
 
 /**
   * FIXME could make generic?
@@ -22,7 +23,7 @@ sealed trait Matrix {
   def ncols: Int = values.head.size
 
   //basic ring operations (R style for the notation)
-  def %+%(m: Matrix): Matrix
+  //def %+%(m: Matrix): Matrix // does not make any sense!
   def %*%(m: Matrix): Matrix
 
   // scalar operations
@@ -132,7 +133,7 @@ case class EmptyMatrix() extends Matrix {
   override def get(i: Int, j: Int): Double = 0.0
   override def set(i: Int, j: Int, v: Double): Matrix = this
   override def %*%(m: Matrix): Matrix = this
-  override def %+%(m: Matrix): Matrix = this
+  //override def %+%(m: Matrix): Matrix = this
   override def *(m: Matrix): Matrix = this
   override def +(m: Matrix): Matrix = this
   override def -(m: Matrix): Matrix = this
@@ -209,7 +210,8 @@ case class RealMatrix(m: linear.RealMatrix) extends DenseMatrix {
     }
   }
 
-  override def %+%(m2: Matrix): Matrix = dispatchOp{m2=>RealMatrix(m.add(m2.m))}(m2)
+  //override def %+%(m2: Matrix): Matrix = dispatchOp{m2=>RealMatrix(m.add(m2.m))}(m2)
+
   override def %*%(m2: Matrix): Matrix = dispatchOp{m2=>RealMatrix(m.multiply(m2.m))}(m2)
   override def +(m2: Matrix): Matrix = dispatchOp{m2=>RealMatrix(m.getData.zip(m2.m.getData).map{case (row1,row2) => row1.zip(row2).map{case (v1,v2) => v1 + v2}})}(m2)
   override def -(m2: Matrix): Matrix = dispatchOp{m2=>RealMatrix(m.getData.zip(m2.m.getData).map{case (row1,row2) => row1.zip(row2).map{case (v1,v2) => v1 - v2}})}(m2)
@@ -228,14 +230,36 @@ object RealMatrix {
 }
 
 /**
-  * TODO breeze DenseMatrix
-  *  and / or spark ?
+  * breeze DenseMatrix
+  *  TODO test spark ?
   */
-//case class DenseMatrix() extends Matrix
+case class BreezeDenseMatrix(m: linalg.DenseMatrix[Double]) extends Matrix {
+  override def clone: BreezeDenseMatrix = this.copy(m = linalg.DenseMatrix[Array[Double],Double](values.clone.flatten))//FIXME constructor not correct?
+  override def values: Array[Array[Double]] = m.data.grouped(m.cols).toArray
+  override def get(i: Int, j: Int): Double = m.valueAt(i,j)
+  override def set(i: Int, j: Int, v: Double): Matrix = {
+    val d = clone.m
+    d.data(d.linearIndex(i,j))=v
+    BreezeDenseMatrix(d)
+  }
 
-//object DenseMatrix {
-//  val empty = DenseMatrix()
-//}
+  override def map(f: Double => Double): Matrix = BreezeDenseMatrix(m.map(f))
+
+  def dispatchOp(op: BreezeDenseMatrix => BreezeDenseMatrix): Matrix => Matrix = {
+    m2: Matrix => m2 match {
+      case m2: BreezeDenseMatrix => op(m2)
+      case _ => throw new UnsupportedOperationException("Matrix implementations combination not supported")
+    }
+  }
+
+  //override def %+%(m2: Matrix): Matrix = dispatchOp{m2=>BreezeDenseMatrix(m+m2.m)}(m2)
+  override def %*%(m2: Matrix): Matrix = dispatchOp{m2=>BreezeDenseMatrix(m*m2.m)}(m2)
+  override def +(m2: Matrix): Matrix = dispatchOp{m2=>BreezeDenseMatrix(m+m2.m)}(m2)
+  override def -(m2: Matrix): Matrix = dispatchOp{m2=>BreezeDenseMatrix(m-m2.m)}(m2)
+  override def *(m2: Matrix): Matrix = dispatchOp{m2=>BreezeDenseMatrix(m*:*m2.m)}(m2)
+  override def transpose: Matrix = BreezeDenseMatrix(m.t)
+  override def determinant: Double = 0.0 // FIXME find LU dec impl in breeze
+}
 
 
 
@@ -259,7 +283,7 @@ object SparseMatrix{
 }
 
 
-case class SparseMatrixImpl(m: linear.OpenMapRealMatrix) extends Matrix {
+case class SparseMatrixImpl(m: linear.OpenMapRealMatrix) extends SparseMatrix {
 
   // FIXME this is highly inefficient: for setting one element, the immutable constraint leads to cloning everything!
   // TODO alternative impl and some tests? or switch to mutable :/
@@ -296,7 +320,7 @@ case class SparseMatrixImpl(m: linear.OpenMapRealMatrix) extends Matrix {
     }
   }
 
-  override def %+%(m2: Matrix): Matrix = dispatchOp {m2 => SparseMatrixImpl(m.add(m2.m))}(m2)
+  //override def %+%(m2: Matrix): Matrix = dispatchOp {m2 => SparseMatrixImpl(m.add(m2.m))}(m2)
   override def %*%(m2: Matrix): Matrix = dispatchOp {m2 => SparseMatrixImpl(m.multiply(m2.m))}(m2)
   // FIXME check and reimplement, inefficient for now
   override def +(m2: Matrix): Matrix = dispatchOp{m2=>SparseMatrixImpl(m.getData.zip(m2.m.getData).map{case (row1,row2) => row1.zip(row2).map{case (v1,v2) => v1 + v2}})}(m2)
@@ -310,11 +334,40 @@ case class SparseMatrixImpl(m: linear.OpenMapRealMatrix) extends Matrix {
 }
 
 object SparseMatrixImpl {
+
+  def apply(entries: Array[(Int,Int,Double)], n: Int, p: Int): SparseMatrixImpl = {
+    val m:linear.OpenMapRealMatrix = new linear.OpenMapRealMatrix(n,p)
+    entries.foreach{case (i,j,v) => m.setEntry(i,j,v)}
+    SparseMatrixImpl(m)
+  }
+
+  /**
+    * ! this constructor does not make sense - the sparse matrix is full
+    * @param a
+    * @return
+    */
   def apply(a: Array[Array[Double]]): SparseMatrixImpl = {
     val (n,p) = (a.length,a(0).length) //assume the array is actually a matrix (same row size)
     val m:linear.OpenMapRealMatrix = new linear.OpenMapRealMatrix(n,p) // mutable !
     a.zipWithIndex.foreach{case (row,i) => row.zipWithIndex.foreach{case (v,j) => m.setEntry(i,j,v)}}
     SparseMatrixImpl(m)
+  }
+}
+
+
+case class BreezeSparseMatrix(m: linalg.CSCMatrix[Double]) {//extends SparseMatrix {
+
+
+}
+
+object BreezeSparseMatrix {
+
+  def apply(entries: Array[(Int,Int,Double)],n: Int, p: Int): BreezeSparseMatrix = {
+    val builder = new CSCMatrix.Builder[Double](rows = 10, cols = 10)
+    entries.foreach {case (i,j,v)=>
+      builder.add(i, j, v)
+    }
+    BreezeSparseMatrix(builder.result())
   }
 }
 

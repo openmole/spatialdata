@@ -86,10 +86,10 @@ object SinglyConstrainedSpIntModel {
       // ! with the form exp(-d/d0), inverse than exp(-beta d)
       val newfitparameter = fitparameter*obsObjective/predObjective
       val newmodel = model.copy(predictedFlows = predictedFlows, fittedParam = newfitparameter)
-      utils.log(s"avg obs travel distance = $obsObjective")
-      utils.log(s"avg pred travel distance = $predObjective")
+      //utils.log(s"avg obs travel distance = $obsObjective")
+      //utils.log(s"avg pred travel distance = $predObjective")
       val error = math.abs(predObjective - obsObjective)/obsObjective
-      utils.log("fit singly constr: error = "+error)
+      //utils.log("fit singly constr: error = "+error)
       (newmodel,error)
     }
     val initialModel = model.copy(predictedFlows=singlyConstrainedFlows(origin,destination,model.distances.map(model.costFunction(_,initialValue)),originConstraint),

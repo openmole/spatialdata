@@ -6,7 +6,9 @@ import org.apache.commons.math3.linear
 import org.apache.commons.math3.linear.LUDecomposition
 import breeze.linalg
 import breeze.linalg.CSCMatrix
+import org.openmole.spatialdata.utils.math.Matrix.Sparse
 
+import scala.collection.mutable
 import scala.util.Random
 
 /**
@@ -47,6 +49,9 @@ sealed trait Matrix {
   def mean: Double = values.flatten.sum/(nrows*ncols)
   def min: Double = values.flatten.min(Ordering.Double.TotalOrdering)
   def max: Double = values.flatten.max(Ordering.Double.TotalOrdering)
+
+  def rowSum: Array[Double]
+  def colSum: Array[Double]
 
 }
 
@@ -144,13 +149,17 @@ case class EmptyMatrix() extends Matrix {
   override def map(f: Double => Double): Matrix = this
   override def determinant: Double = 0.0
   override def transpose: Matrix = this
-
+  override def rowSum: Array[Double] = Array.empty[Double]
+  override def colSum: Array[Double] = Array.empty[Double]
 }
 
 /**
   * Dense matrix
   */
-sealed trait DenseMatrix extends Matrix
+sealed trait DenseMatrix extends Matrix {
+  def rowSum: Array[Double] = values.map{_.sum}
+  def colSum: Array[Double] = transpose.values.map{_.sum}
+}
 
 object DenseMatrix {
 
@@ -175,7 +184,11 @@ object DenseMatrix {
     * @param p
     * @return
     */
-  def zeros(n: Int, p: Int): DenseMatrix = DenseMatrix(Array.fill(n)(Array.fill(p)(0.0)))
+  def zeros(n: Int, p: Int): DenseMatrix = constant(n,p,0.0)
+
+  def ones(n: Int, p: Int): DenseMatrix = constant(n,p,1.0)
+
+  def constant(n: Int, p: Int, v: Double): DenseMatrix = DenseMatrix(Array.fill(n)(Array.fill(p)(v)))
 
   /**
     * random dense matrix
@@ -294,6 +307,7 @@ case class BreezeDenseMatrix(m: linalg.DenseMatrix[Double]) extends DenseMatrix 
   override def *(m2: Matrix): Matrix = dispatchOp{m2=>BreezeDenseMatrix(m*:*m2.m)}(m2)
   override def transpose: Matrix = BreezeDenseMatrix(m.t)
   override def determinant: Double = 0.0 // FIXME find LU dec impl in breeze
+
 }
 
 object BreezeDenseMatrix {
@@ -304,7 +318,9 @@ object BreezeDenseMatrix {
 
 
 
-sealed trait SparseMatrix extends Matrix
+sealed trait SparseMatrix extends Matrix {
+  def nentries: Int
+}
 
 
 object SparseMatrix{
@@ -330,6 +346,16 @@ object SparseMatrix{
     case _ => SparseMatrixImpl(entries,n,p)
   }
 
+  /**
+    * convert from dense - should better have a toSparse function? rq. breeze has built-in toDense
+    * @param m
+    */
+  def apply(m: DenseMatrix): SparseMatrix =  DEFAULT_SPARSE_MATRIX_IMPLEMENTATION match {
+    case _: SparseCommons => SparseMatrixImpl(m)
+    case _: SparseBreeze => BreezeSparseMatrix(m)
+    case _ => SparseMatrixImpl(m)
+  }
+
 
   /**
     * Random sparse matrix
@@ -340,7 +366,11 @@ object SparseMatrix{
     * @return
     */
   def randomSparseMatrix(n: Int, p: Int, density: Double)(implicit rng: Random): SparseMatrix = {
-    val inds: Seq[(Int,Int)] = Stochastic.sampleWithoutReplacement[(Int,Int)](for {i <- 0 until n;j <- 0 until p} yield (i,j), (n*p*density).toInt)
+    // this is highly inefficient for high dimensions - sample and reject strategy better
+    //val inds: Seq[(Int,Int)] = Stochastic.sampleWithoutReplacement[(Int,Int)](for {i <- 0 until n;j <- 0 until p} yield (i,j), (n*p*density).toInt)
+    val inds = new mutable.HashSet[(Int,Int)]
+    def drawInds(numInds: Int): Int = {inds.add((rng.nextInt(n),rng.nextInt(p)));inds.size}
+    Iterator.iterate(0)(drawInds).takeWhile(_<(n*p*density).toInt)
     SparseMatrix(inds.map{case (i,j) => (i,j,rng.nextDouble())}.toArray,n, p)
   }
 
@@ -395,6 +425,12 @@ case class SparseMatrixImpl(m: linear.OpenMapRealMatrix) extends SparseMatrix {
   override def transpose: Matrix = RealMatrix(m.transpose())
   override def determinant: Double = new linear.LUDecomposition(m).getDeterminant
 
+  //FIXME not optimal?
+  override def rowSum: Array[Double] = m.getData.map{_.sum}
+  override def colSum: Array[Double] = m.getData.transpose.map{_.sum}
+
+  override def nentries: Int = m.getData.flatten.count(_>0.0)
+
 }
 
 object SparseMatrixImpl {
@@ -416,6 +452,14 @@ object SparseMatrixImpl {
     a.zipWithIndex.foreach{case (row,i) => row.zipWithIndex.foreach{case (v,j) => m.setEntry(i,j,v)}}
     SparseMatrixImpl(m)
   }
+
+  /**
+    * from a dense matrix - all elements are filled also
+    * @param m
+    * @return
+    */
+  def apply(m: DenseMatrix): SparseMatrixImpl = SparseMatrixImpl(m.values)
+
 }
 
 
@@ -476,10 +520,23 @@ case class BreezeSparseMatrix(m: linalg.CSCMatrix[Double]) extends SparseMatrix 
 
   // FIXME Breeze LU implementation?
   override def determinant: Double = 0.0
+
+  override def rowSum: Array[Double] = m.data.zip(m.rowIndices).groupBy(_._2).toSeq.map(_._2.map(_._1).sum).toArray
+  override def colSum: Array[Double] = Array.tabulate(nrows)(j => util.Arrays.copyOfRange(m.data,m.colPtrs(j), m.colPtrs(j+1)).sum)
+
+  override def nentries: Int = m.data.length
+
 }
 
 object BreezeSparseMatrix {
 
+  /**
+    * from list of entries
+    * @param entries
+    * @param n
+    * @param p
+    * @return
+    */
   def apply(entries: Array[(Int,Int,Double)],n: Int, p: Int): BreezeSparseMatrix = {
     val builder = new CSCMatrix.Builder[Double](rows = n, cols = p)
     entries.foreach {case (i,j,v)=>
@@ -488,11 +545,23 @@ object BreezeSparseMatrix {
     BreezeSparseMatrix(builder.result())
   }
 
+  /**
+    * from values
+    * @param a
+    * @return
+    */
   def apply(a: Array[Array[Double]]): BreezeSparseMatrix = {
     val builder = new CSCMatrix.Builder[Double](rows = a.length, cols = a(0).length)
     a.zipWithIndex.foreach{case (row,i) => row.zipWithIndex.foreach{case (v,j) => builder.add(i,j,v)}}
     BreezeSparseMatrix(builder.result())
   }
+
+  /**
+    * from dense matrix
+    * @param m
+    * @return
+    */
+  def apply(m: DenseMatrix): BreezeSparseMatrix = apply(m.values)
 
 }
 

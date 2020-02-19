@@ -1,7 +1,7 @@
 package org.openmole.spatialdata.model.spatialinteraction
 
 import org.openmole.spatialdata.utils
-import org.openmole.spatialdata.utils.math.{EmptyMatrix, Matrix}
+import org.openmole.spatialdata.utils.math.{DenseMatrix, EmptyMatrix, Matrix, SparseMatrix}
 import org.openmole.spatialdata.vector.SpatialField
 
 object DoublyConstrainedSpIntModel {
@@ -23,14 +23,20 @@ object DoublyConstrainedSpIntModel {
                              costMatrix: Matrix,
                              tolerance: Double = 0.01): Matrix = {
     // FIXME should add check on dimensions
+    costMatrix match {
+      case _: DenseMatrix => Matrix.MatrixImplementation.setDefaultDense
+      case _: SparseMatrix => Matrix.MatrixImplementation.setDefaultSparse
+      case _: EmptyMatrix => throw new UnsupportedOperationException("Cost matrix can not be empty")
+    }
+
     val origin: Matrix = Matrix(originMasses.toArray,false)
     val destination: Matrix = Matrix(destinationMasses.toArray,false)
     val initialOriginWeights = Matrix(Array.fill(originMasses.size)(1.0 / originMasses.size.toDouble),false)
     val initialDestinationWeights = Matrix(Array.fill(destinationMasses.size)(1.0 / destinationMasses.size.toDouble),false)
 
     utils.log(s"cost matrix avg= ${costMatrix.values.flatten.sum/(costMatrix.nrows*costMatrix.ncols)}")
-    utils.log(s"origin avg=${origin.values.flatten.sum/origin.values.flatten.size}")
-    utils.log(s"dest avg=${destination.values.flatten.sum/origin.values.flatten.size}")
+    utils.log(s"origin avg=${origin.values.flatten.sum/origin.values.flatten.length}")
+    utils.log(s"dest avg=${destination.values.flatten.sum/origin.values.flatten.length}")
     /**
       * state composed by column vectors of weights and absolute weight variation (relative ?)
       * @param state
@@ -40,8 +46,8 @@ object DoublyConstrainedSpIntModel {
       val prevOriginWeights = state._1
       val prevDestWeights = state._2
       //utils.log("Prev orig weights: "+prevOriginWeight+" ; Prev dest weights: "+prevDestWeights)
-      println(s"avg ow = ${prevOriginWeights.values.flatten.sum/prevOriginWeights.values.flatten.length}")
-      println(s"avg dw = ${prevDestWeights.values.flatten.sum/prevDestWeights.values.flatten.length}")
+      //println(s"avg ow = ${prevOriginWeights.values.flatten.sum/prevOriginWeights.values.flatten.length}")
+      //println(s"avg dw = ${prevDestWeights.values.flatten.sum/prevDestWeights.values.flatten.length}")
       val originWeightsUnnorm = (costMatrix %*% (prevDestWeights * origin)).map(1/_)
       val destWeightsUnnorm = (costMatrix %*% (prevOriginWeights * destination)).map(1/_)
       val (otot,dtot) = (originWeightsUnnorm.sum,destWeightsUnnorm.sum)
@@ -54,6 +60,7 @@ object DoublyConstrainedSpIntModel {
     //Matrix.cbind(Array.fill(destination.nrows)(ow*origin))*Matrix.rbind(Array.fill(origin.nrows)((dw*destination).transpose))*costMatrix
     val ocol = (ow*origin).values.flatten
     val drow = (dw*destination).values.flatten
+    // FIXME not efficient with sparse here ?
     Matrix(Array.fill(drow.length)(ocol).transpose)*Matrix(Array.fill(ocol.length)(drow))*costMatrix
   }
 

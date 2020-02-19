@@ -6,7 +6,7 @@ import org.openmole.spatialdata.vector.{FieldGenerator, Point, SpatialField}
 import org.openmole.spatialdata.vector.measures.Spatstat
 import org.openmole.spatialdata.grid.Implicits._
 import org.openmole.spatialdata.grid.RasterLayerData
-import org.openmole.spatialdata.utils.math.{DenseMatrix, Matrix}
+import org.openmole.spatialdata.utils.math.{DenseMatrix, Matrix, SparseMatrix}
 
 import scala.util.Random
 
@@ -39,7 +39,8 @@ case class PolycentricGridGravityFlowsGenerator(
                                                destinationRadius: Double,
                                                originExponent: Double,
                                                destinationExponent: Double,
-                                               costFunction: Double => Double
+                                               costFunction: Double => Double,
+                                               sparse: Boolean = false
                                                ) extends FlowsGenerator {
 
 
@@ -53,7 +54,12 @@ case class PolycentricGridGravityFlowsGenerator(
     val destination: FieldGenerator[Double] = new FieldGenerator[Double] {
       override def generateField(implicit rng: Random): SpatialField[Double] = ExpMixtureGridGenerator(gridSize,centers,maxDestination,destinationRadius,false,centerCoords).generateGrid(rng).asSpatialField
     }
-    def dmat(pi: Seq[Point], pj: Seq[Point]) = DenseMatrix(Spatstat.euclidianDistanceMatrix(pi.toArray,pj.toArray))
+
+    def dmat(pi: Seq[Point], pj: Seq[Point]) = {
+      val rawdmat = Spatstat.euclidianDistanceMatrix(pi.toArray,pj.toArray)
+      if (sparse) SparseMatrix(rawdmat.zipWithIndex.map{case (row,i) => row.zipWithIndex.map{case (d,j) => if (d<3*originRadius) Some((i,j,d)) else None}}.flatten.filter(_.isDefined).map{_.get},rawdmat.length,rawdmat(0).length) else DenseMatrix(rawdmat)
+    }
+
     def originTransformation(a: Array[Double]): Double = math.pow(a(0),originExponent)
     def destinationTransformation(a: Array[Double]): Double = math.pow(a(0),destinationExponent)
     def flowsFunction: (Seq[Double], Seq[Double], Matrix)=> Matrix = DoublyConstrainedSpIntModel.doublyConstrainedFlows(_,_,_,0.01)

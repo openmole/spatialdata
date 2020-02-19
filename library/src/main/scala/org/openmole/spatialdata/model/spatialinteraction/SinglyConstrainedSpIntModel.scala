@@ -71,6 +71,10 @@ object SinglyConstrainedSpIntModel {
 
     val (origin,destination) = (Matrix(model.originValues.values.flatten.toArray,false),Matrix(model.destinationValues.values.flatten.toArray,false))
 
+    println(s"origin: ${origin.nrows}x${origin.ncols}")
+    println(s"destination: ${destination.nrows}x${destination.ncols}")
+    println(s"dmat: ${model.distances.nrows}xx${model.distances.ncols}")
+
     /**
       * State is (model including cost function, current parameter value, epsilon)
       * @param state
@@ -112,6 +116,7 @@ object SinglyConstrainedSpIntModel {
                              originConstraint: Boolean
                             ): Matrix = {
     val normalization = (if (originConstraint) costMatrix %*% destinationMasses else costMatrix %*% originMasses).map(1/_)
+    // FIXME add sparse option here - element wise multiplication later - should be able to build in O(elem) in a sparse way
     val omat = if (originConstraint) Matrix(Array.fill(destinationMasses.nrows)((originMasses*normalization).values.flatten).transpose) else Matrix(Array.fill(destinationMasses.nrows)(originMasses.values.flatten).transpose)
     val dmat = if (originConstraint) Matrix(Array.fill(originMasses.nrows)(destinationMasses.values.flatten)) else Matrix(Array.fill(originMasses.nrows)((destinationMasses*normalization).values.flatten))
     omat*dmat*costMatrix

@@ -49,6 +49,7 @@ object CSV {
 
   /**
     * Read a sparse mat as a csv (i,j,v)
+    *  **Spec: first line is (N,P)**
     * @param file
     * @param sep
     * @param naformat
@@ -58,6 +59,9 @@ object CSV {
     val entries = new ArrayBuffer[(Int,Int,Double)]
     val r = new BufferedReader(new FileReader(new File(file)))
     var currentline = r.readLine()
+    val entry = currentline.split(sep)
+    val (n,p) = (entry(0).toInt,entry(1).toInt)
+    currentline = r.readLine()
     while(currentline!=null){
       val entry = currentline.split(sep)
       val (i,j) = (entry(0).toInt,entry(1).toInt)
@@ -66,8 +70,8 @@ object CSV {
       currentline = r.readLine()
     }
     val aentries = entries.toArray
-    val n = aentries.map(_._1).max // FIXME this is not correct if last columns/rows are empty
-    val p = aentries.map(_._2).max
+    //val n = aentries.map(_._1).max // this is not correct if last columns/rows are empty
+    //val p = aentries.map(_._2).max
     SparseMatrixImpl(aentries,n,p)
   }
 

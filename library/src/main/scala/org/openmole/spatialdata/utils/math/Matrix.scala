@@ -1,9 +1,13 @@
 package org.openmole.spatialdata.utils.math
 
+import java.util
+
 import org.apache.commons.math3.linear
 import org.apache.commons.math3.linear.LUDecomposition
 import breeze.linalg
 import breeze.linalg.CSCMatrix
+
+import scala.util.Random
 
 /**
   * FIXME could make generic?
@@ -152,17 +156,48 @@ object DenseMatrix {
 
   sealed trait DenseMatrixImplementation
   case class Real() extends DenseMatrixImplementation
-  //case class DenseBreeze() extends DenseMatrixImplementation
+  case class DenseBreeze() extends DenseMatrixImplementation
   private var DEFAULT_DENSE_MATRIX_IMPLEMENTATION: DenseMatrixImplementation = Real()
   object DenseMatrixImplementation {
-    def setDefaultReal: Unit = DEFAULT_DENSE_MATRIX_IMPLEMENTATION = Real()
-    // def setDefaultDenseBreeze: Unit = DEFAULT_DENSE_MATRIX_IMPLEMENTATION = DenseBreeze()
+    def setImplReal: Unit = DEFAULT_DENSE_MATRIX_IMPLEMENTATION = Real()
+    def setImplDenseBreeze: Unit = DEFAULT_DENSE_MATRIX_IMPLEMENTATION = DenseBreeze()
   }
 
-  def apply(a: Array[Array[Double]]): Matrix = DEFAULT_DENSE_MATRIX_IMPLEMENTATION match {
+  def apply(a: Array[Array[Double]]): DenseMatrix = DEFAULT_DENSE_MATRIX_IMPLEMENTATION match {
     case _: Real => RealMatrix(a)
+    case _: DenseBreeze => BreezeDenseMatrix(a)
     case _ => RealMatrix(a)
   }
+
+  /**
+    * zeros
+    * @param n
+    * @param p
+    * @return
+    */
+  def zeros(n: Int, p: Int): DenseMatrix = DenseMatrix(Array.fill(n)(Array.fill(p)(0.0)))
+
+  /**
+    * random dense matrix
+    * @param n
+    * @param p
+    * @param density
+    * @param rng
+    * @return
+    */
+  def randomDenseMatrix(n: Int, p: Int, density: Double)(implicit rng: Random): DenseMatrix = {
+    val m = zeros(n,p)
+    //val inds: Seq[(Int,Int)] = Stochastic.sampleWithoutReplacement[(Int,Int)](for {i <- 0 until n;j <- 0 until p} yield (i,j), (n*p*density).toInt)
+    //inds.map{case (i,j) => (i,j,rng.nextDouble)}
+    // approximate density by drawing at each step
+    val values = (for {i <- 0 until n
+         j <- 0 until p
+         r = rng.nextDouble()
+    } yield  if (r < density) 0.0 else rng.nextDouble()).toArray.grouped(p).toArray
+    DenseMatrix(values)
+  }
+
+
 }
 
 /**
@@ -233,7 +268,7 @@ object RealMatrix {
   * breeze DenseMatrix
   *  TODO test spark ?
   */
-case class BreezeDenseMatrix(m: linalg.DenseMatrix[Double]) extends Matrix {
+case class BreezeDenseMatrix(m: linalg.DenseMatrix[Double]) extends DenseMatrix {
   override def clone: BreezeDenseMatrix = this.copy(m = linalg.DenseMatrix[Array[Double],Double](values.clone.flatten))//FIXME constructor not correct?
   override def values: Array[Array[Double]] = m.data.grouped(m.cols).toArray
   override def get(i: Int, j: Int): Double = m.valueAt(i,j)
@@ -261,6 +296,12 @@ case class BreezeDenseMatrix(m: linalg.DenseMatrix[Double]) extends Matrix {
   override def determinant: Double = 0.0 // FIXME find LU dec impl in breeze
 }
 
+object BreezeDenseMatrix {
+
+  def apply(a: Array[Array[Double]]): DenseMatrix = BreezeDenseMatrix(linalg.DenseMatrix.create(a.length,a(0).length,a.flatten))
+
+}
+
 
 
 sealed trait SparseMatrix extends Matrix
@@ -270,14 +311,37 @@ object SparseMatrix{
 
   sealed trait SparseMatrixImplementation
   case class SparseCommons() extends SparseMatrixImplementation
+  case class SparseBreeze() extends SparseMatrixImplementation
   private var DEFAULT_SPARSE_MATRIX_IMPLEMENTATION: SparseMatrixImplementation = SparseCommons()
   object SparseMatrixImplementation {
-    def setDefaultSparseCommons: Unit = DEFAULT_SPARSE_MATRIX_IMPLEMENTATION = SparseCommons()
+    def setImplSparseCommons: Unit = DEFAULT_SPARSE_MATRIX_IMPLEMENTATION = SparseCommons()
+    def setImplSparseBreeze: Unit = DEFAULT_SPARSE_MATRIX_IMPLEMENTATION = SparseBreeze()
   }
 
-  def apply(a: Array[Array[Double]]): Matrix = DEFAULT_SPARSE_MATRIX_IMPLEMENTATION match {
+  def apply(a: Array[Array[Double]]): SparseMatrix = DEFAULT_SPARSE_MATRIX_IMPLEMENTATION match {
     case _: SparseCommons => SparseMatrixImpl(a)
+    case _: SparseBreeze => BreezeSparseMatrix(a)
     case _ => SparseMatrixImpl(a)
+  }
+
+  def apply(entries: Array[(Int,Int,Double)],n: Int, p: Int): SparseMatrix = DEFAULT_SPARSE_MATRIX_IMPLEMENTATION match {
+    case _: SparseCommons => SparseMatrixImpl(entries,n,p)
+    case _: SparseBreeze => BreezeSparseMatrix(entries,n,p)
+    case _ => SparseMatrixImpl(entries,n,p)
+  }
+
+
+  /**
+    * Random sparse matrix
+    * @param n
+    * @param p
+    * @param density
+    * @param rng
+    * @return
+    */
+  def randomSparseMatrix(n: Int, p: Int, density: Double)(implicit rng: Random): SparseMatrix = {
+    val inds: Seq[(Int,Int)] = Stochastic.sampleWithoutReplacement[(Int,Int)](for {i <- 0 until n;j <- 0 until p} yield (i,j), (n*p*density).toInt)
+    SparseMatrix(inds.map{case (i,j) => (i,j,rng.nextDouble())}.toArray,n, p)
   }
 
 }
@@ -355,20 +419,81 @@ object SparseMatrixImpl {
 }
 
 
-case class BreezeSparseMatrix(m: linalg.CSCMatrix[Double]) {//extends SparseMatrix {
+case class BreezeSparseMatrix(m: linalg.CSCMatrix[Double]) extends SparseMatrix {
+
+  // should be copy - immutable clone
+  override def clone(): BreezeSparseMatrix = BreezeSparseMatrix(m.copy)
+
+  /**
+    *
+    * @return
+    */
+  override def values: Array[Array[Double]] = {
+    //not optimal to go through a dense to get values? ~ the way it is implemented
+    BreezeDenseMatrix(m.toDense).values
+  }
+
+  /**
+    * specific to the implementation - not efficient as must search in column
+    * @param i
+    * @param j
+    * @return
+    */
+  override def get(i: Int, j: Int): Double = {
+    val start = m.colPtrs(j)
+    val end = m.colPtrs(j + 1)
+    val ind = util.Arrays.binarySearch(m.rowIndices, start, end, i)
+    if (ind < 0 ) 0.0 else m.data(ind)
+  }
+
+  override def set(i: Int, j: Int, v: Double): Matrix = {
+    val copy = clone()
+    copy.m.update(i, j, v) // mutable!
+    copy
+  }
+
+  override def map(f: Double => Double): Matrix = {
+    val d = m.copy
+    d.data.map(f) // mutable
+    this.copy(m=d)
+  }
 
 
+  def dispatchOp(op: BreezeSparseMatrix => BreezeSparseMatrix): Matrix => Matrix = {
+    m2: Matrix => m2 match {
+      case m2: BreezeSparseMatrix => op(m2)
+      case _ => throw new UnsupportedOperationException("Matrix implementations combination not supported")
+    }
+  }
+
+  // note: operators / implementations could be passed as implicit context?
+  override def %*%(m2: Matrix): Matrix = dispatchOp {m2 => BreezeSparseMatrix(m*m2.m)}(m2)
+  override def *(m2: Matrix): Matrix = dispatchOp {m2 => BreezeSparseMatrix(m*:*m2.m)}(m2)
+  override def +(m2: Matrix): Matrix = dispatchOp {m2 => BreezeSparseMatrix(m+m2.m)}(m2)
+  override def -(m2: Matrix): Matrix = dispatchOp {m2 => BreezeSparseMatrix(m-m2.m)}(m2)
+
+  override def transpose: Matrix = this.copy(m = m.t)
+
+  // FIXME Breeze LU implementation?
+  override def determinant: Double = 0.0
 }
 
 object BreezeSparseMatrix {
 
   def apply(entries: Array[(Int,Int,Double)],n: Int, p: Int): BreezeSparseMatrix = {
-    val builder = new CSCMatrix.Builder[Double](rows = 10, cols = 10)
+    val builder = new CSCMatrix.Builder[Double](rows = n, cols = p)
     entries.foreach {case (i,j,v)=>
       builder.add(i, j, v)
     }
     BreezeSparseMatrix(builder.result())
   }
+
+  def apply(a: Array[Array[Double]]): BreezeSparseMatrix = {
+    val builder = new CSCMatrix.Builder[Double](rows = a.length, cols = a(0).length)
+    a.zipWithIndex.foreach{case (row,i) => row.zipWithIndex.foreach{case (v,j) => builder.add(i,j,v)}}
+    BreezeSparseMatrix(builder.result())
+  }
+
 }
 
 

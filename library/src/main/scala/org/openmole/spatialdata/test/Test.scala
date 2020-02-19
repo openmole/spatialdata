@@ -3,7 +3,10 @@ package org.openmole.spatialdata.test
 object Test extends App {
 
   // Spatial interaction models
-  TestSpatialInteraction.testSyntheticFlows
+  //TestSpatialInteraction.testSyntheticFlows
+
+  // Matrices
+  TestMatrix.testImplementations
 
   // Coupled network / grid
   //TestCoupled.testWeakCouplingNodePositions()

@@ -3,8 +3,9 @@ package org.openmole.spatialdata.utils.io
 
 import java.io.{BufferedReader, File, FileReader}
 
+import breeze.linalg.CSCMatrix
 import com.github.tototoshi.csv._
-import org.openmole.spatialdata.utils.math.{SparseMatrix, SparseMatrixImpl}
+import org.openmole.spatialdata.utils.math.{BreezeSparseMatrix, SparseMatrix, SparseMatrixImpl}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -48,6 +49,37 @@ object CSV {
   }
 
   /**
+    * filter a dense mat as sparse from csv
+    *  for perf reasons, use directly builder for sparse breeze here => specific implementation!
+    *  *spec: first line contains n,p*
+    * @param file
+    * @param filter
+    * @param sep
+    * @param naformat
+    * @return
+    */
+  def readSparseMatFromDense(file: String, filter: Double => Boolean, sep: String=",", naformat: String = "NA"): SparseMatrix = {
+    val r = new BufferedReader(new FileReader(new File(file)))
+    val res = new ArrayBuffer[Array[Double]]
+    var currentline = r.readLine()
+    val rawdims = currentline.split(sep)
+    val (n,p) = (rawdims(0).toInt,rawdims(1).toInt)
+    val builder = new CSCMatrix.Builder[Double](rows = n, cols = p)
+    currentline = r.readLine()
+    var i = 0
+    while(currentline!=null){
+      currentline.split(sep).zipWithIndex.map { case (s, j) =>
+        if (s.equals("NA")) None else {
+          if (filter(s.toDouble)) Some((i,j,s.toDouble)) else None
+        }
+      }.filter(_.isDefined).foreach{case Some((i,j,v)) => builder.add(i,j,v)}
+      currentline = r.readLine()
+      i = i+1
+    }
+    BreezeSparseMatrix(builder.result())
+  }
+
+  /**
     * Read a sparse mat as a csv (i,j,v)
     *  **Spec: first line is (N,P)**
     * @param file
@@ -72,7 +104,7 @@ object CSV {
     val aentries = entries.toArray
     //val n = aentries.map(_._1).max // this is not correct if last columns/rows are empty
     //val p = aentries.map(_._2).max
-    SparseMatrixImpl(aentries,n,p)
+    SparseMatrix(aentries,n,p)
   }
 
 

@@ -1,8 +1,9 @@
 package org.openmole.spatialdata.application.quant
 
 import org.openmole.spatialdata.model.spatialinteraction.{FittedSpIntModel, SinglyConstrainedSpIntModel, SpatialInteractionModel}
+import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.utils.io.CSV
-import org.openmole.spatialdata.utils.math.{DenseMatrix, EmptyMatrix, Matrix}
+import org.openmole.spatialdata.utils.math.{DenseMatrix, EmptyMatrix, Matrix, SparseMatrix}
 import org.openmole.spatialdata.vector.SpatialField
 
 
@@ -44,8 +45,15 @@ object QUANTOneMode {
     * @return
     */
   def apply(sparseFlowsFile: String, dmatFile: String): QUANTOneMode = {
-    val dmat = DenseMatrix(CSV.readMat(dmatFile))
+
+    // FIXME set breeze default as used anyway and readSparseFromDense gives a Breeze
+    SparseMatrix.SparseMatrixImplementation.setImplSparseBreeze
+
+    //val dmatdense = DenseMatrix(CSV.readMat(dmatFile))
+    val dmat = CSV.readSparseMatFromDense(dmatFile, {d=> math.exp( - d / 60.0) > 0.3}) // FIXME in the end should do a filtering on OiDjcij
+    utils.log(s"sparse dmat: $dmat")
     val flowmat = CSV.readSparseMat(sparseFlowsFile)
+    utils.log(s"sparse flowmat: $flowmat")
     // note: at this stage, no need of coordinates and spatial fields, just O/D values indeed
     //println(s"flowmat: ${flowmat.nrows}x${flowmat.ncols}")
     val originVals: Array[Double] = flowmat.rowSum
@@ -53,7 +61,7 @@ object QUANTOneMode {
     val origin: SpatialField[Double]=originVals.zipWithIndex.map{case (s,i) => ((i.toDouble,0.0),Array(s))}.toMap
     //println(origin)
     val destination = flowmat.colSum.zipWithIndex.map{case (s,j) => ((j.toDouble,0.0),Array(s))}.toMap
-    //println(origin.size)
+
     QUANTOneMode(model = SinglyConstrainedSpIntModel(flowmat,dmat,origin,destination))
   }
 

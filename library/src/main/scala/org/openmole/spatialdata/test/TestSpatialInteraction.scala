@@ -25,9 +25,9 @@ object TestSpatialInteraction {
     //val dmat = utils.timerLog[Unit,SparseMatrix](_ => SparseMatrix.randomSparseMatrix(n, p, 0.43),(), "rnd dist mat")
     SparseMatrix.SparseMatrixImplementation.setImplSparseBreeze
 
-    val flows = SparseMatrix.randomSparseMatrix(n, p, 0.03)
+    val flows = utils.timerLog[Matrix](SparseMatrix.randomSparseMatrix(n, p, 0.03),"random flows")
     //val dmat = SparseMatrix.randomSparseMatrix(n, p, 0.43)
-    val dmat = SparseMatrix.randomSparseMatrix(n, p, 0.2)
+    val dmat = utils.timerLog[Matrix](SparseMatrix.randomSparseMatrix(n, p, 0.05), "random dmat")
     val origin = Seq.fill(n)(rng.nextDouble())
     val destination = Seq.fill(n)(rng.nextDouble())
     val originfield: SpatialField[Double]=origin.zipWithIndex.map{case (s,i) => ((i.toDouble,0.0),Array(s))}.toMap

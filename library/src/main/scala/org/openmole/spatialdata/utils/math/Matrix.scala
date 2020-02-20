@@ -6,6 +6,7 @@ import org.apache.commons.math3.linear
 import org.apache.commons.math3.linear.LUDecomposition
 import breeze.linalg
 import breeze.linalg.CSCMatrix
+import breeze.util.ArrayUtil
 import org.openmole.spatialdata.utils.math.Matrix.Sparse
 
 import scala.collection.mutable
@@ -425,6 +426,9 @@ object SparseMatrix{
     SparseMatrix(entries,n, p)
   }
 
+  def diagonal(a: Array[Double]): SparseMatrix = apply(a.zipWithIndex.map{case (v,i) => (i,i,v)},a.length,a.length)
+
+
 }
 
 
@@ -592,10 +596,16 @@ case class BreezeSparseMatrix(m: linalg.CSCMatrix[Double]) extends SparseMatrix 
     copy
   }
 
+  /**
+    * the map implementation does on all dense values?
+    * @param f
+    * @return
+    */
   override def map(f: Double => Double): Matrix = {
-    val d = m.copy
-    d.data.map(f) // mutable
-    this.copy(m=d)
+    //this.copy(m=m.map(f))
+    //BreezeSparseMatrix(m.copy(_data=m.data.map(f)))
+    val mapped = new CSCMatrix[Double](ArrayUtil.copyOf(m.data, m.activeSize).map(f), m.rows, m.cols, m.colPtrs.clone, m.activeSize, m.rowIndices.clone)
+    BreezeSparseMatrix(mapped)
   }
 
 
@@ -630,9 +640,13 @@ case class BreezeSparseMatrix(m: linalg.CSCMatrix[Double]) extends SparseMatrix 
 
   override def nentries: Int = m.data.length
 
+  /**
+    * Note for a row / column matrix, equal to number of elements only if no zeros - otherwise use values.flatten
+    * @return
+    */
   override def flatValues: Array[Double] = m.data
 
-  override def toString: String = s"Sparse Matrix Breeze Impl ${nrows}x$ncols"
+  override def toString: String = s"Sparse Matrix Breeze Impl ${nrows}x$ncols with $nentries entries"
 
 }
 

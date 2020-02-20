@@ -49,7 +49,10 @@ libraryDependencies ++= Seq(
 //lazy val runtest = Project("runtest", file("target/test")) settings(
 //  mainClass in (Compile, packageBin) := Some("org.openmole.spatialdata.test.Test"),
 
-mainClass in (Compile,run) := Some("org.openmole.spatialdata.test.Test")
+//mainClass in (Compile,run) := Some("org.openmole.spatialdata.test.Test")
+//fork in run := true
+
+cancelable in Global := true
 
 //)
 

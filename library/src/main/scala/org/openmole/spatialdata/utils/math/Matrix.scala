@@ -616,9 +616,39 @@ case class BreezeSparseMatrix(m: linalg.CSCMatrix[Double]) extends SparseMatrix 
     }
   }
 
+  /**
+    * try specific implementation for ebe multiply
+    *  the new sparse mat will at least have less elements than both
+    *
+    *  !!! HUGE overhead, much less good than the native impl which actually uses sparse
+    *
+    * @param m2
+    * @return
+    */
+  def eBeMultiply(bm2: BreezeSparseMatrix): BreezeSparseMatrix = {
+    val m2 = bm2.m
+    val data = new ArrayBuffer[Double]
+    val rowInds = new ArrayBuffer[Int]
+    val colPtrs = new ArrayBuffer[Int]
+    colPtrs.addOne(0)
+    m.colPtrs.indices.dropRight(1).foreach{ case j =>
+      val (start1,end1,start2,end2) = (m.colPtrs(j),m.colPtrs(j+1),m2.colPtrs(j),m2.colPtrs(j+1))
+      val inds1 = util.Arrays.copyOfRange(m.rowIndices,start1,end1).toSet // FIXME test if not too much perf loss with toSet
+      val inds2 = util.Arrays.copyOfRange(m2.rowIndices,start2,end2).toSet
+      val inds1Map = inds1.zipWithIndex.toMap
+      val inds2Map = inds2.zipWithIndex.toMap
+      val support = inds1.intersect(inds2)
+      rowInds.appendAll(support) // update rowinds
+      support.foreach(row => data.addOne(m.data(inds1Map(row))*m2.data(inds2Map(row)))) // update data
+      colPtrs.addOne(data.size)
+    }
+    BreezeSparseMatrix(new CSCMatrix[Double](data.toArray, m.rows, m.cols, colPtrs.toArray, data.size, rowInds.toArray))
+  }
+
   // note: operators / implementations could be passed as implicit context?
   override def %*%(m2: Matrix): Matrix = dispatchOp {m2 => BreezeSparseMatrix(m*m2.m)}(m2)
   override def *(m2: Matrix): Matrix = dispatchOp {m2 => BreezeSparseMatrix(m*:*m2.m)}(m2)
+  //override def *(m2: Matrix): Matrix = dispatchOp {m2 => eBeMultiply(m2)}(m2)
   override def +(m2: Matrix): Matrix = dispatchOp {m2 => BreezeSparseMatrix(m+m2.m)}(m2)
   override def -(m2: Matrix): Matrix = dispatchOp {m2 => BreezeSparseMatrix(m-m2.m)}(m2)
 

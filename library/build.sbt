@@ -48,7 +48,9 @@ libraryDependencies ++= Seq(
 
 //lazy val runtest = Project("runtest", file("target/test")) settings(
 //  mainClass in (Compile, packageBin) := Some("org.openmole.spatialdata.test.Test"),
-  mainClass in run := Some("org.openmole.spatialdata.test.Test")
+
+mainClass in (Compile,run) := Some("org.openmole.spatialdata.test.Test")
+
 //)
 
 scalacOptions in ThisBuild ++= Seq("-unchecked", "-deprecation")

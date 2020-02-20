@@ -47,8 +47,13 @@ object QUANTOneMode {
     val dmat = DenseMatrix(CSV.readMat(dmatFile))
     val flowmat = CSV.readSparseMat(sparseFlowsFile)
     // note: at this stage, no need of coordinates and spatial fields, just O/D values indeed
-    val origin = flowmat.rowSum.map{s => ((0.0,0.0),Array(s))}.toMap
-    val destination = flowmat.colSum.map{s => ((0.0,0.0),Array(s))}.toMap
+    //println(s"flowmat: ${flowmat.nrows}x${flowmat.ncols}")
+    val originVals: Array[Double] = flowmat.rowSum
+    //println(originVals.toSeq) //!  same keys in map: spatial field has unique value for each point
+    val origin: SpatialField[Double]=originVals.zipWithIndex.map{case (s,i) => ((i.toDouble,0.0),Array(s))}.toMap
+    //println(origin)
+    val destination = flowmat.colSum.zipWithIndex.map{case (s,j) => ((j.toDouble,0.0),Array(s))}.toMap
+    //println(origin.size)
     QUANTOneMode(model = SinglyConstrainedSpIntModel(flowmat,dmat,origin,destination))
   }
 

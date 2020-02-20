@@ -1,7 +1,8 @@
 package org.openmole.spatialdata.model.spatialinteraction
 
+import org.openmole.spatialdata.model.spatialinteraction.SinglyConstrainedSpIntModel.averageTripLength
 import org.openmole.spatialdata.utils
-import org.openmole.spatialdata.utils.math.{EmptyMatrix, Matrix}
+import org.openmole.spatialdata.utils.math.{EmptyMatrix, Matrix, SparseMatrix}
 import org.openmole.spatialdata.vector.SpatialField
 
 /**
@@ -23,13 +24,17 @@ case class SinglyConstrainedSpIntModel(
                                         predictedFlows: Matrix = EmptyMatrix()
                                       ) extends FittedSpIntModel {
 
-  override def fit: SpatialInteractionModel => SpatialInteractionModel = {s => s}
-
-  /*{
-    _ match {
-      case m:  SinglyConstrainedSpIntModel => SinglyConstrainedSpIntModel.fitSinglyConstrainedSpIntModel(m)
+  /**
+    * rq: the generic function does not make sense as it fits itself in the end?
+    * @return
+    */
+  override def fit: SpatialInteractionModel => SpatialInteractionModel = {
+    s => s match {
+      case m: SinglyConstrainedSpIntModel => SinglyConstrainedSpIntModel.fitSinglyConstrainedSpIntModel(m, averageTripLength, 1.0, true, 0.01)
+      case _ => throw new IllegalArgumentException("Can not fit other type of models")
     }
-  } */
+  }
+
 
 }
 
@@ -50,8 +55,14 @@ object SinglyConstrainedSpIntModel {
     * @return
     */
   def averageTripLength(model: SinglyConstrainedSpIntModel, phi: Matrix): Double = {
+    //utils.log(s"Computing avg trip length for flows $phi and distmat ${model.distances}")
     val phitot = phi.sum
-    (phi.map(_ / phitot)*model.distances).sum
+    //utils.log(s"phitot = $phitot")
+    val phinorm = phi.map(_ / phitot)
+    //utils.log("phinorm")
+    val wd = phinorm*model.distances
+    //utils.log("wd")
+    wd.sum
   }
 
   /**
@@ -69,11 +80,14 @@ object SinglyConstrainedSpIntModel {
                                      convergenceThreshold: Double = 0.01
                                     ): SinglyConstrainedSpIntModel = {
 
-    val (origin,destination) = (Matrix(model.originValues.values.flatten.toArray,false),Matrix(model.destinationValues.values.flatten.toArray,false))
+    // ! force a SparseMatrix here
+    val (origin,destination) = (SparseMatrix(model.originValues.values.flatten.toArray,false),SparseMatrix(model.destinationValues.values.flatten.toArray,false))
 
     println(s"origin: ${origin.nrows}x${origin.ncols}")
     println(s"destination: ${destination.nrows}x${destination.ncols}")
-    println(s"dmat: ${model.distances.nrows}xx${model.distances.ncols}")
+    println(s"dmat: ${model.distances.nrows}x${model.distances.ncols}")
+
+    val obsObjective = objectiveFunction(model,model.observedFlows)
 
     /**
       * State is (model including cost function, current parameter value, epsilon)
@@ -81,19 +95,19 @@ object SinglyConstrainedSpIntModel {
       * @return
       */
     def iterateCostParam(state: (SinglyConstrainedSpIntModel,Double)):  (SinglyConstrainedSpIntModel,Double) = {
+      val t = System.currentTimeMillis()
       val model = state._1
       val fitparameter = model.fittedParam
       val currentCostMatrix = model.distances.map(model.costFunction(_,fitparameter))
       val predictedFlows = singlyConstrainedFlows(origin,destination,currentCostMatrix,originConstraint)
       val predObjective = objectiveFunction(model,predictedFlows)
-      val obsObjective = objectiveFunction(model,model.observedFlows)
       // ! with the form exp(-d/d0), inverse than exp(-beta d)
       val newfitparameter = fitparameter*obsObjective/predObjective
       val newmodel = model.copy(predictedFlows = predictedFlows, fittedParam = newfitparameter)
       //utils.log(s"avg obs travel distance = $obsObjective")
       //utils.log(s"avg pred travel distance = $predObjective")
       val error = math.abs(predObjective - obsObjective)/obsObjective
-      //utils.log("fit singly constr: error = "+error)
+      utils.log(s"fit singly constr: error = $error ; iteration in ${System.currentTimeMillis()-t}")
       (newmodel,error)
     }
     val initialModel = model.copy(predictedFlows=singlyConstrainedFlows(origin,destination,model.distances.map(model.costFunction(_,initialValue)),originConstraint),
@@ -115,11 +129,22 @@ object SinglyConstrainedSpIntModel {
                              costMatrix: Matrix,
                              originConstraint: Boolean
                             ): Matrix = {
-    val normalization = (if (originConstraint) costMatrix %*% destinationMasses else costMatrix %*% originMasses).map(1/_)
+    utils.log("Singly constrained flows")
+    val (normalization,tn) = utils.withTimer[Double,Matrix]{_ => (if (originConstraint) costMatrix %*% destinationMasses else costMatrix %*% originMasses).map(1/_)}(0.0)
+    println(tn)
     // FIXME add sparse option here - element wise multiplication later - should be able to build in O(elem) in a sparse way
-    val omat = if (originConstraint) Matrix(Array.fill(destinationMasses.nrows)((originMasses*normalization).values.flatten).transpose) else Matrix(Array.fill(destinationMasses.nrows)(originMasses.values.flatten).transpose)
-    val dmat = if (originConstraint) Matrix(Array.fill(originMasses.nrows)(destinationMasses.values.flatten)) else Matrix(Array.fill(originMasses.nrows)((destinationMasses*normalization).values.flatten))
-    omat*dmat*costMatrix
+    val originnormraw = (originMasses*normalization).flatValues
+    val originraw = originMasses.flatValues
+    val destinationnormraw = (destinationMasses*normalization).flatValues
+    val destinationraw = destinationMasses.flatValues
+    // FIXME this shouldnt take so much time to duplicate column vectors - optimize
+    // !!! takes forever to duplicate - as reconstructing full sparse mat, totally inefficient
+    val (omat,to) = utils.withTimer[Double,Matrix]{_ => if (originConstraint) SparseMatrix(Array.fill(destinationMasses.nrows)(originnormraw).transpose) else SparseMatrix(Array.fill(destinationMasses.nrows)(originraw).transpose)}(0.0)
+    println(s"origin mat: $to")
+    val dmat = if (originConstraint) SparseMatrix(Array.fill(originMasses.nrows)(destinationraw)) else SparseMatrix(Array.fill(originMasses.nrows)(destinationnormraw))
+    val (res,t) = utils.withTimer[Double,Matrix]{_ => omat*dmat*costMatrix}(0.0) // x2 cost overhead
+    println(s"res: $t")
+    res
   }
 
 

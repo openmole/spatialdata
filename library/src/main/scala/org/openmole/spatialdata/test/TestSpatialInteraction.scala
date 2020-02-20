@@ -3,15 +3,59 @@ package org.openmole.spatialdata.test
 import org.openmole.spatialdata.model.spatialinteraction.{SinglyConstrainedSpIntModel, SpatialInteractionModel}
 import org.openmole.spatialdata.model.spatialinteraction.synthetic.PolycentricGridGravityFlowsGenerator
 import org.openmole.spatialdata.utils
-import org.openmole.spatialdata.utils.math.Matrix
+import org.openmole.spatialdata.vector.SpatialField
+//import org.openmole.spatialdata.utils._
+import org.openmole.spatialdata.utils.io.CSV
+import org.openmole.spatialdata.utils.math.{DenseMatrix, Matrix, SparseMatrix}
 import org.openmole.spatialdata.utils.visualization
 
 import scala.util.Random
 
 object TestSpatialInteraction {
 
+  /**
+    * test time perf with random matrices
+    */
+  def testFitSinglyConstrainedRandom: Unit = {
 
-  def testFitSinglyConstrained: Unit = {
+    implicit val rng = new Random
+
+    val (n,p) = (8436,8436)
+    //val flows = utils.timerLog[Unit,SparseMatrix](_ => SparseMatrix.randomSparseMatrix(n, p, 0.03),(),"rnd sparse mat")
+    //val dmat = utils.timerLog[Unit,SparseMatrix](_ => SparseMatrix.randomSparseMatrix(n, p, 0.43),(), "rnd dist mat")
+    SparseMatrix.SparseMatrixImplementation.setImplSparseBreeze
+
+    val flows = SparseMatrix.randomSparseMatrix(n, p, 0.03)
+    //val dmat = SparseMatrix.randomSparseMatrix(n, p, 0.43)
+    val dmat = SparseMatrix.randomSparseMatrix(n, p, 0.2)
+    val origin = Seq.fill(n)(rng.nextDouble())
+    val destination = Seq.fill(n)(rng.nextDouble())
+    val originfield: SpatialField[Double]=origin.zipWithIndex.map{case (s,i) => ((i.toDouble,0.0),Array(s))}.toMap
+    val destinationfield: SpatialField[Double]=destination.zipWithIndex.map{case (s,i) => ((i.toDouble,0.0),Array(s))}.toMap
+    utils.log(s"total flows = ${flows.sum}")
+    val model = SinglyConstrainedSpIntModel(flows,dmat,originfield,destinationfield)
+    val fitted = model.fitted
+  }
+
+
+  /**
+    * quant data
+    */
+  def testFlowData: Unit = {
+    val flowspath = System.getenv("CS_HOME")+"/UrbanDynamics/Data/QUANT/converted/TObs_1.csv"
+    val dmatpath = System.getenv("CS_HOME")+"/UrbanDynamics/Data/QUANT/converted/dis_roads_min.csv"
+    val flowmat = utils.timerLog[String,SparseMatrix](s => CSV.readSparseMat(s),flowspath,"read flows")
+    val dmat = utils.timerLog[String,DenseMatrix](s=>DenseMatrix(CSV.readMat(s)),dmatpath,"read dmat")
+    println(s"flows mat: ${flowmat.nrows}x${flowmat.ncols}; nentries = ${flowmat.nentries}")
+    println(s"dmat: ${dmat.nrows}x${dmat.nrows}")
+    val flowsparsity = utils.timerLog[Double](flowmat.values.flatten.count(_>0.0).toDouble/(flowmat.nrows.toDouble*flowmat.ncols.toDouble),"flow sparsity")
+    val dmatsparsity = utils.timerLog[Double](dmat.map{d => math.exp(-d/60)}.values.flatten.count(_>0.1).toDouble/(dmat.nrows.toDouble*dmat.ncols.toDouble),"dmat sparsity")
+    println(s"flow sparsity: $flowsparsity ; dmatsparsity: $dmatsparsity")
+  }
+
+
+
+  def testFitSinglyConstrainedSyntheticFlows: Unit = {
     implicit val rng = new Random
 
     val syntheticFlows = PolycentricGridGravityFlowsGenerator(

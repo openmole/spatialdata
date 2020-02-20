@@ -9,6 +9,7 @@ import breeze.linalg.CSCMatrix
 import org.openmole.spatialdata.utils.math.Matrix.Sparse
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
 /**
@@ -16,17 +17,37 @@ import scala.util.Random
   */
 sealed trait Matrix {
 
-  // rq: in immutable terms, setting is inefficient (should clone the underlying matrix?)
+  /**
+    * rq: in immutable terms, setting is inefficient (should clone the underlying matrix?)
+    * @param i
+    * @param j
+    * @param v
+    * @return
+    */
   def set(i: Int, j: Int, v: Double): Matrix
+
+  /**
+    * get element
+    * @param i
+    * @param j
+    * @return
+    */
   def get(i: Int, j: Int): Double
 
+  /**
+    * map element by element
+    * @param f
+    * @return
+    */
   def map(f: Double => Double): Matrix
 
   // !! mutable
   def values: Array[Array[Double]]
 
-  def nrows: Int = values.size
-  def ncols: Int = values.head.size
+  def flatValues: Array[Double]
+
+  def nrows: Int
+  def ncols: Int
 
   //basic ring operations (R style for the notation)
   //def %+%(m: Matrix): Matrix // does not make any sense!
@@ -45,10 +66,10 @@ sealed trait Matrix {
   //def inverse: Matrix // should use pseudo inverse or restrict?
   def determinant: Double
 
-  def sum: Double = values.flatten.sum
-  def mean: Double = values.flatten.sum/(nrows*ncols)
-  def min: Double = values.flatten.min(Ordering.Double.TotalOrdering)
-  def max: Double = values.flatten.max(Ordering.Double.TotalOrdering)
+  def sum: Double
+  def mean: Double = sum/(nrows*ncols)
+  def min: Double
+  def max: Double
 
   def rowSum: Array[Double]
   def colSum: Array[Double]
@@ -138,8 +159,11 @@ object Matrix {
 
 
 case class EmptyMatrix() extends Matrix {
+  override def nrows: Int = 0
+  override def ncols: Int = 0
   override def values: Array[Array[Double]] = Array.empty[Array[Double]]
-  override def get(i: Int, j: Int): Double = 0.0
+  override def flatValues: Array[Double] = Array.empty[Double]
+  override def get(i: Int, j: Int): Double = Double.NaN
   override def set(i: Int, j: Int, v: Double): Matrix = this
   override def %*%(m: Matrix): Matrix = this
   //override def %+%(m: Matrix): Matrix = this
@@ -147,8 +171,11 @@ case class EmptyMatrix() extends Matrix {
   override def +(m: Matrix): Matrix = this
   override def -(m: Matrix): Matrix = this
   override def map(f: Double => Double): Matrix = this
-  override def determinant: Double = 0.0
+  override def determinant: Double = Double.NaN
   override def transpose: Matrix = this
+  override def sum: Double = Double.NaN
+  override def min: Double = Double.NaN
+  override def max: Double = Double.NaN
   override def rowSum: Array[Double] = Array.empty[Double]
   override def colSum: Array[Double] = Array.empty[Double]
 }
@@ -157,8 +184,12 @@ case class EmptyMatrix() extends Matrix {
   * Dense matrix
   */
 sealed trait DenseMatrix extends Matrix {
-  def rowSum: Array[Double] = values.map{_.sum}
-  def colSum: Array[Double] = transpose.values.map{_.sum}
+  override def rowSum: Array[Double] = values.map{_.sum}
+  override def colSum: Array[Double] = transpose.values.map{_.sum}
+  override def sum: Double = values.flatten.sum
+  override def min: Double = values.flatten.min(Ordering.Double.TotalOrdering)
+  override def max: Double = values.flatten.max(Ordering.Double.TotalOrdering)
+  override def flatValues: Array[Double] = values.flatten
 }
 
 object DenseMatrix {
@@ -222,6 +253,9 @@ case class RealMatrix(m: linear.RealMatrix) extends DenseMatrix {
   // the object clone does not clone internal references ?
   override def clone: RealMatrix = RealMatrix(m.getData.clone.map(_.clone))
 
+  override def nrows: Int = m.getRowDimension
+  override def ncols: Int = m.getColumnDimension
+
   override def set(i: Int, j: Int, v: Double): Matrix = {
     val d = clone.m
     d.setEntry(i,j,v)
@@ -249,7 +283,6 @@ case class RealMatrix(m: linear.RealMatrix) extends DenseMatrix {
   }
 
   override def values: Array[Array[Double]] = m.getData
-
 
   def dispatchOp(op: RealMatrix => RealMatrix): Matrix => Matrix = {
     m2: Matrix => m2 match {
@@ -283,6 +316,10 @@ object RealMatrix {
   */
 case class BreezeDenseMatrix(m: linalg.DenseMatrix[Double]) extends DenseMatrix {
   override def clone: BreezeDenseMatrix = this.copy(m = linalg.DenseMatrix[Array[Double],Double](values.clone.flatten))//FIXME constructor not correct?
+
+  override def nrows: Int = m.rows
+  override def ncols: Int = m.cols
+
   override def values: Array[Array[Double]] = m.data.grouped(m.cols).toArray
   override def get(i: Int, j: Int): Double = m.valueAt(i,j)
   override def set(i: Int, j: Int, v: Double): Matrix = {
@@ -320,6 +357,7 @@ object BreezeDenseMatrix {
 
 sealed trait SparseMatrix extends Matrix {
   def nentries: Int
+  //def flatValues: Array[Double]
 }
 
 
@@ -347,6 +385,14 @@ object SparseMatrix{
   }
 
   /**
+    * Row / column matrix
+    * @param a
+    * @param row
+    * @return
+    */
+  def apply(a: Array[Double], row: Boolean=true): SparseMatrix = if(row) apply(Array(a)) else apply(a.map(Array(_)))
+
+  /**
     * convert from dense - should better have a toSparse function? rq. breeze has built-in toDense
     * @param m
     */
@@ -368,20 +414,38 @@ object SparseMatrix{
   def randomSparseMatrix(n: Int, p: Int, density: Double)(implicit rng: Random): SparseMatrix = {
     // this is highly inefficient for high dimensions - sample and reject strategy better
     //val inds: Seq[(Int,Int)] = Stochastic.sampleWithoutReplacement[(Int,Int)](for {i <- 0 until n;j <- 0 until p} yield (i,j), (n*p*density).toInt)
-    val inds = new mutable.HashSet[(Int,Int)]
-    def drawInds(numInds: Int): Int = {inds.add((rng.nextInt(n),rng.nextInt(p)));inds.size}
-    Iterator.iterate(0)(drawInds).takeWhile(_<(n*p*density).toInt)
-    SparseMatrix(inds.map{case (i,j) => (i,j,rng.nextDouble())}.toArray,n, p)
+    //val inds = new mutable.HashSet[(Int,Int)]
+    val inds = new ArrayBuffer[(Int,Int)]
+    def drawInds(numInds: Int): Int = {inds.addOne((rng.nextInt(n),rng.nextInt(p)));inds.size}
+    val nentries = (n.toDouble*p.toDouble*density).toInt
+    //println(nentries)
+    Iterator.iterate(0)(drawInds).takeWhile(_<nentries).toSeq
+    val entries = inds.map{case (i,j) => (i,j,rng.nextDouble())}.toArray
+    //println(entries.toSeq)
+    SparseMatrix(entries,n, p)
   }
 
 }
 
 
-case class SparseMatrixImpl(m: linear.OpenMapRealMatrix) extends SparseMatrix {
+/**
+  * Note: the apache class is kind of crappy as one can not access underlying map and some operations are not implemented
+  *  thus should add an additional map here: ~ as memory + perf overhead
+  *  BUT terrible to use: reimplement operations, etc
+  * @param m
+  * @param entries
+  */
+case class SparseMatrixImpl(m: linear.OpenMapRealMatrix//,
+                            //entries: mutable.HashMap[(Int,Int),Double]
+                           ) extends SparseMatrix {
+
 
   // FIXME this is highly inefficient: for setting one element, the immutable constraint leads to cloning everything!
   // TODO alternative impl and some tests? or switch to mutable :/
   override def clone: SparseMatrixImpl = SparseMatrixImpl(new linear.OpenMapRealMatrix(m))
+
+  override def nrows: Int = m.getRowDimension
+  override def ncols: Int = m.getColumnDimension
 
   override def set(i: Int,j: Int, v: Double): Matrix = {
     val d = this.clone.m
@@ -389,6 +453,12 @@ case class SparseMatrixImpl(m: linear.OpenMapRealMatrix) extends SparseMatrix {
     SparseMatrixImpl(d)
   }
 
+  /**
+    * Mutable set
+    * @param i
+    * @param j
+    * @param v
+    */
   def setM(i: Int, j: Int, v: Double): Unit = m.setEntry(i,j,v)
 
   override def get(i: Int, j: Int): Double = m.getEntry(i,j)
@@ -404,6 +474,10 @@ case class SparseMatrixImpl(m: linear.OpenMapRealMatrix) extends SparseMatrix {
     SparseMatrixImpl(d.map(_.map(f)))
   }
 
+  /**
+    * highly inefficient as getData is in O(n*p) as getData is not reimplemented in OpenMapRealMatrix
+    * @return
+    */
   override def values: Array[Array[Double]] = m.getData
 
 
@@ -425,11 +499,23 @@ case class SparseMatrixImpl(m: linear.OpenMapRealMatrix) extends SparseMatrix {
   override def transpose: Matrix = RealMatrix(m.transpose())
   override def determinant: Double = new linear.LUDecomposition(m).getDeterminant
 
+  override def sum: Double = flatValues.sum
+  override def min: Double = flatValues.min(Ordering.Double.TotalOrdering)
+  override def max: Double = flatValues.max(Ordering.Double.TotalOrdering)
+
   //FIXME not optimal?
   override def rowSum: Array[Double] = m.getData.map{_.sum}
   override def colSum: Array[Double] = m.getData.transpose.map{_.sum}
 
   override def nentries: Int = m.getData.flatten.count(_>0.0)
+
+  /**
+    * ! not efficient
+    * @return
+    */
+  override def flatValues: Array[Double] = values.flatten
+
+  override def toString: String = s"Sparse Matrix Apache Impl ${nrows}x${ncols}"
 
 }
 
@@ -468,13 +554,23 @@ case class BreezeSparseMatrix(m: linalg.CSCMatrix[Double]) extends SparseMatrix 
   // should be copy - immutable clone
   override def clone(): BreezeSparseMatrix = BreezeSparseMatrix(m.copy)
 
+  override def nrows: Int = m.rows
+  override def ncols: Int = m.cols
+
   /**
     *
     * @return
     */
   override def values: Array[Array[Double]] = {
     //not optimal to go through a dense to get values? ~ the way it is implemented
-    BreezeDenseMatrix(m.toDense).values
+    //BreezeDenseMatrix(m.toDense).values
+    val res = Array.fill(nrows,ncols)(0.0)
+    m.colPtrs.indices.dropRight(1).foreach{j =>
+      val start = m.colPtrs(j)
+      val end = m.colPtrs(j+1)
+      (start until end).foreach(i => res(m.rowIndices(i))(j) = m.data(i))
+    }
+    res
   }
 
   /**
@@ -521,10 +617,22 @@ case class BreezeSparseMatrix(m: linalg.CSCMatrix[Double]) extends SparseMatrix 
   // FIXME Breeze LU implementation?
   override def determinant: Double = 0.0
 
+  /**
+    * note: same impl as apache sparse mat (flatValues is different)
+    * @return
+    */
+  override def sum: Double = flatValues.sum
+  override def min: Double = flatValues.min(Ordering.Double.TotalOrdering)
+  override def max: Double = flatValues.max(Ordering.Double.TotalOrdering)
+
   override def rowSum: Array[Double] = m.data.zip(m.rowIndices).groupBy(_._2).toSeq.map(_._2.map(_._1).sum).toArray
   override def colSum: Array[Double] = Array.tabulate(nrows)(j => util.Arrays.copyOfRange(m.data,m.colPtrs(j), m.colPtrs(j+1)).sum)
 
   override def nentries: Int = m.data.length
+
+  override def flatValues: Array[Double] = m.data
+
+  override def toString: String = s"Sparse Matrix Breeze Impl ${nrows}x$ncols"
 
 }
 

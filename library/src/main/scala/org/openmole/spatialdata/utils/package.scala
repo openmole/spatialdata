@@ -11,7 +11,7 @@ package object utils {
 
   object Implicits {
 
-    implicit class TraversableDecorator[T](s: Traversable[T]) {
+    implicit class IterableDecorator[T](s: Iterable[T]) {
 
       def sampleWithReplacement(samples: Int)(implicit rng: Random): Vector[T] = Stochastic.sampleWithReplacement(s, samples)
 
@@ -23,21 +23,54 @@ package object utils {
 
   }
 
+  /**
+    * tic toc a void function
+    * @param fun
+    */
   def withTimer(fun: Unit=> Unit): Unit= {
     val start = System.currentTimeMillis()
     fun()
     println("time : "+(System.currentTimeMillis()-start)+" ms")
   }
 
-  def withTimer[A,B](fun: A => B)(a: A): (B,Double) = {
+  /**
+    *
+    * @param fun
+    * @param a
+    * @tparam A
+    * @tparam B
+    * @return
+    */
+  def withTimer[A,B](fun: A => B): A => (B,Double) = {
+    a =>
     val start = System.currentTimeMillis()
     val res = fun(a)
     (res,System.currentTimeMillis()-start)
   }
 
-  // FIXME does not work
-  def withTimer[A](a: A): (A,Double) = withTimer[Unit,A]{ _ => a}()
+  def withTimer[A](a: A): (A,Double) = withTimer[Unit,A](_ => a)()
 
+  /**
+    * tic toc a typed function
+    * @param fun
+    * @param a
+    * @param name
+    * @tparam A
+    * @tparam B
+    * @return
+    */
+  def timerLog[A,B](fun: A => B,a: A, name: String): B = {
+    val (res,t) = withTimer[A,B](fun)(a)
+    log(s"$name: ${t}ms")
+    res
+  }
+
+  def timerLog[A](a: A, name: String): A = timerLog[Unit,A](_ => a, (), name)
+
+  /**
+    * log if debug
+    * @param msg
+    */
   def log(msg: String): Unit = if(spatialdata.DEBUG) println(msg)
 
 

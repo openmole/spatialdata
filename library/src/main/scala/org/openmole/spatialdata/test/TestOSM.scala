@@ -3,6 +3,10 @@ package org.openmole.spatialdata.test
 import org.openmole.spatialdata.grid
 import org.openmole.spatialdata.grid.measures.GridMorphology
 import org.openmole.spatialdata.grid.real.{OSMGridGenerator, OSMGridSampling}
+import org.openmole.spatialdata.utils.osm.PojoRoot
+import org.openmole.spatialdata.utils.osm.api.APIExtractor.Buildings.asPolygonSeq
+import org.openmole.spatialdata.utils.osm.api.Overpass
+import org.openmole.spatialdata.utils.osm.xml.InstantiatedOsmXmlParser
 import org.openmole.spatialdata.utils.visualization
 
 import scala.util.Random
@@ -10,6 +14,34 @@ import scala.util.Random
 object TestOSM {
 
   implicit val rng = new Random
+
+
+
+  def testOverpass: Unit = {
+
+    import java.io.StringReader
+
+    val overpass = new Overpass
+    overpass.setUserAgent("test suite of <https://github.com/karlwettin/osm-common/>");
+    overpass.open()
+
+    val root = new PojoRoot
+    val parser = InstantiatedOsmXmlParser.newInstance
+    parser.setRoot(root)
+
+    parser.parse(new StringReader(overpass.execute(
+      """
+        |<union>
+        |  <bbox-query s="51.249" w="7.148" n="51.251" e="7.152"/>
+        |  <recurse type="up"/>
+        |</union>
+        |<print mode="meta"/>
+      """.stripMargin)))
+    asPolygonSeq(root.enumerateWays).foreach(println)
+  }
+
+
+
 
   def testOSMGridSampling(): Unit = {
 

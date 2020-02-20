@@ -1,22 +1,22 @@
-package org.openmole.spatialdata.run
+package org.openmole.spatialdata.application.syntheticdata
 
 import org.openmole.spatialdata.grid.measures.GridMorphology
 import org.openmole.spatialdata.grid.synthetic.RandomGridGenerator
 import org.openmole.spatialdata.network.measures.NetworkMeasures
 import org.openmole.spatialdata.network.synthetic.RandomNetworkGenerator
-import org.openmole.spatialdata.vector.synthetic.DensityPointsGenerator
 import org.openmole.spatialdata.utils.io.CSV
 import org.openmole.spatialdata.utils.math.Statistics
+import org.openmole.spatialdata.vector.synthetic.DensityPointsGenerator
 
 import scala.util.Random
 
+object RunWeakCoupling //extends App
+                    {
 
-object RunWeakCoupling {
+  //runNullModel
 
 
-
-
-  def runNullModel(): Unit = {
+  def runNullModel: Unit = {
 
     val seedrng = new Random
     val repets = 80
@@ -90,7 +90,3 @@ object RunWeakCoupling {
   }
 
 }
-
-
-
-

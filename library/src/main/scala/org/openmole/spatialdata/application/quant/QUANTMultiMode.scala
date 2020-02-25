@@ -2,7 +2,7 @@ package org.openmole.spatialdata.application.quant
 
 import org.openmole.spatialdata.model.spatialinteraction.{SinglyConstrainedMultiModeSpIntModel, SinglyConstrainedSpIntModel}
 import org.openmole.spatialdata.utils
-import org.openmole.spatialdata.utils.io.CSV
+import org.openmole.spatialdata.utils.io.{Binary, CSV}
 import org.openmole.spatialdata.utils.math.SparseMatrix
 import org.openmole.spatialdata.vector.SpatialField
 
@@ -15,11 +15,17 @@ object QUANTMultiMode {
     * @param dmatFiles
     * @return
     */
-  def quantMultiMode(sparseFlowsFiles: Array[String], dmatFiles: Array[String]): SinglyConstrainedMultiModeSpIntModel = {
-    SparseMatrix.SparseMatrixImplementation.setImplSparseBreeze
-    val dmats = dmatFiles.map(dmatFile => CSV.readSparseMatFromDense(dmatFile, {d=> math.exp( - d / 60.0) > 0.3})) // FIXME in the end should do a filtering on OiDjcij
+  def quantMultiMode(sparseFlowsFiles: Array[String],
+                     dmatFiles: Array[String],
+                     csvInput: Boolean = false
+                    )(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): SinglyConstrainedMultiModeSpIntModel = {
+    //SparseMatrix.SparseMatrixImplementation.setImplSparseBreeze
+
+    val dmats = if (csvInput) dmatFiles.map(dmatFile => CSV.readSparseMatFromDense(dmatFile, {d=> math.exp( - d / 60.0) > 0.3})) // FIXME in the end should do a filtering on OiDjcij
+    else dmatFiles.map(Binary.readBinary[SparseMatrix])
     utils.log(s"sparse dmat: ${dmats.toSeq}")
-    val flowmats = sparseFlowsFiles.map(sparseFlowsFile => CSV.readSparseMat(sparseFlowsFile))
+    val flowmats = if (csvInput) sparseFlowsFiles.map(sparseFlowsFile => CSV.readSparseMat(sparseFlowsFile))
+    else sparseFlowsFiles.map(Binary.readBinary[SparseMatrix])
     utils.log(s"sparse flowmat: ${flowmats.toSeq}")
     // needs to sum all modes
     // FIXME change in 2.13: reduce needs an explicit function - pb expansion?

@@ -37,8 +37,8 @@ case class SinglyConstrainedMultiModeSpIntModel (
     * rq: the generic function does not make sense as it fits itself in the end?
     * @return
     */
-  override def fit: SpatialInteractionModel => FittedSpIntModel = {
-    s => s match {
+  override def fit(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): SpatialInteractionModel => FittedSpIntModel = {
+    s: SpatialInteractionModel => s match {
       case m: SinglyConstrainedMultiModeSpIntModel =>
         SinglyConstrainedMultiModeSpIntModel.fitSinglyConstrainedMultiModeSpIntModel(m,
           m.fittedParams,
@@ -98,7 +98,7 @@ object SinglyConstrainedMultiModeSpIntModel {
                                               objectiveFunction: (SinglyConstrainedMultiModeSpIntModel,Array[Matrix]) => Array[Double] = averageTripLength,
                                               originConstraint: Boolean = true,
                                               convergenceThreshold: Double = 0.01
-                                    ): SinglyConstrainedMultiModeSpIntModel = {
+                                    )(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): SinglyConstrainedMultiModeSpIntModel = {
 
     utils.log("Fitting multi mode singly constrained spatial interaction model")
 
@@ -165,7 +165,7 @@ object SinglyConstrainedMultiModeSpIntModel {
                                       destinationMasses: Matrix,
                                       costMatrices: Array[Matrix],
                                       originConstraint: Boolean
-                                     ): Array[Matrix] = {
+                                     )(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): Array[Matrix] = {
     val totalCostMatrix = costMatrices.reduce(Matrix.msum) // cost Theta(c * NModes)
     val normalization = (if (originConstraint) SparseMatrix.diagonal((totalCostMatrix %*% destinationMasses).values.flatten) else SparseMatrix.diagonal((totalCostMatrix %*% originMasses).values.flatten)).map(1 / _)
 

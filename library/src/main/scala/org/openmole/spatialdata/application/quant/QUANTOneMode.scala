@@ -47,10 +47,7 @@ object QUANTOneMode {
     * @param dmatFile
     * @return
     */
-  def quantOneMode(sparseFlowsFile: String, dmatFile: String): SinglyConstrainedSpIntModel = {
-
-    // FIXME set breeze default as used anyway and readSparseFromDense gives a Breeze
-    SparseMatrix.SparseMatrixImplementation.setImplSparseBreeze
+  def quantOneMode(sparseFlowsFile: String, dmatFile: String)(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): SinglyConstrainedSpIntModel = {
 
     //val dmatdense = DenseMatrix(CSV.readMat(dmatFile))
     val dmat = CSV.readSparseMatFromDense(dmatFile, {d=> math.exp( - d / 60.0) > 0.3}) // FIXME in the end should do a filtering on OiDjcij

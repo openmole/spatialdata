@@ -1,7 +1,7 @@
 package org.openmole.spatialdata.test
 
 import org.openmole.spatialdata.utils.io.{Binary, CSV}
-import org.openmole.spatialdata.utils.math.{Matrix, Stochastic}
+import org.openmole.spatialdata.utils.math.{Matrix, SparseMatrix, Stochastic}
 
 import scala.util.Random
 
@@ -11,6 +11,7 @@ object TestUtils {
 
   def testCSVMatrix: Unit = {
     implicit val ord = Ordering.Double.TotalOrdering
+    implicit val spMatImpl = SparseMatrix.SparseBreeze()
     val path = System.getenv("CS_HOME_EXT2")+"/UrbanDynamics/Data/QUANT/EWS/TObs_1.csv"
     val res = Matrix(CSV.readMat(path))
     println("max="+res.values.map(_.max).max)
@@ -22,7 +23,8 @@ object TestUtils {
   def testBinaryIO: Unit = {
     implicit val ord = Ordering.Double.TotalOrdering
     val path = System.getenv("CS_HOME_EXT2")+"/UrbanDynamics/Data/QUANT/EWS/TObs_1.bin"
-    val res = Binary.readBinaryMatrix(path)
+    //val res = Binary.readBinaryMatrix(path)
+    val res = Binary.readBinary[Matrix](path)
     println("max="+res.values.map(_.max).max)
     println("min="+res.values.map(_.min).min)
     println("mean="+res.values.flatten.sum / res.values.flatten.size)

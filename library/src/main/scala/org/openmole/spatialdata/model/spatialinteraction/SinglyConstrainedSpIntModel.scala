@@ -28,7 +28,7 @@ case class SinglyConstrainedSpIntModel(
     * rq: the generic function does not make sense as it fits itself in the end?
     * @return
     */
-  override def fit: SpatialInteractionModel => FittedSpIntModel = {
+  override def fit(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): SpatialInteractionModel => FittedSpIntModel = {
     s => s match {
       case m: SinglyConstrainedSpIntModel => SinglyConstrainedSpIntModel.fitSinglyConstrainedSpIntModel(m, averageTripLength, 1.0, true, 0.01)
       case _ => throw new IllegalArgumentException("Can not fit other type of models")
@@ -79,7 +79,7 @@ object SinglyConstrainedSpIntModel {
                                      initialValue: Double = 1.0,
                                      originConstraint: Boolean = true,
                                      convergenceThreshold: Double = 0.01
-                                    ): SinglyConstrainedSpIntModel = {
+                                    )(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): SinglyConstrainedSpIntModel = {
 
     // ! force a SparseMatrix here
     val origin = utils.timerLog[Unit,Matrix](_ => SparseMatrix(model.originValues.values.flatten.toArray,false),(),"origin column matrix")
@@ -145,38 +145,15 @@ object SinglyConstrainedSpIntModel {
                              destinationMasses: Matrix,
                              costMatrix: Matrix,
                              originConstraint: Boolean
-                            ): Matrix = {
-    //utils.log("Singly constrained flows")
-    //val normalization = utils.timerLog[Matrix]((if (originConstraint) SparseMatrix.diagonal((costMatrix %*% destinationMasses).flatValues) else SparseMatrix.diagonal((costMatrix %*% originMasses).flatValues)).map(1/_),"normalisation")
-    // !!! do not use flatValues as some values can be zero after mult by cost
-    //val normalization = (if (originConstraint) SparseMatrix.diagonal((costMatrix %*% destinationMasses).flatValues) else SparseMatrix.diagonal((costMatrix %*% originMasses).flatValues)).map(1/_)
-    //val normalization = utils.timerLog[Unit,Matrix](_=> (if (originConstraint) SparseMatrix.diagonal((costMatrix %*% destinationMasses).values.flatten) else SparseMatrix.diagonal((costMatrix %*% originMasses).values.flatten)).map(1/_),(),"normalisation")
+                            )(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): Matrix = {
     val normalization = (if (originConstraint) SparseMatrix.diagonal((costMatrix %*% destinationMasses).values.flatten) else SparseMatrix.diagonal((costMatrix %*% originMasses).values.flatten)).map(1/_)
 
     val origin = SparseMatrix.diagonal(originMasses.flatValues)
     val destination = SparseMatrix.diagonal(destinationMasses.flatValues)
 
-    //val originnorm = SparseMatrix.diagonal((originMasses*normalization).flatValues)
-    //val destinationnorm = SparseMatrix.diagonal((destinationMasses*normalization).flatValues)
-    /*
-    // FIXME this shouldnt take so much time to duplicate column vectors - optimize
-    // !!! takes forever to duplicate - as reconstructing full sparse mat, totally inefficient
-    val (omat,to) = utils.withTimer[Double,Matrix]{_ => if (originConstraint) SparseMatrix(Array.fill(destinationMasses.nrows)(originnormraw).transpose) else SparseMatrix(Array.fill(destinationMasses.nrows)(originraw).transpose)}(0.0)
-    println(s"origin mat: $to")
-    val dmat = if (originConstraint) SparseMatrix(Array.fill(originMasses.nrows)(destinationraw)) else SparseMatrix(Array.fill(originMasses.nrows)(destinationnormraw))
-    // FIXME ! also inefficient to multiply full sparse mats => implement cols/rows times scalar
-    val (res,t) = utils.withTimer[Double,Matrix]{_ => omat*dmat*costMatrix}(0.0) // x2 cost overhead
-    println(s"res: $t")
-    res
-    // => diagonal sparse matrices!
-    */
-
-    //val omat = utils.timerLog[Matrix](if (originConstraint) origin %*% normalization else origin,"omat")
-    //val dmat = utils.timerLog[Matrix](if (originConstraint) destination else destination %*% normalization, name="dmat")
     val omat = if (originConstraint) origin %*% normalization else origin
     val dmat = if (originConstraint) destination else destination %*% normalization
 
-    //val res = utils.timerLog[Matrix](omat%*%costMatrix%*%dmat,name = "full flows")
     val res = omat%*%costMatrix%*%dmat
     res
   }

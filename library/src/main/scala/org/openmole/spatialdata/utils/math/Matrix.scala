@@ -107,14 +107,14 @@ object Matrix {
     * @param a
     * @return
     */
-  def apply(a: Array[Array[Double]]): Matrix = DEFAULT_MATRIX_IMPLEMENTATION match {
+  def apply(a: Array[Array[Double]])(implicit sparseMatrixImpl: SparseMatrix.SparseMatrixImplementation): Matrix = DEFAULT_MATRIX_IMPLEMENTATION match {
     case _: Dense => DenseMatrix(a)
     case _: Sparse => SparseMatrix(a)
   }
 
   //def apply(vector: Vector[Vector[Double]]): Matrix = apply(vector.map{_.toArray}.toArray)
 
-  def apply(a: Array[Double], row: Boolean=true): Matrix = if(row) apply(Array(a)) else apply(a.map(Array(_)))
+  def apply(a: Array[Double], row: Boolean=true)(implicit sparseMatrixImpl: SparseMatrix.SparseMatrixImplementation): Matrix = if(row) apply(Array(a)) else apply(a.map(Array(_)))
 
   //def apply(a: Vector[Double], row: Boolean=true): Matrix = apply(a.toArray,row)
 
@@ -369,19 +369,24 @@ object SparseMatrix{
   sealed trait SparseMatrixImplementation
   case class SparseCommons() extends SparseMatrixImplementation
   case class SparseBreeze() extends SparseMatrixImplementation
-  private var DEFAULT_SPARSE_MATRIX_IMPLEMENTATION: SparseMatrixImplementation = SparseCommons()
-  object SparseMatrixImplementation {
+
+  // switch to implicits instead of mutable
+  //private var DEFAULT_SPARSE_MATRIX_IMPLEMENTATION: SparseMatrixImplementation = SparseCommons()
+  /*object SparseMatrixImplementation {
     def setImplSparseCommons: Unit = DEFAULT_SPARSE_MATRIX_IMPLEMENTATION = SparseCommons()
     def setImplSparseBreeze: Unit = DEFAULT_SPARSE_MATRIX_IMPLEMENTATION = SparseBreeze()
-  }
+  }*/
 
-  def apply(a: Array[Array[Double]]): SparseMatrix = DEFAULT_SPARSE_MATRIX_IMPLEMENTATION match {
+  def apply(a: Array[Array[Double]])(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): SparseMatrix = spMatImpl match {
     case _: SparseCommons => SparseMatrixImpl(a)
     case _: SparseBreeze => BreezeSparseMatrix(a)
     case _ => SparseMatrixImpl(a)
   }
 
-  def apply(entries: Array[(Int,Int,Double)],n: Int, p: Int): SparseMatrix = DEFAULT_SPARSE_MATRIX_IMPLEMENTATION match {
+  def apply(entries: Array[(Int,Int,Double)],
+            n: Int,
+            p: Int
+           )(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): SparseMatrix = spMatImpl match {
     case _: SparseCommons => SparseMatrixImpl(entries,n,p)
     case _: SparseBreeze => BreezeSparseMatrix(entries,n,p)
     case _ => SparseMatrixImpl(entries,n,p)
@@ -393,13 +398,13 @@ object SparseMatrix{
     * @param row
     * @return
     */
-  def apply(a: Array[Double], row: Boolean=true): SparseMatrix = if(row) apply(Array(a)) else apply(a.map(Array(_)))
+  def apply(a: Array[Double], row: Boolean=true)(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): SparseMatrix = if(row) apply(Array(a)) else apply(a.map(Array(_)))
 
   /**
     * convert from dense - should better have a toSparse function? rq. breeze has built-in toDense
     * @param m
     */
-  def apply(m: DenseMatrix): SparseMatrix =  DEFAULT_SPARSE_MATRIX_IMPLEMENTATION match {
+  def apply(m: DenseMatrix)(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): SparseMatrix =  spMatImpl match {
     case _: SparseCommons => SparseMatrixImpl(m)
     case _: SparseBreeze => BreezeSparseMatrix(m)
     case _ => SparseMatrixImpl(m)
@@ -414,7 +419,7 @@ object SparseMatrix{
     * @param rng
     * @return
     */
-  def randomSparseMatrix(n: Int, p: Int, density: Double)(implicit rng: Random): SparseMatrix = {
+  def randomSparseMatrix(n: Int, p: Int, density: Double)(implicit rng: Random, spMatImpl: SparseMatrix.SparseMatrixImplementation): SparseMatrix = {
     // this is highly inefficient for high dimensions - sample and reject strategy better
     //val inds: Seq[(Int,Int)] = Stochastic.sampleWithoutReplacement[(Int,Int)](for {i <- 0 until n;j <- 0 until p} yield (i,j), (n*p*density).toInt)
     //val inds = new mutable.HashSet[(Int,Int)]
@@ -428,7 +433,7 @@ object SparseMatrix{
     SparseMatrix(entries,n, p)
   }
 
-  def diagonal(a: Array[Double]): SparseMatrix = apply(a.zipWithIndex.map{case (v,i) => (i,i,v)},a.length,a.length)
+  def diagonal(a: Array[Double])(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): SparseMatrix = apply(a.zipWithIndex.map{case (v,i) => (i,i,v)},a.length,a.length)
 
 
 }

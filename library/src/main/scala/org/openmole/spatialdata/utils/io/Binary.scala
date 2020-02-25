@@ -1,12 +1,41 @@
 package org.openmole.spatialdata.utils.io
 
-import java.io.{BufferedReader, File, FileReader, InputStream}
+import java.io._
 
 import org.apache.commons.io.IOUtils
+import org.nustaq.serialization.{FSTObjectInput, FSTObjectOutput}
 import org.openmole.spatialdata.utils.math.{Matrix, RealMatrix}
 
 
 object Binary {
+
+
+  /**
+    * serialize any object in binary using FST
+    * @param o
+    * @param filePath
+    */
+  def writeBinary(o: AnyRef, filePath: String): Unit = {
+    val out: FSTObjectOutput = new FSTObjectOutput(new FileOutputStream(filePath))
+    out.writeObject(o)
+    out.close()
+  }
+
+
+  /**
+    *
+    * @param filePath
+    * @tparam T
+    */
+  def readBinary[T](filePath: String): T = {
+    val in: FSTObjectInput = new FSTObjectInput(new FileInputStream(filePath))
+    val result: T = in.readObject().asInstanceOf[T]
+    in.close()
+    result
+  }
+
+
+
 
   /**
     * FIXME not sure of the order
@@ -23,10 +52,11 @@ object Binary {
 
   /**
     * FIXME this does not work with files written by dotnet (not even the same size) - Bytes should be the same however?
+    *  seems that finary formats are not necessarily compatible accross platforms
     * @param file
     * @return
     */
-  def readBinaryMatrix(file: String): Matrix = {
+  /*def readBinaryMatrix(file: String): Matrix = {
     val reader = new FileReader(new File(file))
     val data: Array[Byte] = IOUtils.toByteArray(reader)
     // or can use java.nio.files.Files.readAllBytes ?
@@ -40,7 +70,7 @@ object Binary {
     //if(data.length!=n*p*4) throw new RuntimeException("Binary float matrix data is malformed")
     // sliding row by row
     RealMatrix(data.drop(8).grouped(p*4).map(_.grouped(4).map(byteArrayToFloat(_).toDouble).toArray).toArray)
-  }
+  }*/
 
 
 }

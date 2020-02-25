@@ -19,11 +19,9 @@ object TestSpatialInteraction {
   def testFitSinglyConstrainedRandom: Unit = {
 
     implicit val rng = new Random
+    implicit val spMatImpl = SparseMatrix.SparseBreeze()
 
     val (n,p) = (8436,8436)
-    //val flows = utils.timerLog[Unit,SparseMatrix](_ => SparseMatrix.randomSparseMatrix(n, p, 0.03),(),"rnd sparse mat")
-    //val dmat = utils.timerLog[Unit,SparseMatrix](_ => SparseMatrix.randomSparseMatrix(n, p, 0.43),(), "rnd dist mat")
-    SparseMatrix.SparseMatrixImplementation.setImplSparseBreeze
 
     val flows = utils.timerLog[Matrix](SparseMatrix.randomSparseMatrix(n, p, 0.03),"random flows")
     //val dmat = SparseMatrix.randomSparseMatrix(n, p, 0.43)
@@ -42,6 +40,7 @@ object TestSpatialInteraction {
     * quant data
     */
   def testFlowData: Unit = {
+    implicit val spMatImpl = SparseMatrix.SparseBreeze()
     val flowspath = System.getenv("CS_HOME")+"/UrbanDynamics/Data/QUANT/converted/TObs_1.csv"
     val dmatpath = System.getenv("CS_HOME")+"/UrbanDynamics/Data/QUANT/converted/dis_roads_min.csv"
     val flowmat = utils.timerLog[String,SparseMatrix](s => CSV.readSparseMat(s),flowspath,"read flows")
@@ -57,6 +56,7 @@ object TestSpatialInteraction {
 
   def testFitSinglyConstrainedSyntheticFlows: Unit = {
     implicit val rng = new Random
+    implicit val spMatImpl = SparseMatrix.SparseBreeze()
 
     val syntheticFlows = PolycentricGridGravityFlowsGenerator(
       gridSize = 50,
@@ -88,6 +88,7 @@ object TestSpatialInteraction {
     */
   def testSyntheticFlows: Unit = {
     implicit val rng = new Random
+    implicit val spMatImpl = SparseMatrix.SparseBreeze()
 
     val syntheticFlowsGenerator = PolycentricGridGravityFlowsGenerator(
       gridSize = 50,

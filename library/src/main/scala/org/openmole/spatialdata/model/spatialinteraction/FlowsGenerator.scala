@@ -1,5 +1,7 @@
 package org.openmole.spatialdata.model.spatialinteraction
 
+import org.openmole.spatialdata.utils.math.SparseMatrix
+
 import scala.util.Random
 
 trait FlowsGenerator {
@@ -8,5 +10,5 @@ trait FlowsGenerator {
     * @param rng
     * @return
     */
-  def generateFlows(implicit rng: Random): SpatialInteractionModel
+  def generateFlows(implicit rng: Random, spMatImpl: SparseMatrix.SparseMatrixImplementation): SpatialInteractionModel
 }

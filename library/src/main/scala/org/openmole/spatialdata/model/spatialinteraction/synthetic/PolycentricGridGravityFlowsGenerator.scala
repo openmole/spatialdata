@@ -44,7 +44,7 @@ case class PolycentricGridGravityFlowsGenerator(
                                                ) extends FlowsGenerator {
 
 
-  override def generateFlows(implicit rng: Random): SpatialInteractionModel = {
+  override def generateFlows(implicit rng: Random, spMatImpl: SparseMatrix.SparseMatrixImplementation): SpatialInteractionModel = {
     // grids for origin / destination
     val centerCoords: Seq[Point] = Seq.fill(centers)((rng.nextDouble()*gridSize,rng.nextDouble()*gridSize))
     val origin: FieldGenerator[Double] = //() => ExpMixtureGridGenerator (gridSize, centers, maxOrigin, originRadius, false, centerCoords).generateGrid(rng).asSpatialField
@@ -63,7 +63,7 @@ case class PolycentricGridGravityFlowsGenerator(
     def originTransformation(a: Array[Double]): Double = math.pow(a(0),originExponent)
     def destinationTransformation(a: Array[Double]): Double = math.pow(a(0),destinationExponent)
     def flowsFunction: (Seq[Double], Seq[Double], Matrix)=> Matrix = DoublyConstrainedSpIntModel.doublyConstrainedFlows(_,_,_,0.01)
-    SyntheticFlowsGenerator(origin,destination,dmat,costFunction,originTransformation,destinationTransformation,flowsFunction).generateFlows(rng)
+    SyntheticFlowsGenerator(origin,destination,dmat,costFunction,originTransformation,destinationTransformation,flowsFunction).generateFlows
   }
 
 

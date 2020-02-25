@@ -36,8 +36,8 @@ libraryDependencies ++= Seq(
   "it.uniroma1.dis.wsngroup.gexf4j" % "gexf4j" % "1.0.0",
   //"org.gephi" % "gephi-toolkit" % "0.9.2" // full gephi lib is 68Mo ! totally a bad idea to use it
   "org.scalanlp" %% "breeze" % "1.0",
-  "com.github.fommil.netlib" % "all" % "1.1.2" // impl for breeze
-
+  "com.github.fommil.netlib" % "all" % "1.1.2", // impl for breeze
+  "de.ruedigermoeller" % "fst" % "2.57"
 )
 
 

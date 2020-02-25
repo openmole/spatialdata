@@ -1,7 +1,7 @@
 package org.openmole.spatialdata.model.spatialinteraction.synthetic
 
 import org.openmole.spatialdata.model.spatialinteraction.{FlowsGenerator, SpatialInteractionData, SpatialInteractionModel}
-import org.openmole.spatialdata.utils.math.Matrix
+import org.openmole.spatialdata.utils.math.{Matrix, SparseMatrix}
 import org.openmole.spatialdata.vector.{FieldGenerator, Point, Points, SpatialField}
 
 import scala.util.Random
@@ -27,7 +27,7 @@ case class SyntheticFlowsGenerator(
                                   destinationTransformation: Array[Double] => Double,
                                   flowsFunction: (Seq[Double],Seq[Double],Matrix) => Matrix
                                   ) extends FlowsGenerator {
-  override def generateFlows(implicit rng: Random): SpatialInteractionModel =
+  override def generateFlows(implicit rng: Random, spMatImpl: SparseMatrix.SparseMatrixImplementation): SpatialInteractionModel =
     SyntheticFlowsGenerator.syntheticFlows(originFieldGenerator,destinationFieldGenerator,distanceMatrix,costFunction,originTransformation,destinationTransformation,flowsFunction,rng)
 }
 

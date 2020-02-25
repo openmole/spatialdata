@@ -21,7 +21,8 @@ object DoublyConstrainedSpIntModel {
   def doublyConstrainedFlows(originMasses: Seq[Double],
                              destinationMasses: Seq[Double],
                              costMatrix: Matrix,
-                             tolerance: Double = 0.01): Matrix = {
+                             tolerance: Double = 0.01
+                            )(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): Matrix = {
     // FIXME should add check on dimensions
     costMatrix match {
       case _: DenseMatrix => Matrix.MatrixImplementation.setDefaultDense

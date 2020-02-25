@@ -16,6 +16,8 @@ object TestMatrix {
     */
   def testImplementations: Unit = {
     implicit val rng = new Random
+    implicit val spMatBreeze = SparseMatrix.SparseBreeze()
+    implicit val spMatApache = SparseMatrix.SparseCommons()
 
     val (n,p) = (8000,8000)
     val density = 0.8
@@ -25,19 +27,17 @@ object TestMatrix {
     val sparseTimes = (0 until bootstraps).map {i =>
       println(i)
       //val (m1,m2) =  (SparseMatrix.randomSparseMatrix(n, p, density),SparseMatrix.randomSparseMatrix(n, 1, density))
-      val m1 = SparseMatrix.randomSparseMatrix(n, p, density)
-      val m2 = SparseMatrix(DenseMatrix.ones(n,1))
+      val m1 = SparseMatrix.randomSparseMatrix(n, p, density)(rng, spMatApache)
+      val m2 = SparseMatrix(DenseMatrix.ones(n,1))(spMatApache)
       withTimer[Double, Matrix] { _ => m1 %*% m2 }(0.0)._2
     }
 
 
-
-    SparseMatrix.SparseMatrixImplementation.setImplSparseBreeze
     val sparseBreezeTimes = (0 until bootstraps).map {i =>
       println(i)
       //val (m1,m2) = (SparseMatrix.randomSparseMatrix(n, p, density),SparseMatrix.randomSparseMatrix(n, 1, density))
-      val m1 = SparseMatrix.randomSparseMatrix(n, p, density)
-      val m2 = SparseMatrix(DenseMatrix.ones(n,1))
+      val m1 = SparseMatrix.randomSparseMatrix(n, p, density)(rng, spMatBreeze)
+      val m2 = SparseMatrix(DenseMatrix.ones(n,1))(spMatBreeze)
       withTimer[Double, Matrix] { _ => m1 %*% m2 }(0.0)._2
     }
 

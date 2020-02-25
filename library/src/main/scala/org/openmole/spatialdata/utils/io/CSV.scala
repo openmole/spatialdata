@@ -5,6 +5,8 @@ import java.io.{BufferedReader, File, FileReader}
 
 import breeze.linalg.CSCMatrix
 import com.github.tototoshi.csv._
+import org.apache.commons.math3.linear
+import org.openmole.spatialdata.utils.math.SparseMatrix.{SparseBreeze, SparseCommons}
 import org.openmole.spatialdata.utils.math.{BreezeSparseMatrix, SparseMatrix, SparseMatrixImpl}
 
 import scala.collection.mutable.ArrayBuffer
@@ -58,25 +60,51 @@ object CSV {
     * @param naformat
     * @return
     */
-  def readSparseMatFromDense(file: String, filter: Double => Boolean, sep: String=",", naformat: String = "NA"): SparseMatrix = {
+  def readSparseMatFromDense(file: String,
+                             filter: Double => Boolean,
+                             sep: String=",",
+                             naformat: String = "NA"
+                            )(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): SparseMatrix = {
     val r = new BufferedReader(new FileReader(new File(file)))
     val res = new ArrayBuffer[Array[Double]]
     var currentline = r.readLine()
     val rawdims = currentline.split(sep)
     val (n,p) = (rawdims(0).toInt,rawdims(1).toInt)
-    val builder = new CSCMatrix.Builder[Double](rows = n, cols = p)
-    currentline = r.readLine()
-    var i = 0
-    while(currentline!=null){
-      currentline.split(sep).zipWithIndex.map { case (s, j) =>
-        if (s.equals("NA")) None else {
-          if (filter(s.toDouble)) Some((i,j,s.toDouble)) else None
+
+    spMatImpl match {
+      case _: SparseBreeze => {
+        val breezebuilder = new CSCMatrix.Builder[Double](rows = n, cols = p)
+        currentline = r.readLine()
+        var i = 0
+        while (currentline != null) {
+          currentline.split(sep).zipWithIndex.map { case (s, j) =>
+            if (s.equals("NA")) None else {
+              if (filter(s.toDouble)) Some((i, j, s.toDouble)) else None
+            }
+          }.filter(_.isDefined).foreach { case Some((i, j, v)) => breezebuilder.add(i, j, v) }
+          currentline = r.readLine()
+          i = i + 1
         }
-      }.filter(_.isDefined).foreach{case Some((i,j,v)) => builder.add(i,j,v)}
-      currentline = r.readLine()
-      i = i+1
+        BreezeSparseMatrix(breezebuilder.result())
+      }
+      case _: SparseCommons => {
+        val m:linear.OpenMapRealMatrix = new linear.OpenMapRealMatrix(n,p)
+        currentline = r.readLine()
+        var i = 0
+        while (currentline != null) {
+          currentline.split(sep).zipWithIndex.map { case (s, j) =>
+            if (s.equals("NA")) None else {
+              if (filter(s.toDouble)) Some((i, j, s.toDouble)) else None
+            }
+          }.filter(_.isDefined).foreach { case Some((i, j, v)) => m.setEntry(i,j,v) }
+          currentline = r.readLine()
+          i = i + 1
+        }
+        SparseMatrixImpl(m)
+      }
     }
-    BreezeSparseMatrix(builder.result())
+
+
   }
 
   /**
@@ -87,7 +115,10 @@ object CSV {
     * @param naformat
     * @return
     */
-  def readSparseMat(file: String,sep: String=",",naformat: String = "NA"): SparseMatrix = {
+  def readSparseMat(file: String,
+                    sep: String=",",
+                    naformat: String = "NA"
+                   )(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): SparseMatrix = {
     val entries = new ArrayBuffer[(Int,Int,Double)]
     val r = new BufferedReader(new FileReader(new File(file)))
     var currentline = r.readLine()

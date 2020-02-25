@@ -1,10 +1,10 @@
 package org.openmole.spatialdata.model.spatialinteraction
 
-import org.openmole.spatialdata.utils.math.Matrix
+import org.openmole.spatialdata.utils.math.{Matrix, SparseMatrix}
 
 trait FittedSpIntModel extends SpatialInteractionModel {
-  def fit: SpatialInteractionModel => FittedSpIntModel
-  def fitted: FittedSpIntModel = fit(this)
+  def fit(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): SpatialInteractionModel => FittedSpIntModel
+  def fitted(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): FittedSpIntModel = fit(spMatImpl)(this)
   def fittedParams: Array[Double]
 }
 

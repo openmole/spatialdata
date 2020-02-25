@@ -20,7 +20,7 @@ case class SinglyConstrainedSpIntModel(
                                         originValues: SpatialField[Double],
                                         destinationValues: SpatialField[Double],
                                         costFunction: (Double,Double)=> Double = {case (d,d0) => math.exp(-d / d0)},
-                                        fittedParams: Double = 1.0,
+                                        fittedParam: Double = 1.0,
                                         predictedFlows: Matrix = EmptyMatrix()
                                       ) extends FittedSpIntModel {
 
@@ -28,13 +28,14 @@ case class SinglyConstrainedSpIntModel(
     * rq: the generic function does not make sense as it fits itself in the end?
     * @return
     */
-  override def fit: SpatialInteractionModel => SpatialInteractionModel = {
+  override def fit: SpatialInteractionModel => FittedSpIntModel = {
     s => s match {
       case m: SinglyConstrainedSpIntModel => SinglyConstrainedSpIntModel.fitSinglyConstrainedSpIntModel(m, averageTripLength, 1.0, true, 0.01)
       case _ => throw new IllegalArgumentException("Can not fit other type of models")
     }
   }
 
+  override def fittedParams: Array[Double] = Array(fittedParam)
 
 }
 

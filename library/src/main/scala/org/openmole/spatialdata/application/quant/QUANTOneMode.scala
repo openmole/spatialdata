@@ -1,12 +1,14 @@
 package org.openmole.spatialdata.application.quant
 
-import org.openmole.spatialdata.model.spatialinteraction.{FittedSpIntModel, SinglyConstrainedSpIntModel, SpatialInteractionModel}
+import org.openmole.spatialdata.model.spatialinteraction.SinglyConstrainedSpIntModel
 import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.utils.io.CSV
-import org.openmole.spatialdata.utils.math.{DenseMatrix, EmptyMatrix, Matrix, SparseMatrix}
+import org.openmole.spatialdata.utils.math.SparseMatrix
 import org.openmole.spatialdata.vector.SpatialField
 
 
+/*
+// FIXME this is not necessary as introduces unnecessary redundancy, as long as only wraps a model (useful to have the QUANTOneMode type though)
 case class QUANTOneMode(
                 //override val observedFlows: Matrix,
                 //override val distances: Matrix,
@@ -34,6 +36,7 @@ case class QUANTOneMode(
   override def predictedFlows: Matrix = model.predictedFlows
 
 }
+*/
 
 
 object QUANTOneMode {
@@ -44,7 +47,7 @@ object QUANTOneMode {
     * @param dmatFile
     * @return
     */
-  def apply(sparseFlowsFile: String, dmatFile: String): QUANTOneMode = {
+  def quantOneMode(sparseFlowsFile: String, dmatFile: String): SinglyConstrainedSpIntModel = {
 
     // FIXME set breeze default as used anyway and readSparseFromDense gives a Breeze
     SparseMatrix.SparseMatrixImplementation.setImplSparseBreeze
@@ -62,7 +65,7 @@ object QUANTOneMode {
     //println(origin)
     val destination = flowmat.colSum.zipWithIndex.map{case (s,j) => ((j.toDouble,0.0),Array(s))}.toMap
 
-    QUANTOneMode(model = SinglyConstrainedSpIntModel(flowmat,dmat,origin,destination))
+    SinglyConstrainedSpIntModel(flowmat,dmat,origin,destination)
   }
 
 

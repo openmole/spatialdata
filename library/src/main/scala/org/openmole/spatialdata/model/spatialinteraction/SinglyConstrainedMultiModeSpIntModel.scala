@@ -15,11 +15,12 @@ case class SinglyConstrainedMultiModeSpIntModel (
                                              modesPredictedFlows: Array[Matrix] = Array.empty[Matrix]
                                            ) extends FittedSpIntModel {
 
+
   /**
     * Total observed flows are the sum of all modes
     * @return
     */
-  override def observedFlows: Matrix = modesObservedFlows.reduce{case (phi1,phi2)=>phi1+phi2}
+  override def observedFlows: Matrix = modesObservedFlows.reduce(Matrix.msum)
 
   /**
     * Several ways to compute an aggregate distance:
@@ -28,15 +29,15 @@ case class SinglyConstrainedMultiModeSpIntModel (
     *  - min distance (deterministic mode choice)
     * @return
     */
-  override def distances: Matrix = modesDistances.reduce{case (phi1,phi2)=>phi1+phi2}.map(_ / modesDistances.length)
+  override def distances: Matrix = modesDistances.reduce(Matrix.msum).map(_ / modesDistances.length)
 
-  override def predictedFlows: Matrix = modesPredictedFlows.reduce{case (phi1,phi2)=>phi1+phi2}
+  override def predictedFlows: Matrix = modesPredictedFlows.reduce(Matrix.msum)
 
   /**
     * rq: the generic function does not make sense as it fits itself in the end?
     * @return
     */
-  override def fit: SpatialInteractionModel => SpatialInteractionModel = {
+  override def fit: SpatialInteractionModel => FittedSpIntModel = {
     s => s match {
       case m: SinglyConstrainedMultiModeSpIntModel =>
         SinglyConstrainedMultiModeSpIntModel.fitSinglyConstrainedMultiModeSpIntModel(m,
@@ -53,6 +54,22 @@ case class SinglyConstrainedMultiModeSpIntModel (
 
 
 object SinglyConstrainedMultiModeSpIntModel {
+
+
+  /**
+    * FIXME ad hoc constructor: assumes that the combines sp int models have the same O/D values, take the first
+    * @param models
+    * @return
+    */
+  def apply(models: Array[SpatialInteractionModel]): SinglyConstrainedMultiModeSpIntModel =
+    SinglyConstrainedMultiModeSpIntModel(
+      modesObservedFlows = models.map(_.observedFlows),
+      modesDistances = models.map(_.distances),
+      originValues = models(0).originValues,
+      destinationValues = models(0).destinationValues,
+      fittedParams = Array.fill(models.length)(1.0)
+    )
+
 
 
   /**
@@ -83,13 +100,15 @@ object SinglyConstrainedMultiModeSpIntModel {
                                               convergenceThreshold: Double = 0.01
                                     ): SinglyConstrainedMultiModeSpIntModel = {
 
+    utils.log("Fitting multi mode singly constrained spatial interaction model")
+
     // ! force a SparseMatrix here
     val origin = utils.timerLog[Unit,Matrix](_ => SparseMatrix(model.originValues.values.flatten.toArray,false),(),"origin column matrix")
     val destination = utils.timerLog[Unit,Matrix](_ => SparseMatrix(model.destinationValues.values.flatten.toArray,false),(),"destination column matrix")
     println(s"origin column mat = ${origin}")
 
     val obsObjective = utils.timerLog[Unit,Array[Double]](_ => objectiveFunction(model,model.modesObservedFlows),(),"objective cost function")
-    utils.log(s"observed stat = $obsObjective")
+    utils.log(s"observed stat = ${obsObjective.toSeq}")
 
     val initialFlows = singlyConstrainedMultiModeFlows(
         origin,
@@ -122,7 +141,7 @@ object SinglyConstrainedMultiModeSpIntModel {
       val newmodel = model.copy(modesPredictedFlows = predictedFlows, fittedParams = newfitparameters)
       val errors = predObjectives.zip(obsObjective).map{case (cbar,c) => math.abs(c - cbar)/c}
       utils.log(s"fit singly constr multi mode: errors = ${errors.toSeq} ; iteration in ${System.currentTimeMillis()-t}")
-      (newmodel,errors.max)
+      (newmodel,errors.max(Ordering.Double.TotalOrdering))
     }
 
     val res = Iterator.iterate((initialModel,Double.MaxValue.toDouble))(iterateCostParam).takeWhile(_._2>convergenceThreshold).toSeq.last
@@ -147,7 +166,7 @@ object SinglyConstrainedMultiModeSpIntModel {
                                       costMatrices: Array[Matrix],
                                       originConstraint: Boolean
                                      ): Array[Matrix] = {
-    val totalCostMatrix = costMatrices.reduce { case (c1, c2) => c1 + c2 } // cost Theta(c * NModes)
+    val totalCostMatrix = costMatrices.reduce(Matrix.msum) // cost Theta(c * NModes)
     val normalization = (if (originConstraint) SparseMatrix.diagonal((totalCostMatrix %*% destinationMasses).values.flatten) else SparseMatrix.diagonal((totalCostMatrix %*% originMasses).values.flatten)).map(1 / _)
 
     val origin = SparseMatrix.diagonal(originMasses.flatValues)

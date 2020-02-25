@@ -17,9 +17,8 @@ case class UnconstrainedSpIntModel(
                                   distances: Matrix,
                                   originValues: SpatialField[Double],
                                   destinationValues: SpatialField[Double],
-                                  predictedFlows: Matrix,
-                                  fit: SpatialInteractionModel => SpatialInteractionModel = {s: SpatialInteractionModel => s}//FittedSpIntModel.poissonFit
-                                  ) extends FittedSpIntModel {
+                                  predictedFlows: Matrix
+                                  ) extends SpatialInteractionModel {
 
 }
 

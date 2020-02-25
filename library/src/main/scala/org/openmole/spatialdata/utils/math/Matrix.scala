@@ -155,6 +155,8 @@ object Matrix {
     */
   //def cbind(a: Array[Matrix]): Matrix = a.reduce(cbind)
 
+  def msum: (Matrix,Matrix)=>Matrix = {case m: (Matrix,Matrix) => m._1+m._2}
+
 
 }
 
@@ -665,7 +667,19 @@ case class BreezeSparseMatrix(m: linalg.CSCMatrix[Double]) extends SparseMatrix 
   override def min: Double = flatValues.min(Ordering.Double.TotalOrdering)
   override def max: Double = flatValues.max(Ordering.Double.TotalOrdering)
 
-  override def rowSum: Array[Double] = m.data.zip(m.rowIndices).groupBy(_._2).toSeq.map(_._2.map(_._1).sum).toArray
+  /**
+    * rq: empty rows must be taken into account
+    * @return
+    */
+  override def rowSum: Array[Double] = {
+    val nonemptyrows: Map[Int,Double] = m.data.zip(m.rowIndices).groupBy(_._2).toSeq.map(r => (r._1,r._2.map(_._1).sum)).toMap
+    Array.tabulate(nrows){i => nonemptyrows.getOrElse(i,0.0)}
+  }
+
+  /**
+    * all cols are included in colPtrs (empty subset if column is empty)
+    * @return
+    */
   override def colSum: Array[Double] = Array.tabulate(nrows)(j => util.Arrays.copyOfRange(m.data,m.colPtrs(j), m.colPtrs(j+1)).sum)
 
   override def nentries: Int = m.data.length

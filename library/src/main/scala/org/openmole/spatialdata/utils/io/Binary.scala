@@ -29,6 +29,7 @@ object Binary {
   def readBinaryMatrix(file: String): Matrix = {
     val reader = new FileReader(new File(file))
     val data: Array[Byte] = IOUtils.toByteArray(reader)
+    // or can use java.nio.files.Files.readAllBytes ?
     // array begins with Int - 4 bytes, rows, columns
     //val n: Int = data(0) | data(1) << 8 | data(2) << 16 | data(3) << 24
     //val p: Int = data(4) | data(5) << 8 | data(6) << 16 | data(7) << 24

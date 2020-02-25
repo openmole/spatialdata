@@ -23,6 +23,7 @@ import org.openmole.spatialdata.vector.SpatialField
 trait SpatialInteractionModel {
 
   def observedFlows: Matrix
+  // FIXME this is not the most generic representation: cf MultiMode version
   def distances: Matrix
   def originValues: SpatialField[Double]
   def destinationValues: SpatialField[Double]

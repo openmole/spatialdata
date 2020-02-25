@@ -20,7 +20,7 @@ case class SinglyConstrainedSpIntModel(
                                         originValues: SpatialField[Double],
                                         destinationValues: SpatialField[Double],
                                         costFunction: (Double,Double)=> Double = {case (d,d0) => math.exp(-d / d0)},
-                                        fittedParam: Double = 1.0,
+                                        fittedParams: Double = 1.0,
                                         predictedFlows: Matrix = EmptyMatrix()
                                       ) extends FittedSpIntModel {
 
@@ -179,9 +179,5 @@ object SinglyConstrainedSpIntModel {
     val res = omat%*%costMatrix%*%dmat
     res
   }
-
-
-
-
 
 }

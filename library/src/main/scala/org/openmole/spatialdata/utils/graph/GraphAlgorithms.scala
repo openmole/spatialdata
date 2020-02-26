@@ -37,22 +37,24 @@ object GraphAlgorithms {
   //case class ScalaGraph() extends ShortestPathMethod
   case class FloydWarshall() extends ShortestPathMethod
 
+
   /**
-    * Shortest paths
-    *
+    * Shortest paths (dispatch methods)
     * @param network network
-    * @param vertices from/to vertices
+    * @param from from nodes
+    * @param to to nodes
     * @param linkWeight link weight function
     * @param method method to use
     * @return
     */
   def shortestPaths(network: Network,
-                    vertices: Seq[Node],
+                    from: Seq[Node],
+                    to: Seq[Node],
                     linkWeight: Link => Double = _.weight,
                     method: ShortestPathMethod = DijkstraJGraphT()
                    ): ShortestPaths = {
     method match {
-      case _ : DijkstraJGraphT => ShortestPathsAlgorithms.shortestPathsJGraphT(network, vertices, linkWeight)
+      case _ : DijkstraJGraphT => ShortestPathsAlgorithms.shortestPathsJGraphT(network, from, to, linkWeight)
       case _ : FloydWarshallJGraphT => ShortestPathsAlgorithms.allShortestPathsFloydWarshallJGraphT(network, linkWeight)
       //case _ : ScalaGraph => ShortestPathsAlgorithms.shortestPathsScalaGraph(network, vertices, linkWeight)
       case _ : FloydWarshall => ShortestPathsAlgorithms.allPairsShortestPath(network, linkWeight)
@@ -61,26 +63,29 @@ object GraphAlgorithms {
   }
 
   object ShortestPathsAlgorithms {
+
     /**
       * Generic shortest paths using different JGraphT algo
       *
       * FIXME returns empty path if no path - maybe better to not put in the return map ?
       *
-      * @param network
-      * @param vertices
-      * @param algorithm
-      * @param linkWeight
-      * @return
+      * @param network network
+      * @param from from nodes
+      * @param to to nodes
+      * @param algorithm jgrapht algo to use
+      * @param linkWeight link weight function
+      * @return map of shortest paths
       */
     def shortestPathsWithJGraphTAlgorithm(network: Network,
-                                          vertices: Seq[Node],
+                                          from: Seq[Node],
+                                          to: Seq[Node],
                                           algorithm: Graph[Int,DefaultWeightedEdge] => ShortestPathAlgorithm[Int,DefaultWeightedEdge],
                                           linkWeight: Link => Double = _.weight
                                          ): ShortestPaths = {
       val (g,nodeMap,linkMap) = GraphConversions.networkToJGraphT(network,linkWeight)
       (for {
-        i <- network.nodes.toSeq
-        j <- network.nodes.toSeq
+        i <- from
+        j <- to
       } yield ((i,j),if(i==j) {(Seq(i),Seq.empty[Link],0.0)}
       else {
         val path = algorithm(g).getPath(i.id,j.id)
@@ -95,28 +100,36 @@ object GraphAlgorithms {
     }
 
 
+
     /**
       * Shortest paths using Dijkstra in the JGraphT library
-      * @param network
-      * @param vertices
-      * @param linkWeight
-      * @param rng
-      * @return
+      * @param network network
+      * @param from from nodes
+      * @param to to nodes
+      * @param linkWeight link weight function
+      * @return shortest paths
       */
-    def shortestPathsJGraphT(network: Network, vertices: Seq[Node], linkWeight: Link => Double = _.weight): ShortestPaths =
-      shortestPathsWithJGraphTAlgorithm(network,vertices,g => new DijkstraShortestPath(g), linkWeight)
+    def shortestPathsJGraphT(network: Network, from: Seq[Node], to: Seq[Node], linkWeight: Link => Double = _.weight): ShortestPaths =
+      shortestPathsWithJGraphTAlgorithm(network,from,to,g => new DijkstraShortestPath(g), linkWeight)
 
     /**
-      * Floyd-Warshall of JGraphT
-      * @param network
-      * @param linkWeight
-      * @return
+      * Floyd-Warshall of JGraphT (all pairs shortest paths)
+      * @param network network
+      * @param linkWeight link weight function
+      * @return shortest paths
       */
     def allShortestPathsFloydWarshallJGraphT(network: Network, linkWeight: Link => Double = _.weight): ShortestPaths =
-      shortestPathsWithJGraphTAlgorithm(network,network.nodes.toSeq,g=> new FloydWarshallShortestPaths[Int,DefaultWeightedEdge](g),linkWeight)
+      shortestPathsWithJGraphTAlgorithm(network, network.nodes.toSeq, network.nodes.toSeq, g=> new FloydWarshallShortestPaths[Int,DefaultWeightedEdge](g),linkWeight)
 
+
+    /**
+      * Johnson all pairs shortest paths with JGraphT
+      * @param network network
+      * @param linkWeight link weight function
+      * @return
+      */
     def allShortestPathsJohnsonJGraphT(network: Network, linkWeight: Link => Double = _.weight): ShortestPaths =
-      shortestPathsWithJGraphTAlgorithm(network,network.nodes.toSeq,g=> new JohnsonShortestPaths[Int,DefaultWeightedEdge](g),linkWeight)
+      shortestPathsWithJGraphTAlgorithm(network, network.nodes.toSeq, network.nodes.toSeq, g=> new JohnsonShortestPaths[Int,DefaultWeightedEdge](g),linkWeight)
 
     /**
       * Shortest paths - by default not a spatial network as weight function is only the weight
@@ -126,9 +139,7 @@ object GraphAlgorithms {
       * FIXME works if the network is not connected but returns existing paths only
       * FIXME sampling should not be done here
       *
-      * @param network
-      * @param vertices
-      * @return
+      *
       */
     /*def shortestPathsScalaGraph(network: Network, vertices: Seq[Node], linkWeight: Link => Double = _.weight): ShortestPaths = {
       //println("Computing shortest paths between vertices : "+vertices)

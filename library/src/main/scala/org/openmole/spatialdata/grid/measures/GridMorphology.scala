@@ -181,7 +181,7 @@ object GridMorphology {
     //println("avgdetour = "+avgdetour)
     // should sample points within connected components
     val sampled = nw.nodes.sampleWithoutReplacement(sampledPoints)(rng) // FIXME no shuffling here?
-    val paths = GraphAlgorithms.shortestPaths(nw,sampled) // rng is not used, sampling done before
+    val paths = GraphAlgorithms.shortestPaths(nw, sampled, sampled)
 
     // ! in scala 2.13 no more implicit conversion Map -> Seq
     val avgdetour = paths.toSeq.filter{!_._2._3.isInfinite}.map{

@@ -15,6 +15,8 @@ case class Node(id: Int,
   def x: Double = position._1
   def y: Double = position._2
 
+  //def asPoint: Point = (x,y) // just use position
+
   def distance(n2: Node): Double = math.sqrt(math.pow(x-n2.x,2)+math.pow(y-n2.y,2))
 
   /**

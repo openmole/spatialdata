@@ -21,15 +21,22 @@ case class PercolationNetworkGenerator(
 
 object PercolationNetworkGenerator {
 
+  implicit val doubleOrdering = Ordering.Double.TotalOrdering
+
   /**
     * Basic bond percolation in an overlay network
-    * (iterated until having one connected component with a specified number of points on the boundary,
-    * keep the largest component at each step)
-    * @param worldSize
-    * @param percolationProba
+    * * (iterated until having one connected component with a specified number of points on the boundary,
+    * * keep the largest component at each step)
+    *
+    * @param worldSize size of the underlying grid
+    * @param percolationProba percolation probability
+    * @param bordPoints number of border points to be joined
+    * @param linkwidth FIXME unusued ?
+    * @param maxIterations max number of iterations
+    * @param rng rng
     * @return
     */
-  def bondPercolatedNetwork(worldSize: Int,percolationProba: Double,bordPoints: Int,linkwidth: Double,maxIterations: Int = 10000)(implicit rng: Random): Network = {
+  def bondPercolatedNetwork(worldSize: Int,percolationProba: Double,bordPoints: Int, linkwidth: Double, maxIterations: Int = 10000)(implicit rng: Random): Network = {
     var nw = GridNetworkGenerator(worldSize).generateNetwork
     var bordConnected = 0
     val xmin = nw.nodes.map{_.x}.min;val xmax = nw.nodes.map{_.x}.max

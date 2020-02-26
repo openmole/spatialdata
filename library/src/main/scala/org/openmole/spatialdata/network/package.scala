@@ -10,10 +10,10 @@ import org.locationtech.jts.geom.LineString
 /**
   * Network classes and functions
   *
-  * FIXME put graph algorithms in utils
-  *
   */
 package object network {
+
+  implicit val doubleOrdering: Ordering[Double] = Ordering.Double.TotalOrdering
 
   type ShortestPath = (Seq[Node],Seq[Link],Double)
   type ShortestPaths = Map[(Node,Node), (Seq[Node],Seq[Link],Double)]
@@ -50,9 +50,9 @@ package object network {
     network.links.toSeq.filter{_.weight>0.0}.foreach{case l =>
       val i1 = l.e1.x - xmin;val j1 = l.e1.y - ymin
       val i2 = l.e2.x - xmin;val j2 = l.e2.y - ymin
-      val istep = (i1 - i2) match {case x if math.abs(x) < 1e-10 => 0.0 ;case _ => math.cos(math.atan((j2 - j1)/(i2 - i1)))*footPrintResolution}
-      val jstep = (j1 - j2) match {case x if math.abs(x) < 1e-10 => 0.0 ;case _ => math.sin(math.atan((j2 - j1)/(i2 - i1)))*footPrintResolution}
-      val nsteps = (i1 - i2) match {case x if math.abs(x) < 1e-10 => (j2 - j1)/jstep;case _ => (i2 - i1)/istep}
+      val istep = i1 - i2 match {case x if math.abs(x) < 1e-10 => 0.0 ;case _ => math.cos(math.atan((j2 - j1)/(i2 - i1)))*footPrintResolution}
+      val jstep = j1 - j2 match {case x if math.abs(x) < 1e-10 => 0.0 ;case _ => math.sin(math.atan((j2 - j1)/(i2 - i1)))*footPrintResolution}
+      val nsteps = i1 - i2 match {case x if math.abs(x) < 1e-10 => (j2 - j1)/jstep;case _ => (i2 - i1)/istep}
       var x = l.e1.x;var y = l.e1.y
       (BigDecimal(0.0) to nsteps by 1.0).foreach{_ =>
         for {

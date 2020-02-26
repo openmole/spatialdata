@@ -91,7 +91,13 @@ object CoarseGrainingNetworkSimplificator {
       val neighbors = getNeighbors(p)
       val neighlinks = neighbors.map{neigh =>
         val (_,neighwithin,cneigh) = polygonSubNetworks(neigh)
+
         // superpose the networks: by construction both are connected - otherwise infinity
+        // FIXME subnetwork is not necessarily connected itself: most of it may not find a path to neighbor centroid this way (if most path go through another neighbor)
+        //  -> considering the full network will have a high computational cost
+        //  -> considering all neighbors may also miss very detoured paths
+        //  -> add connectors to the local network may be a good alternative (rq: a non-connected local nw makes no sense in practice) (-> do not test on trees)
+        // : this should be an option
         val d = (nneigh+neighwithin).shortestPathTo(Seq(c),Seq(cneigh)).head._2._3 +
           connectorWeight(p.getCentroid.distance(nodePointMap(c))) + connectorWeight(neigh.getCentroid.distance(nodePointMap(cneigh)))
         (neigh,d)

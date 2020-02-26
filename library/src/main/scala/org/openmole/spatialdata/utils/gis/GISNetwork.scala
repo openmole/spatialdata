@@ -7,6 +7,8 @@ import org.openmole.spatialdata.vector.{Lines, Points}
 
 object GISNetwork {
 
+  implicit val doubleOrdering = Ordering.Double.TotalOrdering
+
   /**
     * Import a network from gis linestrings
     *   - brutal algorithm with aggregation of vertices on an underlying grid

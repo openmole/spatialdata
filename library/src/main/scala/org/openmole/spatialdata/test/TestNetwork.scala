@@ -4,7 +4,7 @@ import org.openmole.spatialdata.vector.Point
 import org.openmole.spatialdata.utils.Implicits._
 import org.openmole.spatialdata.network.measures.NetworkMeasures.ShortestPathsNetworkMeasures
 import org.openmole.spatialdata.network.real.OSMNetworkGenerator
-import org.openmole.spatialdata.network.synthetic.{RandomNetworkGenerator, TreeMinDistGenerator}
+import org.openmole.spatialdata.network.synthetic.{LocalLinksNetworkGenerator, RandomNetworkGenerator, TreeMinDistGenerator}
 import org.openmole.spatialdata.network.{Network, Node, ShortestPaths}
 import org.openmole.spatialdata.utils.graph.GraphAlgorithms
 import org.openmole.spatialdata.utils.graph.GraphAlgorithms.{DijkstraJGraphT, FloydWarshallJGraphT, shortestPaths}
@@ -15,8 +15,20 @@ import scala.util.Random
 object TestNetwork {
 
   implicit val rng = new Random
+  implicit val doubleOrdering: Ordering[Double] = Ordering.Double.TotalOrdering
 
-  implicit val doubleOrdering = Ordering.Double.TotalOrdering
+
+
+  def testCoarseGraining: Unit = {
+    //val nw = TreeMinDistGenerator(200).generateNetwork // tree to test is not necessarily relevant (disconnected local networks)
+    // -> tree with local cycles, planarized?
+    //val nw = RandomNetworkGenerator(10,15,true,false,false).generateNetwork // random makes few sense either
+    // -> implement network breakdown, implement extended simpopnet nw generator
+
+    val nw = LocalLinksNetworkGenerator(nnodes = 200, addedLinks = 50, maxDegree = 5, linkRadius = 0.2).generateNetwork
+
+    visualization.staticNetworkVisualization(Seq(nw))
+  }
 
 
   def testSimplification: Unit = {

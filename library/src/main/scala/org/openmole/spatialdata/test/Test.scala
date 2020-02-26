@@ -3,7 +3,7 @@ package org.openmole.spatialdata.test
 object Test extends App {
 
   // Spatial interaction models
-  TestSpatialInteraction.testFitSinglyConstrainedRandom
+  //TestSpatialInteraction.testFitSinglyConstrainedRandom
   //TestSpatialInteraction.testFlowData
   //TestSpatialInteraction.testFitSinglyConstrainedSyntheticFlows
   //TestSpatialInteraction.testSyntheticFlows
@@ -16,6 +16,7 @@ object Test extends App {
   //TestCoupled.testRandom()
 
   // Network algorithms
+  TestNetwork.testCoarseGraining
   //TestNetwork.testSimplification
   //TestNetwork.testCycles
   //TestNetwork.testShortestPathImplementations()

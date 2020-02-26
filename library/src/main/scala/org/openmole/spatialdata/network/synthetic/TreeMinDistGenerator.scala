@@ -25,6 +25,14 @@ case class TreeMinDistGenerator(
 
 object TreeMinDistGenerator {
 
+  /**
+    *
+    * @param nodes number of random nodes (used if points not empty)
+    * @param points coordinates of nodes
+    * @param connexificationAlgorithm heuristic to connect
+    * @param rng rng
+    * @return Tree network
+    */
   def treeMinDistNetwork(nodes: Int, points: Seq[Point],connexificationAlgorithm: Network => Network)(implicit rng: Random): Network = {
     val coords = if(points.isEmpty) RandomPointsGenerator(nodes).generatePoints else points
     connexificationAlgorithm(Network(coords))

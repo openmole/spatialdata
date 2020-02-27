@@ -19,7 +19,7 @@ case class RandomPointsGenerator(
                                   ymin: Double = 0.0,
                                   ymax: Double = 1.0
                                 ) extends PointsGenerator {
-  override def generatePoints(implicit rng: Random): Vector[(Double, Double)] = RandomPointsGenerator.randomPoints(this)(rng)
+  override def generatePoints(implicit rng: Random): Points = Points.fromPoints(RandomPointsGenerator.randomPoints(this)(rng))
 }
 
 

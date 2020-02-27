@@ -4,7 +4,7 @@ import java.awt._
 
 import javax.swing.{JComponent, JFrame}
 import javax.swing.plaf.ComponentUI
-import org.openmole.spatialdata.network.{Network, Node}
+import org.openmole.spatialdata.network.{Link, Network, Node}
 import org.openmole.spatialdata.vector.Point
 
 case class NetworkFrame(networks: Seq[Network],
@@ -13,7 +13,7 @@ case class NetworkFrame(networks: Seq[Network],
                         nodeSize: Int = 6,
                         margin: Int = 50,
                         withLabel: Boolean = true,
-                        edgeColors: Seq[Int] = Seq.empty ,
+                        edgeColorClasses: Link => Int = {_ => 0},
                         nodeColorClasses: Node => Int = {_ => 0},
                         nodePositioning: Node => Point = {n => n.position}
                        ) extends JFrame() {
@@ -30,8 +30,7 @@ case class NetworkFrame(networks: Seq[Network],
           gg.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
           gg.setStroke(new BasicStroke(1, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND))
 
-          val ecolors = if(edgeColors.nonEmpty) edgeColors else Seq.fill(networks.size)(0)
-          networks.zip(ecolors).foreach {case (network, ecolor) =>
+          networks.foreach {case network =>
             network.nodes.foreach { n => {
               val np = nodePositioning(n)
               val (x, y) = (margin + (np._1 * frameWidth - nodeSize / 2).toInt, margin + (np._2 * frameHeight - nodeSize / 2).toInt)
@@ -41,12 +40,14 @@ case class NetworkFrame(networks: Seq[Network],
               if (withLabel) gg.drawString(n.id.toString, x + nodeSize, y + nodeSize)
             }
             }
-            gg.setColor(palette(ecolor))
-            network.links.foreach { l => gg.drawLine(
-              margin + (nodePositioning(l.e1)._1 * frameWidth).toInt,
-              margin + (nodePositioning(l.e1)._2 * frameHeight).toInt,
-              margin + (nodePositioning(l.e2)._1 * frameWidth).toInt,
-              margin + (nodePositioning(l.e2)._2 * frameHeight).toInt) }
+
+            network.links.foreach { l =>
+              gg.setColor(palette(edgeColorClasses(l)))
+              gg.drawLine(
+                margin + (nodePositioning(l.e1)._1 * frameWidth).toInt,
+                margin + (nodePositioning(l.e1)._2 * frameHeight).toInt,
+                margin + (nodePositioning(l.e2)._1 * frameWidth).toInt,
+                margin + (nodePositioning(l.e2)._2 * frameHeight).toInt) }
           }
         }
       })

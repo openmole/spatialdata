@@ -4,11 +4,13 @@ import org.openmole.spatialdata.vector.Point
 import org.openmole.spatialdata.utils.Implicits._
 import org.openmole.spatialdata.network.measures.NetworkMeasures.ShortestPathsNetworkMeasures
 import org.openmole.spatialdata.network.real.OSMNetworkGenerator
+import org.openmole.spatialdata.network.simplification.CoarseGrainingNetworkSimplificator
 import org.openmole.spatialdata.network.synthetic.{LocalLinksNetworkGenerator, RandomNetworkGenerator, TreeMinDistGenerator}
-import org.openmole.spatialdata.network.{Network, Node, ShortestPaths}
+import org.openmole.spatialdata.network.{Link, Network, Node, ShortestPaths}
 import org.openmole.spatialdata.utils.graph.GraphAlgorithms
 import org.openmole.spatialdata.utils.graph.GraphAlgorithms.{DijkstraJGraphT, FloydWarshallJGraphT, shortestPaths}
 import org.openmole.spatialdata.utils.{visualization, withTimer}
+import org.openmole.spatialdata.vector.synthetic.GridPolygonsGenerator
 
 import scala.util.Random
 
@@ -25,9 +27,26 @@ object TestNetwork {
     //val nw = RandomNetworkGenerator(10,15,true,false,false).generateNetwork // random makes few sense either
     // -> implement network breakdown, implement extended simpopnet nw generator
 
-    val nw = LocalLinksNetworkGenerator(nnodes = 200, addedLinks = 50, maxDegree = 5, linkRadius = 0.2).generateNetwork
+    val nw = LocalLinksNetworkGenerator(nnodes = 400, addedLinks = 100, maxDegree = 5, linkRadius = 0.2).generateNetwork
 
-    visualization.staticNetworkVisualization(Seq(nw))
+    val grid1 = GridPolygonsGenerator(16).generatePolygons
+    val simpl1 = CoarseGrainingNetworkSimplificator(grid1).simplifyNetwork(nw).shiftIds(10000)
+
+    val grid2 = GridPolygonsGenerator(8).generatePolygons
+    val simpl2 = CoarseGrainingNetworkSimplificator(grid2).simplifyNetwork(nw).shiftIds(20000)
+
+    val grid3 = GridPolygonsGenerator(4).generatePolygons
+    val simpl3 = CoarseGrainingNetworkSimplificator(grid3).simplifyNetwork(nw).shiftIds(30000)
+
+    def nodeColor(n: Node): Int = n.id match {
+      case n if n < 10000 => 1
+      case n if n >= 10000&&n<20000 => 2
+      case n if n >= 20000&&n<30000 => 3
+      case n if n>=30000 => 4
+    }
+    def linkColor(l: Link): Int = nodeColor(l.e1)
+
+    visualization.staticNetworkVisualization(Seq(nw,simpl1,simpl2,simpl3),nodeColorClasses = nodeColor,edgeColorClasses = linkColor)
   }
 
 
@@ -60,7 +79,8 @@ object TestNetwork {
     val nw = RandomNetworkGenerator(10,15,true,false,false).generateNetwork
     val cycles = GraphAlgorithms.cycles(nw)
     val colorMap: Map[Node,Int] = cycles.zipWithIndex.flatMap{case (nk,k) => nk.nodes.toSeq.map{(_,k)}}.toMap
-    visualization.staticNetworkVisualization(cycles,edgeColors = cycles.indices,
+    val linkColorMap = cycles.zipWithIndex.flatMap{case (nk,k) => nk.links.toSeq.map{(_,k)}}.toMap
+    visualization.staticNetworkVisualization(cycles,edgeColorClasses = linkColorMap,
       nodeColorClasses = n => colorMap(n),
       nodePositioning = n => (n.x + colorMap(n)/20,n.y + colorMap(n)/20)
     )

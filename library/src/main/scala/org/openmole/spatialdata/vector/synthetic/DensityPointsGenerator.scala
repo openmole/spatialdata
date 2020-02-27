@@ -1,8 +1,7 @@
 package org.openmole.spatialdata.vector.synthetic
 
-import org.openmole.spatialdata.vector.Point
+import org.openmole.spatialdata.vector.{Point, Points, PointsGenerator}
 import org.openmole.spatialdata.grid.RasterLayerData
-import org.openmole.spatialdata.vector.PointsGenerator
 import org.openmole.spatialdata.utils.math.Stochastic
 
 import scala.util.Random
@@ -15,7 +14,7 @@ case class DensityPointsGenerator(
                                   ymin: Double = 0.0,
                                   ymax: Double = 1.0
                                 ) extends PointsGenerator {
-  override def generatePoints(implicit rng: Random): Vector[Point] = DensityPointsGenerator.densityPoints(this)(rng)
+  override def generatePoints(implicit rng: Random): Points = Points.fromPoints(DensityPointsGenerator.densityPoints(this)(rng))
 }
 
 

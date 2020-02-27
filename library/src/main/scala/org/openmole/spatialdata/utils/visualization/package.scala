@@ -2,7 +2,7 @@ package org.openmole.spatialdata.utils
 
 import org.openmole.spatialdata.grid._
 import org.openmole.spatialdata.vector.Point
-import org.openmole.spatialdata.network.{Network, Node}
+import org.openmole.spatialdata.network.{Link, Network, Node}
 import javax.swing._
 import java.awt._
 import java.lang
@@ -27,11 +27,11 @@ package object visualization {
     */
   def staticNetworkVisualization(networks: Seq[Network],
                                  withLabel: Boolean = false,
-                                 edgeColors: Seq[Int] = Seq.empty,
+                                 edgeColorClasses: Link => Int = {_ => 0},
                                  nodeColorClasses: Node=>Int={_ => 0},
                                  nodePositioning: Node => Point = {n => n.position}
                                 ): Unit = {
-    val frame = NetworkFrame(networks = networks,withLabel=withLabel,edgeColors=edgeColors,nodeColorClasses=nodeColorClasses,nodePositioning=nodePositioning)
+    val frame = NetworkFrame(networks = networks,withLabel=withLabel,edgeColorClasses=edgeColorClasses,nodeColorClasses=nodeColorClasses,nodePositioning=nodePositioning)
     frame.init
   }
 

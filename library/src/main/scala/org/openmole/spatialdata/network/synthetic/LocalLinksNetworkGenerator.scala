@@ -66,8 +66,8 @@ object LocalLinksNetworkGenerator {
     val newlinks = Stochastic.sampleWithReplacement(nodes, addedLinks).map{origin =>
       val destination = nodes(Stochastic.sampleWithReplacement(dmat(nodeIndices(origin)).zipWithIndex.filter(_._1 < linkRadius).map(_._2),1).head)
       Link(origin, destination)
-    }.toSet
-    utils.log(s"added links: ${newlinks}")
+    }.toSet.filter(l => l.e1 != l.e2)
+    //utils.log(s"added links: ${newlinks}")
 
     val newnw = basetree.addLinks(newlinks)  // could use LinkAdditionNetworkPerturbator, but shorter directly
 

@@ -34,7 +34,7 @@ object TreeMinDistGenerator {
     * @return Tree network
     */
   def treeMinDistNetwork(nodes: Int, points: Seq[Point],connexificationAlgorithm: Network => Network)(implicit rng: Random): Network = {
-    val coords = if(points.isEmpty) RandomPointsGenerator(nodes).generatePoints else points
+    val coords = if(points.isEmpty) RandomPointsGenerator(nodes).generatePoints.asPointSeq else points
     connexificationAlgorithm(Network(coords))
   }
 

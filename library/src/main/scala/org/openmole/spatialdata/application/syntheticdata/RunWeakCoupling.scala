@@ -31,7 +31,7 @@ object RunWeakCoupling //extends App
 
       val randomNetwork = mode match {
         case "random" => RandomNetworkGenerator(nodes,links,true,false,false).generateNetwork
-        case "density" => RandomNetworkGenerator(nlinks = links,points=DensityPointsGenerator(nodes,randomGrid,true).generatePoints,planarize = true).generateNetwork
+        case "density" => RandomNetworkGenerator(nlinks = links,points=DensityPointsGenerator(nodes,randomGrid,true).generatePoints.asPointSeq,planarize = true).generateNetwork
       }
 
       val nwmeasures = NetworkMeasures(randomNetwork,pathSample = 1.0)

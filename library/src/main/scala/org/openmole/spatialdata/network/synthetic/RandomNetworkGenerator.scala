@@ -48,7 +48,7 @@ object RandomNetworkGenerator {
     */
   def randomNetwork(nnodes: Int,nlinks: Int,planar: Boolean,directed: Boolean,withIndex: Boolean, points: Seq[Point])(implicit rng: Random): Network = {
     if (nnodes==0) Network.empty else {
-      val coords = if (points.isEmpty) RandomPointsGenerator(nnodes).generatePoints else points
+      val coords = if (points.isEmpty) RandomPointsGenerator(nnodes).generatePoints.asPointSeq else points
       val nodes = if (withIndex) Network(coords.zipWithIndex.map { case ((x, y), id) => Node(id, x, y) }.toSet, Set.empty[Link]) else Network(coords.map { case (x, y) => Node(0, x, y) }.toSet, Set.empty[Link])
       val res = addRandomLinks(nodes, nlinks, directed)
       if (planar) res.planarize else res

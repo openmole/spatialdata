@@ -6,7 +6,12 @@ import scala.util.Random
 
 trait PointsGenerator {
 
-  def generatePoints(implicit rng: Random): Vector[Point]
+  /**
+    * Q: object construction/size overhead when wrapping jts classes?
+    * @param rng
+    * @return
+    */
+  def generatePoints(implicit rng: Random): Points
 
 
 

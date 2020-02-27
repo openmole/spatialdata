@@ -16,7 +16,7 @@ object TestCoupled {
     implicit val rng = new Random
 
     val randomGrid = RandomGridGenerator(gridSize,1.0,gridOccupation).generateGrid
-    val points =  DensityPointsGenerator(nwNodes,randomGrid,true).generatePoints
+    val points =  DensityPointsGenerator(nwNodes,randomGrid,true).generatePoints.asPointSeq
     println(points)
     val randomNetwork = RandomNetworkGenerator(nlinks = nwLinks,points=points,planarize = true).generateNetwork
     println(randomNetwork.isPlanar)

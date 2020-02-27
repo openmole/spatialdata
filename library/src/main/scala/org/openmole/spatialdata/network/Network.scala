@@ -50,6 +50,17 @@ case class Network(
   }
 
   /**
+    * shift node ids by a constant
+    * @param k
+    * @return
+    */
+  def shiftIds(k: Int): Network = Network( // ok it may be less painful to use lenses here
+    nodes = nodes.map(n => n.copy(id = n.id + k)),
+    links = links.map(l => l.copy(e1 = l.e1.copy(id = l.e1.id + k), e2 = l.e2.copy(id = l.e2.id +k)))
+  )
+
+
+  /**
     * Monoid operation (union of node and link sets)
     * rq: may result in multi links if links have different weights
     *

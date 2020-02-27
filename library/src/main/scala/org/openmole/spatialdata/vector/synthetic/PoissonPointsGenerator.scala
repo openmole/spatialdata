@@ -1,6 +1,6 @@
 package org.openmole.spatialdata.vector.synthetic
 
-import org.openmole.spatialdata.vector.PointsGenerator
+import org.openmole.spatialdata.vector.{Point, Points, PointsGenerator}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
@@ -15,9 +15,9 @@ case class PoissonPointsGenerator(
                                    ymin: Double = 0.0,
                                    ymax: Double = 1.0
                                  ) extends PointsGenerator {
-  override def generatePoints(implicit rng: Random): Vector[(Double, Double)] =
+  override def generatePoints(implicit rng: Random): Points = Points.fromPoints(
     if (homogenous) PoissonPointsGenerator.homogenousPoissonPoints(this) else PoissonPointsGenerator.heterogenousPoissonPoints(this)
-
+  )
 
   def area: Double = (xmax - xmin)*(ymax - ymin)
 
@@ -43,7 +43,7 @@ object PoissonPointsGenerator {
     * @param rng
     * @return
     */
-  def homogenousPoissonPoints(generator: PoissonPointsGenerator)(implicit rng: Random): Vector[(Double,Double)] = {
+  def homogenousPoissonPoints(generator: PoissonPointsGenerator)(implicit rng: Random): Vector[Point] = {
     // draw number of points
     val n = poissonVariable(generator.lambda*generator.area)
     // then just random points
@@ -60,7 +60,7 @@ object PoissonPointsGenerator {
     * @param rng
     * @return
     */
-  def heterogenousPoissonPoints(generator: PoissonPointsGenerator)(implicit rng: Random): Vector[(Double,Double)] = {
+  def heterogenousPoissonPoints(generator: PoissonPointsGenerator)(implicit rng: Random): Vector[Point] = {
     val totalIntensity = generator.weightedArea
     val n = poissonVariable(totalIntensity)
     // rejection sampling ; the array representing intensity must be inversed on rows

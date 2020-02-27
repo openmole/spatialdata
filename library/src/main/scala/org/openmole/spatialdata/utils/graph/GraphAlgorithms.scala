@@ -82,7 +82,10 @@ object GraphAlgorithms {
                                           algorithm: Graph[Int,DefaultWeightedEdge] => ShortestPathAlgorithm[Int,DefaultWeightedEdge],
                                           linkWeight: Link => Double = _.weight
                                          ): ShortestPaths = {
+      //println(s"    ${from.map(network.nodes.contains)}")
+      //println(network)
       val (g,nodeMap,linkMap) = GraphConversions.networkToJGraphT(network,linkWeight)
+      //println(g) // issue with graoh conversion?
       (for {
         i <- from
         j <- to

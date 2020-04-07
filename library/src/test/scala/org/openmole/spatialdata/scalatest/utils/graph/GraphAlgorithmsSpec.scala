@@ -26,10 +26,9 @@ class GraphAlgorithmsSpec extends AnyFlatSpec {
       val nw = nwgen.generateNetwork
       val nodes = nw.nodes.toSeq
       //val (sp1, t1) = withTimer[Network, ShortestPaths](nw => shortestPaths(nw, nodes, { l => l.length }, ScalaGraph()))(nw)
-      val (sp2, t2) = withTimer[Network, ShortestPaths](nw => shortestPaths(nw, nodes, { l => l.length }, DijkstraJGraphT()))(nw)
-      val (sp3, t3) = withTimer[Network, ShortestPaths](nw => shortestPaths(nw, nodes, { l => l.length }, FloydWarshallJGraphT()))(nw)
+      val (sp2, _) = withTimer[Network, ShortestPaths](nw => shortestPaths(nw, nodes, nodes , { l => l.length }, DijkstraJGraphT()))(nw)
+      val (sp3, _) = withTimer[Network, ShortestPaths](nw => shortestPaths(nw, nodes, nodes, { l => l.length }, FloydWarshallJGraphT()))(nw)
       //assert((sp1 |-| sp2) < 1e-5 && (sp1 |-| sp3) < 1e-5 && (sp3 |-| sp2) < 1e-5)
-      // FIXME shortest path distance sometimes yields NaN ?
       assert((sp3 |-| sp2) < 1e-5)
     }
   }

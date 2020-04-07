@@ -12,6 +12,17 @@ object Statistics {
 
 
   /**
+    * Distribute a variable following a rank size
+    * @param size number of elements
+    * @param alpha slope
+    * @param pmax max value
+    * @return
+    */
+  def rankSizeDistribution(size: Int,alpha: Double, pmax: Double): Vector[Double] =
+    (1 to size by 1).map{i => pmax*math.pow(1.0/i.toDouble,alpha)}.toVector
+
+
+  /**
     * Unbiased moment at a given order
     * @param x
     * @param order

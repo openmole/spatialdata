@@ -20,18 +20,29 @@ object CSV {
     * @param sep
     * @return
     */
-  def readCSVFile(file: File,sep: String=","): Map[String,Seq[String]] = {
+  def readCSVFile(file: File,sep: String=",", withHeader: Boolean =true): Map[String,Seq[String]] = {
 
     implicit val readerFormat = new DefaultCSVFormat {
       override val delimiter = sep.charAt(0)
       override val quoteChar: Char = '"'
     }
-    val (header,content) = CSVReader.open(file)(readerFormat).allWithOrderedHeaders()
-    //CSVReader.open(file)(readerFormat).all()
-    header.map{case s => (s,content.map{_.get(s).get})}.toMap
+    val (header,content): (Seq[String], Seq[Map[String, String]]) = if (withHeader) CSVReader.open(file)(readerFormat).allWithOrderedHeaders()
+    else {
+      val raw = CSVReader.open(file)(readerFormat).all()
+      val h =(0 until raw(0).length).map("V"+_)
+      (h,raw.map{row => row.zip(h).toMap})
+    }
+    header.map{case s => (s,content.map{_(s)})}.toMap
   }
 
-  def readCSV(filename: String,sep: String = ","): Map[String,Seq[String]] = readCSVFile(new File(filename),sep)
+  /**
+    * read csv (file name)
+    * @param filename
+    * @param sep
+    * @param withHeader
+    * @return
+    */
+  def readCSV(filename: String, sep: String = ",", withHeader: Boolean =true): Map[String,Seq[String]] = readCSVFile(new File(filename),sep, withHeader)
 
   /**
     * read a numerical matrix

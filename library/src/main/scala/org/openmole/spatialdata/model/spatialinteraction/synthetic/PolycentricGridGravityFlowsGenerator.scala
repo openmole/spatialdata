@@ -5,8 +5,8 @@ import org.openmole.spatialdata.model.spatialinteraction.{DoublyConstrainedSpInt
 import org.openmole.spatialdata.vector.{FieldGenerator, Point, SpatialField}
 import org.openmole.spatialdata.vector.measures.Spatstat
 import org.openmole.spatialdata.grid.Implicits._
-import org.openmole.spatialdata.grid.RasterLayerData
-import org.openmole.spatialdata.utils.math.{DenseMatrix, Matrix, SparseMatrix}
+import org.openmole.spatialdata.utils.math.Matrix.MatrixImplementation
+import org.openmole.spatialdata.utils.math.{DenseMatrix, EmptyMatrix, Matrix, SparseMatrix}
 
 import scala.util.Random
 
@@ -20,15 +20,15 @@ import scala.util.Random
   *
   *  Center coordinates are not rescaled, so this must be taken into account in the cost function
   *
-  * @param gridSize
-  * @param centers
-  * @param maxOrigin
-  * @param maxDestination
-  * @param originRadius
-  * @param destinationRadius
-  * @param originExponent
-  * @param destinationExponent
-  * @param costFunction
+  * @param gridSize size of the grid
+  * @param centers number of centers
+  * @param maxOrigin max value of origin kernels
+  * @param maxDestination max value of destination kernels
+  * @param originRadius origin radius
+  * @param destinationRadius destination radius
+  * @param originExponent origin exponent
+  * @param destinationExponent destination exponent
+  * @param costFunction cost function to transform distance mat into spatial cost
   */
 case class PolycentricGridGravityFlowsGenerator(
                                                gridSize: Int,
@@ -39,12 +39,16 @@ case class PolycentricGridGravityFlowsGenerator(
                                                destinationRadius: Double,
                                                originExponent: Double,
                                                destinationExponent: Double,
-                                               costFunction: Double => Double,
-                                               sparse: Boolean = false
-                                               ) extends FlowsGenerator {
+                                               costFunction: Double => Double
+                                               )(implicit mImpl: MatrixImplementation) extends FlowsGenerator {
 
 
-  override def generateFlows(implicit rng: Random, spMatImpl: SparseMatrix.SparseMatrixImplementation): SpatialInteractionModel = {
+  /**
+    * polycentric flows
+    * @param rng
+    * @return
+    */
+  override def generateFlows(implicit rng: Random): SpatialInteractionModel = {
     // grids for origin / destination
     val centerCoords: Seq[Point] = Seq.fill(centers)((rng.nextDouble()*gridSize,rng.nextDouble()*gridSize))
     val origin: FieldGenerator[Double] = //() => ExpMixtureGridGenerator (gridSize, centers, maxOrigin, originRadius, false, centerCoords).generateGrid(rng).asSpatialField
@@ -55,9 +59,17 @@ case class PolycentricGridGravityFlowsGenerator(
       override def generateField(implicit rng: Random): SpatialField[Double] = ExpMixtureGridGenerator(gridSize,centers,maxDestination,destinationRadius,false,centerCoords).generateGrid(rng).asSpatialField
     }
 
-    def dmat(pi: Seq[Point], pj: Seq[Point]) = {
+    def dmat(pi: Seq[Point], pj: Seq[Point]): Matrix = {
       val rawdmat = Spatstat.euclidianDistanceMatrix(pi.toArray,pj.toArray)
-      if (sparse) SparseMatrix(rawdmat.zipWithIndex.map{case (row,i) => row.zipWithIndex.map{case (d,j) => if (d<3*originRadius) Some((i,j,d)) else None}}.flatten.filter(_.isDefined).map{_.get},rawdmat.length,rawdmat(0).length) else DenseMatrix(rawdmat)
+      mImpl match {
+        case Matrix.Sparse(sImpl) => SparseMatrix(rawdmat.zipWithIndex.map{
+          case (row,i) => row.zipWithIndex.map{
+            case (d,j) => if (d<3*originRadius) Some((i,j,d)) else None
+          }
+        }.flatten.filter(_.isDefined).map{_.get},rawdmat.length,rawdmat(0).length)(sImpl)
+        case Matrix.Dense(dImpl) => DenseMatrix(rawdmat)(dImpl)
+        case Matrix.Empty() => EmptyMatrix()
+      }
     }
 
     def originTransformation(a: Array[Double]): Double = math.pow(a(0),originExponent)

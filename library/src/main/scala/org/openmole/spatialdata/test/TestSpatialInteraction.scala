@@ -40,7 +40,8 @@ object TestSpatialInteraction {
     * quant data
     */
   def testFlowData: Unit = {
-    implicit val spMatImpl = SparseMatrix.SparseBreeze()
+    implicit val spMatImpl: SparseMatrix.SparseMatrixImplementation = SparseMatrix.SparseBreeze()
+    implicit val dImpl: DenseMatrix.DenseMatrixImplementation = DenseMatrix.DenseBreeze()
     val flowspath = System.getenv("CS_HOME")+"/UrbanDynamics/Data/QUANT/converted/TObs_1.csv"
     val dmatpath = System.getenv("CS_HOME")+"/UrbanDynamics/Data/QUANT/converted/dis_roads_min.csv"
     val flowmat = utils.timerLog[String,SparseMatrix](s => CSV.readSparseMat(s),flowspath,"read flows")
@@ -53,10 +54,13 @@ object TestSpatialInteraction {
   }
 
 
-
+  /**
+    *
+    */
   def testFitSinglyConstrainedSyntheticFlows: Unit = {
-    implicit val rng = new Random
-    implicit val spMatImpl = SparseMatrix.SparseBreeze()
+    implicit val rng: Random = new Random
+    implicit val mImpl: Matrix.MatrixImplementation = Matrix.Sparse(SparseMatrix.SparseBreeze())
+    implicit val spImpl: SparseMatrix.SparseMatrixImplementation = SparseMatrix.SparseBreeze()
 
     val syntheticFlows = PolycentricGridGravityFlowsGenerator(
       gridSize = 50,
@@ -87,8 +91,8 @@ object TestSpatialInteraction {
     * Dense faster than sparse for flow generation?
     */
   def testSyntheticFlows: Unit = {
-    implicit val rng = new Random
-    implicit val spMatImpl = SparseMatrix.SparseBreeze()
+    implicit val rng: Random = new Random
+    implicit val mImpl: Matrix.MatrixImplementation = Matrix.Dense(DenseMatrix.DenseBreeze())
 
     val syntheticFlowsGenerator = PolycentricGridGravityFlowsGenerator(
       gridSize = 50,
@@ -107,8 +111,7 @@ object TestSpatialInteraction {
 
     val (denseFlows,td) = utils.withTimer[Double,SpatialInteractionModel](_ => syntheticFlowsGenerator.generateFlows)(0.0)
 
-    Matrix.MatrixImplementation.setDefaultSparse
-    val sparseGen = syntheticFlowsGenerator.copy(sparse=true)
+    val sparseGen = syntheticFlowsGenerator.copy()(Matrix.Sparse(SparseMatrix.SparseBreeze()))
     val (sparseFlows,ts) = utils.withTimer[Double,SpatialInteractionModel](_ => sparseGen.generateFlows)(0.0)
 
     println(s"Avg synthetic dense flow = ${denseFlows.observedFlows.mean} ; t = $td")

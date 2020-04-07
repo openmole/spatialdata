@@ -10,5 +10,5 @@ trait FlowsGenerator {
     * @param rng
     * @return
     */
-  def generateFlows(implicit rng: Random, spMatImpl: SparseMatrix.SparseMatrixImplementation): SpatialInteractionModel
+  def generateFlows(implicit rng: Random): SpatialInteractionModel
 }

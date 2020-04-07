@@ -27,7 +27,7 @@ case class SyntheticFlowsGenerator(
                                   destinationTransformation: Array[Double] => Double,
                                   flowsFunction: (Seq[Double],Seq[Double],Matrix) => Matrix
                                   ) extends FlowsGenerator {
-  override def generateFlows(implicit rng: Random, spMatImpl: SparseMatrix.SparseMatrixImplementation): SpatialInteractionModel =
+  override def generateFlows(implicit rng: Random): SpatialInteractionModel =
     SyntheticFlowsGenerator.syntheticFlows(originFieldGenerator,destinationFieldGenerator,distanceMatrix,costFunction,originTransformation,destinationTransformation,flowsFunction,rng)
 }
 

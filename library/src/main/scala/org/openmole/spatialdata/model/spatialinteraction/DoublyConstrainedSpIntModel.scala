@@ -1,6 +1,7 @@
 package org.openmole.spatialdata.model.spatialinteraction
 
 import org.openmole.spatialdata.utils
+import org.openmole.spatialdata.utils.math.Matrix.MatrixImplementation
 import org.openmole.spatialdata.utils.math.{DenseMatrix, EmptyMatrix, Matrix, SparseMatrix}
 import org.openmole.spatialdata.vector.SpatialField
 
@@ -22,13 +23,10 @@ object DoublyConstrainedSpIntModel {
                              destinationMasses: Seq[Double],
                              costMatrix: Matrix,
                              tolerance: Double = 0.01
-                            )(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): Matrix = {
+                            ): Matrix = {
     // FIXME should add check on dimensions
-    costMatrix match {
-      case _: DenseMatrix => Matrix.MatrixImplementation.setDefaultDense
-      case _: SparseMatrix => Matrix.MatrixImplementation.setDefaultSparse
-      case _: EmptyMatrix => throw new UnsupportedOperationException("Cost matrix can not be empty")
-    }
+    implicit val mImpl: MatrixImplementation = Matrix.getImplementation(costMatrix)
+    if (mImpl==Matrix.Empty()) throw new UnsupportedOperationException("Cost matrix can not be empty")
 
     val origin: Matrix = Matrix(originMasses.toArray,false)
     val destination: Matrix = Matrix(destinationMasses.toArray,false)

@@ -1,5 +1,11 @@
 package org.openmole.spatialdata.network
 
+
+/**
+  *
+  * - Synthetic network generator to implement: https://arxiv.org/abs/2001.08180
+  *
+  */
 package object synthetic {
 
 

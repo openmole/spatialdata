@@ -3,41 +3,75 @@ package org.openmole.spatialdata.utils.math
 import java.util
 
 import org.apache.commons.math3.linear
-import org.apache.commons.math3.linear.LUDecomposition
+import org.apache.commons.math3.linear.{LUDecomposition, MatrixUtils}
 import breeze.linalg
-import breeze.linalg.CSCMatrix
+import breeze.linalg._
 import breeze.util.ArrayUtil
-import org.openmole.spatialdata.utils.math.Matrix.Sparse
 
-import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
 /**
-  * FIXME could make generic?
+  * Generic methods for double matrices
+  *   rq: could make generic in Numeric type?
   */
 sealed trait Matrix {
 
   /**
-    * rq: in immutable terms, setting is inefficient (should clone the underlying matrix?)
-    * @param i
-    * @param j
-    * @param v
-    * @return
+    * rq: in immutable terms, setting is not efficient (should clone the underlying matrix?)
+    * @param i row
+    * @param j column
+    * @param v value
+    * @return cloned matrix with value set
     */
   def set(i: Int, j: Int, v: Double): Matrix
 
   /**
+    * Mutable set
+    * @param i row
+    * @param j column
+    * @param v value
+    */
+  def setM(i: Int, j: Int, v: Double): Unit
+
+  /**
     * get element
-    * @param i
-    * @param j
-    * @return
+    * @param i row
+    * @param j column
+    * @return value
     */
   def get(i: Int, j: Int): Double
 
   /**
+    * get submatrix
+    * @param i starting row
+    * @param j starting column
+    * @param nrows number of rows
+    * @param ncols number of columns
+    * @return submatrix
+    */
+  def getSubmat(i: Int, j: Int, nrows: Int, ncols: Int): Matrix
+
+  def getRow(i: Int): Matrix = getSubmat(i,0,1,ncols)
+  def getCol(j: Int): Matrix = getSubmat(0,j,nrows,1)
+
+  /**
+    * unoptimal mutable submat set
+    * @param i starting row
+    * @param j starting col
+    * @param a values
+    */
+  def setMSubmat(i: Int, j: Int, a: Array[Array[Double]]): Unit = {
+    a.zipWithIndex.foreach{case (row,k) =>
+      row.zipWithIndex.foreach{case (v,l) =>
+        if(i+k<nrows&&j+l<ncols) setM(i+k,j+l,v)
+      }
+    }
+  }
+
+  /**
     * map element by element
-    * @param f
+    * @param f function to map
     * @return
     */
   def map(f: Double => Double): Matrix
@@ -64,7 +98,7 @@ sealed trait Matrix {
   def *(m: Matrix): Matrix
 
   def transpose: Matrix
-  //def inverse: Matrix // should use pseudo inverse or restrict?
+  def inverse: Matrix // should use pseudo inverse or restrict?
   def determinant: Double
 
   def sum: Double
@@ -80,78 +114,77 @@ sealed trait Matrix {
 /**
   * matrix utilities (not linear algebra operations which are in [[Linear]]
   *
-  * TODO test spark matrices https://spark.apache.org/docs/2.1.2/api/java/org/apache/spark/mllib/linalg/Matrix.html
+  *  - test spark matrices https://spark.apache.org/docs/2.1.2/api/java/org/apache/spark/mllib/linalg/Matrix.html?
   *
   * mutable / immutable matrices?
   * https://medium.com/@eob/how-you-might-create-a-scala-matrix-library-in-a-functional-programming-style-760f8bf6ee6
+  *
+  * Also Jama for matrices Jama.Matrix
   *
   */
 object Matrix {
 
   sealed trait MatrixImplementation
-  case class Dense() extends MatrixImplementation
-  case class Sparse() extends MatrixImplementation
-  // dirty but avoids passing a context as implicit everywhere
-  private var DEFAULT_MATRIX_IMPLEMENTATION: MatrixImplementation = Dense()
-  object MatrixImplementation {
-    def setDefaultDense: Unit = DEFAULT_MATRIX_IMPLEMENTATION = Dense()
-    def setDefaultSparse: Unit = DEFAULT_MATRIX_IMPLEMENTATION = Sparse()
-  }
+  case class Dense(denseImpl: DenseMatrix.DenseMatrixImplementation) extends MatrixImplementation
+  case class Sparse(sparseImpl: SparseMatrix.SparseMatrixImplementation) extends MatrixImplementation
+  case class Empty() extends MatrixImplementation
 
+  val defaultImplementation: MatrixImplementation = Dense(DenseMatrix.Real())
+  //private implicit val locDefaultImpl: MatrixImplementation = defaultImplementation
 
   /**
-    * Use default implementation
+    * could make this implicit also?
+    * @param m matrix
+    */
+  def getImplementation(m: Matrix): MatrixImplementation = m match {
+    case _: RealMatrix => Matrix.Dense(DenseMatrix.Real())
+    case _: BreezeDenseMatrix => Matrix.Dense(DenseMatrix.DenseBreeze())
+    case _: SparseMatrixImpl => Matrix.Sparse(SparseMatrix.SparseCommons())
+    case _: BreezeSparseMatrix => Matrix.Sparse(SparseMatrix.SparseBreeze())
+    case _: EmptyMatrix => Empty()
+  }
+
+  /**
     *
-    * FIXME if alternative implementations, find a way to switch within Dense / Sparse
+    * Constructs given implicit implementations
     *
-    * @param a
+    * @param a array of array
     * @return
     */
-  def apply(a: Array[Array[Double]])(implicit sparseMatrixImpl: SparseMatrix.SparseMatrixImplementation): Matrix = DEFAULT_MATRIX_IMPLEMENTATION match {
-    case _: Dense => DenseMatrix(a)
-    case _: Sparse => SparseMatrix(a)
+  def apply(a: Array[Array[Double]])(implicit matrixImpl: MatrixImplementation): Matrix = matrixImpl match {
+    case Dense(dmImpl) => DenseMatrix(a)(dmImpl)
+    case Sparse(smImpl) => SparseMatrix(a)(smImpl)
+    case _: Empty => EmptyMatrix()
   }
 
-  //def apply(vector: Vector[Vector[Double]]): Matrix = apply(vector.map{_.toArray}.toArray)
-
-  def apply(a: Array[Double], row: Boolean=true)(implicit sparseMatrixImpl: SparseMatrix.SparseMatrixImplementation): Matrix = if(row) apply(Array(a)) else apply(a.map(Array(_)))
-
-  //def apply(a: Vector[Double], row: Boolean=true): Matrix = apply(a.toArray,row)
-
-  // FIXME get data methods should go into specific impl ?
-  //def toFlatArray(realMatrix: linear.RealMatrix): Array[Double] = realMatrix.getData.flatten
 
   /**
+    * column or row constructor
+    * @param a array
+    * @param row row or column matrix
+    * @param matrixImpl implementation
+    * @return matrix
+    */
+  def apply(a: Array[Double], row: Boolean=true)(implicit matrixImpl: MatrixImplementation): Matrix = if(row) apply(Array(a)) else apply(a.map(Array(_)))
+
+  /*
     * Row bind two matrices
-    * FIXME rewrite specific for sparse mats
-    *
-    * FIXME need to test these
-    *
-    * @param a1
-    * @param a2
-    * @return
+    *   !!! rewrite specific for sparse mats
     */
   //def rbind(a1: Matrix, a2: Matrix): Matrix = Matrix(a1.values++a2.values)
 
-  /**
+  /*
     * Row bind several matrices
-    * @param a
-    * @return
     */
   //def rbind(a: Array[Matrix]): Matrix = a.reduce(rbind)
 
-  /**
+  /*
     * Column bind two matrices
-    * @param a1
-    * @param a2
-    * @return
     */
   //def cbind(a1: Matrix, a2: Matrix): Matrix = Matrix((a1.values.transpose++a2.values.transpose).transpose)
 
-  /**
+  /*
     * Column bind several matrices
-    * @param a
-    * @return
     */
   //def cbind(a: Array[Matrix]): Matrix = a.reduce(cbind)
 
@@ -167,7 +200,9 @@ case class EmptyMatrix() extends Matrix {
   override def values: Array[Array[Double]] = Array.empty[Array[Double]]
   override def flatValues: Array[Double] = Array.empty[Double]
   override def get(i: Int, j: Int): Double = Double.NaN
+  override def getSubmat(i: Int, j: Int, nrows: Int, ncols: Int): Matrix = this//Array[Array[Double]] = Array.fill(nrows,ncols)(Double.NaN)
   override def set(i: Int, j: Int, v: Double): Matrix = this
+  override def setM(i: Int, j: Int, v: Double): Unit = {}
   override def %*%(m: Matrix): Matrix = this
   //override def %+%(m: Matrix): Matrix = this
   override def *(m: Matrix): Matrix = this
@@ -175,6 +210,7 @@ case class EmptyMatrix() extends Matrix {
   override def -(m: Matrix): Matrix = this
   override def map(f: Double => Double): Matrix = this
   override def determinant: Double = Double.NaN
+  override def inverse: Matrix = this
   override def transpose: Matrix = this
   override def sum: Double = Double.NaN
   override def min: Double = Double.NaN
@@ -197,16 +233,20 @@ sealed trait DenseMatrix extends Matrix {
 
 object DenseMatrix {
 
-  sealed trait DenseMatrixImplementation
+  sealed trait DenseMatrixImplementation //extends MatrixImplementation
   case class Real() extends DenseMatrixImplementation
   case class DenseBreeze() extends DenseMatrixImplementation
-  private var DEFAULT_DENSE_MATRIX_IMPLEMENTATION: DenseMatrixImplementation = Real()
-  object DenseMatrixImplementation {
-    def setImplReal: Unit = DEFAULT_DENSE_MATRIX_IMPLEMENTATION = Real()
-    def setImplDenseBreeze: Unit = DEFAULT_DENSE_MATRIX_IMPLEMENTATION = DenseBreeze()
-  }
 
-  def apply(a: Array[Array[Double]]): DenseMatrix = DEFAULT_DENSE_MATRIX_IMPLEMENTATION match {
+  private implicit val defaultDenseMatrixImplementation: DenseMatrixImplementation = Real()
+
+
+  /**
+    * Construct given an implicit implementation
+    * @param a values
+    * @param dmImpl implicit implementation
+    * @return
+    */
+  def apply(a: Array[Array[Double]])(implicit dmImpl: DenseMatrixImplementation): DenseMatrix = dmImpl match {
     case _: Real => RealMatrix(a)
     case _: DenseBreeze => BreezeDenseMatrix(a)
     case _ => RealMatrix(a)
@@ -214,8 +254,8 @@ object DenseMatrix {
 
   /**
     * zeros
-    * @param n
-    * @param p
+    * @param n rows
+    * @param p columns
     * @return
     */
   def zeros(n: Int, p: Int): DenseMatrix = constant(n,p,0.0)
@@ -224,21 +264,23 @@ object DenseMatrix {
 
   def constant(n: Int, p: Int, v: Double): DenseMatrix = DenseMatrix(Array.fill(n)(Array.fill(p)(v)))
 
+  def diagonal(a: Array[Double]): DenseMatrix = DenseMatrix(Array.tabulate(a.length,a.length){case (i,j) => if(i==j)a(i) else 0.0})
+
   /**
     * random dense matrix
-    * @param n
-    * @param p
-    * @param density
-    * @param rng
+    * @param n rows
+    * @param p columns
+    * @param density density
+    * @param rng implicit random
     * @return
     */
   def randomDenseMatrix(n: Int, p: Int, density: Double)(implicit rng: Random): DenseMatrix = {
-    val m = zeros(n,p)
+    //val m = zeros(n,p)
     //val inds: Seq[(Int,Int)] = Stochastic.sampleWithoutReplacement[(Int,Int)](for {i <- 0 until n;j <- 0 until p} yield (i,j), (n*p*density).toInt)
     //inds.map{case (i,j) => (i,j,rng.nextDouble)}
     // approximate density by drawing at each step
-    val values = (for {i <- 0 until n
-         j <- 0 until p
+    val values = (for {_ <- 0 until n
+         _ <- 0 until p
          r = rng.nextDouble()
     } yield  if (r < density) 0.0 else rng.nextDouble()).toArray.grouped(p).toArray
     DenseMatrix(values)
@@ -249,7 +291,7 @@ object DenseMatrix {
 
 /**
   * Apache commons real matrix as implementation of dense matrix
-  * @param m
+  * @param m apache RealMatrix
   */
 case class RealMatrix(m: linear.RealMatrix) extends DenseMatrix {
 
@@ -257,27 +299,50 @@ case class RealMatrix(m: linear.RealMatrix) extends DenseMatrix {
   override def clone: RealMatrix = RealMatrix(m.getData.clone.map(_.clone))
 
   override def nrows: Int = m.getRowDimension
+
   override def ncols: Int = m.getColumnDimension
 
   override def set(i: Int, j: Int, v: Double): Matrix = {
     val d = clone.m
-    d.setEntry(i,j,v)
+    d.setEntry(i, j, v)
     RealMatrix(d)
   }
 
   /**
     * Mutable set
-    * @param i
-    * @param j
-    * @param v
+    *
+    * @param i row
+    * @param j column
+    * @param v value
     */
-  def setM(i: Int, j: Int, v: Double): Unit = m.setEntry(i,j,v)
+  def setM(i: Int, j: Int, v: Double): Unit = m.setEntry(i, j, v)
+
+  def setSubmatM(i: Int, j: Int, d: Array[Array[Double]]): Unit = m.setSubMatrix(d, i, j)
+
+  def setDiagM(d: Double): Unit = (0 until math.min(nrows, ncols)).foreach(i => setM(i, i, d))
+
+  def setDiagM(a: Array[Double]): Unit = a.zipWithIndex.foreach { case (d, i) => setM(i, i, d) }
+
+
+  /**
+    * !!! using getSubmatrix should give issues with mutable -> necessary to copy (~ unoptimal)
+    * @param i starting row
+    * @param j starting column
+    * @param nrows number of rows
+    * @param ncols number of columns
+    * @return submatrix
+    */
+  override def getSubmat(i: Int, j: Int, nrows: Int, ncols: Int): Matrix = {
+    val dest: Array[Array[Double]] = Array.fill(nrows,ncols)(0.0)
+    m.copySubMatrix((i until i + nrows).toArray, (j until j + ncols).toArray,dest)
+    RealMatrix(dest)
+  }
 
   override def get(i: Int, j: Int): Double = m.getEntry(i,j)
 
   /**
     * for map, go through each element anyway, cloning is less an issue
-    * @param f
+    * @param f function
     * @return
     */
   override def map(f: Double => Double): Matrix = {
@@ -302,34 +367,45 @@ case class RealMatrix(m: linear.RealMatrix) extends DenseMatrix {
   override def *(m2: Matrix): Matrix =  dispatchOp{m2=>RealMatrix(m.getData.zip(m2.m.getData).map{case (row1,row2) => row1.zip(row2).map{case (v1,v2) => v1 * v2}})}(m2)
   override def transpose: Matrix = RealMatrix(m.transpose())
   override def determinant: Double = new LUDecomposition(m).getDeterminant
+  override def inverse: Matrix = RealMatrix(MatrixUtils.inverse(m))
 
-  override def toString: String = s"Dense real matrix of size ${nrows}x${ncols} - internal: ${m.getRowDimension}x${m.getColumnDimension}"
+  override def toString: String = s"Dense real matrix of size ${nrows}x$ncols - internal: ${m.getRowDimension}x${m.getColumnDimension}"
 
 }
 
 object RealMatrix {
 
   def apply(a: Array[Array[Double]]): RealMatrix = RealMatrix(linear.MatrixUtils.createRealMatrix(a))
+  def apply(a: Array[Double],row: Boolean=true): RealMatrix = if(row) apply(Array(a)) else apply(a.map(Array(_)))
+
+  def zeros(n: Int, p: Int): RealMatrix = constant(n,p,0.0)
+  def ones(n: Int, p: Int): RealMatrix = constant(n,p,1.0)
+  def constant(n: Int, p: Int, v: Double): RealMatrix = RealMatrix(Array.fill(n)(Array.fill(p)(v)))
+
 
 }
 
 /**
   * breeze DenseMatrix
-  *  TODO test spark ?
   */
 case class BreezeDenseMatrix(m: linalg.DenseMatrix[Double]) extends DenseMatrix {
-  override def clone: BreezeDenseMatrix = this.copy(m = linalg.DenseMatrix[Array[Double],Double](values.clone.flatten))//FIXME constructor not correct?
+  override def clone: BreezeDenseMatrix = this.copy(
+    m = linalg.DenseMatrix[Array[Double],Double](values.map(_.clone).clone.flatten)
+  )
 
   override def nrows: Int = m.rows
   override def ncols: Int = m.cols
 
   override def values: Array[Array[Double]] = m.data.grouped(m.cols).toArray
   override def get(i: Int, j: Int): Double = m.valueAt(i,j)
+  override def getSubmat(i: Int, j: Int, nrows: Int, ncols: Int): Matrix =
+    BreezeDenseMatrix(m(i until i + nrows,j until j + ncols))
   override def set(i: Int, j: Int, v: Double): Matrix = {
     val d = clone.m
     d.data(d.linearIndex(i,j))=v
     BreezeDenseMatrix(d)
   }
+  override def setM(i: Int, j: Int, v: Double): Unit = m.data(m.linearIndex(i,j))=v
 
   override def map(f: Double => Double): Matrix = BreezeDenseMatrix(m.map(f))
 
@@ -346,7 +422,13 @@ case class BreezeDenseMatrix(m: linalg.DenseMatrix[Double]) extends DenseMatrix 
   override def -(m2: Matrix): Matrix = dispatchOp{m2=>BreezeDenseMatrix(m-m2.m)}(m2)
   override def *(m2: Matrix): Matrix = dispatchOp{m2=>BreezeDenseMatrix(m*:*m2.m)}(m2)
   override def transpose: Matrix = BreezeDenseMatrix(m.t)
-  override def determinant: Double = 0.0 // FIXME find LU dec impl in breeze
+
+  /**
+    * https://github.com/scalanlp/breeze/wiki/Linear-Algebra-Cheat-Sheet
+    * @return
+    */
+  override def determinant: Double = det(m)
+  override def inverse: Matrix = BreezeDenseMatrix(inv(m))
 
 }
 
@@ -366,16 +448,11 @@ sealed trait SparseMatrix extends Matrix {
 
 object SparseMatrix{
 
-  sealed trait SparseMatrixImplementation
+  sealed trait SparseMatrixImplementation //extends MatrixImplementation // better not to extend actually, for exhaustive matchs
   case class SparseCommons() extends SparseMatrixImplementation
   case class SparseBreeze() extends SparseMatrixImplementation
 
-  // switch to implicits instead of mutable
-  //private var DEFAULT_SPARSE_MATRIX_IMPLEMENTATION: SparseMatrixImplementation = SparseCommons()
-  /*object SparseMatrixImplementation {
-    def setImplSparseCommons: Unit = DEFAULT_SPARSE_MATRIX_IMPLEMENTATION = SparseCommons()
-    def setImplSparseBreeze: Unit = DEFAULT_SPARSE_MATRIX_IMPLEMENTATION = SparseBreeze()
-  }*/
+  private implicit val defaultSparseImplementation: SparseMatrixImplementation = SparseBreeze()
 
   def apply(a: Array[Array[Double]])(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): SparseMatrix = spMatImpl match {
     case _: SparseCommons => SparseMatrixImpl(a)
@@ -394,15 +471,16 @@ object SparseMatrix{
 
   /**
     * Row / column matrix
-    * @param a
-    * @param row
+    * @param a data
+    * @param row row matrix?
     * @return
     */
-  def apply(a: Array[Double], row: Boolean=true)(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): SparseMatrix = if(row) apply(Array(a)) else apply(a.map(Array(_)))
+  def apply(a: Array[Double], row: Boolean=true)(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): SparseMatrix =
+    if(row) apply(Array(a))(spMatImpl) else apply(a.map(Array(_)))(spMatImpl)
 
   /**
     * convert from dense - should better have a toSparse function? rq. breeze has built-in toDense
-    * @param m
+    * @param m DenseMatrix
     */
   def apply(m: DenseMatrix)(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): SparseMatrix =  spMatImpl match {
     case _: SparseCommons => SparseMatrixImpl(m)
@@ -413,10 +491,10 @@ object SparseMatrix{
 
   /**
     * Random sparse matrix
-    * @param n
-    * @param p
-    * @param density
-    * @param rng
+    * @param n rows
+    * @param p columns
+    * @param density density
+    * @param rng implicit random
     * @return
     */
   def randomSparseMatrix(n: Int, p: Int, density: Double)(implicit rng: Random, spMatImpl: SparseMatrix.SparseMatrixImplementation): SparseMatrix = {
@@ -430,10 +508,11 @@ object SparseMatrix{
     Iterator.iterate(0)(drawInds).takeWhile(_<nentries).toSeq
     val entries = inds.map{case (i,j) => (i,j,rng.nextDouble())}.toArray
     //println(entries.toSeq)
-    SparseMatrix(entries,n, p)
+    SparseMatrix(entries,n, p)(spMatImpl)
   }
 
-  def diagonal(a: Array[Double])(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): SparseMatrix = apply(a.zipWithIndex.map{case (v,i) => (i,i,v)},a.length,a.length)
+  def diagonal(a: Array[Double])(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): SparseMatrix =
+    apply(a.zipWithIndex.map{case (v,i) => (i,i,v)},a.length,a.length)(spMatImpl)
 
 
 }
@@ -443,16 +522,18 @@ object SparseMatrix{
   * Note: the apache class is kind of crappy as one can not access underlying map and some operations are not implemented
   *  thus should add an additional map here: ~ as memory + perf overhead
   *  BUT terrible to use: reimplement operations, etc
-  * @param m
-  * @param entries
+  * @param m apache sparse mat
   */
 case class SparseMatrixImpl(m: linear.OpenMapRealMatrix//,
                             //entries: mutable.HashMap[(Int,Int),Double]
                            ) extends SparseMatrix {
 
 
-  // FIXME this is highly inefficient: for setting one element, the immutable constraint leads to cloning everything!
-  // TODO alternative impl and some tests? or switch to mutable :/
+  /**
+    * this is highly inefficient: for setting one element, the immutable constraint leads to cloning everything!
+    * alternative impl and some tests? or use mutable when necessary
+    * @return
+    */
   override def clone: SparseMatrixImpl = SparseMatrixImpl(new linear.OpenMapRealMatrix(m))
 
   override def nrows: Int = m.getRowDimension
@@ -464,20 +545,17 @@ case class SparseMatrixImpl(m: linear.OpenMapRealMatrix//,
     SparseMatrixImpl(d)
   }
 
-  /**
-    * Mutable set
-    * @param i
-    * @param j
-    * @param v
-    */
-  def setM(i: Int, j: Int, v: Double): Unit = m.setEntry(i,j,v)
+  override def setM(i: Int, j: Int, v: Double): Unit = m.setEntry(i,j,v)
 
   override def get(i: Int, j: Int): Double = m.getEntry(i,j)
 
+  override def getSubmat(i: Int, j: Int, nrows: Int, ncols: Int): Matrix =
+    RealMatrix(m.getSubMatrix((i until i + nrows).toArray,(j until j + ncols).toArray))
+
   /**
-    * FIXME does not exploit the sparse structure - should keep the index of non zero elements to iterate only on these?
+    * !!! does not exploit the sparse structure - should keep the index of non zero elements to iterate only on these?
     *  -> maybe reimplement with proper map would be more straightforward
-    * @param f
+    * @param f function
     * @return
     */
   override def map(f: Double => Double): Matrix = {
@@ -501,7 +579,12 @@ case class SparseMatrixImpl(m: linear.OpenMapRealMatrix//,
 
   //override def %+%(m2: Matrix): Matrix = dispatchOp {m2 => SparseMatrixImpl(m.add(m2.m))}(m2)
   override def %*%(m2: Matrix): Matrix = dispatchOp {m2 => SparseMatrixImpl(m.multiply(m2.m))}(m2)
-  // FIXME check and reimplement, inefficient for now
+
+  /**
+    * !!! check and reimplement, inefficient for now
+    * @param m2 other matrix
+    * @return
+    */
   override def +(m2: Matrix): Matrix = dispatchOp{m2=>SparseMatrixImpl(m.getData.zip(m2.m.getData).map{case (row1,row2) => row1.zip(row2).map{case (v1,v2) => v1 + v2}})}(m2)
   override def -(m2: Matrix): Matrix = dispatchOp{m2=>SparseMatrixImpl(m.getData.zip(m2.m.getData).map{case (row1,row2) => row1.zip(row2).map{case (v1,v2) => v1 - v2}})}(m2)
   override def *(m2: Matrix): Matrix = dispatchOp{m2=>SparseMatrixImpl(m.getData.zip(m2.m.getData).map{case (row1,row2) => row1.zip(row2).map{case (v1,v2) => v1 * v2}})}(m2)
@@ -509,12 +592,15 @@ case class SparseMatrixImpl(m: linear.OpenMapRealMatrix//,
   // cannot go through sparse mat entries: shitty implementation
   override def transpose: Matrix = RealMatrix(m.transpose())
   override def determinant: Double = new linear.LUDecomposition(m).getDeterminant
+  override def inverse: Matrix = RealMatrix(MatrixUtils.inverse(m))
 
   override def sum: Double = flatValues.sum
   override def min: Double = flatValues.min(Ordering.Double.TotalOrdering)
   override def max: Double = flatValues.max(Ordering.Double.TotalOrdering)
 
-  //FIXME not optimal?
+  /**
+    *   not optimal
+    */
   override def rowSum: Array[Double] = m.getData.map{_.sum}
   override def colSum: Array[Double] = m.getData.transpose.map{_.sum}
 
@@ -526,7 +612,7 @@ case class SparseMatrixImpl(m: linear.OpenMapRealMatrix//,
     */
   override def flatValues: Array[Double] = values.flatten
 
-  override def toString: String = s"Sparse Matrix Apache Impl ${nrows}x${ncols}"
+  override def toString: String = s"Sparse Matrix Apache Impl ${nrows}x$ncols"
 
 }
 
@@ -540,7 +626,7 @@ object SparseMatrixImpl {
 
   /**
     * ! this constructor does not make sense - the sparse matrix is full
-    * @param a
+    * @param a data
     * @return
     */
   def apply(a: Array[Array[Double]]): SparseMatrixImpl = {
@@ -552,7 +638,7 @@ object SparseMatrixImpl {
 
   /**
     * from a dense matrix - all elements are filled also
-    * @param m
+    * @param m dense matrix
     * @return
     */
   def apply(m: DenseMatrix): SparseMatrixImpl = SparseMatrixImpl(m.values)
@@ -563,7 +649,8 @@ object SparseMatrixImpl {
 case class BreezeSparseMatrix(m: linalg.CSCMatrix[Double]) extends SparseMatrix {
 
   // should be copy - immutable clone
-  override def clone(): BreezeSparseMatrix = BreezeSparseMatrix(m.copy)
+  override def clone: BreezeSparseMatrix = BreezeSparseMatrix(m.copy)
+  def dense: linalg.DenseMatrix[Double] = m.toDense
 
   override def nrows: Int = m.rows
   override def ncols: Int = m.cols
@@ -586,9 +673,9 @@ case class BreezeSparseMatrix(m: linalg.CSCMatrix[Double]) extends SparseMatrix 
 
   /**
     * specific to the implementation - not efficient as must search in column
-    * @param i
-    * @param j
-    * @return
+    * @param i row
+    * @param j column
+    * @return value
     */
   override def get(i: Int, j: Int): Double = {
     val start = m.colPtrs(j)
@@ -597,20 +684,22 @@ case class BreezeSparseMatrix(m: linalg.CSCMatrix[Double]) extends SparseMatrix 
     if (ind < 0 ) 0.0 else m.data(ind)
   }
 
+  override def getSubmat(i: Int, j: Int, nrows: Int, ncols: Int): Matrix =
+    BreezeDenseMatrix(dense).getSubmat(i, j, nrows, ncols)
+
   override def set(i: Int, j: Int, v: Double): Matrix = {
     val copy = clone()
     copy.m.update(i, j, v) // mutable!
     copy
   }
+  override def setM(i: Int, j: Int, v: Double): Unit = m.update(i, j, v)
 
   /**
     * the map implementation does on all dense values?
-    * @param f
+    * @param f function
     * @return
     */
   override def map(f: Double => Double): Matrix = {
-    //this.copy(m=m.map(f))
-    //BreezeSparseMatrix(m.copy(_data=m.data.map(f)))
     val mapped = new CSCMatrix[Double](ArrayUtil.copyOf(m.data, m.activeSize).map(f), m.rows, m.cols, m.colPtrs.clone, m.activeSize, m.rowIndices.clone)
     BreezeSparseMatrix(mapped)
   }
@@ -629,7 +718,7 @@ case class BreezeSparseMatrix(m: linalg.CSCMatrix[Double]) extends SparseMatrix 
     *
     *  !!! HUGE overhead, much less good than the native impl which actually uses sparse
     *
-    * @param m2
+    * @param bm2 other matrix
     * @return
     */
   def eBeMultiply(bm2: BreezeSparseMatrix): BreezeSparseMatrix = {
@@ -638,9 +727,9 @@ case class BreezeSparseMatrix(m: linalg.CSCMatrix[Double]) extends SparseMatrix 
     val rowInds = new ArrayBuffer[Int]
     val colPtrs = new ArrayBuffer[Int]
     colPtrs.addOne(0)
-    m.colPtrs.indices.dropRight(1).foreach{ case j =>
+    m.colPtrs.indices.dropRight(1).foreach{ j =>
       val (start1,end1,start2,end2) = (m.colPtrs(j),m.colPtrs(j+1),m2.colPtrs(j),m2.colPtrs(j+1))
-      val inds1 = util.Arrays.copyOfRange(m.rowIndices,start1,end1).toSet // FIXME test if not too much perf loss with toSet
+      val inds1 = util.Arrays.copyOfRange(m.rowIndices,start1,end1).toSet //  test if not too much perf loss with toSet ?
       val inds2 = util.Arrays.copyOfRange(m2.rowIndices,start2,end2).toSet
       val inds1Map = inds1.zipWithIndex.toMap
       val inds2Map = inds2.zipWithIndex.toMap
@@ -655,14 +744,22 @@ case class BreezeSparseMatrix(m: linalg.CSCMatrix[Double]) extends SparseMatrix 
   // note: operators / implementations could be passed as implicit context?
   override def %*%(m2: Matrix): Matrix = dispatchOp {m2 => BreezeSparseMatrix(m*m2.m)}(m2)
   override def *(m2: Matrix): Matrix = dispatchOp {m2 => BreezeSparseMatrix(m*:*m2.m)}(m2)
-  //override def *(m2: Matrix): Matrix = dispatchOp {m2 => eBeMultiply(m2)}(m2)
   override def +(m2: Matrix): Matrix = dispatchOp {m2 => BreezeSparseMatrix(m+m2.m)}(m2)
   override def -(m2: Matrix): Matrix = dispatchOp {m2 => BreezeSparseMatrix(m-m2.m)}(m2)
 
   override def transpose: Matrix = this.copy(m = m.t)
 
-  // FIXME Breeze LU implementation?
-  override def determinant: Double = 0.0
+  /**
+    * Converts to dense to compute det
+    * @return
+    */
+  override def determinant: Double = det(dense)
+
+  /**
+    * Converts to dense to comput inverse
+    * @return
+    */
+  override def inverse: Matrix = BreezeDenseMatrix(inv(dense))
 
   /**
     * note: same impl as apache sparse mat (flatValues is different)
@@ -703,9 +800,9 @@ object BreezeSparseMatrix {
 
   /**
     * from list of entries
-    * @param entries
-    * @param n
-    * @param p
+    * @param entries entries
+    * @param n rows
+    * @param p columns
     * @return
     */
   def apply(entries: Array[(Int,Int,Double)],n: Int, p: Int): BreezeSparseMatrix = {
@@ -718,7 +815,7 @@ object BreezeSparseMatrix {
 
   /**
     * from values
-    * @param a
+    * @param a values
     * @return
     */
   def apply(a: Array[Array[Double]]): BreezeSparseMatrix = {
@@ -729,7 +826,7 @@ object BreezeSparseMatrix {
 
   /**
     * from dense matrix
-    * @param m
+    * @param m dense matrix
     * @return
     */
   def apply(m: DenseMatrix): BreezeSparseMatrix = apply(m.values)
@@ -743,9 +840,9 @@ object BreezeSparseMatrix {
 
 /**
   * although not super efficient before matrix operations, string indices can be used for correspondance between dimensions
-  * @param m
-  * @param rowNames
-  * @param colNames
+  * @param m matrix
+  * @param rowNames row names
+  * @param colNames column names
   */
 case class IndexedMatrix(
                         m: Matrix,

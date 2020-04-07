@@ -39,10 +39,10 @@ object TestNetwork {
     val simpl3 = CoarseGrainingNetworkSimplificator(grid3).simplifyNetwork(nw).shiftIds(30000)
 
     def nodeColor(n: Node): Int = n.id match {
-      case n if n < 10000 => 1
-      case n if n >= 10000&&n<20000 => 2
-      case n if n >= 20000&&n<30000 => 3
-      case n if n>=30000 => 4
+      case n if n < 10000 => 3
+      case n if n >= 10000&&n<20000 => 4
+      case n if n >= 20000&&n<30000 => 2
+      case n if n>=30000 => 1
     }
     def linkColor(l: Link): Int = nodeColor(l.e1)
 

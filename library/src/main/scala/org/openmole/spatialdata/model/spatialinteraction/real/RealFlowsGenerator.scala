@@ -9,7 +9,7 @@ case class RealFlowsGenerator(
 
                              ) extends FlowsGenerator {
 
-  override def generateFlows(implicit rng: Random, sparseMatrixImplementation: SparseMatrixImplementation): SpatialInteractionModel = ???
+  override def generateFlows(implicit rng: Random): SpatialInteractionModel = ???
 
 }
 

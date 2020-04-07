@@ -10,13 +10,13 @@ object TestUtils {
 
 
   def testCSVMatrix: Unit = {
-    implicit val ord = Ordering.Double.TotalOrdering
-    implicit val spMatImpl = SparseMatrix.SparseBreeze()
+    implicit val ord: Ordering[Double] = Ordering.Double.TotalOrdering
+    implicit val matImpl: Matrix.MatrixImplementation = Matrix.defaultImplementation
     val path = System.getenv("CS_HOME_EXT2")+"/UrbanDynamics/Data/QUANT/EWS/TObs_1.csv"
     val res = Matrix(CSV.readMat(path))
     println("max="+res.values.map(_.max).max)
     println("min="+res.values.map(_.min).min)
-    println("mean="+res.values.flatten.sum / res.values.flatten.size)
+    println("mean="+res.values.flatten.sum / res.values.flatten.length)
   }
 
 

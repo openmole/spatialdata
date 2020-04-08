@@ -68,6 +68,11 @@ object ReactionDiffusionGridGenerator {
     var steps = 0
     var stepdeltapop = 0.0
 
+    //log("ReacDiff Ng = "+growthRate.toInt)
+    //assert(growthRate.toInt>0,"no meso growth : tot pop = "+arrayVals.flatten.sum)
+    // growthRates < 1 will lead to no increment : either discretize in smaller units or keep this small discrepency ? (if really pop counts should be reasonable)
+
+
     // FIXME thematic Q : are negative pop increment just a bias in the heuristic or could be interpreted realistically? NO because get out only from boundaries: true if more sprawl, no meaning if external migration
     while (population < totalPopulation && stepdeltapop>=0.0) {
 
@@ -104,7 +109,7 @@ object ReactionDiffusionGridGenerator {
           }
         }else {
 
-          val probas = Array.fill(growthRate.toInt)(rng.nextDouble()).sorted
+          val probas = Array.fill(growthRate.toInt)(rng.nextDouble()).sorted(Ordering.Double.TotalOrdering)
 
           //println(probas.toSeq)
 

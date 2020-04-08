@@ -96,6 +96,7 @@ sealed trait Matrix {
   def +(m: Matrix): Matrix
   def -(m: Matrix): Matrix
   def *(m: Matrix): Matrix
+  def ^(m: Matrix): Matrix
 
   def transpose: Matrix
   def inverse: Matrix // should use pseudo inverse or restrict?
@@ -208,6 +209,7 @@ case class EmptyMatrix() extends Matrix {
   override def *(m: Matrix): Matrix = this
   override def +(m: Matrix): Matrix = this
   override def -(m: Matrix): Matrix = this
+  override def ^(m: Matrix): Matrix = this
   override def map(f: Double => Double): Matrix = this
   override def determinant: Double = Double.NaN
   override def inverse: Matrix = this
@@ -365,6 +367,8 @@ case class RealMatrix(m: linear.RealMatrix) extends DenseMatrix {
   override def +(m2: Matrix): Matrix = dispatchOp{m2=>RealMatrix(m.getData.zip(m2.m.getData).map{case (row1,row2) => row1.zip(row2).map{case (v1,v2) => v1 + v2}})}(m2)
   override def -(m2: Matrix): Matrix = dispatchOp{m2=>RealMatrix(m.getData.zip(m2.m.getData).map{case (row1,row2) => row1.zip(row2).map{case (v1,v2) => v1 - v2}})}(m2)
   override def *(m2: Matrix): Matrix =  dispatchOp{m2=>RealMatrix(m.getData.zip(m2.m.getData).map{case (row1,row2) => row1.zip(row2).map{case (v1,v2) => v1 * v2}})}(m2)
+  override def ^(m2: Matrix): Matrix =  dispatchOp{m2=>RealMatrix(m.getData.zip(m2.m.getData).map{case (row1,row2) => row1.zip(row2).map{case (v1,v2) => math.pow(v1,v2)}})}(m2)
+
   override def transpose: Matrix = RealMatrix(m.transpose())
   override def determinant: Double = new LUDecomposition(m).getDeterminant
   override def inverse: Matrix = RealMatrix(MatrixUtils.inverse(m))
@@ -421,6 +425,7 @@ case class BreezeDenseMatrix(m: linalg.DenseMatrix[Double]) extends DenseMatrix 
   override def +(m2: Matrix): Matrix = dispatchOp{m2=>BreezeDenseMatrix(m+m2.m)}(m2)
   override def -(m2: Matrix): Matrix = dispatchOp{m2=>BreezeDenseMatrix(m-m2.m)}(m2)
   override def *(m2: Matrix): Matrix = dispatchOp{m2=>BreezeDenseMatrix(m*:*m2.m)}(m2)
+  override def ^(m2: Matrix): Matrix = dispatchOp{m2=>BreezeDenseMatrix(m^:^m2.m)}(m2)
   override def transpose: Matrix = BreezeDenseMatrix(m.t)
 
   /**
@@ -588,6 +593,8 @@ case class SparseMatrixImpl(m: linear.OpenMapRealMatrix//,
   override def +(m2: Matrix): Matrix = dispatchOp{m2=>SparseMatrixImpl(m.getData.zip(m2.m.getData).map{case (row1,row2) => row1.zip(row2).map{case (v1,v2) => v1 + v2}})}(m2)
   override def -(m2: Matrix): Matrix = dispatchOp{m2=>SparseMatrixImpl(m.getData.zip(m2.m.getData).map{case (row1,row2) => row1.zip(row2).map{case (v1,v2) => v1 - v2}})}(m2)
   override def *(m2: Matrix): Matrix = dispatchOp{m2=>SparseMatrixImpl(m.getData.zip(m2.m.getData).map{case (row1,row2) => row1.zip(row2).map{case (v1,v2) => v1 * v2}})}(m2)
+  override def ^(m2: Matrix): Matrix = dispatchOp{m2=>SparseMatrixImpl(m.getData.zip(m2.m.getData).map{case (row1,row2) => row1.zip(row2).map{case (v1,v2) => math.pow(v1, v2)}})}(m2)
+
   // ! transpose not implemented -> transforms into a real matrix
   // cannot go through sparse mat entries: shitty implementation
   override def transpose: Matrix = RealMatrix(m.transpose())
@@ -746,6 +753,7 @@ case class BreezeSparseMatrix(m: linalg.CSCMatrix[Double]) extends SparseMatrix 
   override def *(m2: Matrix): Matrix = dispatchOp {m2 => BreezeSparseMatrix(m*:*m2.m)}(m2)
   override def +(m2: Matrix): Matrix = dispatchOp {m2 => BreezeSparseMatrix(m+m2.m)}(m2)
   override def -(m2: Matrix): Matrix = dispatchOp {m2 => BreezeSparseMatrix(m-m2.m)}(m2)
+  override def ^(m2: Matrix): Matrix = dispatchOp {m2 => BreezeSparseMatrix(m^:^m2.m)}(m2)
 
   override def transpose: Matrix = this.copy(m = m.t)
 

@@ -57,12 +57,12 @@ object UserEquilibriumNetworkLoader {
           (l.copy(weight=linkCostFunction(l,newflow)),newflow)
          }.toMap
         // update loaded network with new costs
-      val newLinkFlowsIds = newLinkFlows.map{case (l,f) => (l.id,f)}
-      val delta = state._1.flows.map{case (l,f) => math.abs(newLinkFlowsIds.getOrElse(l.id,f) - f) / f}.sum / newLinkFlows.size
+      val newLinkFlowsIds = newLinkFlows.toSeq.map{case (l,f) => (l.id,f)}.toMap
+      val delta = state._1.flows.toSeq.map{case (l,f) => math.abs(newLinkFlowsIds.getOrElse(l.id,f) - f) / f}.sum / newLinkFlows.size
       (state._1.updateFlows(newLinkFlows),delta)
     }
 
-    Iterator.iterate((loader.load(network,odPattern).updateCosts(linkCostFunction),1.0))(step).takeWhile(_._2>epsilon).toSeq.last._1
+    Iterator.iterate((loader.load(network,odPattern).updateCosts(linkCostFunction),1.0.toDouble))(step).takeWhile(_._2>epsilon).toSeq.last._1
 
   }
 

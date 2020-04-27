@@ -14,6 +14,29 @@ import org.openmole.spatialdata.utils.Implicits._
 
 import scala.util.Random
 
+
+/**
+  *
+  * check https://github.com/martinfleis/momepy for more building level morphology measures
+  * Fleischmann, (2019). momepy: Urban Morphology Measuring Toolkit. Journal of Open Source Software, 4(43), 1807, https://doi.org/10.21105/joss.01807
+  *
+  * @param height
+  * @param width
+  * @param area
+  * @param moran
+  * @param avgDistance
+  * @param entropy
+  * @param slope
+  * @param density
+  * @param components
+  * @param avgDetour
+  * @param avgBlockArea
+  * @param avgComponentArea
+  * @param fullDilationSteps
+  * @param fullErosionSteps
+  * @param fullClosingSteps
+  * @param fullOpeningSteps
+  */
 case class GridMorphology(
                        height: Double,
                        width: Double,

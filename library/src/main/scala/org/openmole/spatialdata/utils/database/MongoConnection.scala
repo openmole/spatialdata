@@ -14,16 +14,16 @@ import scala.collection.mutable.ArrayBuffer
 
 object MongoConnection {
 
-  var mongoClient: MongoClient = null
+  var mongoClient: MongoClient = _
 
-  var mongoDatabase: MongoDatabase = null
+  var mongoDatabase: MongoDatabase = _
 
 
   /**
     *
-    * @param database
-    * @param host
-    * @param port
+    * @param database database
+    * @param host host
+    * @param port port
     */
   def initMongo(database: String,host: String = "127.0.0.1", port: Int = 27017): Unit = {
     try {
@@ -37,11 +37,11 @@ object MongoConnection {
   /**
     *
     *
-    * @param lonmin
-    * @param latmin
-    * @param lonmax
-    * @param latmax
-    * @param collection
+    * @param lonmin min longitude
+    * @param latmin min latitude
+    * @param lonmax max longitude
+    * @param latmax max latitude
+    * @param collection collection
     * @return
     */
   def bboxRequest(lonmin: Double,latmin: Double,lonmax: Double,latmax: Double,collection: String,limit: Int = -1): Seq[Polygon] = {
@@ -56,10 +56,7 @@ object MongoConnection {
 
     while (queryres.iterator.hasNext&&(limit<0||res.length<limit)){
       val currentdoc: Document = queryres.iterator.next
-      //println(currentdoc)
-      //println(currentdoc.get("geometry").asInstanceOf[Document].get("coordinates").asInstanceOf[util.ArrayList[AnyRef]].toArray.toSeq.map{_.asInstanceOf[util.ArrayList[Double]].toArray.toSeq})
-      val coords = currentdoc.get("geometry").asInstanceOf[Document].get("coordinates").asInstanceOf[util.ArrayList[AnyRef]].toArray.map{case l: util.ArrayList[Double] => new Coordinate(l.get(0),l.get(1))}
-      //println(coords)
+      val coords = currentdoc.get("geometry").asInstanceOf[Document].get("coordinates").asInstanceOf[util.ArrayList[AnyRef]].toArray.map{l  => new Coordinate(l.asInstanceOf[util.ArrayList[Double]].get(0),l.asInstanceOf[util.ArrayList[Double]].get(1))}
       res.append(geomfact.createPolygon(geomfact.createLinearRing(coords)))
     }
     res.toSeq

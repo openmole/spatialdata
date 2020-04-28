@@ -22,6 +22,8 @@ case class OSMGridGenerator(
 
 object OSMGridGenerator {
 
+  implicit val doubleOrdering: Ordering[Double] = Ordering.Double.TotalOrdering
+
   /**
     * Generate a grid by rasterizing the geometry
     * @param lon

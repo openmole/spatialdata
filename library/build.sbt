@@ -5,19 +5,14 @@ name := "spatialdata"
 organization := "org.openmole.library"
 
 resolvers ++= Seq(
-  "osgeo" at "https://download.osgeo.org/webdav/geotools",
-  "geosolutions" at "https://maven.geo-solutions.it",
-  "geotoolkit" at "https://maven.geotoolkit.org",
   "apache" at "https://repo.maven.apache.org/maven2",
-  // gephi resolvers
-  //"NetBeans" at "https://bits.netbeans.org/nexus/content/groups/netbeans/",
-  //"gephi-thirdparty" at "https://raw.github.com/gephi/gephi/mvn-thirdparty-repo/",
+  ("icm" at "http://maven.icm.edu.pl/artifactory/repo").withAllowInsecureProtocol(true), // for geotools
   Resolver.sonatypeRepo("snapshots"),
   Resolver.sonatypeRepo("staging"),
   Resolver.mavenCentral
 )
 
-val geotoolsVersion = "21.0"
+val geotoolsVersion = "22-RC"
 
 libraryDependencies ++= Seq(
   "org.apache.commons" % "commons-math3" % "3.6.1",
@@ -60,7 +55,7 @@ scalacOptions in ThisBuild ++= Seq("-unchecked", "-deprecation")
 
 enablePlugins(SbtOsgi)
 
-//lazy val omlplugin = Project("omlplugin", file("target/omlplugin")) enablePlugins SbtOsgi settings( // FIXME
+//lazy val omlplugin = Project("omlplugin", file("target/omlplugin")) enablePlugins SbtOsgi settings(
 //  name := "spatialdata",
  //org.openmole.spatialdata.application.*
 OsgiKeys.exportPackage := Seq("*;-split-package:=merge-first")//,
@@ -125,7 +120,7 @@ homepage in ThisBuild := Some(url("https://github.com/openmole/spatialdata"))
 
 scmInfo in ThisBuild := Some(ScmInfo(url("https://github.com/openmole/spatialdata.git"), "scm:git:git@github.com:openmole/spatialdata.git"))
 
-pomExtra in ThisBuild := (
+pomExtra in ThisBuild :=
   <developers>
     <developer>
       <id>justeraimbault</id>
@@ -136,7 +131,7 @@ pomExtra in ThisBuild := (
       <name>Julien Perret</name>
     </developer>
   </developers>
-  )
+
 
 /**
   * Releasing
@@ -145,7 +140,6 @@ pomExtra in ThisBuild := (
 
 sonatypeProfileName := "org.openmole"
 
-import sbt.enablePlugins
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 
 releaseProcess := Seq[ReleaseStep](

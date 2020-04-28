@@ -1,7 +1,7 @@
 package org.openmole.spatialdata.test
 
 import better.files.File
-import org.openmole.spatialdata.application.urbmorph.GridGeneratorLauncher
+import org.openmole.spatialdata.application.urbanmorphology.GridGeneratorLauncher
 import org.openmole.spatialdata.grid.real.OSMGridSampling
 import org.openmole.spatialdata.utils.io.PNG
 
@@ -9,9 +9,11 @@ import scala.util.Random
 
 object TestPNG {
 
+  implicit val doubleOrdering: Ordering[Double] = Ordering.Double.TotalOrdering
+
   def testPNG(): Unit = {
 
-    implicit val rng = new Random(42L)
+    implicit val rng: Random = new Random(42L)
     val launchers = Seq("random","expMixture","blocks","percolation").map{
       GridGeneratorLauncher(_,200,
         0.5,
@@ -23,10 +25,9 @@ object TestPNG {
     val directory = File("data") / "test"
     directory.createDirectories()
     launchers.foreach{
-      case g => {
+       g =>
         val grid = g.getGrid
         PNG.write(grid, directory / s"${g.generatorType}.png")
-      }
     }
   }
   def testOSMGridSampling(): Unit = {

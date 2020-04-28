@@ -3,8 +3,10 @@ package org.openmole.spatialdata.model.urbandynamics
 
 import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.utils.io.CSV
-import org.openmole.spatialdata.utils.math.{DenseMatrix, Matrix}
+import org.openmole.spatialdata.utils.math.{DenseMatrix, Matrix, Statistics, Stochastic}
 import org.openmole.spatialdata.utils.math.Matrix.MatrixImplementation
+import org.openmole.spatialdata.vector.measures.Spatstat
+import org.openmole.spatialdata.vector.synthetic.RandomPointsGenerator
 
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
@@ -20,7 +22,6 @@ import scala.util.Random
   * @param distanceMatrix          Distance matrix
   * @param dates                   Dates
   * @param rng                     Model has its own rng
-  * @param seed                    Random seed
   * @param growthRate              Gibrat growth rate
   * @param innovationWeight        weight of innovation induced growth rate
   * @param gravityDecay            Decay of gravity interaction
@@ -31,32 +32,38 @@ case class Innovation(
                        distanceMatrix: Matrix,
                        dates: Array[Double],
                        rng : Random,
-                       seed : Int,
                        growthRate: Double,
                        innovationWeight: Double,
                        gravityDecay: Double,
                        innovationDecay: Double,
-                       newInnovation: (Seq[Double],Seq[Double],Seq[Seq[Double]]) => (Boolean,Double,Seq[Seq[Double]]),
+                       newInnovation: (Seq[Double],Seq[Double],Seq[Seq[Double]]) => (Boolean,Seq[Double],Seq[Seq[Double]]),
                        initialInnovationUtility: Double
                      ) extends MacroModel {
 
-  override def run: MacroResult = Innovation.run(this)
+  /**
+    * run for model calibration
+    * @return
+    */
+  override def run: MacroResult = Innovation.run(this)._1
+
+
+
+
+
 
   override def toString: String = "Innovation model with parameters"+
     "\n\tgrowthRate = "+growthRate+"\n\tinnovationWeight = "+innovationWeight+"\n\tgravityDecay = "+gravityDecay+
     "\n\tinnovationDecay = "+innovationDecay
-
-  //+"\n\tinnovationUtility = "+innovationUtility+"\n\tinnovationUtilityGrowth = "+innovationUtilityGrowth+
-  //  "\n\tearlyAdoptersRate = "+earlyAdoptersRate+"\n\tnewInnovationHierarchy = "+newInnovationHierarchy+"\n\tnewInnovationPopulationProportion = "+newInnovationPopulationProportion
 
 }
 
 
 object Innovation {
 
+  implicit val doubleOrdering: Ordering[Double] = Ordering.Double.TotalOrdering
 
   /**
-    * Construct from setup files
+    * Construct original model from setup files
     *
     * @param populationFile   pop file
     * @param distanceFile     dist file
@@ -86,6 +93,8 @@ object Innovation {
             newInnovationHierarchy: Double = 1.0,
             newInnovationPopulationProportion: Double = 0.5
            )(implicit m: MatrixImplementation = Matrix.defaultImplementation, rng: Random): Innovation = {
+    rng.setSeed(seed.toLong)
+
     val populationMatrix = Matrix(CSV.readMat(populationFile))
     val distancesMatrix: Matrix = distanceFile.length match {
       case n if n > 0 => Matrix(CSV.readMat(distanceFile))
@@ -93,22 +102,84 @@ object Innovation {
     }
     val dates = CSV.readCSV(datesFile,withHeader=false).values.toSeq(0).map(_.toDouble).toArray
 
-    Innovation(populationMatrix,distancesMatrix,dates,rng,seed,growthRate,innovationWeight,gravityDecay,innovationDecay,
+    Innovation(populationMatrix,distancesMatrix,dates,rng,growthRate,innovationWeight,gravityDecay,innovationDecay,
       legacyInnovation(_,_,_,innovationUtilityGrowth,earlyAdoptersRate,newInnovationHierarchy,newInnovationPopulationProportion),
       innovationUtility
     )
   }
 
   /**
+    * Synthetic setup for mutation model
+    * @param syntheticCities number of cities
+    * @param syntheticHierarchy initial hierarchy
+    * @param syntheticMaxPop initial max population
+    * @param finalTime number of time steps
+    * @param seed seed
+    * @param growthRate Gibrat growth rate
+    * @param innovationWeight innovation growth rate
+    * @param gravityDecay gravity decay
+    * @param innovationDecay innovation diffusion decay
+    * @param mutationRate mutation rate
+    * @param newInnovationHierarchy new innovation hierarchy
+    * @param earlyAdoptersRate early adoption proportion
+    * @param utilityStd utility standard dviation
+    * @param utilityDistribution type of distribution: "normal" or "log-normal"
+    * @param rng rng
+    * @return
+    */
+  def apply(
+           syntheticCities: Int,
+           syntheticHierarchy: Double,
+           syntheticMaxPop: Double,
+           finalTime: Int,
+           seed: Int,
+           growthRate: Double,
+           innovationWeight: Double,
+           gravityDecay: Double,
+           innovationDecay: Double,
+           mutationRate: Double,
+           newInnovationHierarchy: Double,
+           earlyAdoptersRate: Double,
+           utilityStd: Double,
+           utilityDistribution: String
+           )(implicit rng: Random): Innovation = {
+    implicit val m: MatrixImplementation = Matrix.defaultImplementation
+    rng.setSeed(seed.toLong)
+
+    val dmat = Matrix(Spatstat.euclidianDistanceMatrix(RandomPointsGenerator(syntheticCities).generatePoints.asPointSeq.toArray))
+    val initialPopulations = Statistics.rankSizeDistribution(syntheticCities, syntheticHierarchy, syntheticMaxPop)
+    val populationMatrix = DenseMatrix.zeros(syntheticCities,finalTime+1)
+    populationMatrix.setMSubmat(0,0,Array(initialPopulations.toArray).transpose)
+    val dates: Array[Double] = (0 to finalTime).toArray.map{_.toDouble}
+    val distrib = utilityDistribution match {
+      case "normal" => InnovationUtilityNormalDistribution()
+      case "log-normal" => InnovationUtilityLogNormalDistribution()
+    }
+
+    Innovation(populationMatrix,dmat,dates,rng,growthRate,innovationWeight,gravityDecay,innovationDecay,
+      mutationInnovation(_,_,_, mutationRate, newInnovationHierarchy, earlyAdoptersRate, utilityStd, distrib),
+      1.0
+    )
+
+  }
+
+  sealed trait InnovationUtilityDistribution
+  case class InnovationUtilityNormalDistribution() extends InnovationUtilityDistribution
+  case class InnovationUtilityLogNormalDistribution() extends InnovationUtilityDistribution
+
+
+
+
+  /**
     * Original model innovation process
-    * @param population
-    * @param utilities
-    * @param innovationShares
-    * @param innovationUtilityGrowth
-    * @param earlyAdoptersRate
-    * @param newInnovationHierarchy
-    * @param newInnovationPopulationProportion
-    * @param rng
+    * @param population populations
+    * @param utilities utility of innovations
+    * @param innovationShares shares of innovations: innov[cities]
+    * @param innovationUtilityGrowth fixed growth rate for utility
+    * @param earlyAdoptersRate rate of early adoption
+    * @param newInnovationHierarchy hierarchy to select a new innovative city
+    * @param newInnovationPopulationProportion proportion needed for a new innovation to appear (deterministic)
+    * @param rng rng
     * @return
     */
   def legacyInnovation(population: Seq[Double],
@@ -118,16 +189,16 @@ object Innovation {
                        earlyAdoptersRate: Double,
                        newInnovationHierarchy: Double,
                        newInnovationPopulationProportion: Double
-                      )(implicit rng: Random): (Boolean, Double, Seq[Seq[Double]]) = {
+                      )(implicit rng: Random): (Boolean, Seq[Double], Seq[Seq[Double]]) = {
 
     val latestInnovAdoption = innovationShares.last.zip(population).map{case (w,pop)=>w*pop}.sum / population.sum
     if (latestInnovAdoption > newInnovationPopulationProportion) {
       val newutility = utilities.last * innovationUtilityGrowth
       val (oldShares, newShares) = legacyNewInnovationShares(innovationShares.last,population, newInnovationHierarchy, earlyAdoptersRate)
       val newInnovationShares: Seq[Seq[Double]] = innovationShares.dropRight(1)++Seq(oldShares,newShares)
-      (true, newutility, newInnovationShares)
+      (true, Seq(newutility), newInnovationShares)
     }else {
-      (false, 0.0, Seq.empty[Seq[Double]])
+      (false, Seq.empty[Double], Seq.empty[Seq[Double]])
     }
   }
 
@@ -136,7 +207,6 @@ object Innovation {
     * Returns new innovation and last innovation modified shares in the Favaro-Pumain model
     * @param previousInnovShares previous innovation shares across cities
     * @param currentPopulations current pops
-    * @param time time step
     * @return
     */
   def legacyNewInnovationShares(previousInnovShares: Seq[Double],currentPopulations: Seq[Double], newInnovationHierarchy: Double, earlyAdoptersRate: Double)(implicit rng: Random): (Seq[Double], Seq[Double]) = {
@@ -146,6 +216,51 @@ object Innovation {
     val oldShares: Seq[Double] = previousInnovShares.zipWithIndex.map{case (s,i) => if(i==innovativeCityIndex) s - earlyAdoptersRate else s}
     (oldShares, newShares)
   }
+
+
+  /**
+    * Innovation based on mutation
+    * @param population population
+    * @param utilities utilities
+    * @param innovationShares innovation shares
+    * @param mutationRate mutation rate
+    * @param newInnovationHierarchy new innovation hierarchy
+    * @param earlyAdoptersRate proportion of new innovation
+    * @param utilityStd standard deviation of utility distribution
+    * @param utilityDistribution type of distribution
+    * @param rng rng
+    * @return
+    */
+  def mutationInnovation(population: Seq[Double],
+                         utilities: Seq[Double],
+                         innovationShares: Seq[Seq[Double]],
+                         mutationRate: Double,
+                         newInnovationHierarchy: Double,
+                         earlyAdoptersRate: Double,
+                         utilityStd: Double,
+                         utilityDistribution: InnovationUtilityDistribution
+                        )(implicit rng: Random): (Boolean, Seq[Double], Seq[Seq[Double]]) = {
+    def drawUtility: Double = utilityDistribution match {
+      case _: InnovationUtilityNormalDistribution => utilities.sum/utilities.length + Stochastic.NormalDistribution(0.0,utilityStd).draw
+      case _: InnovationUtilityLogNormalDistribution => utilities.sum/utilities.length - math.sqrt(utilityStd)*math.exp(0.25) + Stochastic.LogNormalDistribution(0.0,math.sqrt(math.log(utilityStd)+0.5)).draw
+    }
+
+    val pmax = population.max
+    // max one innovation per city
+    val innovativeCities: Seq[Int] = population.map(p => mutationRate*math.pow(p/pmax,newInnovationHierarchy)).
+      zip(Seq.fill(population.length)(rng.nextDouble())).zipWithIndex.map{ case ((p,r),i) => if(p<r) Some(i) else None}.filter(_.isDefined).map(_.get)
+    utils.log("Innovative cities: "+innovativeCities)
+
+    if (innovativeCities.isEmpty) (false, Seq.empty[Double], Seq.empty[Seq[Double]])
+    else {
+      val newUtilities = innovativeCities.map(_ => drawUtility)
+      // option: rescale or remove fixed proportion
+      val newShares = innovationShares.map(_.zipWithIndex.map{case (s,i) => if(innovativeCities.contains(i)) s / (1 - earlyAdoptersRate) else s})++
+        innovativeCities.map(i => Seq.tabulate(population.length)(j => if (j==i) earlyAdoptersRate else 0.0))
+      (true, newUtilities, newShares)
+    }
+  }
+
 
   /**
     * Select a city hierarchically to population
@@ -165,21 +280,16 @@ object Innovation {
   /**
     * Run the model
     * @param model model
-    * @return
+    * @return (MacroResult for population, seq of innovation utilities, seq of innovation proportions)
     */
-  def run(model: Innovation): MacroResult = {
+  def run(model: Innovation): (MacroResult, Seq[Double], Seq[Matrix])  = {
 
     utils.log("Running "+model.toString)
 
     import model._
 
-    rng.setSeed(seed.toLong)
-
     val n = populationMatrix.nrows
     val p = populationMatrix.ncols
-
-
-    val inds = (0 until n by 1).toArray
 
     val res = DenseMatrix.zeros(n, p)
     res.setMSubmat(0, 0, populationMatrix.getCol(0).values)
@@ -205,7 +315,7 @@ object Innovation {
 
       val totalpop = currentPopulations.sum
 
-      /**
+      /*
         * 1) diffuse innovations
         */
       val tmplevel: Array[Array[Double]] = innovationProportions.zip(innovationUtilities).map{
@@ -226,7 +336,7 @@ object Innovation {
       }.map{_ / totalpop}.toArray
 
 
-      /**
+      /*
         * 2) Update populations
         */
       val technoFactor: Array[Double] = innovationProportions.zip(macroAdoptionLevels).map{
@@ -252,14 +362,22 @@ object Innovation {
       )
       currentPopulations = res.getCol(t).flatValues
 
-      /**
+      /*
         * 3) create a new innovation if needed
         */
       val currentInnovProps: Seq[Seq[Double]] = innovationProportions.map(_.getCol(t).flatValues.toSeq).toSeq
-      val potentialInnovation: (Boolean, Double, Seq[Seq[Double]]) = model.newInnovation(currentPopulations.toSeq, innovationUtilities.toSeq, currentInnovProps)
+      val potentialInnovation: (Boolean, Seq[Double], Seq[Seq[Double]]) = model.newInnovation(currentPopulations.toSeq, innovationUtilities.toSeq, currentInnovProps)
       if (potentialInnovation._1){
-        innovationUtilities.append(potentialInnovation._2)
-        innovationProportions.toArray.zip(potentialInnovation._3).foreach{case (m,newprop) => m.setMSubmat(0,t,Array(newprop.toArray))}
+        innovationUtilities.appendAll(potentialInnovation._2)
+        val newShares = potentialInnovation._3
+        // update old innovations (note that remaining of potentialInnovation._3 is ignored by the zip)
+        innovationProportions.toArray.zip(newShares).foreach{case (m,newprop) => m.setMSubmat(0,t,Array(newprop.toArray).transpose)}
+        // add new innovation matrices
+        newShares.takeRight(newShares.length-innovationProportions.length).foreach{s =>
+          val newInnovMat = DenseMatrix.zeros(n,p)
+          newInnovMat.setMSubmat(0,t,Array(s.toArray).transpose)
+          innovationProportions.append(newInnovMat)
+        }
       }
 
     }
@@ -272,7 +390,7 @@ object Innovation {
     utils.log("Innovations introduced : "+innovationProportions.length)
     utils.log("Macro adoption levels : "+macroAdoptionLevels.mkString(","))
 
-    MacroResult(model.populationMatrix,res)
+    (MacroResult(model.populationMatrix,res),innovationUtilities.toSeq,innovationProportions.toSeq)
   }
 
 

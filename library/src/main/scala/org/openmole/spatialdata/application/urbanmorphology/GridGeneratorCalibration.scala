@@ -1,4 +1,4 @@
-package org.openmole.spatialdata.application.urbmorph
+package org.openmole.spatialdata.application.urbanmorphology
 
 import org.openmole.spatialdata.grid.measures.GridMorphology
 import org.openmole.spatialdata.grid.synthetic._

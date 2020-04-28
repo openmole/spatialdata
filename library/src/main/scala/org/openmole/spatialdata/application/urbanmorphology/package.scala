@@ -9,4 +9,4 @@ package org.openmole.spatialdata.application
   * The 2019 Conference on Artificial Life 2019 NO. 31, 179-186
   *
   */
-package object urbmorph
+package object urbanmorphology

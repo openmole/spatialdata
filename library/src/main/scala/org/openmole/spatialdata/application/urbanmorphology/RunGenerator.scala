@@ -1,4 +1,4 @@
-package org.openmole.spatialdata.application.urbmorph
+package org.openmole.spatialdata.application.urbanmorphology
 
 import better.files.File
 import org.openmole.spatialdata.grid.real.OSMGridGenerator

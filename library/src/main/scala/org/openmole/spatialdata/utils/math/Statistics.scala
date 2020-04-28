@@ -6,9 +6,18 @@ import org.apache.commons.math3.stat.regression.SimpleRegression
 
 import scala.math.{Ordering, log}
 
+/**
+  * Statistics utility
+  *
+  * Future work:
+  *  - on the estimation of power laws, implement
+  *    Clauset, A., Shalizi, C. R., & Newman, M. E. (2009). Power-law distributions in empirical data. SIAM review, 51(4), 661-703.
+  *
+  *
+  */
 object Statistics {
 
-  implicit val doubleOrdering = Ordering.Double.TotalOrdering
+  implicit val doubleOrdering: Ordering[Double] = Ordering.Double.TotalOrdering
 
 
   /**
@@ -24,27 +33,29 @@ object Statistics {
 
   /**
     * Unbiased moment at a given order
-    * @param x
-    * @param order
+    * @param x values
+    * @param order order
     * @param weighting optional array of weights (will be renormalized if not already)
     * @param filter filtering function
     * @return
     */
   def moment(x: Array[Double],order: Int = 1,weighting : Array[Double]=Array.empty,filter: Double => Boolean = _ => true): Double = {
-    val w: Array[Double] = x.zip(weighting).filter{case (x,_)=>filter(x)}.map{case (x,w)=> w} match {
-      case a if (a.size==0) => Array.fill(x.size){1.0/x.size}
-      case a if (a.sum != 1.0) => {val s = a.sum; a.map{_/s}}
+    val w: Array[Double] = x.zip(weighting).filter{case (xx,_)=>filter(xx)}.map{case (_,ww)=> ww} match {
+      case a if a.length==0 => Array.fill(x.length){1.0/x.length}
+      case a if a.sum != 1.0 =>
+        val s = a.sum
+        a.map{_/s}
       case a => a
     }
-    x.filter(filter).zip(w).map{case (x,w) => w*math.pow(x,order.toDouble)}.sum
+    x.filter(filter).zip(w).map{case (xx,ww) => ww*math.pow(xx,order.toDouble)}.sum
   }
 
 
 
   /**
     * Histogram
-    * @param x
-    * @param breaks
+    * @param x values
+    * @param breaks number of breaks
     * @return
     */
   def histogram(x: Array[Double],breaks: Int,filter: Double => Boolean = _ => true,display:Boolean = false): Array[(Double,Double)] = {
@@ -67,12 +78,12 @@ object Statistics {
 
     val xstep = ampl / breaks
     //Array.tabulate(breaks){case i => xstep / 2 + i*xstep}.zip(hist.values.map{_.asInstanceOf[Counting].entries})
-    Array.tabulate(breaks){case i => xstep / 2 + i*xstep}.zip(counts)
+    Array.tabulate(breaks)( i => xstep / 2 + i*xstep).zip(counts)
   }
 
   /**
     * biased estimator of the std
-    * @param x
+    * @param x values
     * @return
     */
   def std(x: Array[Double]): Double = {
@@ -86,9 +97,10 @@ object Statistics {
     * Rank-size slope
     * Simply estimated by a log-log linear regression
     *
-    * TODO add option to better estimate the power law (see Clauset, A., Shalizi, C. R., & Newman, M. E. (2009). Power-law distributions in empirical data. SIAM review, 51(4), 661-703.)
+    * Future work:
+    *  add option to better estimate the power law (see Clauset, A., Shalizi, C. R., & Newman, M. E. (2009). Power-law distributions in empirical data. SIAM review, 51(4), 661-703.)
     *
-    * @param matrix
+    * @param matrix values
     * @return (estimated slope, R2 of the regression)
     */
   def slope(matrix: Array[Array[Double]]): (Double,Double) = slope(matrix.flatten)
@@ -108,7 +120,7 @@ object Statistics {
   /**
     * Entropy of the distribution
     *
-    * @param matrix
+    * @param matrix values
     * @return
     */
   def entropy(matrix: Array[Array[Double]]): Double = entropy(matrix.flatten)
@@ -118,7 +130,7 @@ object Statistics {
 
   /**
     * Entropy of a stat distrib
-    * @param values
+    * @param values values
     * @return
     */
   def entropy(values: Array[Double]): Double = {
@@ -138,7 +150,7 @@ object Statistics {
   }
 
 
-  // TODO
+  //
   /*
   def conditionalExpectancies(initialValues: Vector[Double],
                               initialState: Vector[Vector[Double]],
@@ -157,7 +169,7 @@ object Statistics {
   }*/
 
   def discreteChoicesProbaTime(state: Array[Array[Double]],beta: Int => Array[Double]): Int => Array[Double] = {
-    t => Array.empty
+    _ => Array.empty
       //Matrix.toFlatArray(Matrix.fromArray(state).multiply(Matrix.fromColumnArray(beta(t))))
   }
 
@@ -169,7 +181,7 @@ object Statistics {
 
   /**
     * L2 discrepancy
-    * @param points
+    * @param points points
     * @return
     */
   def discrepancyL2(points: Array[Array[Double]]): Double = {

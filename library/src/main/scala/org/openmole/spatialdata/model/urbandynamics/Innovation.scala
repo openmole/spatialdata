@@ -25,11 +25,6 @@ import scala.util.Random
   * @param innovationWeight        weight of innovation induced growth rate
   * @param gravityDecay            Decay of gravity interaction
   * @param innovationDecay         Decay of innovation diffusion
-  * @param innovationUtility       Utility of the first innovation
-  * @param innovationUtilityGrowth Growth of the innovation utility (default to 1.12)
-  * @param earlyAdoptersRate       Proportion of early adopters (defaults to 1%)
-  * @param newInnovationHierarchy  City innovation hierarchy : exponent of the probability that a city introduces the new innovation (defaults to 1)
-  * @param newInnovationPopulationProportion Proportion of population at which new innovation emerges (defaults to 0.5)
   */
 case class Innovation(
                        populationMatrix: Matrix,
@@ -41,20 +36,18 @@ case class Innovation(
                        innovationWeight: Double,
                        gravityDecay: Double,
                        innovationDecay: Double,
-                       innovationUtility: Double,
-                       innovationUtilityGrowth: Double,
-                       earlyAdoptersRate: Double,
-                       newInnovationHierarchy: Double,
-                       newInnovationPopulationProportion: Double
-
+                       newInnovation: (Seq[Double],Seq[Double],Seq[Seq[Double]]) => (Boolean,Double,Seq[Seq[Double]]),
+                       initialInnovationUtility: Double
                      ) extends MacroModel {
 
   override def run: MacroResult = Innovation.run(this)
 
   override def toString: String = "Innovation model with parameters"+
     "\n\tgrowthRate = "+growthRate+"\n\tinnovationWeight = "+innovationWeight+"\n\tgravityDecay = "+gravityDecay+
-    "\n\tinnovationDecay = "+innovationDecay+"\n\tinnovationUtility = "+innovationUtility+"\n\tinnovationUtilityGrowth = "+innovationUtilityGrowth+
-    "\n\tearlyAdoptersRate = "+earlyAdoptersRate+"\n\tnewInnovationHierarchy = "+newInnovationHierarchy+"\n\tnewInnovationPopulationProportion = "+newInnovationPopulationProportion
+    "\n\tinnovationDecay = "+innovationDecay
+
+  //+"\n\tinnovationUtility = "+innovationUtility+"\n\tinnovationUtilityGrowth = "+innovationUtilityGrowth+
+  //  "\n\tearlyAdoptersRate = "+earlyAdoptersRate+"\n\tnewInnovationHierarchy = "+newInnovationHierarchy+"\n\tnewInnovationPopulationProportion = "+newInnovationPopulationProportion
 
 }
 
@@ -65,18 +58,18 @@ object Innovation {
   /**
     * Construct from setup files
     *
-    * @param populationFile pop file
-    * @param distanceFile dist file
-    * @param datesFile dates file
-    * @param growthRate g_0
+    * @param populationFile   pop file
+    * @param distanceFile     dist file
+    * @param datesFile        dates file
+    * @param growthRate       g_0
     * @param innovationWeight w_I
-    * @param gravityDecay d_G
-    * @param innovationDecay d_I
-    * @param innovationUtility U_I
-    * @param innovationUtilityGrowth Delta U_I
-    * @param earlyAdoptersRate r_0
-    * @param newInnovationHierarchy alpha
-    * @param newInnovationPopulationProportion p_0
+    * @param gravityDecay     d_G
+    * @param innovationDecay  d_I
+    * @param innovationUtility       Utility of the first innovation
+    * @param innovationUtilityGrowth Growth of the innovation utility (default to 1.12)
+    * @param earlyAdoptersRate       Proportion of early adopters (defaults to 1%)
+    * @param newInnovationHierarchy  City innovation hierarchy : exponent of the probability that a city introduces the new innovation (defaults to 1)
+    * @param newInnovationPopulationProportion Proportion of population at which new innovation emerges (defaults to 0.5)
     * @return
     */
   def apply(populationFile: String,
@@ -100,8 +93,73 @@ object Innovation {
     }
     val dates = CSV.readCSV(datesFile,withHeader=false).values.toSeq(0).map(_.toDouble).toArray
 
-    Innovation(populationMatrix,distancesMatrix,dates,rng,seed,growthRate,innovationWeight,gravityDecay,innovationDecay,innovationUtility,innovationUtilityGrowth,earlyAdoptersRate,newInnovationHierarchy,newInnovationPopulationProportion)
+    Innovation(populationMatrix,distancesMatrix,dates,rng,seed,growthRate,innovationWeight,gravityDecay,innovationDecay,
+      legacyInnovation(_,_,_,innovationUtilityGrowth,earlyAdoptersRate,newInnovationHierarchy,newInnovationPopulationProportion),
+      innovationUtility
+    )
   }
+
+  /**
+    * Original model innovation process
+    * @param population
+    * @param utilities
+    * @param innovationShares
+    * @param innovationUtilityGrowth
+    * @param earlyAdoptersRate
+    * @param newInnovationHierarchy
+    * @param newInnovationPopulationProportion
+    * @param rng
+    * @return
+    */
+  def legacyInnovation(population: Seq[Double],
+                       utilities: Seq[Double],
+                       innovationShares: Seq[Seq[Double]],
+                       innovationUtilityGrowth: Double,
+                       earlyAdoptersRate: Double,
+                       newInnovationHierarchy: Double,
+                       newInnovationPopulationProportion: Double
+                      )(implicit rng: Random): (Boolean, Double, Seq[Seq[Double]]) = {
+
+    val latestInnovAdoption = innovationShares.last.zip(population).map{case (w,pop)=>w*pop}.sum / population.sum
+    if (latestInnovAdoption > newInnovationPopulationProportion) {
+      val newutility = utilities.last * innovationUtilityGrowth
+      val (oldShares, newShares) = legacyNewInnovationShares(innovationShares.last,population, newInnovationHierarchy, earlyAdoptersRate)
+      val newInnovationShares: Seq[Seq[Double]] = innovationShares.dropRight(1)++Seq(oldShares,newShares)
+      (true, newutility, newInnovationShares)
+    }else {
+      (false, 0.0, Seq.empty[Seq[Double]])
+    }
+  }
+
+
+  /**
+    * Returns new innovation and last innovation modified shares in the Favaro-Pumain model
+    * @param previousInnovShares previous innovation shares across cities
+    * @param currentPopulations current pops
+    * @param time time step
+    * @return
+    */
+  def legacyNewInnovationShares(previousInnovShares: Seq[Double],currentPopulations: Seq[Double], newInnovationHierarchy: Double, earlyAdoptersRate: Double)(implicit rng: Random): (Seq[Double], Seq[Double]) = {
+    val innovativeCityIndex: Int = selectCityHierarchically(currentPopulations, newInnovationHierarchy)
+    utils.log("Innovative city : "+innovativeCityIndex)
+    val newShares: Seq[Double] = Seq.tabulate(previousInnovShares.length)(i => if(i==innovativeCityIndex) earlyAdoptersRate else 0.0)
+    val oldShares: Seq[Double] = previousInnovShares.zipWithIndex.map{case (s,i) => if(i==innovativeCityIndex) s - earlyAdoptersRate else s}
+    (oldShares, newShares)
+  }
+
+  /**
+    * Select a city hierarchically to population
+    * @param currentPopulations current populations
+    * @return
+    */
+  def selectCityHierarchically(currentPopulations: Seq[Double], newInnovationHierarchy: Double)(implicit rng: Random): Int = {
+    val r = rng.nextDouble
+    val ptot = currentPopulations.map{math.pow(_,newInnovationHierarchy)}.sum
+    Seq(Seq(0,currentPopulations.map{math.pow(_,newInnovationHierarchy)/ptot}.scanLeft(0.0)(_+_).indexWhere(_>r)).max,currentPopulations.length-1).min
+  }
+
+
+
 
 
   /**
@@ -120,32 +178,6 @@ object Innovation {
     val n = populationMatrix.nrows
     val p = populationMatrix.ncols
 
-    /**
-      * Select a city hierarchically to population
-      * @param currentPopulations current populations
-      * @return
-      */
-    def selectCityHierarchically(currentPopulations: Array[Double]): Int = {
-      val r = rng.nextDouble
-      val ptot = currentPopulations.map{math.pow(_,newInnovationHierarchy)}.sum
-      Seq(Seq(0,currentPopulations.map{math.pow(_,newInnovationHierarchy)/ptot}.scanLeft(0.0)(_+_).indexWhere(_>r)).max,n-1).min
-    }
-
-    /**
-      * Returns a Matrix for the new innov AND **Modifies in place the previous one**
-      * @param previousInnovMatrix previous mat
-      * @param currentPopulations current pops
-      * @param time time step
-      * @return
-      */
-    def newInnovationMatrix(previousInnovMatrix: Matrix,currentPopulations: Array[Double],time: Int): Matrix = {
-      val innovativeCityIndex: Int = selectCityHierarchically(currentPopulations)
-      utils.log("Innovative city : "+innovativeCityIndex)
-      val diffrates: Matrix = DenseMatrix.zeros(n,p)
-      diffrates.setM(innovativeCityIndex,time,earlyAdoptersRate)
-      previousInnovMatrix.setM(innovativeCityIndex,time,previousInnovMatrix.get(innovativeCityIndex,time)-earlyAdoptersRate)
-      diffrates
-    }
 
     val inds = (0 until n by 1).toArray
 
@@ -156,16 +188,16 @@ object Innovation {
     val gravityDistanceWeights = distanceMatrix.map { d => Math.exp(-d / gravityDecay) }
     val innovationDistanceWeights = distanceMatrix.map { d => Math.exp(-d / innovationDecay) }
 
-    val innovationUtilities: ArrayBuffer[Double] = new ArrayBuffer[Double]
-    innovationUtilities.appendAll(Array(innovationUtility,innovationUtility*innovationUtilityGrowth))
-    val innovationProportions: ArrayBuffer[Matrix] = new ArrayBuffer[Matrix]
-
-    // the first innovation is already in one city on top of a background archaic technology
+    // the first innovation could already be in one city on top of a background archaic technology
     // (can be replaced by the second at the first step, consistent as assumed as coming from before the simulated period)
+    // -> NO - better start with a single techno and let mutation process insert new
+    val innovationUtilities: ArrayBuffer[Double] = new ArrayBuffer[Double]
+    innovationUtilities.append(model.initialInnovationUtility)
+    val innovationProportions: ArrayBuffer[Matrix] = new ArrayBuffer[Matrix]
     val archaicTechno =  DenseMatrix.zeros(n,p)
     archaicTechno.setMSubmat(0, 0, Array.fill(n)(Array(1.0)))
     innovationProportions.append(archaicTechno)
-    innovationProportions.append(newInnovationMatrix(archaicTechno,currentPopulations,time=0))
+
 
     for (t <- 1 until p) {
 
@@ -223,11 +255,11 @@ object Innovation {
       /**
         * 3) create a new innovation if needed
         */
-      val latestInnovAdoption = innovationProportions.last.getCol(t).flatValues.zip(currentPopulations).map{case (w,pop)=>w*pop}.sum / currentPopulations.sum
-      if (latestInnovAdoption > newInnovationPopulationProportion) {
-        val newutility = innovationUtilities.last * innovationUtilityGrowth
-        innovationUtilities.append(newutility)
-        innovationProportions.append(newInnovationMatrix(innovationProportions.last,currentPopulations,time = t))
+      val currentInnovProps: Seq[Seq[Double]] = innovationProportions.map(_.getCol(t).flatValues.toSeq).toSeq
+      val potentialInnovation: (Boolean, Double, Seq[Seq[Double]]) = model.newInnovation(currentPopulations.toSeq, innovationUtilities.toSeq, currentInnovProps)
+      if (potentialInnovation._1){
+        innovationUtilities.append(potentialInnovation._2)
+        innovationProportions.toArray.zip(potentialInnovation._3).foreach{case (m,newprop) => m.setMSubmat(0,t,Array(newprop.toArray))}
       }
 
     }

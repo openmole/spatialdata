@@ -1,34 +1,32 @@
 package org.openmole.spatialdata.utils.gis
 
-import com.vividsolutions.jts.geom.{GeometryCollection, MultiPolygon, Polygon}
-import com.vividsolutions.jts.triangulate.ConformingDelaunayTriangulationBuilder
+import org.locationtech.jts.geom.{GeometryCollection, MultiPolygon, Polygon}
+import org.locationtech.jts.triangulate.ConformingDelaunayTriangulationBuilder
 import org.openmole.spatialdata.vector.Point
 import org.openmole.spatialdata.utils.io.Shapefile
 
 import scala.util.{Random, Try}
 
 
-/*
-trait SpatialSampling {
-  // TODO generic caracs of a spatial sampling ? -> not necessary ; here only GIS primitives
-}
-*/
 
-
-
+/**
+  * Primitives for layer sampling
+  *
+  * generic caracs of a spatial sampling ? -> not necessary ; here only GIS primitives
+  */
 object LayerSampling {
 
 
   /**
     *
-    * @param layer
-    * @param nPoints
-    * @param weightAttribute
+    * @param layer layer
+    * @param nPoints number of points
+    * @param weightAttribute weights
     * @return
     */
   def samplePointsInLayer(layer: String,nPoints: Int,weightAttribute: String = "")(implicit rng: Random): Seq[Point] = {
     val polygons = weightAttribute match {
-      case s if s.length > 0 => Shapefile.readGeometry(layer,Array(weightAttribute))
+      case w if w.length > 0 => Shapefile.readGeometry(layer,Array(weightAttribute))
       case _ => Shapefile.readGeometry(layer).map{case (g,_)=>(g,Array(1.0))}
     }
     val attrs = polygons.map{_._2(0)}
@@ -39,15 +37,19 @@ object LayerSampling {
       val r = rng.nextDouble()
       var ss=0.0
       // Delaunay triangulation sometimes fails when enforcing constraints (too fine geometries ?) => wrap in Try
-      Try[Point]{PolygonSampler(polygons(weights.map{case w => {ss = ss + w ; ss > r} }.zipWithIndex.filter{_._1}.head._2)._1.asInstanceOf[MultiPolygon]).
+      Try[Point]{PolygonSampler(polygons(weights.map{
+        w =>
+          ss = ss + w
+          ss > r
+      }.zipWithIndex.filter{_._1}.head._2)._1.asInstanceOf[MultiPolygon]).
         sample}
     }
     pointTries.flatMap(_.toOption)
   }
 
 
-  case class PolygonSampler(val polygon: MultiPolygon, val tolerance: Double = 0.1) {
-    lazy val triangles = {
+  case class PolygonSampler(polygon: MultiPolygon, tolerance: Double = 0.1) {
+    lazy val triangles: Seq[(Double,Polygon)] = {
       val builder = new ConformingDelaunayTriangulationBuilder
       builder.setSites(polygon)
       builder.setConstraints(polygon)
@@ -64,7 +66,7 @@ object LayerSampling {
       }
     }
 
-    lazy val totalArea = triangles.last._1
+    lazy val totalArea: Double = triangles.last._1
 
     def sample(implicit rng: Random): (Double,Double) = {
       val s = rng.nextDouble() * totalArea

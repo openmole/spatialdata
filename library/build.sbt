@@ -17,7 +17,7 @@ val geotoolsVersion = "22-RC"
 libraryDependencies ++= Seq(
   "org.apache.commons" % "commons-math3" % "3.6.1",
   "com.github.pathikrit" %% "better-files" % "3.8.0",
-  "com.vividsolutions" % "jts" % "1.13",
+  "org.locationtech.jts" % "jts" % "1.16.1" pomOnly(),
   "org.geotools" % "geotools" % geotoolsVersion exclude("javax.media", "jai_core") exclude("com.vividsolutions", "jts-core"),
   "org.geotools" % "gt-shapefile" % geotoolsVersion exclude("javax.media", "jai_core") exclude("com.vividsolutions", "jts-core"),
   "com.github.tototoshi" %% "scala-csv" % "1.3.6",

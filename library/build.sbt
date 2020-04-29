@@ -18,7 +18,6 @@ libraryDependencies ++= Seq(
   "org.apache.commons" % "commons-math3" % "3.6.1",
   "com.github.pathikrit" %% "better-files" % "3.8.0",
   "com.vividsolutions" % "jts" % "1.13",
-  //"org.openmole.library" %% "graph-core" % "1.12.5.1", // graph-core not needed anymore
   "org.geotools" % "geotools" % geotoolsVersion exclude("javax.media", "jai_core") exclude("com.vividsolutions", "jts-core"),
   "org.geotools" % "gt-shapefile" % geotoolsVersion exclude("javax.media", "jai_core") exclude("com.vividsolutions", "jts-core"),
   "com.github.tototoshi" %% "scala-csv" % "1.3.6",
@@ -29,7 +28,6 @@ libraryDependencies ++= Seq(
   "commons-io" % "commons-io" % "2.3",
   "org.apache.commons" % "commons-lang3" % "3.1",
   "it.uniroma1.dis.wsngroup.gexf4j" % "gexf4j" % "1.0.0",
-  //"org.gephi" % "gephi-toolkit" % "0.9.2" // full gephi lib is 68Mo ! totally a bad idea to use it
   "org.scalanlp" %% "breeze" % "1.0",
   "com.github.fommil.netlib" % "all" % "1.1.2", // impl for breeze
   "de.ruedigermoeller" % "fst" % "2.57"

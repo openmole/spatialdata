@@ -6,7 +6,8 @@ import scala.util.Random
 
 
 /**
-  * TODO include more realistic kernels for cities - see Chen, Y. (2010). A new model of urban population density indicating latent fractal structure. International Journal of Urban Sustainable Development, 1(1-2), 89-110.
+  * Future work
+  * include more realistic kernels for cities - see Chen, Y. (2010). A new model of urban population density indicating latent fractal structure. International Journal of Urban Sustainable Development, 1(1-2), 89-110.
   */
 object KernelMixture {
 

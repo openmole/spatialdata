@@ -15,12 +15,18 @@ import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters._
 
 /**
-  * Libraries to test:
+  *
+  * Graph algorithms
+  *
+  * Libraries to test/alternatives:
   *   - JGraphT seems very well maintained https://github.com/jgrapht/jgrapht/
   *   - Guava https://github.com/google/guava/wiki/GraphsExplained
   *   - Apache common graph seems dead http://commons.apache.org/sandbox/commons-graph/source-repository.html
+  *   - Gephi //"org.gephi" % "gephi-toolkit" % "0.9.2" // full gephi lib is 68Mo ! totally a bad idea to use it
+  *   - scala-graph   //"org.openmole.library" %% "graph-core" % "1.12.5.1", // graph-core not needed anymore
   *
-  *   TODO add community detection ? NetLogo NW extension: own implementation, uses jgrapht for generators, jung for some component algos
+  * Future work:
+  *   - add community detection ? NetLogo NW extension: own implementation, uses jgrapht for generators, jung for some component algos
   *
   */
 object GraphAlgorithms {
@@ -34,7 +40,6 @@ object GraphAlgorithms {
   case class DijkstraJGraphT() extends ShortestPathMethod
   case class FloydWarshallJGraphT() extends ShortestPathMethod
   case class JohnsonJGraphT() extends ShortestPathMethod
-  //case class ScalaGraph() extends ShortestPathMethod
   case class FloydWarshall() extends ShortestPathMethod
 
 
@@ -178,9 +183,9 @@ object GraphAlgorithms {
       *
       * See https://jgrapht.org/javadoc/org/jgrapht/alg/shortestpath/JohnsonShortestPaths.html for sparse graphs in O(n2 logN)
       *
-      * - slow in O(N^3) => DO NOT USE FOR LARGE NETWORKS
+      * - slow in O(N3) => DO NOT USE FOR LARGE NETWORKS
       *
-      * @param network
+      * @param network network
       * @return
       */
     def allPairsShortestPath(network: Network, linkWeight: Link => Double = _.weight): ShortestPaths = {

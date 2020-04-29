@@ -26,10 +26,10 @@ object OSMGridGenerator {
 
   /**
     * Generate a grid by rasterizing the geometry
-    * @param lon
-    * @param lat
-    * @param windowSize
-    * @param worldWidth
+    * @param lon lon
+    * @param lat lat
+    * @param windowSize window size in meters
+    * @param worldWidth generated world width
     * @return
     */
   def OSMBuildingsGrid(lon: Double, lat: Double,windowSize: Double, worldWidth: Int,mode: OSMAPIMode): RasterLayerData[Double] = {

@@ -44,7 +44,7 @@ case class Innovation(
     * run for model calibration
     * @return
     */
-  override def run: MacroResult = Innovation.run(this)._1
+  override def run: MacroResult = Innovation.run(this).macroResult
 
 
 
@@ -61,6 +61,64 @@ case class Innovation(
 object Innovation {
 
   implicit val doubleOrdering: Ordering[Double] = Ordering.Double.TotalOrdering
+
+  sealed trait InnovationUtilityDistribution
+  case class InnovationUtilityNormalDistribution() extends InnovationUtilityDistribution
+  case class InnovationUtilityLogNormalDistribution() extends InnovationUtilityDistribution
+
+  /**
+    * Specific result, includes indicators
+    * @param macroResult populations
+    * @param innovationUtilities utilities
+    * @param innovationShares shares
+    */
+  case class InnovationResult(
+                             macroResult: MacroResult,
+                             innovationUtilities: Seq[Double],
+                             innovationShares: Seq[Matrix]
+                             ) {
+
+    /**
+      * Utility averaged over cities, innovations and time, weighted by population and innovation share
+      *
+      * 1 / T \sum_t {\sum_i,c (P_i(t) /P_tot(t)) * delta_{i,c,t} * u_c}
+      *
+      * @return
+      */
+    def averageUtility: Double = {
+      val normPop = macroResult.simulatedPopulation%*%DenseMatrix.diagonal(macroResult.simulatedPopulation.colSum.map(1/_))
+      innovationShares.zip(innovationUtilities).map{case (m,u)=> (normPop*m*(u/m.ncols)).sum}.sum
+    }
+
+    /**
+      *
+      * Diversity:
+      *  - within cities? -> Herfindhal for each city
+      *  - across cities? pb - given one innov does not sum to 1
+      *  - across cities and innovations P_{i,c} = delta_{i,c} * P_i/P_tot is proba to find this innov in a random city
+      *   H = 1 -  \sum_{i,c}{(delta_{i,c}* P_i/P_tot ) 2}
+      *  - accross innov on total shares P_c = \sum_i P_i/P_tot delta_{i,c}
+      *   H' = 1 - \sum_c P_c2
+      *   (different from H)
+      *
+      *   Use H: try to be diverse both within and across cities
+      *
+      * @return
+      */
+    def averageDiversity: Double = {
+      val normPop = macroResult.simulatedPopulation%*%DenseMatrix.diagonal(macroResult.simulatedPopulation.colSum.map(1/_))
+      innovationShares.map(m => (normPop*m).map(x => x*x).colSum).reduceLeft(org.openmole.spatialdata.utils.math.+).map(1 - _).sum / normPop.ncols
+    }
+
+    /**
+      * Number of innovation per city and unit of time
+      * @return
+      */
+    def averageInnovation: Double = {
+      innovationUtilities.length.toDouble/(macroResult.simulatedPopulation.nrows.toDouble*macroResult.simulatedPopulation.ncols.toDouble)
+    }
+
+  }
 
   /**
     * Construct original model from setup files
@@ -153,7 +211,10 @@ object Innovation {
     val dates: Array[Double] = (0 to finalTime).toArray.map{_.toDouble}
     val distrib = utilityDistribution match {
       case "normal" => InnovationUtilityNormalDistribution()
-      case "log-normal" => InnovationUtilityLogNormalDistribution()
+      case "log-normal" =>
+        assert(utilityStd>math.exp(-0.5),"For a log-normal distribution with mu=0, std must be > to 0.6")
+        InnovationUtilityLogNormalDistribution()
+
     }
 
     Innovation(populationMatrix,dmat,dates,rng,growthRate,innovationWeight,gravityDecay,innovationDecay,
@@ -162,11 +223,6 @@ object Innovation {
     )
 
   }
-
-  sealed trait InnovationUtilityDistribution
-  case class InnovationUtilityNormalDistribution() extends InnovationUtilityDistribution
-  case class InnovationUtilityLogNormalDistribution() extends InnovationUtilityDistribution
-
 
 
 
@@ -247,16 +303,20 @@ object Innovation {
 
     val pmax = population.max
     // max one innovation per city
-    val innovativeCities: Seq[Int] = population.map(p => mutationRate*math.pow(p/pmax,newInnovationHierarchy)).
-      zip(Seq.fill(population.length)(rng.nextDouble())).zipWithIndex.map{ case ((p,r),i) => if(p<r) Some(i) else None}.filter(_.isDefined).map(_.get)
-    utils.log("Innovative cities: "+innovativeCities)
+    val (innovprobas,draws) = (population.map(p => mutationRate*math.pow(p/pmax,newInnovationHierarchy)),Seq.fill(population.length)(rng.nextDouble()))
+    //utils.log("Innovation probas = "+innovprobas+" ; draws = "+draws)
+    val innovativeCities: Seq[Int] = innovprobas.zip(draws).zipWithIndex.map{ case ((p,r),i) => if(r<p) Some(i) else None}.filter(_.isDefined).map(_.get)
+
+    if (innovativeCities.nonEmpty) utils.log("Innovative cities: "+innovativeCities)
 
     if (innovativeCities.isEmpty) (false, Seq.empty[Double], Seq.empty[Seq[Double]])
     else {
-      val newUtilities = innovativeCities.map(_ => drawUtility)
+      val newUtilities = innovativeCities.map(_ => math.max(0.1,drawUtility)) // min utility to avoid negative ones in case of large log-normal std
+      utils.log("New utilities = "+newUtilities)
       // option: rescale or remove fixed proportion
-      val newShares = innovationShares.map(_.zipWithIndex.map{case (s,i) => if(innovativeCities.contains(i)) s / (1 - earlyAdoptersRate) else s})++
+      val newShares = innovationShares.map(_.zipWithIndex.map{case (s,i) => if(innovativeCities.contains(i)) s * (1 - earlyAdoptersRate) else s})++
         innovativeCities.map(i => Seq.tabulate(population.length)(j => if (j==i) earlyAdoptersRate else 0.0))
+      //utils.log("New shares = "+newShares)
       (true, newUtilities, newShares)
     }
   }
@@ -282,7 +342,7 @@ object Innovation {
     * @param model model
     * @return (MacroResult for population, seq of innovation utilities, seq of innovation proportions)
     */
-  def run(model: Innovation): (MacroResult, Seq[Double], Seq[Matrix])  = {
+  def run(model: Innovation): InnovationResult  = {
 
     utils.log("Running "+model.toString)
 
@@ -311,6 +371,8 @@ object Innovation {
 
     for (t <- 1 until p) {
 
+      utils.log(s"\n=================\nStep $t\n=================\n")
+
       val delta_t = dates(t) - dates(t - 1)
 
       val totalpop = currentPopulations.sum
@@ -319,10 +381,11 @@ object Innovation {
         * 1) diffuse innovations
         */
       val tmplevel: Array[Array[Double]] = innovationProportions.zip(innovationUtilities).map{
-        case (m,u)=>
+        case (m,utility)=>
           (Matrix(Array(
           m.getCol(t-1).flatValues.zip(currentPopulations).map{
-            case(w,d)=> math.pow(w*d,u)}))(Matrix.defaultImplementation)%*%innovationDistanceWeights).flatValues
+            case(previousshare,citypop)=> math.pow(previousshare*citypop/totalpop,1/utility)}))(Matrix.defaultImplementation)%*%
+            innovationDistanceWeights).flatValues
       }.toArray
       val cumtmp: Array[Double] = tmplevel.foldLeft(Array.fill(n)(0.0)){case (a1,a2)=>a1.zip(a2).map{case(d1,d2)=>d1+d2}}
       val deltaci: Array[Array[Double]] = tmplevel.map{_.zip(cumtmp).map{case (d1,d2)=>d1 / d2}}
@@ -334,7 +397,7 @@ object Innovation {
       val macroAdoptionLevels: Array[Double] = innovationProportions.map{
         _.getCol(t).flatValues.zip(currentPopulations).map{case(w,d)=>w*d}.sum
       }.map{_ / totalpop}.toArray
-
+      utils.log("Macro levels = "+macroAdoptionLevels.toSeq)
 
       /*
         * 2) Update populations
@@ -387,10 +450,11 @@ object Innovation {
       _.getCol(p-1).flatValues.zip(currentPopulations).map{case(w,d)=>w*d}.sum
     }.map{_ / totalpop}.toArray
 
+    utils.log("\n=================\n")
     utils.log("Innovations introduced : "+innovationProportions.length)
     utils.log("Macro adoption levels : "+macroAdoptionLevels.mkString(","))
 
-    (MacroResult(model.populationMatrix,res),innovationUtilities.toSeq,innovationProportions.toSeq)
+    InnovationResult(MacroResult(model.populationMatrix,res),innovationUtilities.toSeq,innovationProportions.toSeq)
   }
 
 

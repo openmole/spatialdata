@@ -85,7 +85,6 @@ sealed trait Matrix {
   def ncols: Int
 
   //basic ring operations (R style for the notation)
-  //def %+%(m: Matrix): Matrix // does not make any sense!
   def %*%(m: Matrix): Matrix
 
   // scalar operations

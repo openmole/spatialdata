@@ -11,8 +11,11 @@ object Convolution {
 
   /**
     * Generic convol for double Arrays (in O(nlog(n)), using FFT)
-    *  FIXME implement general x*y and call this kernel convol
-    * @param x
+    *
+    *  Future work:
+    *  implement general x*y and call this kernel convol (specific to a centered kernel)
+    *
+    * @param x vector
     * @param k centered kernel
     * @return y = x*k with y_i = \sum_{j=1}{|K|}{x_{i-j-|K|/2}*k_j}
     */
@@ -34,7 +37,7 @@ object Convolution {
   /**
     * Direct computation of convolution O(n2)
     *
-    * @param x
+    * @param x vector
     * @param k centered kernel
     * @return
     */

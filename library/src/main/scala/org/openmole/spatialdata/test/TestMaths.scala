@@ -1,11 +1,19 @@
 package org.openmole.spatialdata.test
 
-import org.openmole.spatialdata.utils.math.Convolution
+import org.openmole.spatialdata.utils.math.{Convolution, Stochastic}
 import org.openmole.spatialdata.utils.withTimer
 
 import scala.util.Random
 
 object TestMaths {
+
+
+  def testStochastic(): Unit = {
+    implicit val rng = new Random(42)
+    val std = 1.5
+    val lndraw = Stochastic.LogNormalDistribution(0.0,math.sqrt(math.log(std)+0.5)).draw
+    assert(!lndraw.isNaN,s"NaN drawn from log-normal with mu = 0 and std $std")
+  }
 
 
   def testConvolution2D(): Unit = {

@@ -3,49 +3,25 @@ package org.openmole.spatialdata.utils.http
 import org.apache.http.HttpRequest
 import org.apache.http.client.HttpClient
 import org.apache.http.client.config.RequestConfig
-import org.apache.http.conn.ClientConnectionManager
-import org.apache.http.conn.scheme.{PlainSocketFactory, Scheme, SchemeRegistry}
 import org.apache.http.impl.client.HttpClientBuilder
-import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager
-import org.apache.http.params.BasicHttpParams
 
 
 
-class HttpService {
-  private var minimumMillisecondsDelayBetweenRequests: Long  = 0
-  private var previousRequestTimestamp: Long = 0
-  private var cm: ClientConnectionManager = _
-  private var httpClient:HttpClient = _
-  private val defaultUserAgent = "Unnamed instance of " + getClass.getName + ", https://github.com/karlwettin/osm-common/"
-  private var userAgent = defaultUserAgent
-  private var withTorPool: Boolean = _
+case class HttpService(
+                        userAgent: String,
+                        httpClient: HttpClient,
+                        minimumMillisecondsDelayBetweenRequests: Long,
+                        timeout: Int
+                      ) {
+  private var previousRequestTimestamp: Long = 0L
 
-  @throws[Exception]
-  def open(timeout: Int=1000,torPool: Boolean=true) = {
-    val schemeRegistry = new SchemeRegistry
-    schemeRegistry.register(new Scheme("http", PlainSocketFactory.getSocketFactory, 80))
-    cm = new ThreadSafeClientConnManager(new BasicHttpParams, schemeRegistry)
-    //httpClient = new DefaultHttpClient(cm, new BasicHttpParams)
-    var requestBuilder = RequestConfig.custom()
-    requestBuilder.setConnectTimeout(timeout)
-    requestBuilder.setConnectionRequestTimeout(timeout)
-    httpClient = HttpClientBuilder.create.setDefaultRequestConfig(requestBuilder.build()).build
-    withTorPool=torPool
-    if(withTorPool){TorPoolManager.setupTorPoolConnexion(true)}
-  }
-
-  def setUserAgent(httpRequest: HttpRequest) = {
-    if (defaultUserAgent == userAgent) throw new NullPointerException("HTTP header User-Agent not set! See HttpService#setUserAgent")
+  def setUserAgent(httpRequest: HttpRequest): Unit = {
     httpRequest.setHeader("User-Agent", userAgent)
   }
 
 
   @throws[Exception]
-  def close() = {
-  }
-
-  @throws[Exception]
-  def leniency() = {
+  def leniency(): Unit = {
     var sleep = previousRequestTimestamp + minimumMillisecondsDelayBetweenRequests - System.currentTimeMillis
     while (sleep > 0) {
       Thread.sleep(sleep)
@@ -54,21 +30,16 @@ class HttpService {
     previousRequestTimestamp = System.currentTimeMillis
   }
 
-  def getUserAgent = userAgent
+}
 
-  def setUserAgent(userAgent: String) = {
-    this.userAgent = userAgent
-  }
+object HttpService {
+  val defaultUserAgent: String = ""
 
-  def getMinimumMillisecondsDelayBetweenRequests = minimumMillisecondsDelayBetweenRequests
-
-  def setMinimumMillisecondsDelayBetweenRequests(minimumMillisecondsDelayBetweenRequests: Long) = {
-    this.minimumMillisecondsDelayBetweenRequests = minimumMillisecondsDelayBetweenRequests
-  }
-
-  def getHttpClient = httpClient
-
-  def setHttpClient(httpClient: Nothing) = {
-    this.httpClient = httpClient
+  def apply(userAgent: String = defaultUserAgent, withTorPool: Boolean = false, minimumMillisecondsDelayBetweenRequests: Long = 0L, timeout: Int = 1000): HttpService = {
+    val requestBuilder = RequestConfig.custom()
+    requestBuilder.setConnectTimeout(timeout)
+    requestBuilder.setConnectionRequestTimeout(timeout)
+    if(withTorPool){TorPoolManager.setupTorPoolConnexion(true)}
+    HttpService(userAgent = userAgent, httpClient = HttpClientBuilder.create.setDefaultRequestConfig(requestBuilder.build()).build, minimumMillisecondsDelayBetweenRequests, timeout)
   }
 }

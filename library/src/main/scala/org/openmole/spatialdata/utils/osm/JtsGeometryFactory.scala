@@ -40,9 +40,9 @@ class JtsGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
   /**
     * Asserts that relation members are all outer ways that form a single polygon.
     *
-    *  FIXME function never used
+    *  ! function never used
     *
-    * @param relation
+    * @param relation relation
     * @return
     */
   def createOuterWaysPolygon(relation: Relation) = {
@@ -70,7 +70,7 @@ class JtsGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
       }) {
         val line = lineIterator.next
         var stop = false
-        val loop = new Breaks;
+        val loop = new Breaks
         loop.breakable {
           for (testLine <- sorted.toSeq) {
             if (testLine(testLine.size - 1) == line(0)) {
@@ -151,7 +151,7 @@ class JtsGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
             coordinates(i) = new Coordinate(node.getX, node.getY)
 
             {
-              i += 1;
+              i += 1
               i - 1
             }
           }

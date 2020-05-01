@@ -28,7 +28,7 @@ object ApiConnection {
 
 class ApiConnection(userServerURL: String = ApiConnection.defaultServerURL,val timeout: Int = 1000) {
 
-  def removeTrailing(s: (String,Boolean)): (String,Boolean) = if(s._1.endsWith("/")) removeTrailing((s._1.substring(0, s._1.length - 1),false)) else (s+"/",true)
+  def removeTrailing(s: (String,Boolean)): (String,Boolean) = if(s._1.endsWith("/")) removeTrailing((s._1.substring(0, s._1.length - 1),false)) else (s._1+"/",true)
 
   val serverURL: String = Iterator.iterate((userServerURL,false))(removeTrailing).takeWhile(!_._2).toSeq.last._1
 

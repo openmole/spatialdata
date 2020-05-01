@@ -1,18 +1,16 @@
 package org.openmole.spatialdata.utils.osm.api
 
-import java.io.StringReader
 import java.sql.Connection
 import java.util.Locale
 
 import org.locationtech.jts.geom._
-import org.openmole.spatialdata
+
 import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.utils.database.{MongoConnection, PostgisConnection}
 import org.openmole.spatialdata.utils.gis.GISUtils.WGS84toPseudoMercatorFilter
 import org.openmole.spatialdata.utils.gis.PoligonizerUtils
 import org.openmole.spatialdata.utils.osm.JtsGeometryFactory
 import org.openmole.spatialdata.utils.osm._
-import org.openmole.spatialdata.utils.osm.xml.InstantiatedOsmXmlParser
 import org.openmole.spatialdata.vector.Points
 
 import scala.util.Try
@@ -28,17 +26,18 @@ object APIExtractor {
 
   /**
     * Methods to extract buildings
+    *
+    *  ! some OSM polygons seem to be bad formed (failure "Way expected to be a polygon" for large sampling) => wrap in Try
     */
   object Buildings {
 
-    def asPolygonSeq(e: Root.Enumerator[Way]) = {
+    def asPolygonSeq(e: Root.Enumerator[Way]): Seq[Polygon] = {
       var result = scala.collection.mutable.Buffer[Polygon]()
       val fact = new JtsGeometryFactory()
       var way: Way = e.next
       while (way != null) {
         val building = way.getTag("building")
         if (building != null /* && building.equals("yes")*/ ) {
-          // FIXME some OSM polygons seem to be bad formed (failure "Way expected to be a polygon" for large sampling) => wrap in Try
           val potentialPolygon = Try(fact.createPolygon(way))
           if (potentialPolygon.isSuccess) {
             result += potentialPolygon.get
@@ -51,48 +50,51 @@ object APIExtractor {
 
 
     /**
+      * Get buildings from OSM
       *
-      * @param south
-      * @param west
-      * @param north
-      * @param east
+      * !simplify is not used ? + which precision if simplify? (arbitrary)
+      *
+      * @param south south coord
+      * @param west west coord
+      * @param north north coord
+      * @param east east coord
       * @param mode osm,overpass, postgresql
       * @return
       */
     def getBuildings(south: Double, west: Double, north: Double, east: Double, mode: OSMAPIMode = OSMOverpass): Seq[Polygon] = {
       Locale.setDefault(Locale.ENGLISH)
       mode match {
-        case OSMOverpass => {
+        case OSMOverpass =>
           val overpass = new Overpass
           val root = overpass.get(south, west, north, east, hasKeyValue=("building",Seq("yes")))
           utils.log("retrieved via overpass " + east + " n=" + north + " s=" + south + "w=" + west)
           asPolygonSeq(root.enumerateWays)
-        }
-        case OSMDirect => {
+
+        case OSMDirect =>
           val api = new ApiConnection()
           val res = api.get(south, west, north, east)
           utils.log("retrieved via standard api " + east + " n=" + north + " s=" + south + "w=" + west)
           asPolygonSeq(res.enumerateWays)
-        }
-        case Postgresql(port) => {
+
+        case Postgresql(port) =>
           implicit val connection: Connection = PostgisConnection.initPostgis(database ="buildings",port = port)
           val polygons = PostgisConnection.bboxRequest(west,south,east,north,"ways")
           utils.log("retrieved via postgresql " + east + " n=" + north + " s=" + south + "w=" + west+" : "+polygons.size+" buildings")
           PostgisConnection.closeConnection
           polygons
-        }
-        case Mongo(port) => {
+
+        case Mongo(port) =>
           MongoConnection.initMongo(database = "buildings",port=port)
           val polygons = MongoConnection.bboxRequest(west,south,east,north,"buildings")
           utils.log("retrieved via mongo " + east + " n=" + north + " s=" + south + "w=" + west+" : "+polygons.size+" buildings")
           MongoConnection.closeMongo()
           polygons
-        }
+
       }
       /*
-      // FIXME simplify is not used ?
+
       def simplify(polygon: Polygon) = {
-        GeometryPrecisionReducer.reduce(polygon, new PrecisionModel(10000)) match {//FIXME: This is arbitrary
+        GeometryPrecisionReducer.reduce(polygon, new PrecisionModel(10000)) match {
           case p: Polygon => Seq(p)
           case mp: MultiPolygon => for (i <- 0 until mp.getNumGeometries) yield mp.getGeometryN(i).asInstanceOf[Polygon]
           case _ => Seq()
@@ -142,8 +144,8 @@ object APIExtractor {
 
     /**
       * Convert API result to a sequence of LineString
-      * @param e
-      * @param tags
+      * @param e OSM enumerator
+      * @param tags tags to keep
       * @return
       */
     def asLineStringSeq(e: Root.Enumerator[Way], tags: Map[String,Seq[String]]): Seq[LineString] = {
@@ -172,12 +174,16 @@ object APIExtractor {
 
     /**
       * Get highways from API
-      * @param south
-      * @param west
-      * @param north
-      * @param east
-      * @param tags
-      * @return FIXME should return Lines with specified attributes
+      *
+      * ! should return Lines with specified attributes
+      * ! the has-kv with | does not work for highway
+      *
+      * @param south south coord
+      * @param west west coord
+      * @param north north coord
+      * @param east east coord
+      * @param tags tags
+      * @return FIXME
       *
       */
     def getHighways(south: Double, west: Double, north: Double, east: Double,
@@ -185,24 +191,23 @@ object APIExtractor {
                     mode: OSMAPIMode = OSMOverpass): Seq[LineString] = {
       Locale.setDefault(Locale.ENGLISH)
       mode match {
-        case OSMOverpass => {
+        case OSMOverpass =>
           val overpass = new Overpass
           // if only one tag requested, use as a filter in the overpass request
           val root = overpass.get(south, west, north, east,
-            // FIXME the has-kv with | does not work for highway
             hasKeyValue=("",Seq("")) //if (tags.size==1) tags.toSeq(0) else ("",Seq(""))
           )
           val res = asLineStringSeq(root.enumerateWays,tags)
           utils.log("Highways from overpass " +res)
           res
-        }
-        case OSMDirect => {
+
+        case OSMDirect =>
           val api = new ApiConnection()
           val root = api.get(south, west, north, east)
           val res = asLineStringSeq(root.enumerateWays,tags)
           utils.log("Highways from OSM (API): "+res)
           res
-        }
+
         case _ => Seq.empty
       }
     }
@@ -214,8 +219,8 @@ object APIExtractor {
 
     /**
       * OSM Node enumerator to Points
-      * @param root
-      * @param tags
+      * @param root enumerator
+      * @param tags tags
       * @return
       */
     def asPoints(root: Root.Enumerator[Node], tags: Map[String,Seq[String]]): org.openmole.spatialdata.vector.Points = {
@@ -245,12 +250,15 @@ object APIExtractor {
 
     /**
       * Get points from API
-      * @param south
-      * @param west
-      * @param north
-      * @param east
-      * @param tags
-      * @param mode
+      *
+      * ! the has-kv with | does not work for highway
+      *
+      * @param south south coord
+      * @param west west coord
+      * @param north north coord
+      * @param east east coord
+      * @param tags tags
+      * @param mode mode
       * @return
       */
     def getPoints(south: Double, west: Double, north: Double, east: Double,
@@ -259,24 +267,23 @@ object APIExtractor {
                  ): Points = {
       Locale.setDefault(Locale.ENGLISH)
       mode match {
-        case OSMOverpass => {
+        case OSMOverpass =>
           val overpass = new Overpass
           // if only one tag requested, use as a filter in the overpass request
           val root = overpass.get(south, west, north, east,
-            // FIXME the has-kv with | does not work for highway
             hasKeyValue=("",Seq("")) //if (tags.size==1) tags.toSeq(0) else ("",Seq(""))
           )
           val res = asPoints(root.enumerateNodes,tags)
           utils.log("Nodes from overpass " +res)
           res
-        }
-        case OSMDirect => {
+
+        case OSMDirect =>
           val api = new ApiConnection()
           val root = api.get(south, west, north, east)
           val res = asPoints(root.enumerateNodes,tags)
           utils.log("Nodes from OSM (API): "+res)
           res
-        }
+
         case _ => org.openmole.spatialdata.vector.Points.empty
       }
     }

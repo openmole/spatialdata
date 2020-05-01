@@ -39,7 +39,7 @@ object TestReactionDiffusion {
 
     val res = params.map {case (alpha,beta,tsteps,s) =>
       val calib = ReactionDiffusionCalibration(initialConfig,finalConfig,alpha,beta,1.0,tsteps,targetPop,targetMoran,targetAvgDist,targetEntropy,targetSlope,s)
-      val (r,t) = withTimer[Unit,Double]{_ => calib.runModel._1}()
+      val (r,t) = withTimer[Unit,Double]{_ => calib.runModel._1}(())
       println(t)
       (calib,r,t)
     }
@@ -54,7 +54,7 @@ object TestReactionDiffusion {
 
   def testModel(): Unit = {
 
-    implicit val rng = new Random
+    implicit val rng: Random = new Random
 
     val targetArea = 100
     val initYear = 1975
@@ -96,7 +96,7 @@ object TestReactionDiffusion {
 
   def benchmarkImplementation(): Unit ={
 
-    implicit val rng = new Random
+    implicit val rng: Random = new Random
 
     // 189215.2320944653 ; alpha = 8.844474802962576 ; beta = 0.09763924370738188 ; tsteps = 93.04388345412039 ; growthRate = 2033.6127972105405
 
@@ -109,10 +109,10 @@ object TestReactionDiffusion {
       println(k)
       val (morph1, t) = withTimer[Unit, GridMorphology] { _ =>
         GridMorphology(generatoriter.generateGrid,Seq(Moran(),AverageDistance(),Entropy(),Slope()))
-      }()
+      }(())
       val (morph2, t2) = withTimer[Unit, GridMorphology] { _ =>
         GridMorphology(generator.generateGrid,Seq(Moran(),AverageDistance(),Entropy(),Slope()))
-      }()
+      }(())
       (t,t2,morph1,morph2)
     }
 

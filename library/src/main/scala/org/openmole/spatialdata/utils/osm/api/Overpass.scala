@@ -9,21 +9,21 @@ import org.apache.http.client.entity.UrlEncodedFormEntity
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.message.BasicNameValuePair
 import org.openmole.spatialdata.utils.http.HttpService
-import APIExtractor.Buildings.asPolygonSeq
 import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.utils.osm._
 import org.openmole.spatialdata.utils.osm.xml.InstantiatedOsmXmlParser
 
 
-class Overpass extends HttpService {
-  private var serverURL = "http://www.overpass-api.de/api/interpreter"
+case class Overpass(
+                     serverURL: String = Overpass.defaultServerURL,
+                     httpService: HttpService = HttpService("OSM Overpass request")
+                   )  {
 
 
   def get(south: Double, west: Double, north: Double, east: Double,
           hasKeyValue: (String,Seq[String])=("",Seq(""))): PojoRoot = {
     utils.log(s"Getting OSM data from Overpass API for bbox $east $north $south $west")
-    setUserAgent("Spatial Data extraction")
-    open()
+
     val root = new PojoRoot
     val parser = InstantiatedOsmXmlParser.newInstance
     parser.setRoot(root)
@@ -47,27 +47,27 @@ class Overpass extends HttpService {
     * 2013-07-28 Usage policy accept 10 000 requests or 5GB data per day using up to two threads.
     * See http://wiki.openstreetmap.org/wiki/Overpass_API#Introduction
     *
-    * @param overpassQuery
-    * @param queryDescription
+    * @param overpassQuery query
+    * @param queryDescription query description
     * @return
     */
-  @throws[OverpassException]
-  def execute(overpassQuery: String, queryDescription: String = null) = try {
+  @throws[Overpass.OverpassException]
+  def execute(overpassQuery: String, queryDescription: String = null): String = try {
     val post = new HttpPost(serverURL)
-    setUserAgent(post)
+    post.setHeader("User-Agent", httpService.userAgent)
     val nameValuePairs = new util.ArrayList[NameValuePair](1)
     nameValuePairs.add(new BasicNameValuePair("data", overpassQuery))
     post.setEntity(new UrlEncodedFormEntity(nameValuePairs))
-    leniency
+    httpService.leniency()
 //    println("Executing overpass query: " + queryDescription + "\n" + overpassQuery)
     //val started = System.currentTimeMillis
 
-    var content = getHttpClient.execute(post).getEntity.getContent
+    val content = httpService.httpClient.execute(post).getEntity.getContent
     /*
     val res = Try {
       var content = Try{getHttpClient.execute(post).getEntity.getContent}
       while(content.isFailure){
-        // FIXME add a max number of tries ?
+        //  add a max number of tries ?
         TorPoolManager.switchPort(true)
         content = Try {
           getHttpClient.execute(post).getEntity.getContent
@@ -93,16 +93,19 @@ class Overpass extends HttpService {
     buffer.toString
   } catch {
     case e: Exception =>
-      throw new OverpassException(e.getMessage, e)
+      throw Overpass.OverpassException(e.getMessage, e)
   }
 
-  def getServerURL = serverURL
 
-  def setServerURL(serverURL: String) = {
-    this.serverURL = serverURL
-  }
+}
+
+object Overpass {
+
+  val defaultServerURL: String = "http://www.overpass-api.de/api/interpreter"
+
+  case class OverpassException(message: String, cause: Throwable) extends Exception(message, cause) {}
+
 }
 
 
-class OverpassException(message: String, cause: Throwable) extends Exception(message, cause) {}
 

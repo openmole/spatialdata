@@ -3,11 +3,11 @@ package org.openmole.spatialdata.test
 import org.openmole.spatialdata.model.spatialinteraction.{SinglyConstrainedSpIntModel, SpatialInteractionModel}
 import org.openmole.spatialdata.model.spatialinteraction.synthetic.PolycentricGridGravityFlowsGenerator
 import org.openmole.spatialdata.utils
+import org.openmole.spatialdata.utils.math.SparseMatrix.SparseMatrixImplementation
 import org.openmole.spatialdata.vector.SpatialField
-//import org.openmole.spatialdata.utils._
 import org.openmole.spatialdata.utils.io.CSV
 import org.openmole.spatialdata.utils.math.{DenseMatrix, Matrix, SparseMatrix}
-import org.openmole.spatialdata.utils.visualization
+
 
 import scala.util.Random
 
@@ -18,8 +18,8 @@ object TestSpatialInteraction {
     */
   def testFitSinglyConstrainedRandom: Unit = {
 
-    implicit val rng = new Random
-    implicit val spMatImpl = SparseMatrix.SparseBreeze()
+    implicit val rng: Random = new Random
+    implicit val spMatImpl: SparseMatrixImplementation = SparseMatrix.SparseBreeze()
 
     val (n,p) = (8436,8436)
 
@@ -32,14 +32,14 @@ object TestSpatialInteraction {
     val destinationfield: SpatialField[Double]=destination.zipWithIndex.map{case (s,i) => ((i.toDouble,0.0),Array(s))}.toMap
     utils.log(s"total flows = ${flows.sum}")
     val model = SinglyConstrainedSpIntModel(flows,dmat,originfield,destinationfield)
-    val fitted = model.fitted
+    val _ = model.fitted
   }
 
 
   /**
     * quant data
     */
-  def testFlowData: Unit = {
+  def testFlowData(): Unit = {
     implicit val spMatImpl: SparseMatrix.SparseMatrixImplementation = SparseMatrix.SparseBreeze()
     implicit val dImpl: DenseMatrix.DenseMatrixImplementation = DenseMatrix.DenseBreeze()
     val flowspath = System.getenv("CS_HOME")+"/UrbanDynamics/Data/QUANT/converted/TObs_1.csv"
@@ -57,7 +57,7 @@ object TestSpatialInteraction {
   /**
     *
     */
-  def testFitSinglyConstrainedSyntheticFlows: Unit = {
+  def testFitSinglyConstrainedSyntheticFlows(): Unit = {
     implicit val rng: Random = new Random
     implicit val mImpl: Matrix.MatrixImplementation = Matrix.Sparse(SparseMatrix.SparseBreeze())
     implicit val spImpl: SparseMatrix.SparseMatrixImplementation = SparseMatrix.SparseBreeze()
@@ -90,7 +90,7 @@ object TestSpatialInteraction {
   /**
     * Dense faster than sparse for flow generation?
     */
-  def testSyntheticFlows: Unit = {
+  def testSyntheticFlows(): Unit = {
     implicit val rng: Random = new Random
     implicit val mImpl: Matrix.MatrixImplementation = Matrix.Dense(DenseMatrix.DenseBreeze())
 

@@ -6,19 +6,18 @@ organization := "org.openmole.library"
 
 resolvers ++= Seq(
   "apache" at "https://repo.maven.apache.org/maven2",
-  ("icm" at "http://maven.icm.edu.pl/artifactory/repo").withAllowInsecureProtocol(true), // for geotools
+  "osgeo" at "https://repo.osgeo.org/repository/geotools-releases", // for geotools
   Resolver.sonatypeRepo("snapshots"),
   Resolver.sonatypeRepo("staging"),
   Resolver.mavenCentral
 )
 
-val geotoolsVersion = "22-RC"
+val geotoolsVersion = "23.0"
 
 libraryDependencies ++= Seq(
   "org.apache.commons" % "commons-math3" % "3.6.1",
   "com.github.pathikrit" %% "better-files" % "3.8.0",
   "org.locationtech.jts" % "jts" % "1.16.1" pomOnly(),
-  "org.geotools" % "geotools" % geotoolsVersion exclude("javax.media", "jai_core") exclude("com.vividsolutions", "jts-core"),
   "org.geotools" % "gt-shapefile" % geotoolsVersion exclude("javax.media", "jai_core") exclude("com.vividsolutions", "jts-core"),
   "com.github.tototoshi" %% "scala-csv" % "1.3.6",
   "org.postgresql" % "postgresql" % "42.2.5",

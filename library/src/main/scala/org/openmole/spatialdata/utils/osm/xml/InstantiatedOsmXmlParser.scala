@@ -102,18 +102,18 @@ abstract class InstantiatedOsmXmlParser {
   @throws[OsmXmlParserException]
   def parse(xml: Reader):InstantiatedOsmXmlParserDelta = parse(new ReaderInputStream(xml, "utf8"))
 
-  def processParsedNode(node: Node, state: State.Value) = {
+  def processParsedNode(node: Node, state: State.Value): Unit = {
   }
 
-  def processParsedWay(way: Way, state: State.Value) = {
+  def processParsedWay(way: Way, state: State.Value): Unit = {
   }
 
-  def processParsedRelation(relation: Relation, state: State.Value) = {
+  def processParsedRelation(relation: Relation, state: State.Value): Unit = {
   }
 
   def isAllowingMissingVersions = allowingMissingVersions
 
-  def setAllowingMissingVersions(allowingMissingVersions: Boolean) = {
+  def setAllowingMissingVersions(allowingMissingVersions: Boolean): Unit = {
     this.allowingMissingVersions = allowingMissingVersions
   }
 

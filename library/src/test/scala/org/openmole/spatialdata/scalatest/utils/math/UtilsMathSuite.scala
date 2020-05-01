@@ -4,5 +4,6 @@ import org.scalatest.Suites
 
 class UtilsMathSuite extends Suites(
   new StochasticSpec,
-  new ConvolutionSpec
+  new ConvolutionSpec,
+  new MatrixSpec
 )

@@ -1,6 +1,5 @@
 package org.openmole.spatialdata.test
 
-import org.openmole.spatialdata.grid
 import org.openmole.spatialdata.grid.measures.GridMorphology
 import org.openmole.spatialdata.grid.real.{OSMGridGenerator, OSMGridSampling}
 import org.openmole.spatialdata.utils.osm.PojoRoot
@@ -13,17 +12,15 @@ import scala.util.Random
 
 object TestOSM {
 
-  implicit val rng = new Random
+  implicit val rng: Random = new Random
 
 
 
-  def testOverpass: Unit = {
+  def testOverpass(): Unit = {
 
     import java.io.StringReader
 
     val overpass = new Overpass
-    overpass.setUserAgent("test suite of <https://github.com/karlwettin/osm-common/>");
-    overpass.open()
 
     val root = new PojoRoot
     val parser = InstantiatedOsmXmlParser.newInstance

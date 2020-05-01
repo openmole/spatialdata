@@ -25,20 +25,19 @@ package object utils {
 
   /**
     * tic toc a void function
-    * @param fun
+    * @param fun function
     */
   def withTimer(fun: Unit=> Unit): Unit= {
     val start = System.currentTimeMillis()
-    fun()
+    fun(())
     println("time : "+(System.currentTimeMillis()-start)+" ms")
   }
 
   /**
     *
-    * @param fun
-    * @param a
-    * @tparam A
-    * @tparam B
+    * @param fun function
+    * @tparam A origin type
+    * @tparam B destination type
     * @return
     */
   def withTimer[A,B](fun: A => B): A => (B,Double) = {
@@ -48,15 +47,15 @@ package object utils {
     (res,System.currentTimeMillis()-start)
   }
 
-  def withTimer[A](a: A): (A,Double) = withTimer[Unit,A](_ => a)()
+  def withTimer[A](a: A): (A,Double) = withTimer[Unit,A](_ => a)(())
 
   /**
     * tic toc a typed function
-    * @param fun
-    * @param a
-    * @param name
-    * @tparam A
-    * @tparam B
+    * @param fun function
+    * @param a argument
+    * @param name name of task
+    * @tparam A origin type
+    * @tparam B destination type
     * @return
     */
   def timerLog[A,B](fun: A => B,a: A, name: String): B = {

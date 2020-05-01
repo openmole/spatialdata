@@ -1,5 +1,7 @@
 package org.openmole.spatialdata.test
 
+import org.openmole.spatialdata.utils.math.Matrix.MatrixImplementation
+import org.openmole.spatialdata.utils.math.SparseMatrix.SparseMatrixImplementation
 import org.openmole.spatialdata.utils.math.{DenseMatrix, Matrix, SparseMatrix}
 
 import scala.util.Random
@@ -15,11 +17,12 @@ object TestMatrix {
     *  - sparse with density = 0.8: apache better sparse apache: 0.15 ; sparse breeze: 0.6
     */
   def testImplementations: Unit = {
-    implicit val rng = new Random
-    implicit val spMatBreeze = SparseMatrix.SparseBreeze()
-    implicit val spMatApache = SparseMatrix.SparseCommons()
+    implicit val rng: Random = new Random
+    implicit val spMatBreeze: SparseMatrixImplementation = SparseMatrix.SparseBreeze()
+    implicit val spMatApache: SparseMatrixImplementation = SparseMatrix.SparseCommons()
 
-    val (n,p) = (8000,8000)
+    //val (n,p) = (8000,8000)
+    val (n,p) = (30,30)
     val density = 0.8
     val bootstraps = 20
 

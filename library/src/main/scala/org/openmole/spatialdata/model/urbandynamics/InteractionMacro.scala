@@ -6,6 +6,7 @@ import org.openmole.spatialdata.utils.math.{DenseMatrix, Matrix}
 
 object InteractionMacro {
 
+  implicit val doubleOrdering: Ordering[Double] = Ordering.Double.TotalOrdering
 
   def deltaMacroStates(prev: MacroState,current: MacroState): Vector[(Double,Double,Double)] = {
     val prevIndics = prev.indicators
@@ -35,15 +36,17 @@ object InteractionMacro {
   /**
     * Compute the evolution of macroscopic populations
     *
+    *   ! no account of time step, by default 1 for synthetic application: generalize for possible calibration
+    *
     * @param prevpop previous populations
-    * @param genDistanceMatrix
+    * @param genDistanceMatrix generalized distance matrix
     * @param growthRates growth rate proper to each city
-    * @param interactionWeights
-    * @param interactionGammas
+    * @param interactionWeights weights of interactions
+    * @param interactionGammas gammas of interactions
     * @return
     */
   def interactionStep(prevpop: Vector[Double],genDistanceMatrix: Matrix,growthRates: Vector[Double],interactionWeights: Vector[Double],interactionGammas: Vector[Double]): Vector[Double] = {
-    val delta_t = 1 // synthetic model // TODO generalize for possible calibration
+    val delta_t = 1 // synthetic model
     val n = prevpop.size
     val totalpop = prevpop.toArray.sum
     val diagpops = DenseMatrix.diagonal(prevpop.toArray.zip(interactionGammas).map{ case (p,g) => math.pow(p / totalpop,g)})
@@ -80,9 +83,9 @@ object InteractionMacro {
   /**
     * Specific update for generalized distance given previous and new decays
     *  ( uses the fact that access is computed with an exponential)
-    * @param dmat
-    * @param prevDecays
-    * @param decays
+    * @param dmat distance matrix
+    * @param prevDecays previous decay
+    * @param decays new decay
     * @return
     */
   def updateDistanceMatrix(dmat: Matrix,prevDecays: Vector[Double],decays: Vector[Double]): Matrix =

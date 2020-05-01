@@ -36,9 +36,9 @@ object RandomNetworkGenerator {
     * @param nlinks number of links
     * @return
     */
-  def apply(points: Seq[(Double,Double)], nlinks: Int): RandomNetworkGenerator = RandomNetworkGenerator(0,nlinks,true,false,false,points)
+  def apply(points: Seq[(Double,Double)], nlinks: Int): RandomNetworkGenerator = RandomNetworkGenerator(0,nlinks,planarize = true,directed = false,withIndex = false,points)
 
-  def apply(nnodes: Int, nlinks: Int): RandomNetworkGenerator = RandomNetworkGenerator(nnodes,nlinks,true,false,false, Seq.empty)
+  def apply(nnodes: Int, nlinks: Int): RandomNetworkGenerator = RandomNetworkGenerator(nnodes,nlinks,planarize = true,directed = false,withIndex = false, Seq.empty)
 
   /**
     * basic random euclidian network (no planarisation)
@@ -56,10 +56,11 @@ object RandomNetworkGenerator {
   }
 
   /**
-    * add random links to an existing network
-    * @param network
-    * @param nlinks
-    * @param rng
+    * Add random links to an existing network
+    *
+    * @param network network
+    * @param nlinks number of links
+    * @param rng rng
     * @return
     */
   def addRandomLinks(network: Network,nlinks: Int,directed: Boolean)(implicit rng: Random): Network = {

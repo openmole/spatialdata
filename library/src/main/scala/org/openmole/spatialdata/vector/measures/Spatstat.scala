@@ -131,6 +131,12 @@ object Spatstat {
     ).getData.map(_.map(math.sqrt))
   }
 
+  /**
+    * Euclidian distance matrix between different sets of points
+    * @param pi points
+    * @param pj points
+    * @return
+    */
   def euclidianDistanceMatrix(pi: Array[Point], pj: Array[Point]): Array[Array[Double]] = {
     val (n,p) = (pi.length, pj.length)
     val xj = MatrixUtils.createRealMatrix(Array.fill(n)(pj.map(_._1)))

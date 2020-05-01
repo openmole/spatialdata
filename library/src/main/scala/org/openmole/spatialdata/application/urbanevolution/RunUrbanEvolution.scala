@@ -23,7 +23,7 @@ object RunUrbanEvolution extends App {
     newInnovationHierarchy = 0.5,
     earlyAdoptersRate = 0.2,
     utilityStd = 1.0,
-    utilityDistribution = "normal"//"log-normal"
+    utilityDistribution = "log-normal" // "normal"
   )
 
   val result = Innovation.run(model)

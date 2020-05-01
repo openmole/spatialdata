@@ -35,7 +35,7 @@ object TestMaths {
     // we can have |k|>|x|
     val x = Array.fill(100){rng.nextDouble()}
     //val x = Array.fill(10)(1.0)
-    val k = Array.fill(121){rng.nextDouble()}
+    val k = Array.fill(61){rng.nextDouble()}
     //val k = Array.fill(3)(1.0)
     val (cx,t1) = withTimer[Array[Double],Array[Double]]{Convolution.convolution(_,k)}(x)
     val (cdx,t2) = withTimer[Array[Double],Array[Double]]{Convolution.directConvol(_,k)}(x)

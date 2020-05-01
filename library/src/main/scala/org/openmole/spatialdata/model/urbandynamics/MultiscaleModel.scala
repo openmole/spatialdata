@@ -36,7 +36,7 @@ case class MultiscaleModel(
 
   /**
     * initial state
-    * @param rng
+    * @param rng rng
     * @return
     */
   def initialState(implicit rng: Random): MultiscaleState = {
@@ -52,14 +52,14 @@ case class MultiscaleModel(
 
     val consistentMacroState = MultiscaleModel.ensureConsistence(macrostate,mesoStates,"initialisation")
 
-    assert(mesoStates.map{_.populationGrid.flatten.sum>0}.filter(_==false).size==0,"existing null meso pop grids")
+    assert(mesoStates.forall{_.populationGrid.flatten.sum>0},"existing null meso pop grids")
 
     val initialCongestedFlows = mesoStates.map{s =>
       //assert(s.populationGrid.flatten.filter(_.isNaN).size==0,"NaN in pop grid : "+s)
       GridMorphology.congestedFlows(s.populationGrid.map{_.toArray}.toArray,mesoMacroCongestionCost)
     }
 
-    assert(initialCongestedFlows.filter(_.isNaN).size==0,"NaNs congested flows : "+initialCongestedFlows)
+    assert(!initialCongestedFlows.exists(_.isNaN),"NaNs congested flows : "+initialCongestedFlows)
 
     MultiscaleState(
       0,consistentMacroState.copy(congestedFlows = initialCongestedFlows),
@@ -70,8 +70,8 @@ case class MultiscaleModel(
 
   /**
     * one step of the model
-    * @param state
-    * @param rng
+    * @param state state
+    * @param rng rng
     * @return
     */
   def modelStep(state: MultiscaleState)(implicit rng: Random): MultiscaleState = {
@@ -96,17 +96,16 @@ case class MultiscaleModel(
 
   /**
     * run the model
-    * @param rng
+    * @param rng rng
     * @return
     */
   def modelRun(fullTimeSeries: Boolean)(implicit rng: Random): MultiscaleResult = {
     def run0(steps: Int,state: MultiscaleState, accumulator: Vector[MultiscaleState]): Vector[MultiscaleState] = steps match{
       case 0 => accumulator
-      case s => {
+      case s =>
         //log("step : "+s)
         val nextState = modelStep(state)
         run0(s - 1,nextState,accumulator++Vector(nextState))
-      }
     }
     val init = initialState
     MultiscaleResult(run0(timeSteps,init,Vector(init)),fullTimeSeries)
@@ -119,7 +118,7 @@ case class MultiscaleModel(
 object MultiscaleModel {
 
 
-
+  implicit val doubleOrdering: Ordering[Double] = Ordering.Double.TotalOrdering
 
 
   /**
@@ -132,9 +131,9 @@ object MultiscaleModel {
     * @param mesostate mesoscopic state
     * @param deltaPop population increment
     * @param relDeltaPop relative pop increment
-    * @param relDeltaAccess
-    * @param betaUpdateMax
-    * @param alphaUpdateMax
+    * @param relDeltaAccess relative accessibility increment
+    * @param betaUpdateMax max value for beta upbate
+    * @param alphaUpdateMax max value for alpha update
     * @return
     */
   def updateMesoParameters(mesostate: ReactionDiffusionMesoState,deltaPop: Double,relDeltaPop: Double,relDeltaAccess: Double,
@@ -150,17 +149,17 @@ object MultiscaleModel {
   /**
     * updates macroscopic parameters :
     *  - only interactionDecay is updated, in a linear feedback by dg = dg (1 + decayMaxUpdate * delta phi / max delta phi)
-    *    where the "performance" phi aggregates internal flows with a congestion cost as \sum c_ij = \sum pipj/dij - congestionCost *(pipj/dij)^2
-    * @param macroState
-    * @param mesoStates
-    * @param congestionCost
-    * @param decayMaxUpdate
+    *    where the "performance" phi aggregates internal flows with a congestion cost as \sum c_ij = \sum pipj/dij - congestionCost *(pipj/dij)2
+    * @param macroState macro states
+    * @param mesoStates meso states
+    * @param congestionCost congestion cost
+    * @param decayUpdateMax max update of decay
     * @return
     */
   def updateMacroParameters(macroState: InteractionMacroState,mesoStates: Vector[ReactionDiffusionMesoState],
                             congestionCost: Double,decayUpdateMax: Double): InteractionMacroState = {
 
-    assert(mesoStates.map{_.populationGrid.flatten.sum>0}.filter(_==false).size==0,"existing null meso pop grids")
+    assert(mesoStates.forall{_.populationGrid.flatten.sum>0},"existing null meso pop grids")
 
     // note: congestedFlow function in spatialdata computes \sum (flow - lambda flow^2 )
     val utilities = mesoStates.map{s => GridMorphology.congestedFlows(s.populationGrid.map{_.toArray}.toArray,congestionCost)}
@@ -181,10 +180,10 @@ object MultiscaleModel {
 
   /**
     * assert consistence between macroscopic and mesoscopic state
-    * @param macroState
-    * @param mesoStates
-    * @param call
-    * @param threshold
+    * @param macroState macro state
+    * @param mesoStates meso states
+    * @param call call
+    * @param threshold threshold
     */
   def ensureConsistence(macroState: InteractionMacroState,mesoStates: Vector[ReactionDiffusionMesoState],call: String = "",threshold: Double = 10000.0): InteractionMacroState = {
     val deltaPopLevels = macroState.populations.zip(mesoStates).map{case (p,ms)=>math.abs(p - ms.populationGrid.flatten.sum)}

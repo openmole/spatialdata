@@ -16,14 +16,14 @@ object CSV {
 
   /**
     * read csv file
-    * @param file
-    * @param sep
+    * @param file file
+    * @param sep separator
     * @return
     */
   def readCSVFile(file: File,sep: String=",", withHeader: Boolean =true): Map[String,Seq[String]] = {
 
-    implicit val readerFormat = new DefaultCSVFormat {
-      override val delimiter = sep.charAt(0)
+    implicit val readerFormat: CSVFormat = new DefaultCSVFormat {
+      override val delimiter: Char = sep.charAt(0)
       override val quoteChar: Char = '"'
     }
     val (header,content): (Seq[String], Seq[Map[String, String]]) = if (withHeader) CSVReader.open(file)(readerFormat).allWithOrderedHeaders()
@@ -32,22 +32,22 @@ object CSV {
       val h =(0 until raw(0).length).map("V"+_)
       (h,raw.map{row => row.zip(h).toMap})
     }
-    header.map{case s => (s,content.map{_(s)})}.toMap
+    header.map(s => (s,content.map{_(s)})).toMap
   }
 
   /**
     * read csv (file name)
-    * @param filename
-    * @param sep
-    * @param withHeader
+    * @param filename file
+    * @param sep separator
+    * @param withHeader read header
     * @return
     */
   def readCSV(filename: String, sep: String = ",", withHeader: Boolean =true): Map[String,Seq[String]] = readCSVFile(new File(filename),sep, withHeader)
 
   /**
     * read a numerical matrix
-    * @param file
-    * @param sep
+    * @param file file
+    * @param sep separator
     * @return
     */
   def readMat(file: String,sep: String=",",naformat: String = "NA"): Array[Array[Double]] = {
@@ -65,10 +65,10 @@ object CSV {
     * filter a dense mat as sparse from csv
     *  for perf reasons, use directly builder for sparse breeze here => specific implementation!
     *  *spec: first line contains n,p*
-    * @param file
-    * @param filter
-    * @param sep
-    * @param naformat
+    * @param file file
+    * @param filter filter based on value
+    * @param sep separator
+    * @param naformat NA
     * @return
     */
   def readSparseMatFromDense(file: String,
@@ -77,13 +77,12 @@ object CSV {
                              naformat: String = "NA"
                             )(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): SparseMatrix = {
     val r = new BufferedReader(new FileReader(new File(file)))
-    val res = new ArrayBuffer[Array[Double]]
     var currentline = r.readLine()
     val rawdims = currentline.split(sep)
     val (n,p) = (rawdims(0).toInt,rawdims(1).toInt)
 
     spMatImpl match {
-      case _: SparseBreeze => {
+      case _: SparseBreeze =>
         val breezebuilder = new CSCMatrix.Builder[Double](rows = n, cols = p)
         currentline = r.readLine()
         var i = 0
@@ -92,13 +91,13 @@ object CSV {
             if (s.equals("NA")) None else {
               if (filter(s.toDouble)) Some((i, j, s.toDouble)) else None
             }
-          }.filter(_.isDefined).foreach { case Some((i, j, v)) => breezebuilder.add(i, j, v) }
+          }.filter(_.isDefined).foreach { case Some((row, col, v)) => breezebuilder.add(row, col, v); case None => () }
           currentline = r.readLine()
           i = i + 1
         }
         BreezeSparseMatrix(breezebuilder.result())
-      }
-      case _: SparseCommons => {
+
+      case _: SparseCommons =>
         val m:linear.OpenMapRealMatrix = new linear.OpenMapRealMatrix(n,p)
         currentline = r.readLine()
         var i = 0
@@ -107,12 +106,12 @@ object CSV {
             if (s.equals("NA")) None else {
               if (filter(s.toDouble)) Some((i, j, s.toDouble)) else None
             }
-          }.filter(_.isDefined).foreach { case Some((i, j, v)) => m.setEntry(i,j,v) }
+          }.filter(_.isDefined).foreach { case Some((row, col, v)) => m.setEntry(row, col, v); case None => () }
           currentline = r.readLine()
           i = i + 1
         }
         SparseMatrixImpl(m)
-      }
+
     }
 
 
@@ -121,9 +120,9 @@ object CSV {
   /**
     * Read a sparse mat as a csv (i,j,v)
     *  **Spec: first line is (N,P)**
-    * @param file
-    * @param sep
-    * @param naformat
+    * @param file file
+    * @param sep separator
+    * @param naformat NA
     * @return
     */
   def readSparseMat(file: String,
@@ -144,27 +143,25 @@ object CSV {
       currentline = r.readLine()
     }
     val aentries = entries.toArray
-    //val n = aentries.map(_._1).max // this is not correct if last columns/rows are empty
-    //val p = aentries.map(_._2).max
     SparseMatrix(aentries,n,p)
   }
 
 
   /**
     * write a csv to a file
-    * @param data
-    * @param file
-    * @param sep
-    * @param header
-    * @tparam T
+    * @param data data
+    * @param file file
+    * @param sep separator
+    * @param header header
+    * @tparam T data type
     */
   def writeCSV[T <: Any](data: Array[Array[T]],file:String,sep:String,header:Array[String] = Array.empty): Unit = {
-    implicit val writerFormat = new DefaultCSVFormat {
-      override val delimiter = sep.charAt(0)
+    implicit val writerFormat: CSVFormat = new DefaultCSVFormat {
+      override val delimiter: Char = sep.charAt(0)
       override val quoteChar: Char = '"'
     }
 
-    val towrite = if(header.size == 0){data.map{_.map{_.toString}.toSeq}.toSeq} else {Seq(header.toSeq)++data.map{_.toSeq}.toSeq}
+    val towrite = if(header.length == 0){data.map{_.map{_.toString}.toSeq}.toSeq} else {Seq(header.toSeq)++data.map{_.toSeq}.toSeq}
 
     CSVWriter.open(file)(writerFormat).writeAll(towrite)
   }

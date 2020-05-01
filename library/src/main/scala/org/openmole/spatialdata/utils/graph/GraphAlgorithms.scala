@@ -23,19 +23,19 @@ import scala.jdk.CollectionConverters._
   *   - Guava https://github.com/google/guava/wiki/GraphsExplained
   *   - Apache common graph seems dead http://commons.apache.org/sandbox/commons-graph/source-repository.html
   *   - Gephi //"org.gephi" % "gephi-toolkit" % "0.9.2" // full gephi lib is 68Mo ! totally a bad idea to use it
-  *   - scala-graph   //"org.openmole.library" %% "graph-core" % "1.12.5.1", // graph-core not needed anymore
+  *   - scala-graph   //"org.openmole.library" %% "graph-core" % "1.12.5.1", // graph-core not needed anymore - old scala-graph shortest paths removed (less performant than JGrapht)
   *
   * Future work:
   *   - add community detection ? NetLogo NW extension: own implementation, uses jgrapht for generators, jung for some component algos
+  *   - code an astar and or dynamic routing (update) for more perf of shortest paths? -> see in JGraphT
   *
   */
 object GraphAlgorithms {
 
-  //
-  // Shortest paths algorithms
-  //
 
-
+  /**
+    * Shortest paths algorithms
+    */
   sealed trait ShortestPathMethod
   case class DijkstraJGraphT() extends ShortestPathMethod
   case class FloydWarshallJGraphT() extends ShortestPathMethod
@@ -61,7 +61,6 @@ object GraphAlgorithms {
     method match {
       case _ : DijkstraJGraphT => ShortestPathsAlgorithms.shortestPathsJGraphT(network, from, to, linkWeight)
       case _ : FloydWarshallJGraphT => ShortestPathsAlgorithms.allShortestPathsFloydWarshallJGraphT(network, linkWeight)
-      //case _ : ScalaGraph => ShortestPathsAlgorithms.shortestPathsScalaGraph(network, vertices, linkWeight)
       case _ : FloydWarshall => ShortestPathsAlgorithms.allPairsShortestPath(network, linkWeight)
       case _ : JohnsonJGraphT => ShortestPathsAlgorithms.allShortestPathsJohnsonJGraphT(network, linkWeight)
     }
@@ -72,7 +71,7 @@ object GraphAlgorithms {
     /**
       * Generic shortest paths using different JGraphT algo
       *
-      * FIXME returns empty path if no path - maybe better to not put in the return map ?
+      *  ! returns empty path if no path - maybe better to not put in the return map ?
       *
       * @param network network
       * @param from from nodes
@@ -87,10 +86,7 @@ object GraphAlgorithms {
                                           algorithm: Graph[Int,DefaultWeightedEdge] => ShortestPathAlgorithm[Int,DefaultWeightedEdge],
                                           linkWeight: Link => Double = _.weight
                                          ): ShortestPaths = {
-      //println(s"    ${from.map(network.nodes.contains)}")
-      //println(network)
       val (g,nodeMap,linkMap) = GraphConversions.networkToJGraphT(network,linkWeight)
-      //println(g) // issue with graoh conversion?
       (for {
         i <- from
         j <- to
@@ -139,47 +135,11 @@ object GraphAlgorithms {
     def allShortestPathsJohnsonJGraphT(network: Network, linkWeight: Link => Double = _.weight): ShortestPaths =
       shortestPathsWithJGraphTAlgorithm(network, network.nodes.toSeq, network.nodes.toSeq, g=> new JohnsonShortestPaths[Int,DefaultWeightedEdge](g),linkWeight)
 
-    /**
-      * Shortest paths - by default not a spatial network as weight function is only the weight
-      *
-      *  -- DEPRECATED, use JGraphT instead --
-      *
-      * FIXME works if the network is not connected but returns existing paths only
-      * FIXME sampling should not be done here
-      *
-      *
-      */
-    /*def shortestPathsScalaGraph(network: Network, vertices: Seq[Node], linkWeight: Link => Double = _.weight): ShortestPaths = {
-      //println("Computing shortest paths between vertices : "+vertices)
-      val (g,nodeMap,linkMap) = GraphConversions.networkToScalaGraph(network, linkWeight)
-      //val odnodes = if(pathSample==1.0) vertices else Stochastic.sampleWithoutReplacementBy[Node](vertices,v => 1.0 / vertices.length.toDouble, math.floor(pathSample*vertices.length).toInt)
-      val odnodes = vertices // better to do the sampling explicitly outside the function
-      (for {
-        i <- odnodes
-        j <- odnodes
-      } yield ((i,j),if(i==j) {(Seq(i),Seq.empty[Link],0.0)}
-      else {
-        val path = g.get(i.id).shortestPathTo(g.get(j.id))
-        if(path.nonEmpty){
-          (path.get.nodes.map{nodeMap(_)}.toSeq,
-            path.get.edges.map{e => linkMap((e._1,e._2))}.toSeq,
-            path.get.edges.map{_.weight}.sum
-          )
-        }
-        else {(Seq.empty[Node],Seq.empty[Link],Double.PositiveInfinity)}
-      })).toMap
-    }*/
-
-
-
-    /**
-      * TODO: code an astar and or dynamic routing (update) for more perf of shortest paths?
-      *  -> see in JGraphT
-      */
-
 
     /**
       * Floid Warshall shortest paths
+      *
+      * returns empty path (infinite distance) for unconnected vertices
       *
       * See https://jgrapht.org/javadoc/org/jgrapht/alg/shortestpath/JohnsonShortestPaths.html for sparse graphs in O(n2 logN)
       *
@@ -191,8 +151,8 @@ object GraphAlgorithms {
     def allPairsShortestPath(network: Network, linkWeight: Link => Double = _.weight): ShortestPaths = {
       utils.log("computing shortest paths between "+network.nodes.toSeq.size+" vertices")
       val nodenames = network.nodes.toSeq.map{_.id}
-      val nodeids: Map[Int,Int] = nodenames.toSeq.zipWithIndex.toMap
-      val revnodes: Map[Int,Node] = network.nodes.toSeq.zipWithIndex.map{case(n,i)=>(i,n)}.toMap
+      val nodeids: Map[Int,Int] = nodenames.zipWithIndex.toMap
+      val revnodes: Map[Int,Node] = network.nodes.toSeq.zipWithIndex.map{case(node,i)=>(i,node)}.toMap
       val nodes = nodeids.keySet //not necessary, for clarity
       val mlinks = mutable.Map[Int, Set[Int]]()
       val mlinkweights = mutable.Map[(Int,Int),Double]()
@@ -245,7 +205,10 @@ object GraphAlgorithms {
           extractPath(path,pathLinks, k, j)
         }else {
           // otherwise k is the next node, can add the link
-          assert(linksMap.contains(revnodes(i).id,revnodes(j).id),"error : "+network.links.filter{case l => l.e1.id==revnodes(i).id&&l.e2.id==revnodes(j).id}+" - "+network.links.filter{case l => l.e2.id==revnodes(i).id&&l.e1.id==revnodes(j).id})
+          assert(linksMap.contains(revnodes(i).id,revnodes(j).id),"error : "+
+            network.links.filter{ l => l.e1.id==revnodes(i).id&&l.e2.id==revnodes(j).id}+" - "+
+            network.links.filter{ l => l.e2.id==revnodes(i).id&&l.e1.id==revnodes(j).id}
+          )
           pathLinks.append(linksMap(revnodes(i).id,revnodes(j).id))
         }
       }
@@ -266,6 +229,8 @@ object GraphAlgorithms {
               currentPath.append(revnodes(j))
             }
             paths((revnodes(i), revnodes(j))) = (currentPath.toSeq,currentPathLinks.toSeq,currentPathLinks.map{_.weight}.sum)
+          } else {
+            paths((revnodes(i), revnodes(j))) = (Seq.empty[Node],Seq.empty[Link],Double.PositiveInfinity)
           }
         }
       }
@@ -278,7 +243,9 @@ object GraphAlgorithms {
   }
 
 
-
+  /**
+    * Components
+    */
   sealed trait ComponentsMethod
   case class ConnectedComponentsTraverse() extends ComponentsMethod
   case class ConnectedComponentsJGraphT() extends ComponentsMethod
@@ -286,8 +253,8 @@ object GraphAlgorithms {
 
   /**
     * Get connected components (undirected network)
-    * @param network
-    * @param method
+    * @param network network
+    * @param method method
     * @return
     */
   def connectedComponents(network: Network, method: ComponentsMethod = ConnectedComponentsTraverse()): Seq[Network] =
@@ -301,7 +268,7 @@ object GraphAlgorithms {
   /**
     * get largest connected component
     *
-    * @param network
+    * @param network network
     * @return
     */
   def largestConnectedComponent(network: Network, method: ComponentsMethod = ConnectedComponentsTraverse()): Network = {
@@ -317,9 +284,9 @@ object GraphAlgorithms {
     /**
       * Undirected weak components using JGraphT
       *
-      * FIXME untested - yield empty components
+      *  ! untested - yield empty components
       *
-      * @param network
+      * @param network network
       * @return
       */
     def connectedComponentsJGraphT(network: Network): Seq[Network] = {
@@ -329,11 +296,11 @@ object GraphAlgorithms {
 
 
     /**
-      * dirty component traverser (not appropriate network data structure)
+      * Dirty component traverser (unappropriate network data structure)
       *
-      * FIXME remove the mutable and the while
+      *  ! remove the mutable and the while
       *
-      * @param network
+      * @param network netwokr
       * @return
       */
     def connectedComponentsTraverse(network: Network): Seq[Network] = {
@@ -401,12 +368,12 @@ object GraphAlgorithms {
   object CycleAlgorithms {
 
     /**
-      * FIXME returned graphs have consistent ids but no properties of initial graph (should copy ?)
-      * @param nw
+      * ! returned graphs have consistent ids but no properties of initial graph (should copy ?)
+      * @param nw network
       * @return
       */
     def cyclesPatonJGraphT(nw: Network): Seq[Network] = {
-      val (g,nodeMap,edgeMap) = GraphConversions.networkToJGraphT(nw)
+      val (g,_,edgeMap) = GraphConversions.networkToJGraphT(nw)
       val cycles = new PatonCycleBase(g).getCycleBasis.getCycles.asScala.toSeq
       cycles.map{l =>
         val edges = l.asScala.map{e => edgeMap((g.getEdgeSource(e),g.getEdgeTarget(e)))}.toSet
@@ -426,7 +393,7 @@ object GraphAlgorithms {
       * ! fails if network has self-loops
       * implemented iteratively with mutable Sets for performance
       *
-      * @param network
+      * @param network network
       * @param combineLength function to combine lengths
       * @return
       */
@@ -459,7 +426,7 @@ object GraphAlgorithms {
         //println("othernodes : "+othernodes)
         // this will fail if there are self loops
         //assert(othernodes.size==2,"In network simplification: removed vertice had not two neighbors")
-        val newlink = Link(othernodes(0),othernodes(1),combineWeights(replacedlinks(0),replacedlinks(1)),combineLength(replacedlinks(0),replacedlinks(1)),false)
+        val newlink = Link(othernodes(0),othernodes(1),combineWeights(replacedlinks(0),replacedlinks(1)),combineLength(replacedlinks(0),replacedlinks(1)),directed = false)
         links.add(newlink)
         //println("new link : "+newlink+"\n")
         assert(othernodes.size==2,"In network simplification: removed vertice had not two neighbors")

@@ -16,12 +16,12 @@ import scala.util.Random
 
 object TestNetwork {
 
-  implicit val rng = new Random
+  implicit val rng: Random = new Random
   implicit val doubleOrdering: Ordering[Double] = Ordering.Double.TotalOrdering
 
 
 
-  def testCoarseGraining: Unit = {
+  def testCoarseGraining(): Unit = {
     //val nw = TreeMinDistGenerator(200).generateNetwork // tree to test is not necessarily relevant (disconnected local networks)
     // -> tree with local cycles, planarized?
     //val nw = RandomNetworkGenerator(10,15,true,false,false).generateNetwork // random makes few sense either
@@ -39,10 +39,10 @@ object TestNetwork {
     val simpl3 = CoarseGrainingNetworkSimplificator(grid3).simplifyNetwork(nw).shiftIds(30000)
 
     def nodeColor(n: Node): Int = n.id match {
-      case n if n < 10000 => 3
-      case n if n >= 10000&&n<20000 => 4
-      case n if n >= 20000&&n<30000 => 2
-      case n if n>=30000 => 1
+      case nn if nn < 10000 => 3
+      case nn if nn >= 10000&&nn<20000 => 4
+      case nn if nn >= 20000&&nn<30000 => 2
+      case nn if nn>=30000 => 1
     }
     def linkColor(l: Link): Int = nodeColor(l.e1)
 
@@ -50,7 +50,7 @@ object TestNetwork {
   }
 
 
-  def testSimplification: Unit = {
+  def testSimplification(): Unit = {
     val (lat,lon) = (51.5213835,-0.1347904)
     val nw = OSMNetworkGenerator(lon,lat,20000,simplifySnapping = 0.01).generateNetwork
     val (xmin,xmax,ymin,ymax) = (nw.nodes.map{_.x}.min,nw.nodes.map{_.x}.max,nw.nodes.map{_.y}.min,nw.nodes.map{_.y}.max)
@@ -63,7 +63,7 @@ object TestNetwork {
   }
 
 
-  def testOSMNetwork: Unit = {
+  def testOSMNetwork(): Unit = {
     val (lat,lon) = (51.5213835,-0.1347904)
     //val nw = OSMNetworkGenerator(lon,lat,5000).generateNetwork
     val nw = OSMNetworkGenerator(lon,lat,10000,simplifySnapping = 0.02).generateNetwork
@@ -75,8 +75,8 @@ object TestNetwork {
 
 
 
-  def testCycles: Unit = {
-    val nw = RandomNetworkGenerator(10,15,true,false,false).generateNetwork
+  def testCycles(): Unit = {
+    val nw = RandomNetworkGenerator(10,15,planarize = true,withIndex = false).generateNetwork
     val cycles = GraphAlgorithms.cycles(nw)
     val colorMap: Map[Node,Int] = cycles.zipWithIndex.flatMap{case (nk,k) => nk.nodes.toSeq.map{(_,k)}}.toMap
     val linkColorMap = cycles.zipWithIndex.flatMap{case (nk,k) => nk.links.toSeq.map{(_,k)}}.toMap
@@ -87,7 +87,7 @@ object TestNetwork {
   }
 
 
-  def testTreeMinDist: Unit = {
+  def testTreeMinDist(): Unit = {
     //val nw = TreeMinDistGenerator(200,connexificationAlgorithm = n => n.projectionConnect).generateNetwork
     val nw = TreeMinDistGenerator(200).generateNetwork
     //val nw = TreeMinDistGenerator(100).generateNetwork
@@ -103,7 +103,7 @@ object TestNetwork {
     */
   def testShortestPathImplementations(): Unit = {
     //val nwgen = RandomNetworkGenerator(15,50,true,false,false)
-    val nwgen = RandomNetworkGenerator(10,20,true,false,false)
+    val nwgen = RandomNetworkGenerator(10,20,planarize = true,withIndex = false)
 
     val res = (0 until 100).map{k =>
       if(k%10==0) println(k)
@@ -112,7 +112,7 @@ object TestNetwork {
       val nodes = nw.nodes.toSeq
       //val (sp1,t1) = withTimer[Network,ShortestPaths](nw => shortestPaths(nw,nodes,{l => l.length},ScalaGraph()))(nw)
       val (sp2,t2) = withTimer[Network,ShortestPaths](nw => shortestPaths(nw,nodes, nodes,{l => l.length},DijkstraJGraphT()))(nw)
-      val (sp3,t3) = withTimer[Network,ShortestPaths](nw => shortestPaths(nw,nodes, nodes,{l => l.length},FloydWarshallJGraphT()))(nw)
+      val (_,t3) = withTimer[Network,ShortestPaths](nw => shortestPaths(nw,nodes, nodes,{l => l.length},FloydWarshallJGraphT()))(nw)
       (sp2 |-| sp2,0.0,t2,t3,nodes.size.toDouble)
       //(0.0,0.0,0.0,0.0,0.0)
     }
@@ -126,7 +126,7 @@ object TestNetwork {
 
 
   def testPlanarization(): Unit = {
-    val nw = RandomNetworkGenerator(20,200,false,false,false).generateNetwork
+    val nw = RandomNetworkGenerator(20,200,withIndex = false).generateNetwork
     //val nw = GridNetworkGenerator(10).generateNetwork
 
     //println(nw.links.size)
@@ -145,7 +145,7 @@ object TestNetwork {
   }
 
   def testRandomNetwork(): Unit = {
-    val nw = RandomNetworkGenerator(15,10,true,false,false).generateNetwork
+    val nw = RandomNetworkGenerator(15,10,planarize = true,withIndex = false).generateNetwork
     visualization.staticNetworkVisualization(Seq(nw))
   }
 

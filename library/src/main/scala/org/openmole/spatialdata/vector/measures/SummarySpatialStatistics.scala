@@ -6,22 +6,22 @@ import org.openmole.spatialdata.vector.Point
 
 /**
   * A set of summary spatial statistics for a point cloud
-  *
-  * @param moment1
-  * @param moment2
-  * @param moment3
-  * @param moment4
-  * @param unconditionalCount
-  * @param conditionalHistogram
-  * @param moran
-  * @param entropy
-  * @param avgDistance
-  * @param hierarchy
-  * @param spatialMoment01
-  * @param spatialMoment10
-  * @param spatialMoment11
-  * @param spatialMoment20
-  * @param spatialMoment02
+  * @param moment1 first moment
+  * @param moment2 second moment
+  * @param moment3 third moment
+  * @param moment4 fourth moment
+  * @param nonCondCount number of point not matching a condition
+  * @param conditionalHistogramValues values of conditional histogram
+  * @param conditionalHistogramCounts counts of conditional histogram
+  * @param moran moran
+  * @param entropy entropy
+  * @param avgDistance average distance
+  * @param hierarchy hierarchy
+  * @param spatialMoment01 spatial moment 0,1
+  * @param spatialMoment10 spatial moment 1,0
+  * @param spatialMoment11 spatial moment 1,1
+  * @param spatialMoment20 spatial moment 2,0
+  * @param spatialMoment02 spatial moment 0,2
   */
 case class SummarySpatialStatistics(
                                      moment1: Double,
@@ -63,22 +63,22 @@ object SummarySpatialStatistics {
     val condhist = Statistics.histogram(values.filter{!modeCondition(_)},histBreaks,filter = !_.isNaN, display=true)
 
     SummarySpatialStatistics(
-      Statistics.moment(values,1,filter = !_.isNaN),
+      Statistics.moment(values,filter = !_.isNaN),
       Statistics.moment(values,2,filter = !_.isNaN),
       Statistics.moment(values,3,filter = !_.isNaN),
       Statistics.moment(values,4,filter = !_.isNaN),
-      values.filter(modeCondition).size,
+      values.count(modeCondition),
       condhist.map{_._1},
       condhist.map{_._2},
       Spatstat.moran(points,values,filter = !_.isNaN),
       Statistics.entropy(values.filter(!_.isNaN)),
       Spatstat.averageDistance(points,values,filter = !_.isNaN),
       Statistics.slope(values.filter(!_.isNaN)),
-      Spatstat.spatialMoment(points,values,0,1,filter = !_.isNaN),
-      Spatstat.spatialMoment(points,values,1,0,filter = !_.isNaN),
-      Spatstat.spatialMoment(points,values,1,1,filter = !_.isNaN),
-      Spatstat.spatialMoment(points,values,2,0,filter = !_.isNaN),
-      Spatstat.spatialMoment(points,values,0,2,filter = !_.isNaN)
+      Spatstat.spatialMoment(points,values,q = 1,filter = !_.isNaN),
+      Spatstat.spatialMoment(points,values,p = 1,filter = !_.isNaN),
+      Spatstat.spatialMoment(points,values,p = 1, q = 1,filter = !_.isNaN),
+      Spatstat.spatialMoment(points,values,p = 2,filter = !_.isNaN),
+      Spatstat.spatialMoment(points,values,q = 2,filter = !_.isNaN)
     )
   }
 

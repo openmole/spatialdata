@@ -6,7 +6,7 @@ import org.openmole.spatialdata.utils.osm.PojoRoot
 import org.openmole.spatialdata.utils.osm.api.APIExtractor.Buildings.asPolygonSeq
 import org.openmole.spatialdata.utils.osm.api.Overpass
 import org.openmole.spatialdata.utils.osm.xml.InstantiatedOsmXmlParser
-import org.openmole.spatialdata.utils.visualization
+//import org.openmole.spatialdata.utils.visualization
 
 import scala.util.Random
 
@@ -68,8 +68,8 @@ object TestOSM {
 
     val g = OSMGridGenerator(lon,lat,shift,50).generateGrid
     //println(grid.gridToString(g))
-    //println(GridMorphology(g))
-    visualization.staticRasterVisualization(g)
+    println(GridMorphology(g))
+    //visualization.staticRasterVisualization(g)
 
     /*
     BuildingExtractor.getBuildingIntersection(48.82864, 2.36238, 48.83040, 2.36752).foreach(println)

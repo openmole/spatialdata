@@ -20,22 +20,22 @@ import scala.util.Random
   * check https://github.com/martinfleis/momepy for more building level morphology measures
   * Fleischmann, (2019). momepy: Urban Morphology Measuring Toolkit. Journal of Open Source Software, 4(43), 1807, https://doi.org/10.21105/joss.01807
   *
-  * @param height
-  * @param width
-  * @param area
-  * @param moran
-  * @param avgDistance
-  * @param entropy
-  * @param slope
-  * @param density
-  * @param components
-  * @param avgDetour
-  * @param avgBlockArea
-  * @param avgComponentArea
-  * @param fullDilationSteps
-  * @param fullErosionSteps
-  * @param fullClosingSteps
-  * @param fullOpeningSteps
+  * @param height height
+  * @param width width
+  * @param area area
+  * @param moran moran
+  * @param avgDistance average distance
+  * @param entropy entropy
+  * @param slope slope
+  * @param density density
+  * @param components number of connected components
+  * @param avgDetour average detour in underlying graph
+  * @param avgBlockArea average block area
+  * @param avgComponentArea average component area
+  * @param fullDilationSteps dilation steps
+  * @param fullErosionSteps erosion steps
+  * @param fullClosingSteps closing steps
+  * @param fullOpeningSteps opening steps
   */
 case class GridMorphology(
                        height: Double,
@@ -77,8 +77,9 @@ case class GridMorphology(
   *
   * (see Raimbault, J. (2018). Calibration of a density-based model of urban morphogenesis. PloS one, 13(9), e0203516.)
   *
-  * FIXME See https://github.com/locationtech/geotrellis if implemented in raster operations
-  *
+  * Future work
+  *    - See https://github.com/locationtech/geotrellis if some are implemented in raster operations
+  *    - to finish -> separate block based indicators from density grid ?
   */
 object GridMorphology {
 
@@ -89,9 +90,14 @@ object GridMorphology {
   case class Entropy() extends GridMorphologyIndicator
   case class Slope() extends GridMorphologyIndicator
 
-  // FIXME to finish -> separate block based indicators from density grid ?
+  /**
+    * Compute given indicators
+    * @param grid grid
+    * @param indicators indicator list
+    * @return
+    */
   def apply(grid: RasterLayerData[Double], indicators: Seq[GridMorphologyIndicator]): GridMorphology = {
-    GridMorphology(grid.size,grid(0).size,grid.flatten.sum,
+    GridMorphology(grid.length,grid(0).length,grid.flatten.sum,
       if (indicators.contains(Moran())) moran(grid) else 0.0,
       if (indicators.contains(AverageDistance())) distanceMean(grid) else 0.0,
       if (indicators.contains(Entropy())) Statistics.entropy(grid) else 0.0,
@@ -102,12 +108,18 @@ object GridMorphology {
   }
 
 
-  def apply(grid: RasterLayerData[Double]): GridMorphology = {
-    // FIXME construct a specific random here
-    implicit val rng = new Random
+  /**
+    * Compute morphological indicators for a given grid
+    *
+    *  - construct a specific random here? NO implicit
+    *  - rq: opening and closing are interesting as profile of mask radius (always one or two with the smaller mask); not computed: too complicated/costly to compute
+    * @param grid grid
+    * @return
+    */
+  def apply(grid: RasterLayerData[Double])(implicit rng: Random): GridMorphology = {
     val cachedNetwork = network.gridToNetwork(grid)
     GridMorphology(
-      grid.size,grid(0).size,
+      grid.length,grid(0).length,
       grid.flatten.sum,
       moranDirect(grid),
       distanceMeanDirect(grid),
@@ -119,8 +131,6 @@ object GridMorphology {
       avgComponentArea(grid),
       fullDilationSteps(grid),
       fullErosionSteps(grid),
-      // FIXME opening and closing are interesting as profile of mask radius (always one or two with the smaller mask)
-      //  : too complicated/costly to compute
       0.0,//fullClosingSteps(grid),
       0.0//fullOpeningSteps(grid)
     )
@@ -129,8 +139,9 @@ object GridMorphology {
   /**
     * read a rotation from file and perform it on the normalized corresponding components
     * (can be projected if not same number of arrows as number of elements in Morphology)
-    * @param rotFile
-    * @param morpho
+    * @param rotation rotation
+    * @param normalization normalization
+    * @param morpho morphological indicators
     * @return
     */
   def rotation(rotation: Array[Array[Double]],normalization: Array[Array[Double]])(morpho: GridMorphology): Array[Double] = {
@@ -149,8 +160,8 @@ object GridMorphology {
 
   /**
     * Number of connected components
-    * @param world
-    * @param cachedNetwork
+    * @param world world
+    * @param cachedNetwork network if cached
     * @return
     */
   def components(world: Array[Array[Double]],cachedNetwork: Option[Network] = None): Double = {
@@ -161,7 +172,7 @@ object GridMorphology {
 
   /**
     * average block area
-    * @param world
+    * @param world world
     * @return
     */
   def avgBlockArea(world: Array[Array[Double]],cachedNetwork: Option[Network] = None): Double = {
@@ -175,14 +186,14 @@ object GridMorphology {
 
   /**
     * avg component area
-    * @param world
+    * @param world world
     * @return
     */
   def avgComponentArea(world: Array[Array[Double]]): Double = {
-    val inversedNetwork = network.gridToNetwork(world.map{_.map{case x => 1.0 - x}})
+    val inversedNetwork = network.gridToNetwork(world.map{_.map{x => 1.0 - x}})
     val components = GraphAlgorithms.connectedComponents(inversedNetwork)
     //println("avgblockarea = "+avgblockarea)
-    if(components.size > 0){
+    if(components.nonEmpty){
       components.map{_.nodes.size}.sum/components.size
     }else 0.0
   }
@@ -190,9 +201,9 @@ object GridMorphology {
 
   /**
     * average detour compared to euclidian
-    * @param world
-    * @param cachedNetwork
-    * @param sampledPoints
+    * @param world world
+    * @param cachedNetwork cached network
+    * @param sampledPoints number of sampling points
     * @return
     */
   def avgDetour(world: Array[Array[Double]],cachedNetwork: Option[Network] = None,sampledPoints: Int=50)(implicit rng: Random): Double = {
@@ -203,7 +214,7 @@ object GridMorphology {
     //val avgdetour = shortestPaths.values.map{_.map{_.weight}.sum}.zip(shortestPaths.keys.map{case (n1,n2)=> math.sqrt((n1.x-n2.x)*(n1.x-n2.x)+(n1.y-n2.y)*(n1.y-n2.y))}).map{case (dn,de)=>dn/de}.sum/shortestPaths.size
     //println("avgdetour = "+avgdetour)
     // should sample points within connected components
-    val sampled = nw.nodes.sampleWithoutReplacement(sampledPoints)(rng) // FIXME no shuffling here?
+    val sampled = nw.nodes.sampleWithoutReplacement(sampledPoints)(rng) //  no shuffling here? Not needed
     val paths = GraphAlgorithms.shortestPaths(nw, sampled, sampled)
 
     // ! in scala 2.13 no more implicit conversion Map -> Seq
@@ -220,10 +231,10 @@ object GridMorphology {
 
   /**
     * Global density
-    * @param world
+    * @param world world
     * @return
     */
-  def density(world: Array[Array[Double]]): Double = world.flatten.filter(_ > 0.0).map{_ => 1.0}.sum / world.flatten.size
+  def density(world: Array[Array[Double]]): Double = world.flatten.filter(_ > 0.0).map{_ => 1.0}.sum / world.flatten.length
 
 
 
@@ -231,7 +242,7 @@ object GridMorphology {
   /**
     * Mean distance using fast convolution.
     *
-    * @param matrix
+    * @param matrix matrix
     * @return
     */
   def distanceMean(matrix: Array[Array[Double]],normalize: Boolean = true): Double = {
@@ -252,7 +263,7 @@ object GridMorphology {
   def acentrism(matrix: Array[Array[Double]], quantiles: Array[Double] = Array.tabulate(100){n => n*0.01}): Double = {
     val popdists = quantiles.map{ q =>
       val posvalues = matrix.flatten.filter(_ > 0).sorted(Ordering.Double.TotalOrdering)
-      val qth = posvalues((q*posvalues.size).toInt)
+      val qth = posvalues((q*posvalues.length).toInt)
       val filteredmat = matrix.map(_.map{d => if (d < qth) 0.0 else d})
       (posvalues.sum,distanceMean(filteredmat,normalize = false))
     }
@@ -264,18 +275,18 @@ object GridMorphology {
   /**
     * Box counting fractal dimension using convolution
     *
-    * FIXME finish implementation
+    * ! finish implementation
     *
     * @return
     */
   def fractalDimension(matrix: Array[Array[Double]]): (Double,Double) = {
     val maxkernelsize = math.floor(math.min(matrix.length,matrix(0).length) / 4) - 1
-    val rc = (1 to maxkernelsize.toInt by 1).map{k: Int =>
+    val _ = (1 to maxkernelsize.toInt by 1).map{k: Int =>
       val convol: Array[Array[Double]] = Convolution.convolution2D(matrix,Array.fill(2*k+1){Array.fill(2*k+1)(1.0)})
-      val counts = convol.map(_.zipWithIndex).zipWithIndex.map{
-        // FIXME this is terrible - find why scala2.13 consider full pattern matching not with return type but Any
-        case rowind: (Array[(Double,Int)],Int) => rowind._1.map{case (d,j) => var res = 0.0; if (rowind._2%(2*k+1)==k&&j%(2*k+1)==k) {if(d > 0.0) res = 1.0}; res}
-      }.flatten.sum
+      val counts = convol.map(_.zipWithIndex).zipWithIndex.flatMap{
+        //  this is terrible - find why scala2.13 consider full pattern matching not with return type but Any
+        rowind: (Array[(Double,Int)],Int) => rowind._1.map{case (d,j) => var res = 0.0; if (rowind._2%(2*k+1)==k&&j%(2*k+1)==k) {if(d > 0.0) res = 1.0}; res}
+      }.sum
       (2*k+1,counts)
     }
     (0.0,0.0)
@@ -283,9 +294,12 @@ object GridMorphology {
 
   /**
     * aggregated gravity flow with simple square externalities (linear utility)
-    *  TODO generalize to any utility function ? may be trickier to compute for other things than polynomials ?
-    * @param matrix
-    * @param congestionCost
+    *
+    *  Future work
+    *  - generalize to any utility function ? may be trickier to compute for other things than polynomials ?
+    *
+    * @param matrix matrix
+    * @param congestionCost cost of congestion parameter
     * @return
     */
   def congestedFlows(matrix: Array[Array[Double]],congestionCost: Double): Double = {
@@ -313,7 +327,8 @@ object GridMorphology {
   /**
     * Distance kernel
     *
-    * @param n
+    * @param n rows
+    * @param p cols
     * @return
     */
   def distanceMatrix(n: Int, p: Int): Array[Array[Double]] = {
@@ -325,7 +340,7 @@ object GridMorphology {
   /**
     * Moran index using fast convolution.
     *
-    * @param matrix
+    * @param matrix matrix
     * @return
     */
   def moran(matrix: Array[Array[Double]],weightFunction: Array[Array[Double]]=> Array[Array[Double]] = spatialWeights): Double = {
@@ -341,8 +356,10 @@ object GridMorphology {
 
   /**
     * Default spatial weights for Moran
-    *  FIXME non square size
-    * @param n
+    *
+    *  ! non square size
+    *
+    * @param matrix
     * @return
     */
   def spatialWeights(matrix: Array[Array[Double]]): Array[Array[Double]] = {
@@ -360,7 +377,7 @@ object GridMorphology {
     * Average distance between individuals in the population
     * (direct computation)
     *
-    * @param matrix
+    * @param matrix matrix
     * @return
     */
   def distanceMeanDirect(matrix: Array[Array[Double]]): Double = {
@@ -375,7 +392,7 @@ object GridMorphology {
 
     def normalisation = math.sqrt(matrix.flatten.length / math.Pi)
 
-    if(totalQuantity==0.0||normalisation==0.0) return(0.0)
+    if(totalQuantity==0.0||normalisation==0.0) return 0.0
 
     (numerator / (totalQuantity * totalQuantity)) / normalisation
   }
@@ -389,7 +406,7 @@ object GridMorphology {
   }
 
   def zipWithPosition(m :Array[Array[Double]]): Seq[(Double, (Int,Int))] = {
-    // FIXME for ... yield also changed in 2.13 ?
+    //  for ... yield also changed in 2.13 ?
     m.zipWithIndex.map{
       case (row,i) =>
         row.zipWithIndex.map{
@@ -400,8 +417,8 @@ object GridMorphology {
 
 
   /**
-    * Direct computation of Moran index (in O(N^4))
-    * @param matrix
+    * Direct computation of Moran index (in O(N4))
+    * @param matrix matrix
     * @return
     */
   def moranDirect(matrix: Array[Array[Double]]): Double = {

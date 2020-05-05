@@ -31,6 +31,25 @@ object Stochastic {
     }
   }
 
+  /**
+    * Draw a random variable with a poisson distribution
+    * @param lambda lambda
+    * @param localRng rng
+    * @return
+    */
+  case class PoissonDistribution(lambda: Double)(implicit localRng: Random) extends Distribution {
+    override def rng: Random = localRng
+
+    override def draw: Double = {
+      val el = math.exp(-1.0*lambda)
+      def prec(p: Double,k: Int): Int = p match {
+        case pp if pp > el => prec(pp*rng.nextDouble(),k+1)
+        case _ => k - 1
+      }
+      prec(1.0,0).toDouble
+    }
+  }
+
 
   /**
     * The probability function is assumed to effectively define a probability measure on elements of sampled

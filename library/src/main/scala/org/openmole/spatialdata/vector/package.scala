@@ -1,7 +1,6 @@
 package org.openmole.spatialdata
 
-import org.locationtech.jts.geom.PrecisionModel
-import org.locationtech.jts.geom.Coordinate
+import scala.language.implicitConversions
 
 package object vector {
 

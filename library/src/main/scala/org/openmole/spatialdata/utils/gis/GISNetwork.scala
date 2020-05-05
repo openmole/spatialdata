@@ -1,6 +1,5 @@
 package org.openmole.spatialdata.utils.gis
 
-import org.locationtech.jts.geom.LineString
 import org.openmole.spatialdata.network.{Link, Network, Node}
 import org.openmole.spatialdata.utils.math.Implicits._
 import org.openmole.spatialdata.vector.{Lines, Points}

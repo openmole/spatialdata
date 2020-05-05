@@ -48,7 +48,7 @@ cancelable in Global := true
 
 //)
 
-scalacOptions in ThisBuild ++= Seq("-unchecked", "-deprecation")
+scalacOptions in ThisBuild ++= Seq("-unchecked", "-deprecation","-feature")
 
 enablePlugins(SbtOsgi)
 

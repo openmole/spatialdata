@@ -2,6 +2,7 @@ package org.openmole.spatialdata.model.urbandynamics
 
 import java.io.File
 
+import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.utils.io.CSV
 import org.openmole.spatialdata.utils.math.Matrix.MatrixImplementation
 import org.openmole.spatialdata.utils.math.{DenseMatrix, Matrix, RealMatrix, SparseMatrix}
@@ -131,12 +132,12 @@ object Coevolution {
 
   /**
     * run a coevolution model
-    * @param model
+    * @param model model
     * @return
     */
   def run(model: Coevolution)(implicit mImpl: MatrixImplementation): MacroResult = {
 
-    println("Running "+model.toString)
+    utils.log("Running "+model.toString)
 
     import model._
 

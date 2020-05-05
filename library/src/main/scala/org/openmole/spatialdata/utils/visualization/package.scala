@@ -3,17 +3,13 @@ package org.openmole.spatialdata.utils
 import org.openmole.spatialdata.grid._
 import org.openmole.spatialdata.vector.Point
 import org.openmole.spatialdata.network.{Link, Network, Node}
-import javax.swing._
 import java.awt._
-import java.lang
-import java.lang.System
 
-import javax.swing.plaf.ComponentUI
 import org.openmole.spatialdata.model.spatialinteraction.SpatialInteractionModel
 
 package object visualization {
 
-  implicit val doubleOrdering = Ordering.Double.TotalOrdering
+  implicit val doubleOrdering: Ordering[Double] = Ordering.Double.TotalOrdering
 
   import Color._
   val colors = Vector(BLACK,BLUE,MAGENTA,ORANGE,PINK,RED,CYAN,YELLOW,DARK_GRAY,GRAY,GREEN,LIGHT_GRAY)//,WHITE)
@@ -23,7 +19,6 @@ package object visualization {
 
   /**
     * Quick visu for debugging purposes
-    * @param network
     */
   def staticNetworkVisualization(networks: Seq[Network],
                                  withLabel: Boolean = false,

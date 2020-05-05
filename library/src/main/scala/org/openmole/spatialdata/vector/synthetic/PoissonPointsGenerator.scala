@@ -1,5 +1,6 @@
 package org.openmole.spatialdata.vector.synthetic
 
+import org.openmole.spatialdata.utils.math.Stochastic.PoissonDistribution
 import org.openmole.spatialdata.vector.{Point, Points, PointsGenerator}
 
 import scala.collection.mutable.ArrayBuffer
@@ -28,24 +29,24 @@ case class PoissonPointsGenerator(
 
 object PoissonPointsGenerator {
 
-  def apply(lambda: Double,xmin: Double, xmax: Double, ymin: Double, ymax: Double): PoissonPointsGenerator = PoissonPointsGenerator(lambda,Array.empty,true,xmin,xmax,ymin,ymax)
+  def apply(lambda: Double,xmin: Double, xmax: Double, ymin: Double, ymax: Double): PoissonPointsGenerator = PoissonPointsGenerator(lambda,Array.empty,homogenous = true,xmin,xmax,ymin,ymax)
 
-  def apply(lambdaField: Array[Array[Double]]): PoissonPointsGenerator = PoissonPointsGenerator(0.0,lambdaField,false)
+  def apply(lambdaField: Array[Array[Double]]): PoissonPointsGenerator = PoissonPointsGenerator(0.0,lambdaField,homogenous = false)
 
   def apply(lambdaField: Array[Array[Double]], xmin: Double, xmax: Double, ymin: Double, ymax: Double): PoissonPointsGenerator =
-    PoissonPointsGenerator(0.0,lambdaField,false,xmin,xmax,ymin,ymax)
+    PoissonPointsGenerator(0.0,lambdaField,homogenous = false,xmin,xmax,ymin,ymax)
 
   /**
     * Homogenous poisson point process
     * https://en.wikipedia.org/wiki/Poisson_point_process
     *
-    * @param lambda
-    * @param rng
+    * @param generator generator
+    * @param rng rng
     * @return
     */
   def homogenousPoissonPoints(generator: PoissonPointsGenerator)(implicit rng: Random): Vector[Point] = {
     // draw number of points
-    val n = poissonVariable(generator.lambda*generator.area)
+    val n = PoissonDistribution(generator.lambda*generator.area).draw.toInt
     // then just random points
     Vector.fill(n){(generator.xmin + (generator.xmax - generator.xmin)*rng.nextDouble(),
       generator.ymin + (generator.ymax - generator.ymin)*rng.nextDouble())}
@@ -56,13 +57,13 @@ object PoissonPointsGenerator {
     *
     * intensity field represented by a raster
     *
-    * @param generator
-    * @param rng
+    * @param generator generator
+    * @param rng rng
     * @return
     */
   def heterogenousPoissonPoints(generator: PoissonPointsGenerator)(implicit rng: Random): Vector[Point] = {
     val totalIntensity = generator.weightedArea
-    val n = poissonVariable(totalIntensity)
+    val n = PoissonDistribution(totalIntensity).draw.toInt
     // rejection sampling ; the array representing intensity must be inversed on rows
     val lambdas: Array[Array[Double]] = generator.lambdaField.reverse
     val points = new ArrayBuffer[(Double,Double)]
@@ -73,22 +74,6 @@ object PoissonPointsGenerator {
       if (localIntensity / totalIntensity > rng.nextDouble()) points.append((generator.xmin + (generator.xmax - generator.xmin)*x,generator.ymin + (generator.ymax - generator.ymin)*y))
     }
     points.toVector
-  }
-
-
-  /**
-    * Draw a random variable with a poisson distribution
-    * @param lambda
-    * @param rng
-    * @return
-    */
-  def poissonVariable(lambda: Double)(implicit rng: Random): Int = {
-    val el = math.exp(-1.0*lambda)
-    def prec(p: Double,k: Int): Int = p match {
-      case p if p > el => prec(p*rng.nextDouble(),k+1)
-      case _ => k - 1
-    }
-    prec(1.0,0)
   }
 
 

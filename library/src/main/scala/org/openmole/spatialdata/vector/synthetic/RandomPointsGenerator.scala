@@ -2,7 +2,6 @@ package org.openmole.spatialdata.vector.synthetic
 
 import org.openmole.spatialdata.vector._
 import org.openmole.spatialdata.vector.PointsGenerator
-import org.openmole.spatialdata.utils.math
 
 import scala.util.Random
 
@@ -10,7 +9,7 @@ import scala.util.Random
 /**
   * Random points
   *
-  * @param npoints
+  * @param npoints number of points
   */
 case class RandomPointsGenerator(
                                   npoints: Int,

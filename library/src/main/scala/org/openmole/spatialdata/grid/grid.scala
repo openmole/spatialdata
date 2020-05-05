@@ -1,7 +1,8 @@
 
 package org.openmole.spatialdata
 
-import org.openmole.spatialdata.utils.math.Matrix
+
+import scala.language.implicitConversions
 import org.openmole.spatialdata.vector.SpatialField
 
 
@@ -16,8 +17,9 @@ package object grid {
 
   /**
     * RasterLayerData are two dimensional arrays of Numeric values
-    * TODO keep the name RasterLayer for a wrapper with more properties
-    * FIXME mutable ! -> switch to Vector[Vector]
+    *
+    * ! keep the name RasterLayer for a wrapper with more properties
+    * ! mutable ! -> switch to Vector[Vector]?
     */
   type RasterLayerData[N] = Array[Array[N]]
 
@@ -44,11 +46,17 @@ package object grid {
 
   /**
     * String representation of a grid
-    * @param world
+    * @param  world world
     * @return
     */
   def gridToString(world: RasterLayerData[Double]): String = {
-    world.map{_.map(_ match {case x if x > 0.0 => "+"; case x if x == 0 => "0"; case _ => "0"}).mkString("")}.mkString("\n")
+    world.map{
+      _.map{
+        case x if x > 0.0 => "+"
+        case x if x == 0 => "0"
+        case _ => "0"
+      }.mkString("")
+    }.mkString("\n")
   }
 
 
@@ -66,12 +74,13 @@ package object grid {
         */
       def asSpatialField: SpatialField[Double] = r.zipWithIndex.map{case (row,i) => row.zipWithIndex.map{case (v,j) => ((i+0.5,j+0.5),Array(v))}}.flatten.toMap
 
-      /**
+      /*
         * Euclidian distance matrix between centers of the raster cells - indexing
+        *
+        *  -> not needed, use conversion to spatial field and SpatStat.euclidianDistanceMatrix
         * @return
         */
       /*def distanceMatrix: Matrix = {
-        // FIXME not needed, use conversion to spatial field and SpatStat.euclidianDistanceMatrix
       }*/
     }
 

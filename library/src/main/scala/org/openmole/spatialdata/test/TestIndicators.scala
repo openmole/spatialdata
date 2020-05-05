@@ -2,6 +2,7 @@ package org.openmole.spatialdata.test
 
 import better.files.File
 import org.openmole.spatialdata.grid.Implicits._
+import org.openmole.spatialdata.grid.RasterLayerData
 import org.openmole.spatialdata.grid.measures.GridMorphology
 import org.openmole.spatialdata.grid.measures.GridMorphology.{AverageDistance, Moran}
 import org.openmole.spatialdata.grid.synthetic.ExpMixtureGridGenerator
@@ -16,18 +17,18 @@ object TestIndicators {
 
 
   def testFFTConvolution(): Unit = {
-    implicit val rng = new Random
+    implicit val rng: Random = new Random
 
 
     //(0 to 20).foreach{_ =>
-      val grid = ExpMixtureGridGenerator(50,3,1.0,10.0,true).generateGrid
+      val grid = ExpMixtureGridGenerator(50,3,1.0,10.0,normalized = true).generateGrid
       val maxval = grid.flatten.max(Ordering.Double.TotalOrdering)
-      val ngrid = grid.map{_.map{case d => if(d / maxval > 0.6) 1.0 else 0.0}}
+      val ngrid = grid.map{_.map{d => if(d / maxval > 0.6) 1.0 else 0.0}}
 
-    PNG.write(ngrid, File("data") / "test/grid.png")
-    PNG.write(GridMorphology.erosion(ngrid), File("data") / "test/gridFFT.png")
-    PNG.write(GridMorphology.erosion(ngrid,Convolution.convolution2dDirect), File("data") / "test/gridDirect.png")
-    // TODO fix the fft convolution
+    PNG.write(ngrid.asInstanceOf[RasterLayerData[Double]], File("data") / "test/grid.png")
+    PNG.write(GridMorphology.erosion(ngrid.asInstanceOf[RasterLayerData[Double]]), File("data") / "test/gridFFT.png")
+    PNG.write(GridMorphology.erosion(ngrid.asInstanceOf[RasterLayerData[Double]],Convolution.convolution2dDirect), File("data") / "test/gridDirect.png")
+    //  fix the fft convolution -> ok?
     /*
       time(_=>println("fft erosion steps = "+Morphology.fullErosionSteps(ngrid)))
       time(_=>println("direct erosion steps = "+Morphology.fullErosionSteps(ngrid,Morphology.convolutionDirect)))
@@ -39,11 +40,12 @@ object TestIndicators {
   }
 
 
-
-
+  /**
+    * Test summary spatial statistics
+    */
   def testSpatialIndics(): Unit = {
-    val data2 = CSV.readCSV("data/test/sample2.csv",",")
-    val data1 = CSV.readCSV("data/test/sample1.csv",",")
+    val data2 = CSV.readCSV("data/test/sample2.csv")
+    val data1 = CSV.readCSV("data/test/sample1.csv")
     // variable 1 : v ; position : c ; variable 2 : Delta h : h
     //println(data1("v"))
     val m = data2("h").zip(data1("h")).map{case (h2,h1)=> h2.toDouble - h1.toDouble}
@@ -51,7 +53,10 @@ object TestIndicators {
     val atot = a.map{_.toDouble}.sum
     val r = m.zip(a).map{case (mm,aa)=> mm/aa.toDouble}
     val weightedAvg = m.zip(a).map{case (mm,aa)=>mm*aa.toDouble/atot}.sum
-    val points = data1("c").map{case s => {val a = s.replace("(","").replace(")","").split(",");(a(0).trim.toDouble,a(1).trim.toDouble)}}.toArray
+    val points = data1("c").map{s =>
+      val a = s.replace("(","").replace(")","").split(",")
+      (a(0).trim.toDouble,a(1).trim.toDouble)
+    }.toArray
 
     //println("counts = "+hist.map{_._2}.sum+" / "+r.filter(!_.isNaN).length+" ("+r.filter(_.isNaN).length+" / "+r.size+" NaNs )")
     //println("fully occupied areas : "+r.filter(_==1.0).size)
@@ -69,7 +74,7 @@ object TestIndicators {
 
   def testMorphology(): Unit = {
 
-    implicit val rng = new Random
+    implicit val rng: Random = new Random
 
     val gen = ExpMixtureGridGenerator((20,40),10,1.0,10.0)
 

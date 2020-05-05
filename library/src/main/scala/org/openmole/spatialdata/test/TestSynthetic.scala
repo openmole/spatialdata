@@ -73,7 +73,7 @@ object TestSynthetic {
     */
   def testRandomGrids(): Unit = {
 
-    implicit val rng = new Random
+    implicit val rng: Random = new Random
 
     val size = 25
 

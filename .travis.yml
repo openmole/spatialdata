@@ -6,7 +6,7 @@ scala:
    - 2.13.1
 
 script:
-   - cd library; sbt ++$TRAVIS_SCALA_VERSION "testOnly org.openmole.spatialdata.scalatest.TestSuite"
+   - cd library; sbt ++$TRAVIS_SCALA_VERSION "project test; testOnly org.openmole.spatialdata.scalatest.TestSuite"
 
 git:
     submodules: false

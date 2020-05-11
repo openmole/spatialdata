@@ -1,11 +1,9 @@
 package org.openmole.spatialdata.model.urbandynamics
 
-import java.io.File
-
 import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.utils.io.CSV
 import org.openmole.spatialdata.utils.math.Matrix.MatrixImplementation
-import org.openmole.spatialdata.utils.math.{DenseMatrix, Matrix, RealMatrix, SparseMatrix}
+import org.openmole.spatialdata.utils.math._
 
 /**
   *
@@ -25,7 +23,7 @@ import org.openmole.spatialdata.utils.math.{DenseMatrix, Matrix, RealMatrix, Spa
   * @param feedbackWeight w_N
   * @param feedbackGamma gamma_N
   * @param feedbackDecay d_N
-  * @param smImpl
+  * @param m matrix implementation
   */
 case class Coevolution(
                         populationMatrix: Matrix,
@@ -99,24 +97,21 @@ object Coevolution {
       case _ => Array(DenseMatrix.zeros(populationMatrix.nrows,populationMatrix.ncols))
     }
 
-    /*
-    val feedbackDistancesMatrix: Matrix = if(feedbackDistancesFile!=null){
-       FileUtils.parseMatrixFile(feedbackDistancesFile)
-    }else{
-      new Matrix(populationMatrix.getRowDimension,(populationMatrix.getRowDimension*(populationMatrix.getRowDimension-1))/2,0.0)
+    val feedbackDistancesMatrix: Matrix = feedbackWeight match {
+      case 0.0 => EmptyMatrix()
+      case _ => feedbackDistancesFile match {
+        case null => DenseMatrix.zeros(populationMatrix.nrows,(populationMatrix.nrows*(populationMatrix.nrows-1))/2)
+        case _ => Matrix(CSV.readMat(feedbackDistancesFile))
+      }
     }
-    */
 
     val rawdates: Seq[String] = CSV.readCSV(datesFile,withHeader=false).values.toSeq(0)
     val dates: Array[Double] = rawdates.map(_.toDouble).toArray
 
-    /*Coevolution(populationMatrix,distancesMatrix,feedbackDistancesMatrix,dates,
-      growthRate,gravityWeight,gravityGamma,gravityDecay,feedbackWeight,feedbackGamma,feedbackDecay
-    )*/
     Coevolution(
       populationMatrix,
       distancesMatrices,
-      null, // feedback not implemented
+      feedbackDistancesMatrix,
       dates,
       growthRate,
       gravityWeight,
@@ -148,10 +143,10 @@ object Coevolution {
 
     val gravityDistanceWeights = distancesMatrices(0).map{ d => Math.exp(-d / gravityDecay) }.asInstanceOf[RealMatrix]
 
-    //val feedbackDistanceWeights = new Matrix(feedbackDistancesMatrix.getArray().map { _.map { d => Math.exp(-d / feedbackDecay) } })
+    val feedbackDistanceWeights: Matrix = if(feedbackWeight!=0.0) feedbackDistancesMatrix.map { d => Math.exp(-d / feedbackDecay) } else EmptyMatrix()
 
-    //println("mean dist mat : " + distancesMatrix.getArray().flatten.sum / (distancesMatrix.getRowDimension() * distancesMatrix.getColumnDimension()))
-    //println("mean feedback mat : " + feedbackDistancesMatrix.getArray().flatten.sum / (feedbackDistancesMatrix.getRowDimension() * feedbackDistancesMatrix.getColumnDimension()))
+    utils.log("mean dist mat : " + distancesMatrices(0).mean)
+    utils.log("mean feedback mat : " + feedbackDistancesMatrix.mean)
 
     for (t <- 1 until p) {
       // get time between two dates
@@ -162,35 +157,29 @@ object Coevolution {
       val diag: RealMatrix = RealMatrix.zeros(n,n);diag.setDiagM(prevpop.flatValues)
       val diagpops: RealMatrix = (diag * (1.0 / totalpop)).map(Math.pow(_, gravityGamma)).asInstanceOf[RealMatrix]
 
-      //var diagpopsFeedback = diagpops.times((new Matrix(n, n, 1)).times(diagpops))
-
-      //println("mean norm pop : " + diagpops.getArray().flatten.sum / (n * n))
-      //diagpopsFeedback = new Matrix(diagpopsFeedback.getArray().map { _.map { Math.pow(_, feedbackGamma) } })
+      utils.log(s"mean norm pop before time ${dates(t)} = " + diagpops.mean)
 
       val potsgravity: RealMatrix = (diagpops%*%gravityDistanceWeights%*%diagpops).asInstanceOf[RealMatrix]
-
-      //val potsfeedback = feedbackDistanceWeights.times(flattenPot(diagpopsFeedback))
-
       potsgravity.setDiagM(0.0)
-      //setDiag(potsfeedback, 0)
       val meanpotgravity = potsgravity.sum / (n * n)
 
-      //val meanpotfeedback = potsfeedback.getArray().flatten.sum / n
-      //println("mean pot gravity : " + meanpotgravity)
-      //println("mean pot feedback : " + meanpotfeedback)
-      //val flatpot = flattenPot(potsfeedback)
+      val diagpopsFeedback: Matrix = (if(feedbackWeight!= 0.0) diagpops %*% DenseMatrix.ones(n,n) %*% diagpops else EmptyMatrix()).map(Math.pow(_, feedbackGamma))
+      val potsfeedback: RealMatrix = (feedbackDistanceWeights %*% flattenPot(diagpopsFeedback)).asInstanceOf[RealMatrix]
+      potsfeedback.setDiagM(0.0)
+      val meanpotfeedback = potsfeedback.sum / n
 
-      /*res.setMatrix(0, n - 1, t, t,
-        prevpop.plus(prevpop.arrayTimes(potsgravity.times(new Matrix(n, 1, 1)).times(gravityWeight / (n * meanpotgravity)).plus(new Matrix(n, 1, growthRate)).plus(
-          potsfeedback.times(2 * feedbackWeight / (n * (n - 1) * meanpotfeedback))
-        ).times(delta_t)))
-      )*/
-      // FIXME not optimal to wrap/unwrap
+      utils.log("mean pot gravity : " + meanpotgravity)
+      utils.log("mean pot feedback : " + meanpotfeedback)
+
+      val growthRates: Matrix = if (feedbackWeight != 0.0)
+        RealMatrix.constant(n,1,growthRate) + ((potsgravity %*% RealMatrix.ones(n,1)) * (gravityWeight / (n * meanpotgravity))) + (potsfeedback * (2 * feedbackWeight / (n * (n - 1) * meanpotfeedback)))
+      else RealMatrix.constant(n,1,growthRate) + (potsgravity %*% RealMatrix.ones(n,1)) * (gravityWeight / (n * meanpotgravity))
+      // rq: not optimal to wrap/unwrap
       res.setSubmatM(0, t,
         (prevpop + (prevpop *
-          (((potsgravity %*% RealMatrix.ones(n,1)) * (gravityWeight / (n * meanpotgravity))
-           + RealMatrix.constant(n,1,growthRate)) * delta_t)
-          )).values
+            (growthRates * delta_t)
+          )
+        ).values
       )
     }
 
@@ -200,9 +189,6 @@ object Coevolution {
 
   /**
     * Direct flows between cities given a distance matrix
-    * @param populations
-    * @param distances
-    * @return
     */
   /*
   def computeFlows(populations: Populations, distances: Distances): Array[Array[Double]] = {
@@ -211,9 +197,6 @@ object Coevolution {
 
   /**
     *
-    * @param populations
-    * @param flows
-    * @return
     */
   /*
   def updatePopulations(populations: Populations,flows: Array[Array[Double]]): Populations = {
@@ -225,21 +208,27 @@ object Coevolution {
     Array.empty
   }*/
 
+  /**
+    * Transforms feedback potential into a flat vector
+    * @param m potential matrix
+    * @return
+    */
+  def flattenPot(m: Matrix): Matrix = {
+    val n = m.nrows
+    val res = DenseMatrix.zeros(n * (n - 1) / 2, 1)
 
-  /*def flattenPot(m: Matrix): Matrix = {
-    val n = m.getRowDimension()
-    val res = new Matrix(n * (n - 1) / 2, 1)
-    //println(res.getRowDimension)
     for (i <- 0 to n - 2) {
       //println("i :" + i)
       //println("range : " + ((i * (n - 1)) - (i * (i - 1) / 2)) + " ; " + ((i + 1) * (n - 1) - (i * (i + 1) / 2)))
-      val col = m.getMatrix(i + 1, n - 1, i, i)
+      // rows \in i+1,n-1 ; cols in i,i
+      val col = m.getSubmat(i + 1, i, nrows = n - i - 1, ncols = 1)
       //println(col.getRowDimension() + " ; " + col.getColumnDimension())
       //println((i + 1) * (n - 1) - (i * (i + 1) / 2) - (i * (n - 1)) - (i * (i - 1) / 2))
-      res.setMatrix((i * (n - 1)) - (i * (i - 1) / 2), (i + 1) * (n - 1) - (i * (i + 1) / 2) - 1, 0, 0, col)
+      // set row: (i * (n - 1)) - (i * (i - 1) / 2) , (i + 1) * (n - 1) - (i * (i + 1) / 2) - 1 ; set col: 0 (flat)
+      res.setMSubmat((i * (n - 1)) - (i * (i - 1) / 2), 0, col.values)
     }
-    return res
-  }*/
+    res
+  }
 
 
 

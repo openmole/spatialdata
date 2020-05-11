@@ -214,6 +214,7 @@ case class EmptyMatrix() extends Matrix {
   override def inverse: Matrix = this
   override def transpose: Matrix = this
   override def sum: Double = Double.NaN
+  override def mean: Double = Double.NaN
   override def min: Double = Double.NaN
   override def max: Double = Double.NaN
   override def rowSum: Array[Double] = Array.empty[Double]

@@ -1,3 +1,4 @@
+import sbt.Keys.publishMavenStyle
 import sbt.enablePlugins
 
 lazy val commonSettings = Seq(
@@ -32,9 +33,37 @@ lazy val commonSettings = Seq(
 )
 
 
+lazy val overwriteNonSnapshot = true // use to overwrite when publish non-snapshot if issue during a previous release tentative
+lazy val publishSettings = Seq(
+  useGpg := true,
+  publishMavenStyle in ThisBuild := true,
+  publishTo in ThisBuild := {
+    val nexus = "https://oss.sonatype.org/"
+    if (isSnapshot.value) Some("snapshots" at nexus + "content/repositories/snapshots")
+    else Some("releases" at nexus + "service/local/staging/deploy/maven2")
+  },
+  publishConfiguration := publishConfiguration.value.withOverwrite(overwriteNonSnapshot),
+  credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
+  licenses in ThisBuild := Seq("Affero GPLv3" -> url("http://www.gnu.org/licenses/")),
+  homepage in ThisBuild := Some(url("https://github.com/openmole/spatialdata")),
+  scmInfo in ThisBuild := Some(ScmInfo(url("https://github.com/openmole/spatialdata.git"), "scm:git:git@github.com:openmole/spatialdata.git")),
+  pomExtra in ThisBuild :=
+  <developers>
+    <developer>
+      <id>justeraimbault</id>
+      <name>Juste Raimbault</name>
+    </developer>
+    <developer>
+      <id>julienperret</id>
+      <name>Julien Perret</name>
+    </developer>
+  </developers>
+)
+
+
 
 lazy val spatialdata = project.in(file(".")).settings(
-  commonSettings ++ Seq(name := "spatialdata")
+  Seq(name := "spatialdata") ++ commonSettings ++ publishSettings
 )
 
 
@@ -97,42 +126,6 @@ runtest := {
   fork in run := true
 }
 
-
-
-/**
-  * Publishing
-  */
-lazy val publishAll = taskKey[Unit]("Publish local and sonatype")
-// use to overwrite when publish non-snapshot if issue during a previous release tentative
-lazy val overwriteNonSnapshot = false
-publishAll := {
-  useGpg := true
-  publishMavenStyle in ThisBuild := true
-  publishTo in ThisBuild := {
-    val nexus = "https://oss.sonatype.org/"
-    if (isSnapshot.value) Some("snapshots" at nexus + "content/repositories/snapshots")
-    else Some("releases" at nexus + "service/local/staging/deploy/maven2")
-  }
-  publishConfiguration := publishConfiguration.value.withOverwrite(overwriteNonSnapshot)
-  credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
-  licenses in ThisBuild := Seq("Affero GPLv3" -> url("http://www.gnu.org/licenses/"))
-  homepage in ThisBuild := Some(url("https://github.com/openmole/spatialdata"))
-  scmInfo in ThisBuild := Some(ScmInfo(url("https://github.com/openmole/spatialdata.git"), "scm:git:git@github.com:openmole/spatialdata.git"))
-  pomExtra in ThisBuild :=
-    <developers>
-      <developer>
-        <id>justeraimbault</id>
-        <name>Juste Raimbault</name>
-      </developer>
-      <developer>
-        <id>julienperret</id>
-        <name>Julien Perret</name>
-      </developer>
-    </developers>
-
-  publishLocal in spatialdata
-  publish in spatialdata
-}
 
 /**
   * Releasing: run releaseConfig, release

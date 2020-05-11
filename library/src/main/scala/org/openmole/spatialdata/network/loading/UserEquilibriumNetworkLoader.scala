@@ -9,11 +9,11 @@ import scala.util.Random
 /**
   * Static deterministic user equilibrium
   *
-  * FIXME this must be tested and benchmarked for convergence / performance
+  * ! this must be tested and benchmarked for convergence / performance
   *
-  * @param network
-  * @param linkCostFunction
-  * @param pathSample
+  * @param network network
+  * @param linkCostFunction link cost function
+  * @param pathSample proportion of paths to sample
   */
 case class UserEquilibriumNetworkLoader(
                                          network: Network,
@@ -38,12 +38,18 @@ object UserEquilibriumNetworkLoader {
     *   (see Perederieieva, O., Ehrgott, M., Wang, J. Y., & Raith, A. (2013, October). A computational study of traffic assignment algorithms. In Australasian Transport Research Forum, Brisbane, Australia (pp. 1-18).
     *     for description and comparison of several link-based, path-based and origin-based traffic assignment algorithms
     *     !!! a step is taken as f_(t+1) = (1 - lambda) f(t) + lambda f_{shortest}(t) (nothing happens when flows are already at the shortest path)
-    * @param linkCostFunction
-    * @param odPattern
-    * @param rng
+    * @param linkCostFunction link cost function
+    * @param odPattern optional od pattern
+    * @param rng rng
     * @return
     */
-  def load(network: Network,linkCostFunction: (Link,Double) => Double,odPattern: Option[Map[(Node,Node),Double]],pathSample: Double,descentStep: Double, epsilon: Double)(implicit rng: Random): NetworkLoading = {
+  def load(network: Network,
+           linkCostFunction: (Link,Double) => Double,
+           odPattern: Option[Map[(Node,Node),Double]],
+           pathSample: Double,
+           descentStep: Double,
+           epsilon: Double
+          )(implicit rng: Random): NetworkLoading = {
     // In practice can be implemented with any other loader (not sure it converges though ?)
     val loader: NetworkLoader = ShortestPathsNetworkLoader(pathSample)
     def step(state: (NetworkLoading,Double)): (NetworkLoading,Double) = {

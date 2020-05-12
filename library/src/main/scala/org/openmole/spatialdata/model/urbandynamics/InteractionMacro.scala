@@ -24,9 +24,13 @@ object InteractionMacro {
     * @param state macro state
     * @return
     */
-  def macroStep(state: InteractionMacroState): InteractionMacroState = {
-    val newpops = interactionStep(state.populations,state.distanceMatrix,state.growthRates,state.interactionWeights,state.interactionGammas)
-    utils.log("macro Delta P = "+newpops.zip(state.populations).map{case (np,p)=>math.abs(np-p)}.sum)
+  def macroStep(state: InteractionMacroState,
+                additiveGrowthRates: Vector[Matrix => Matrix] = Vector.empty,
+                deltat: Double = 1.0
+               ): InteractionMacroState = {
+    val growthRates: Matrix = additiveGrowthRates.map(_(state.populations)).reduce(Matrix.msum)
+    val newpops = state.populations + (state.populations * deltat * growthRates)
+    utils.log("macro Delta P = "+newpops.flatValues.zip(state.populations.flatValues).map{case (np,p)=>math.abs(np-p)}.sum)
     state.copy(time = state.time + 1,
       populations = newpops
     )
@@ -38,33 +42,25 @@ object InteractionMacro {
     *
     *   ! no account of time step, by default 1 for synthetic application: generalize for possible calibration
     *
-    * @param prevpop previous populations
+    * @param prevpop previous populations as a column vector
     * @param genDistanceMatrix generalized distance matrix
     * @param growthRates growth rate proper to each city
     * @param interactionWeights weights of interactions
     * @param interactionGammas gammas of interactions
-    * @return
+    * @return next populations as a column vector
     */
-  def interactionStep(prevpop: Vector[Double],genDistanceMatrix: Matrix,growthRates: Vector[Double],interactionWeights: Vector[Double],interactionGammas: Vector[Double]): Vector[Double] = {
-    val delta_t = 1 // synthetic model
-    val n = prevpop.size
-    val totalpop = prevpop.toArray.sum
-    val diagpops = DenseMatrix.diagonal(prevpop.toArray.zip(interactionGammas).map{ case (p,g) => math.pow(p / totalpop,g)})
-    //utils.log("diagpops : "+diagpops.getRowDimension+"x"+diagpops.getColumnDimension+" ; dmat : "+dmat.getRowDimension+"x"+dmat.getColumnDimension)
+  def interactionGrowthRates(prevpop: Matrix,
+                      genDistanceMatrix: Matrix,
+                      interactionWeights: Vector[Double],
+                      interactionGammas: Vector[Double]): Matrix = {
+    val n = prevpop.nrows
+    val totalpop = prevpop.sum
+    val diagpops = DenseMatrix.diagonal(prevpop.flatValues.zip(interactionGammas).map{ case (p,g) => math.pow(p / totalpop,g)})
     val potsgravity = diagpops %*% genDistanceMatrix %*% diagpops
     (0 until potsgravity.nrows).foreach(i => potsgravity.setM(i,i,0.0))
-    val meanpotgravity = potsgravity.flatValues.sum / (prevpop.size * prevpop.size)
+    val meanpotgravity = potsgravity.flatValues.sum / (n * n)
     val diagweights = DenseMatrix.diagonal(interactionWeights.toArray.map(_/ (n * meanpotgravity)))
-    val prevpopmat = Matrix(prevpop.toArray.map(Array(_)))(Matrix.defaultImplementation)
-    (prevpopmat +
-       (
-         (prevpopmat * delta_t) *
-           (
-             (diagweights %*% potsgravity %*% DenseMatrix.ones(n, 1)) +
-                Matrix(growthRates.toArray.map(Array(_)))(Matrix.defaultImplementation)
-           )
-        )
-     ).values.transpose.head.toVector
+    diagweights %*% potsgravity %*% DenseMatrix.ones(n, 1)
   }
 
 

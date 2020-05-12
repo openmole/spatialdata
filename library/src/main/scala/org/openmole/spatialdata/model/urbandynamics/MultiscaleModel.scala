@@ -2,6 +2,8 @@ package org.openmole.spatialdata.model.urbandynamics
 
 import org.openmole.spatialdata.grid.measures.GridMorphology
 import org.openmole.spatialdata.utils
+import org.openmole.spatialdata.utils.math.Matrix
+import org.openmole.spatialdata.utils.math.Matrix.MatrixImplementation
 
 import scala.util.Random
 
@@ -39,9 +41,9 @@ case class MultiscaleModel(
     * @param rng rng
     * @return
     */
-  def initialState(implicit rng: Random): MultiscaleState = {
+  def initialState(implicit rng: Random, mImpl: MatrixImplementation): MultiscaleState = {
     val macrostate = InteractionMacroState.initialSyntheticState(macroNcities,macroInitialHierarchy,macroInitialMaxPop,macroRange,macroGrowthRate,macroInteractionDecay,macroInteractionWeight,macroInteractionGamma)
-    val mesoStates = macrostate.populations.map{pi => {
+    val mesoStates = macrostate.populations.flatValues.toVector.map{pi => {
       val initState = ReactionDiffusionMesoState.initialSyntheticState(mesoGridSize, mesoCenterDensity, math.sqrt(pi / (2 * math.Pi * mesoCenterDensity)), mesoAlpha,
         mesoBeta, mesoNdiff, 0.0, mesoTimeSteps)
       //assert(pi==initState.populationGrid.flatten.sum,"inc init state : pi = "+pi+" ; meso = "+initState.populationGrid.flatten.sum+"\n"+
@@ -74,9 +76,15 @@ case class MultiscaleModel(
     * @param rng rng
     * @return
     */
-  def modelStep(state: MultiscaleState)(implicit rng: Random): MultiscaleState = {
+  def modelStep(state: MultiscaleState)(implicit rng: Random, matrixImplementation: MatrixImplementation): MultiscaleState = {
     // compute next macro state
-    val provMacroState = InteractionMacro.macroStep(state.macroState)
+    val provMacroState = InteractionMacro.macroStep(
+      state.macroState,
+      Vector(
+        _ => Matrix(state.macroState.growthRates.toArray,row=false),
+        p => InteractionMacro.interactionGrowthRates(p,state.macroState.distanceMatrix,state.macroState.interactionWeights,state.macroState.interactionGammas)
+      )
+    )
     val deltas = InteractionMacro.deltaMacroStates(state.macroState,provMacroState)
 
     // update meso parameters as a function of delta populations
@@ -99,7 +107,7 @@ case class MultiscaleModel(
     * @param rng rng
     * @return
     */
-  def modelRun(fullTimeSeries: Boolean)(implicit rng: Random): MultiscaleResult = {
+  def modelRun(fullTimeSeries: Boolean)(implicit rng: Random, mImpl: MatrixImplementation): MultiscaleResult = {
     def run0(steps: Int,state: MultiscaleState, accumulator: Vector[MultiscaleState]): Vector[MultiscaleState] = steps match{
       case 0 => accumulator
       case s =>
@@ -185,13 +193,17 @@ object MultiscaleModel {
     * @param call call
     * @param threshold threshold
     */
-  def ensureConsistence(macroState: InteractionMacroState,mesoStates: Vector[ReactionDiffusionMesoState],call: String = "",threshold: Double = 10000.0): InteractionMacroState = {
-    val deltaPopLevels = macroState.populations.zip(mesoStates).map{case (p,ms)=>math.abs(p - ms.populationGrid.flatten.sum)}
+  def ensureConsistence(macroState: InteractionMacroState,
+                        mesoStates: Vector[ReactionDiffusionMesoState],
+                        call: String = "",
+                        threshold: Double = 10000.0
+                       )(implicit mImpl: MatrixImplementation): InteractionMacroState = {
+    val deltaPopLevels = macroState.populations.flatValues.zip(mesoStates).map{case (p,ms)=>math.abs(p - ms.populationGrid.flatten.sum)}
     /*assert(deltaPopLevels.sum/deltaPopLevels.size<threshold,call+" - incoherence between levels : "+deltaPopLevels+"\n"+macroState.populations+"\n"+
       mesoStates.map(_.populationGrid.flatten.sum)
     )*/
     utils.log("total consistence adj = "+deltaPopLevels.map(math.abs).sum)
-    macroState.copy(populations = mesoStates.map(_.populationGrid.flatten.sum))
+    macroState.copy(populations = Matrix(mesoStates.map(_.populationGrid.flatten.sum).toArray,row=false))
   }
 
 

@@ -8,8 +8,22 @@ import org.openmole.spatialdata.utils.math.Matrix
   *  rq : coordinates are not useful once the distance matrix has been computed ?
   */
 trait MacroState {
+  /**
+    * time step
+    * @return
+    */
   def time: Int
-  def populations: Vector[Double]
+
+  /**
+    * populations as column vector
+    * @return
+    */
+  def populations: Matrix
+
+  /**
+    * distance matrix
+    * @return
+    */
   def distanceMatrix: Matrix
 
   /**
@@ -17,7 +31,7 @@ trait MacroState {
     * @return
     */
   def indicators: (Vector[Double],Vector[Double],Vector[Double]) = {
-    val pop = populations
+    val pop = populations.flatValues.toVector
     val dmat = distanceMatrix
     val ptot = populations.sum
     (pop,dmat.values.map(r => r.sum/r.length).toVector,dmat.values.map(r=> r.zip(pop).map{case (e,p)=> e*p/ptot}.sum / r.length).toVector)

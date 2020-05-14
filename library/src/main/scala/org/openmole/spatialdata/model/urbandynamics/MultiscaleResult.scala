@@ -6,16 +6,16 @@ import org.openmole.spatialdata.utils.math.Statistics
 /**
   * computed indicators for a multiscale simu
  *
-  * @param rawStates
-  * @param macroPopulations
-  * @param macroClosenesses
-  * @param macroAccessibilities
-  * @param mesoMorans
-  * @param mesoDistances
-  * @param mesoEntropy
-  * @param mesoSlopes
-  * @param mesoSlopeRsquared
-  * @param mesoCongestedFlows
+  * @param rawStates raw states
+  * @param macroPopulations macro pops
+  * @param macroClosenesses macro closeness
+  * @param macroAccessibilities macro access
+  * @param mesoMorans meso morans
+  * @param mesoDistances meso distances
+  * @param mesoEntropy meso entropies
+  * @param mesoSlopes meso slopes
+  * @param mesoSlopeRsquared meso slopees rsquared
+  * @param mesoCongestedFlows meso congested flows
   */
 case class MultiscaleResult(
                              rawStates: Vector[MultiscaleState],
@@ -34,7 +34,8 @@ case class MultiscaleResult(
                              timesteps: Int,
                              cities: Int
                            ) {
-  def asArrayTuple =  (macroPopulations.toArray,macroClosenesses.toArray,macroAccessibilities.toArray,
+  def asArrayTuple: (Array[Double],Array[Double],Array[Double],Array[Double],Array[Double],Array[Double],Array[Double],Array[Double],Array[Double],Array[Double]) =
+    (macroPopulations.toArray,macroClosenesses.toArray,macroAccessibilities.toArray,
     mesoMorans.toArray,mesoDistances.toArray,mesoEntropy.toArray,mesoSlopes.toArray,mesoSlopeRsquared.toArray,
     mesoCongestedFlows.toArray,mesoMissingPopulations.toArray
   )
@@ -73,7 +74,7 @@ object MultiscaleResult {
       morphologies.map(_._3),
       morphologies.map(_._4),
       morphologies.map(_._5),
-      states.flatMap(_.macroState.congestedFlows),
+      states.flatMap(_.parameters.congestedFlows),
       states.flatMap(_.mesoStates.map(_.missingPopulation)),
       fulltrajs,
       rawStates.length,

@@ -4,27 +4,22 @@ import org.openmole.spatialdata.utils.math.Matrix
 
 
 /**
-  * Macroscopic state
-  *  rq : coordinates are not useful once the distance matrix has been computed ?
+  *
   */
-trait MacroState {
-  /**
-    * time step
-    * @return
-    */
-  def time: Int
 
-  /**
-    * populations as column vector
-    * @return
-    */
-  def populations: Matrix
-
-  /**
-    * distance matrix
-    * @return
-    */
-  def distanceMatrix: Matrix
+/**
+  * Macroscopic state
+  *   rq : coordinates are not useful once the distance matrix has been computed ?
+  *
+  * @param time time step
+  * @param populations populations as column vector
+  * @param distanceMatrix distance matrix  - not cached as evolves at each step - must be from the beginning a generalized distance matrix ? (! update rule ?)
+  */
+case class MacroState(
+  time: Int,
+  populations: Matrix,
+  distanceMatrix: Matrix
+) {
 
   /**
     * Compute macroscopic indicators : population, closeness and accessibility
@@ -41,9 +36,3 @@ trait MacroState {
 
 
 
-
-/*
-object MacroState {
-  def initialSyntheticState(): MacroState = MacroState(0)
-}
-*/

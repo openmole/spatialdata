@@ -137,53 +137,27 @@ object Coevolution {
     import model._
 
     val n = populationMatrix.nrows
-    val p = populationMatrix.ncols
-    val res: RealMatrix = RealMatrix.zeros(n, p)
-    res.setSubmatM(0, 0, populationMatrix.getSubmat(0, 0, nrows = n, ncols= 1).values)
-
     val gravityDistanceWeights = distancesMatrices(0).map{ d => Math.exp(-d / gravityDecay) }.asInstanceOf[RealMatrix]
-
     val feedbackDistanceWeights: Matrix = if(feedbackWeight!=0.0) feedbackDistancesMatrix.map { d => Math.exp(-d / feedbackDecay) } else EmptyMatrix()
 
     utils.log("mean dist mat : " + distancesMatrices(0).mean)
     utils.log("mean feedback mat : " + feedbackDistancesMatrix.mean)
 
-    for (t <- 1 until p) {
-      // get time between two dates
-      val delta_t = dates(t) - dates(t - 1)
+    val growthRates = Vector(
+      Gibrat(Vector.fill(n)(growthRate)),
+      InteractionMacro(Vector.fill(n)(gravityDecay),Vector.fill(n)(gravityWeight),Vector.fill(n)(gravityGamma),gravityDistanceWeights)
+    ) ++ (if (feedbackWeight != 0.0)
+      Vector(NetworkFeedback(Vector.fill(n)(feedbackWeight),Vector.fill(n)(feedbackDecay),Vector.fill(n)(feedbackGamma),feedbackDistanceWeights)) else Vector.empty)
 
-      val prevpop = res.getSubmat(0, t - 1, nrows = n, ncols = 1)
-      val totalpop = prevpop.sum
-      val diag: RealMatrix = RealMatrix.zeros(n,n);diag.setDiagM(prevpop.flatValues)
-      val diagpops: RealMatrix = (diag * (1.0 / totalpop)).map(Math.pow(_, gravityGamma)).asInstanceOf[RealMatrix]
+    def step(state: (Vector[MacroState],Vector[Double])): (Vector[MacroState],Vector[Double]) =
+      (Vector(MacroModel.macroStep(state._1.head,growthRates,state._2.head))++state._1,state._2.tail)
 
-      utils.log(s"mean norm pop before time ${dates(t)} = " + diagpops.mean)
+    val initState = MacroState(0,populationMatrix.getSubmat(0, 0, nrows = n, ncols= 1), distancesMatrices(0))
+    val deltats = dates.tail.zip(dates.dropRight(1)).map{case (next,prev)=> next-prev}.toVector
 
-      val potsgravity: RealMatrix = (diagpops%*%gravityDistanceWeights%*%diagpops).asInstanceOf[RealMatrix]
-      potsgravity.setDiagM(0.0)
-      val meanpotgravity = potsgravity.sum / (n * n)
+    val states = Iterator.iterate((Vector(initState),deltats))(step).takeWhile(_._2.nonEmpty).toVector.last._1
 
-      val diagpopsFeedback: Matrix = (if(feedbackWeight!= 0.0) diagpops %*% DenseMatrix.ones(n,n) %*% diagpops else EmptyMatrix()).map(Math.pow(_, feedbackGamma))
-      val potsfeedback: RealMatrix = (feedbackDistanceWeights %*% flattenPot(diagpopsFeedback)).asInstanceOf[RealMatrix]
-      potsfeedback.setDiagM(0.0)
-      val meanpotfeedback = potsfeedback.sum / n
-
-      utils.log("mean pot gravity : " + meanpotgravity)
-      utils.log("mean pot feedback : " + meanpotfeedback)
-
-      val growthRates: Matrix = if (feedbackWeight != 0.0)
-        RealMatrix.constant(n,1,growthRate) + ((potsgravity %*% RealMatrix.ones(n,1)) * (gravityWeight / (n * meanpotgravity))) + (potsfeedback * (2 * feedbackWeight / (n * (n - 1) * meanpotfeedback)))
-      else RealMatrix.constant(n,1,growthRate) + (potsgravity %*% RealMatrix.ones(n,1)) * (gravityWeight / (n * meanpotgravity))
-      // rq: not optimal to wrap/unwrap
-      res.setSubmatM(0, t,
-        (prevpop + (prevpop *
-            (growthRates * delta_t)
-          )
-        ).values
-      )
-    }
-
-    MacroResult(populationMatrix,res)
+    MacroResult(populationMatrix,states)
   }
 
 
@@ -208,27 +182,7 @@ object Coevolution {
     Array.empty
   }*/
 
-  /**
-    * Transforms feedback potential into a flat vector
-    * @param m potential matrix
-    * @return
-    */
-  def flattenPot(m: Matrix): Matrix = {
-    val n = m.nrows
-    val res = DenseMatrix.zeros(n * (n - 1) / 2, 1)
 
-    for (i <- 0 to n - 2) {
-      //println("i :" + i)
-      //println("range : " + ((i * (n - 1)) - (i * (i - 1) / 2)) + " ; " + ((i + 1) * (n - 1) - (i * (i + 1) / 2)))
-      // rows \in i+1,n-1 ; cols in i,i
-      val col = m.getSubmat(i + 1, i, nrows = n - i - 1, ncols = 1)
-      //println(col.getRowDimension() + " ; " + col.getColumnDimension())
-      //println((i + 1) * (n - 1) - (i * (i + 1) / 2) - (i * (n - 1)) - (i * (i - 1) / 2))
-      // set row: (i * (n - 1)) - (i * (i - 1) / 2) , (i + 1) * (n - 1) - (i * (i + 1) / 2) - 1 ; set col: 0 (flat)
-      res.setMSubmat((i * (n - 1)) - (i * (i - 1) / 2), 0, col.values)
-    }
-    res
-  }
 
 
 

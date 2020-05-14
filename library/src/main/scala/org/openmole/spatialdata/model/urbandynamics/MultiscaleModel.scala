@@ -42,17 +42,18 @@ case class MultiscaleModel(
     * @return
     */
   def initialState(implicit rng: Random, mImpl: MatrixImplementation): MultiscaleState = {
-    val macrostate = InteractionMacroState.initialSyntheticState(macroNcities,macroInitialHierarchy,macroInitialMaxPop,macroRange,macroGrowthRate,macroInteractionDecay,macroInteractionWeight,macroInteractionGamma)
-    val mesoStates = macrostate.populations.flatValues.toVector.map{pi => {
-      val initState = ReactionDiffusionMesoState.initialSyntheticState(mesoGridSize, mesoCenterDensity, math.sqrt(pi / (2 * math.Pi * mesoCenterDensity)), mesoAlpha,
-        mesoBeta, mesoNdiff, 0.0, mesoTimeSteps)
-      //assert(pi==initState.populationGrid.flatten.sum,"inc init state : pi = "+pi+" ; meso = "+initState.populationGrid.flatten.sum+"\n"+
-      // initState.populationGrid.map(_.map(math.floor)).mkString("\n"))
-      initState
-    }
+    val macrostate: MacroState = MacroModel.initialSyntheticState(macroNcities,macroInitialHierarchy,macroInitialMaxPop,macroRange,macroInteractionDecay)
+    val mesoStates: Vector[ReactionDiffusionMesoState] = macrostate.populations.flatValues.toVector.map{
+      pi => {
+        val initState = ReactionDiffusionMesoState.initialSyntheticState(mesoGridSize, mesoCenterDensity, math.sqrt(pi / (2 * math.Pi * mesoCenterDensity)), mesoAlpha,
+          mesoBeta, mesoNdiff, 0.0, mesoTimeSteps)
+        //assert(pi==initState.populationGrid.flatten.sum,"inc init state : pi = "+pi+" ; meso = "+initState.populationGrid.flatten.sum+"\n"+
+        // initState.populationGrid.map(_.map(math.floor)).mkString("\n"))
+        initState
+      }
     }
 
-    val consistentMacroState = MultiscaleModel.ensureConsistence(macrostate,mesoStates,"initialisation")
+    val consistentMacroState: MacroState = MultiscaleModel.ensureConsistence(macrostate,mesoStates,"initialisation")
 
     assert(mesoStates.forall{_.populationGrid.flatten.sum>0},"existing null meso pop grids")
 
@@ -64,8 +65,15 @@ case class MultiscaleModel(
     assert(!initialCongestedFlows.exists(_.isNaN),"NaNs congested flows : "+initialCongestedFlows)
 
     MultiscaleState(
-      0,consistentMacroState.copy(congestedFlows = initialCongestedFlows),
-      mesoStates
+      0,consistentMacroState,
+        //.copy(congestedFlows = initialCongestedFlows),
+      mesoStates,
+      MultiscaleState.Parameters(
+        growthRates = Vector.fill(macroNcities)(macroGrowthRate),
+        interactionDecays = Vector.fill(macroNcities)(macroInteractionDecay),
+        interactionWeights = Vector.fill(macroNcities)(macroInteractionWeight),
+        interactionGammas = Vector.fill(macroNcities)(macroInteractionGamma),
+        congestedFlows= initialCongestedFlows)
     )
   }
 
@@ -78,14 +86,14 @@ case class MultiscaleModel(
     */
   def modelStep(state: MultiscaleState)(implicit rng: Random, matrixImplementation: MatrixImplementation): MultiscaleState = {
     // compute next macro state
-    val provMacroState = InteractionMacro.macroStep(
+    val provMacroState = MacroModel.macroStep(
       state.macroState,
       Vector(
-        _ => Matrix(state.macroState.growthRates.toArray,row=false),
-        p => InteractionMacro.interactionGrowthRates(p,state.macroState.distanceMatrix,state.macroState.interactionWeights,state.macroState.interactionGammas)
+        Gibrat(state.parameters.growthRates),
+        InteractionMacro(state.parameters.interactionDecays,state.parameters.interactionWeights,state.parameters.interactionGammas,state.macroState.distanceMatrix)
       )
     )
-    val deltas = InteractionMacro.deltaMacroStates(state.macroState,provMacroState)
+    val deltas = MacroModel.deltaMacroStates(state.macroState,provMacroState)
 
     // update meso parameters as a function of delta populations
     val updatedMesoStates = ReactionDiffusionMesoState.mesoStep(state.mesoStates.zip(deltas).map{case (mesoState,delta) =>
@@ -96,10 +104,7 @@ case class MultiscaleModel(
     val consistentMacroState = MultiscaleModel.ensureConsistence(provMacroState,updatedMesoStates,"model step")
 
     // update macroparameters as a function of mesoconfigurations
-    val updatedMacroState = MultiscaleModel.updateMacroParameters(consistentMacroState,updatedMesoStates,mesoMacroCongestionCost,mesoMacroDecayUpdateMax)
-
-    //construct new multiscale state
-    MultiscaleState(state.time+1,updatedMacroState,updatedMesoStates)
+    MultiscaleModel.updateMacroParameters(state.copy(time = state.time+1,macroState = consistentMacroState,mesoStates = updatedMesoStates),mesoMacroCongestionCost,mesoMacroDecayUpdateMax)
   }
 
   /**
@@ -136,7 +141,7 @@ object MultiscaleModel {
     *  - alpha : idem => scenario globalized metropolis or eq city
     *  - mesoSteps : could be updated (speed of urban project e.g.) - fixed for now
     *
-    * @param mesostate mesoscopic state
+    * @param mesoState mesoscopic state
     * @param deltaPop population increment
     * @param relDeltaPop relative pop increment
     * @param relDeltaAccess relative accessibility increment
@@ -144,13 +149,13 @@ object MultiscaleModel {
     * @param alphaUpdateMax max value for alpha update
     * @return
     */
-  def updateMesoParameters(mesostate: ReactionDiffusionMesoState,deltaPop: Double,relDeltaPop: Double,relDeltaAccess: Double,
+  def updateMesoParameters(mesoState: ReactionDiffusionMesoState,deltaPop: Double,relDeltaPop: Double,relDeltaAccess: Double,
                            betaUpdateMax: Double,alphaUpdateMax: Double
                           ): ReactionDiffusionMesoState = {
-    val newGrowthRate = deltaPop / mesostate.mesoTimeSteps
-    val newBeta = mesostate.beta* (1 + betaUpdateMax*relDeltaPop)
-    val newAlpha = mesostate.alpha* (1+ alphaUpdateMax*relDeltaAccess)
-    mesostate.copy(beta=newBeta,alpha=newAlpha,growthRate = newGrowthRate)
+    val newGrowthRate = deltaPop / mesoState.mesoTimeSteps
+    val newBeta = mesoState.beta* (1 + betaUpdateMax*relDeltaPop)
+    val newAlpha = mesoState.alpha* (1+ alphaUpdateMax*relDeltaAccess)
+    mesoState.copy(beta=newBeta,alpha=newAlpha,growthRate = newGrowthRate)
   }
 
 
@@ -158,19 +163,19 @@ object MultiscaleModel {
     * updates macroscopic parameters :
     *  - only interactionDecay is updated, in a linear feedback by dg = dg (1 + decayMaxUpdate * delta phi / max delta phi)
     *    where the "performance" phi aggregates internal flows with a congestion cost as \sum c_ij = \sum pipj/dij - congestionCost *(pipj/dij)2
-    * @param macroState macro states
-    * @param mesoStates meso states
+    * @param state state
     * @param congestionCost congestion cost
     * @param decayUpdateMax max update of decay
     * @return
     */
-  def updateMacroParameters(macroState: InteractionMacroState,mesoStates: Vector[ReactionDiffusionMesoState],
-                            congestionCost: Double,decayUpdateMax: Double): InteractionMacroState = {
+  def updateMacroParameters(state: MultiscaleState,
+                            congestionCost: Double,
+                            decayUpdateMax: Double): MultiscaleState = {
 
-    assert(mesoStates.forall{_.populationGrid.flatten.sum>0},"existing null meso pop grids")
+    assert(state.mesoStates.forall{_.populationGrid.flatten.sum>0},"existing null meso pop grids")
 
     // note: congestedFlow function in spatialdata computes \sum (flow - lambda flow^2 )
-    val utilities = mesoStates.map{s => GridMorphology.congestedFlows(s.populationGrid.map{_.toArray}.toArray,congestionCost)}
+    val utilities = state.mesoStates.map{s => GridMorphology.congestedFlows(s.populationGrid.map{_.toArray}.toArray,congestionCost)}
 
     assert(!utilities.exists(_.isNaN),"Nan in utilities : "+utilities)
 
@@ -180,9 +185,12 @@ object MultiscaleModel {
     //assert(relutilities.filter(_.isNaN).size==0,"Nan in rel utils : "+maxabsu+" ; "+relutilities)
 
     // update interaction decays and generalized distance matrix
-    val newDecays = macroState.interactionDecays.zip(relutilities).map{case (d,u) => d*(1 + decayUpdateMax*u)}
-    val newGenDistMatrix = InteractionMacro.updateDistanceMatrix(macroState.distanceMatrix,macroState.interactionDecays,newDecays)
-    macroState.copy(interactionDecays = newDecays,distanceMatrix = newGenDistMatrix,congestedFlows = utilities)
+    val newDecays = state.parameters.interactionDecays.zip(relutilities).map{case (d,u) => d*(1 + decayUpdateMax*u)}
+    val newGenDistMatrix = MacroModel.updateDistanceMatrix(state.macroState.distanceMatrix,state.parameters.interactionDecays,newDecays)
+    state.copy(
+      macroState = state.macroState.copy(distanceMatrix = newGenDistMatrix),
+      parameters = state.parameters.copy(interactionDecays = newDecays,congestedFlows = utilities)
+    )
   }
 
 
@@ -193,17 +201,19 @@ object MultiscaleModel {
     * @param call call
     * @param threshold threshold
     */
-  def ensureConsistence(macroState: InteractionMacroState,
-                        mesoStates: Vector[ReactionDiffusionMesoState],
+  def ensureConsistence(macroState: MacroState,
+                        mesoStates: Vector[MesoState],
                         call: String = "",
                         threshold: Double = 10000.0
-                       )(implicit mImpl: MatrixImplementation): InteractionMacroState = {
+                       )(implicit mImpl: MatrixImplementation): MacroState = {
     val deltaPopLevels = macroState.populations.flatValues.zip(mesoStates).map{case (p,ms)=>math.abs(p - ms.populationGrid.flatten.sum)}
     /*assert(deltaPopLevels.sum/deltaPopLevels.size<threshold,call+" - incoherence between levels : "+deltaPopLevels+"\n"+macroState.populations+"\n"+
       mesoStates.map(_.populationGrid.flatten.sum)
     )*/
     utils.log("total consistence adj = "+deltaPopLevels.map(math.abs).sum)
-    macroState.copy(populations = Matrix(mesoStates.map(_.populationGrid.flatten.sum).toArray,row=false))
+    macroState.copy(
+      populations = Matrix(mesoStates.map(_.populationGrid.flatten.sum).toArray,row=false)
+    )
   }
 
 

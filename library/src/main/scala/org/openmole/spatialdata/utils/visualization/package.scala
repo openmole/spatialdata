@@ -30,6 +30,12 @@ package object visualization {
     frame.init
   }
 
+  def normalizedPosition(networks: Seq[Network]): Node => Point = {
+    val (xcoords,ycoords) = networks.flatMap(_.nodes.toSeq.map(_.position)).unzip
+    val (minx,maxx,miny,maxy) = (xcoords.min,xcoords.max,ycoords.min,ycoords.max)
+    n: Node => ((n.position._1 - minx) / (maxx - minx),(n.position._2 - miny) / (maxy - miny))
+  }
+
   def staticFlowsVisualization(model: SpatialInteractionModel
                                 ): Unit = {
     val frame = FlowsFrame(model)

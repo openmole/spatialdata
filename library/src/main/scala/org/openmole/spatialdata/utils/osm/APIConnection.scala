@@ -107,8 +107,7 @@ class APIConnection(userServerURL: String = APIConnection.defaultServerURL, val 
 
     try {
       if (response.getStatusLine.getStatusCode != 200) throw new RuntimeException("HTTP status " + response.getStatusLine.getStatusCode + ", " + response.getStatusLine.getReasonPhrase)
-      val parser = OSMXmlParser.apply()
-      parser.setRoot(root)
+      val parser = OSMXmlParser(root)
       parser.parse(response.getEntity.getContent)
     } finally response.close()
   }
@@ -173,8 +172,7 @@ class APIConnection(userServerURL: String = APIConnection.defaultServerURL, val 
     val response = httpClient.execute(get)
     try {
       if (response.getStatusLine.getStatusCode != 200) throw new RuntimeException("HTTP status " + response.getStatusLine.getStatusCode + ", " + response.getStatusLine.getReasonPhrase)
-      val parser = OSMXmlParser.apply()
-      parser.setRoot(root)
+      val parser = OSMXmlParser(root)
       parser.parse(new InputStreamReader(response.getEntity.getContent, "UTF8"))
     } finally response.close()
   }
@@ -192,8 +190,7 @@ class APIConnection(userServerURL: String = APIConnection.defaultServerURL, val 
     val response = httpClient.execute(get)
     try {
       if (response.getStatusLine.getStatusCode != 200) throw new RuntimeException("HTTP status " + response.getStatusLine.getStatusCode + ", " + response.getStatusLine.getReasonPhrase)
-      val parser = OSMXmlParser.apply()
-      parser.setRoot(root)
+      val parser = OSMXmlParser(root)
       parser.parse(new InputStreamReader(response.getEntity.getContent, "UTF8"))
     } finally response.close()
   }
@@ -211,8 +208,7 @@ class APIConnection(userServerURL: String = APIConnection.defaultServerURL, val 
     val response = httpClient.execute(get)
     try {
       if (response.getStatusLine.getStatusCode != 200) throw new RuntimeException("HTTP status " + response.getStatusLine.getStatusCode + ", " + response.getStatusLine.getReasonPhrase)
-      val parser = OSMXmlParser.apply()
-      parser.setRoot(root)
+      val parser = OSMXmlParser(root)
       parser.parse(new InputStreamReader(response.getEntity.getContent, "UTF8"))
     } finally response.close()
   }

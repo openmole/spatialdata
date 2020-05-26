@@ -21,8 +21,7 @@ object TestOSM {
     val overpass = new APIOverpass
 
     val root = new OSMRoot
-    val parser = OSMXmlParser.apply()
-    parser.setRoot(root)
+    val parser = OSMXmlParser(root)
 
     parser.parse(new StringReader(overpass.execute(
       """

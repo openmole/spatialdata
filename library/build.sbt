@@ -23,7 +23,6 @@ lazy val commonSettings = Seq(
     "org.apache.httpcomponents" % "httpclient" % "4.3.5",
     "commons-io" % "commons-io" % "2.3",
     "org.apache.commons" % "commons-lang3" % "3.1",
-    "it.uniroma1.dis.wsngroup.gexf4j" % "gexf4j" % "1.0.0",
     "org.scalanlp" %% "breeze" % "1.0",
     "com.github.fommil.netlib" % "all" % "1.1.2", // impl for breeze
     "de.ruedigermoeller" % "fst" % "2.57"

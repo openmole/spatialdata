@@ -30,7 +30,7 @@ case class NetworkFrame(networks: Seq[Network],
           gg.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
           gg.setStroke(new BasicStroke(1, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND))
 
-          networks.foreach {case network =>
+          networks.foreach {network =>
             network.nodes.foreach { n => {
               val np = nodePositioning(n)
               val (x, y) = (margin + (np._1 * frameWidth - nodeSize / 2).toInt, margin + (np._2 * frameHeight - nodeSize / 2).toInt)

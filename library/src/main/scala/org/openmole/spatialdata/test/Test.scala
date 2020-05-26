@@ -16,11 +16,14 @@ object Test extends App {
   //TestCoupled.testRandom()
 
   // Network algorithms
-  TestNetwork.testCoarseGraining
+  //TestNetwork.testCoarseGraining
   //TestNetwork.testSimplification
   //TestNetwork.testCycles
   //TestNetwork.testShortestPathImplementations()
   //TestNetwork.testPlanarization()
+
+  // Matsim
+  TestMatsim.testMatsimNetworkGenerator
 
   // OSM
   //TestOSM.testBuildingExtractor()

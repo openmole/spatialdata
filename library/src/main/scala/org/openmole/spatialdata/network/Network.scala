@@ -304,9 +304,9 @@ case class Network(
 
   /**
     * Get links connecting single nodes to closest
-    *   TODO option to connect each node with closest neighbor before ? (cf NetLogo implementation)
-    *   FIXME cannot work returning a Seq[Link], must return a network as projection node must be created !
-    *   FIXME what happens with directed links ?
+    *    -  option to connect each node with closest neighbor before ? (cf NetLogo implementation)
+    *    -  cannot work returning a Seq[Link], must return a network as projection node must be created !
+    *    -  what happens with directed links ?
     * @return
     */
   def projectionConnect: Network = {

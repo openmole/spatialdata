@@ -14,20 +14,17 @@ import scala.collection.mutable
 import scala.util.control.Breaks._
 
 
-class OSMXmlParser {
-  /**
-    * if false, OSM objects with a version greater than +1 of the current object in root will throw an exception.
-    */
-  protected var allowingMissingVersions = true
-  protected var timestampFormat = new OSMXmlParser.OsmXmlTimestampFormat
-  protected var root: OSMRoot = new OSMRoot
-  protected var tagKeyIntern = new OSMXmlParser.HashConsing[String]
-  protected var tagValueIntern = new OSMXmlParser.HashConsing[String]
-  protected var userIntern = new OSMXmlParser.HashConsing[String]
-  protected var roleIntern = new OSMXmlParser.HashConsing[String]
+case class OSMXmlParser(
+                         root: OSMRoot,
+                         allowingMissingVersions: Boolean = true,
+                         timestampFormat: OsmXmlTimestampFormat = new OsmXmlTimestampFormat,
+                         tagKeyIntern: HashConsing[String] = new HashConsing[String],
+                         tagValueIntern: HashConsing[String] = new HashConsing[String],
+                         userIntern: HashConsing[String] = new HashConsing[String],
+                         roleIntern: HashConsing[String] = new HashConsing[String]
+                       ) {
 
   /**
-    * Overrides use to java Reader
     *
     * @param xml xml string
     * @return
@@ -48,48 +45,6 @@ class OSMXmlParser {
   def processParsedWay(way: Way, state: State.Value): Unit = {}
 
   def processParsedRelation(relation: Relation, state: State.Value): Unit = {}
-
-  def isAllowingMissingVersions: Boolean = allowingMissingVersions
-
-  def setAllowingMissingVersions(allowingMissingVersions: Boolean): Unit = {
-    this.allowingMissingVersions = allowingMissingVersions
-  }
-
-  def getTimestampFormat: OsmXmlTimestampFormat = timestampFormat
-
-  def setTimestampFormat(timestampFormat: OsmXmlTimestampFormat): Unit = {
-    this.timestampFormat = timestampFormat
-  }
-
-  def getRoot: OSMRoot = root
-
-  def setRoot(root: OSMRoot): Unit = {
-    this.root = root
-  }
-
-  def getTagKeyIntern: HashConsing[String] = tagKeyIntern
-
-  def setTagKeyIntern(tagKeyIntern: Nothing): Unit = {
-    this.tagKeyIntern = tagKeyIntern
-  }
-
-  def getTagValueIntern: HashConsing[String] = tagValueIntern
-
-  def setTagValueIntern(tagValueIntern: Nothing): Unit = {
-    this.tagValueIntern = tagValueIntern
-  }
-
-  def getUserIntern: HashConsing[String] = userIntern
-
-  def setUserIntern(userIntern: Nothing): Unit = {
-    this.userIntern = userIntern
-  }
-
-  def getRoleIntern: HashConsing[String] = roleIntern
-
-  def setRoleIntern(roleIntern: Nothing): Unit = {
-    this.roleIntern = roleIntern
-  }
 
 
   @throws[StreamException]
@@ -112,8 +67,7 @@ class OSMXmlParser {
       var currentWay: Way = null
       var skipCurrentObject = false
       var state: State.Value = State.none
-      var eventType = xmlr.getEventType // START_DOCUMENT
-      eventType = xmlr.next
+      var eventType: Int = xmlr.next // START_DOCUMENT
       while (!xmlr.isEndDocument(eventType)) {
         breakable {
           if (xmlr.isStartElement(eventType)) {
@@ -155,7 +109,7 @@ class OSMXmlParser {
                   skipCurrentObject = true
                   break //was:continue
                 }
-                else if (version > currentNode.getVersion + 1 && !isAllowingMissingVersions) throw new OsmXmlParserException("Inconsistency, version " + version + " too great to modify node " + currentNode.getId + " with version " + currentNode.getVersion)
+                else if (version > currentNode.getVersion + 1 && !allowingMissingVersions) throw new OsmXmlParserException("Inconsistency, version " + version + " too great to modify node " + currentNode.getId + " with version " + currentNode.getVersion)
                 else if (version == currentNode.getVersion) throw new OsmXmlParserException("Inconsistency, found same version in new data during modify node.")
                 currentNode.setTags(null)
                 currentNode.setAttributes(null)
@@ -179,7 +133,7 @@ class OSMXmlParser {
                   skipCurrentObject = true
                   break //was:continue
                 }
-                else if (version > nodeToRemove.getVersion + 1 && !isAllowingMissingVersions) throw new OsmXmlParserException("Inconsistency, too great version found during delete node.")
+                else if (version > nodeToRemove.getVersion + 1 && !allowingMissingVersions) throw new OsmXmlParserException("Inconsistency, too great version found during delete node.")
                 root.remove(nodeToRemove)
                 delta.deletedNodes.add(nodeToRemove)
               }
@@ -218,7 +172,7 @@ class OSMXmlParser {
                   skipCurrentObject = true
                   break //was:continue
                 }
-                else if (version > currentWay.getVersion + 1 && !isAllowingMissingVersions) throw new OsmXmlParserException("Inconsistency, found too great version in new data during modify way.")
+                else if (version > currentWay.getVersion + 1 && !allowingMissingVersions) throw new OsmXmlParserException("Inconsistency, found too great version in new data during modify way.")
                 else if (version == currentWay.getVersion) throw new OsmXmlParserException("Inconsistency, found same version in new data during modify way.")
                 //                currentWay.setTags(null)
                 currentWay.setAttributes(null)
@@ -246,7 +200,7 @@ class OSMXmlParser {
                   skipCurrentObject = true
                   break //was:continue
                 }
-                else if (version > wayToRemove.getVersion + 1 && !isAllowingMissingVersions) throw new OsmXmlParserException("Inconsistency, too great way version found during delete way.")
+                else if (version > wayToRemove.getVersion + 1 && !allowingMissingVersions) throw new OsmXmlParserException("Inconsistency, too great way version found during delete way.")
                 root.remove(wayToRemove)
                 delta.deletedWays.add(wayToRemove)
               }
@@ -303,7 +257,7 @@ class OSMXmlParser {
                   skipCurrentObject = true
                   break //was:continue
                 }
-                else if (version > currentRelation.getVersion + 1 && !isAllowingMissingVersions) throw new OsmXmlParserException("Inconsistency, too great version found during modify relation.")
+                else if (version > currentRelation.getVersion + 1 && !allowingMissingVersions) throw new OsmXmlParserException("Inconsistency, too great version found during modify relation.")
                 else if (version == currentRelation.getVersion) throw new OsmXmlParserException("Inconsistency, same version found during modify relation.")
                 if (currentRelation.getMembers != null) {
 
@@ -332,7 +286,7 @@ class OSMXmlParser {
                   skipCurrentObject = true
                   break //was:continue
                 }
-                else if (version > relationToRemove.getVersion + 1 && !isAllowingMissingVersions) throw new OsmXmlParserException("Inconsistency, too great version found during delete relation.")
+                else if (version > relationToRemove.getVersion + 1 && !allowingMissingVersions) throw new OsmXmlParserException("Inconsistency, too great version found during delete relation.")
                 if (relationToRemove.getMembers != null) {
                   for (member <- relationToRemove.getMembers) {
                     member.getObject.getRelationMemberships.remove(member.getObject.getRelationMemberships.indexOf(member))
@@ -440,20 +394,20 @@ class OSMXmlParser {
   }
 
   @throws[StreamException]
-  private def parseObjectAttributes(xmlr: OSMXmlParser.Stream, `object`: OSMObject, parsedAttributes: String*): Unit = {
+  private def parseObjectAttributes(xmlr: OSMXmlParser.Stream, osmObject: OSMObject, parsedAttributes: String*): Unit = {
     var attributeIndex = 0
     while ( {
       attributeIndex < xmlr.getAttributeCount
     }) {
       val key = xmlr.getAttributeLocalName(attributeIndex)
       val value = xmlr.getAttributeValue(attributeIndex)
-      if ("version" == key) `object`.setVersion(Integer.valueOf(value))
-      else if ("changeset" == key) `object`.setChangeset(value.toLong)
-      else if ("uid" == key) `object`.setUid(value.toLong)
-      else if ("user" == key) `object`.setUser(userIntern.intern(value))
-      else if ("visible" == key) `object`.setVisible(value.toBoolean)
+      if ("version" == key) osmObject.setVersion(Integer.valueOf(value))
+      else if ("changeset" == key) osmObject.setChangeset(value.toLong)
+      else if ("uid" == key) osmObject.setUid(value.toLong)
+      else if ("user" == key) osmObject.setUser(userIntern.intern(value))
+      else if ("visible" == key) osmObject.setVisible(value.toBoolean)
       else if ("timestamp" == key) try {
-        `object`.setTimestamp(timestampFormat.parse(value).getTime)
+        osmObject.setTimestamp(timestampFormat.parse(value).getTime)
       } catch {
         case pe: Exception =>
           throw new RuntimeException(pe)
@@ -469,7 +423,7 @@ class OSMXmlParser {
           }
         }
         if (!parsed) {
-          `object`.setAttribute(key, value)
+          osmObject.setAttribute(key, value)
         }
       }
       {
@@ -561,33 +515,6 @@ object OSMXmlParser {
           obj
         case Some(t) => t
       }
-    }
-  }
-
-
-
-  var factoryClass:Class[OSMXmlParser] = _
-
-  /**
-    * @return a new instance depending on underlying OS. E.g. Android or Java.
-    */
-  def apply(): OSMXmlParser = {
-    classOf[OSMXmlParser].synchronized {
-      if (factoryClass == null) try
-        factoryClass = Class.forName(classOf[OSMXmlParser].getName + "Impl").asInstanceOf[Class[OSMXmlParser]]
-      catch {
-        case e: ClassNotFoundException =>
-          throw new RuntimeException(e)
-      }
-    }
-
-    try
-      factoryClass.newInstance
-    catch {
-      case e: InstantiationException =>
-        throw new RuntimeException(e)
-      case e: IllegalAccessException =>
-        throw new RuntimeException(e)
     }
   }
 

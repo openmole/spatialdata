@@ -23,8 +23,7 @@ case class APIOverpass(
     utils.log(s"Getting OSM data from Overpass API for bbox $east $north $south $west")
 
     val root = new OSMRoot
-    val parser = OSMXmlParser.apply()
-    parser.setRoot(root)
+    val parser = OSMXmlParser(root)
     val query = s"""
                    |  <query type="way">
                    |    ${if(hasKeyValue._1.length>0) "<has-kv k=\"" else ""}${hasKeyValue._1}${if(hasKeyValue._1.length>0) "\" v=\"" else ""}${hasKeyValue._2.mkString("|")}${if(hasKeyValue._1.length>0)"\"/>" else ""}

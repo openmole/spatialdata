@@ -1,22 +1,22 @@
 
 package org.openmole.spatialdata.network.real
 
-import org.openmole.spatialdata.{network, utils}
+import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.network.{Network, NetworkGenerator}
 import org.openmole.spatialdata.utils.gis.{GISNetwork, GISUtils}
-import org.openmole.spatialdata.utils.osm.api.APIExtractor
+import org.openmole.spatialdata.utils.osm.APIExtractor
 import org.openmole.spatialdata.vector.Implicits._
 
 import scala.util.Random
 
 /**
   *
-  * @param lon
-  * @param lat
-  * @param windowSize
-  * @param tags
-  * @param simplifySnapping
-  * @param stationNodesTags
+  * @param lon window center longitude
+  * @param lat window center latitude
+  * @param windowSize window size in meters
+  * @param tags tags to keep
+  * @param simplifySnapping snapping distance
+  * @param stationNodesTags tags for station nodes
   */
 case class OSMNetworkGenerator(
                               lon: Double,
@@ -39,11 +39,11 @@ object OSMNetworkGenerator {
 
   /**
     * Construct a network from OSM
-    * @param lon
-    * @param lat
-    * @param windowSize
-    * @param tags
-    * @param simplifySnapping
+    * @param lon lon
+    * @param lat lat
+    * @param windowSize window size
+    * @param tags tags
+    * @param simplifySnapping snapping
     * @return
     */
   def OSMWayNetwork(lon: Double,lat: Double,windowSize: Double,

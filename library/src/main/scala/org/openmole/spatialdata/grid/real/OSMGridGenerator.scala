@@ -5,7 +5,7 @@ import org.locationtech.jts.geom._
 import org.openmole.spatialdata.grid.RasterLayerData
 import org.openmole.spatialdata.grid.GridGenerator
 import org.openmole.spatialdata.utils.gis.GISUtils
-import org.openmole.spatialdata.utils.osm.api.APIExtractor
+import org.openmole.spatialdata.utils.osm.APIExtractor
 import org.openmole.spatialdata.utils.osm.api.APIExtractor.{OSMAPIMode, OSMOverpass}
 
 import scala.util.{Random, Try}

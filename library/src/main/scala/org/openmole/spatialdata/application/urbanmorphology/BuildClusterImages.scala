@@ -5,7 +5,7 @@ import com.github.tototoshi.csv.CSVReader
 import org.openmole.spatialdata.grid.measures.GridMorphology
 import org.openmole.spatialdata.grid.real.OSMGridGenerator
 import org.openmole.spatialdata.utils.io.PNG
-import org.openmole.spatialdata.utils.osm.api.APIExtractor.{OSMAPIMode, OSMOverpass}
+import org.openmole.spatialdata.utils.osm.APIExtractor.{OSMAPIMode, OSMOverpass}
 
 import scala.io.Source
 import scala.util.Random

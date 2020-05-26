@@ -20,6 +20,8 @@ import scala.util.Random
   * check https://github.com/martinfleis/momepy for more building level morphology measures
   * Fleischmann, (2019). momepy: Urban Morphology Measuring Toolkit. Journal of Open Source Software, 4(43), 1807, https://doi.org/10.21105/joss.01807
   *
+  * check https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0225734 for landscape ecology metrics
+  *
   * @param height height
   * @param width width
   * @param area area
@@ -359,7 +361,7 @@ object GridMorphology {
     *
     *  ! non square size
     *
-    * @param matrix
+    * @param matrix matrix
     * @return
     */
   def spatialWeights(matrix: Array[Array[Double]]): Array[Array[Double]] = {
@@ -422,6 +424,10 @@ object GridMorphology {
     * @return
     */
   def moranDirect(matrix: Array[Array[Double]]): Double = {
+    def decay(p1:(Int,Int),p2:(Int,Int)): Double = {
+      if (p1==p2) 0.0
+      else 1/distance(p1,p2)
+    }
     def flatCells = matrix.flatten
     val totalPop = flatCells.sum
     val averagePop = totalPop / matrix.flatten.length
@@ -449,48 +455,46 @@ object GridMorphology {
     else (matrix.flatten.length / totalWeight) * (numerator / denominator)
   }
 
-  def decay(p1:(Int,Int),p2:(Int,Int)) = {
-    if (p1==p2) 0.0
-    else 1/distance(p1,p2)
-  }
+
 
 
 
   /**
     * Dilation with default cross mask
-    * @param matrix
+    * @param matrix matrix
+    * @param convol convolution function
     * @return
     */
   def dilation(matrix: Array[Array[Double]],
-               convol: (Array[Array[Double]],Array[Array[Double]],(Double=> Double))=> Array[Array[Double]] = Convolution.convolution2dDirect): Array[Array[Double]] =
-    convol(matrix,Array(Array(0.0,1.0,0.0),Array(1.0,1.0,1.0),Array(0.0,1.0,0.0)),{case d => if(d > 0.0)1.0 else 0.0})
+               convol: (Array[Array[Double]],Array[Array[Double]],Double=> Double)=> Array[Array[Double]] = Convolution.convolution2dDirect
+              ): Array[Array[Double]] =
+    convol(matrix,Array(Array(0.0,1.0,0.0),Array(1.0,1.0,1.0),Array(0.0,1.0,0.0)),{d => if(d > 0.0)1.0 else 0.0})
 
   def erosion(matrix: Array[Array[Double]],
-              convol: (Array[Array[Double]],Array[Array[Double]],(Double=> Double))=> Array[Array[Double]] = Convolution.convolution2dDirect): Array[Array[Double]] = {
+              convol: (Array[Array[Double]],Array[Array[Double]],Double=> Double)=> Array[Array[Double]] = Convolution.convolution2dDirect
+             ): Array[Array[Double]] = {
     val mask = Array(Array(0.0, 1.0, 0.0), Array(1.0, 1.0, 1.0), Array(0.0, 1.0, 0.0))
     convol(matrix,
       mask,
-      { case d => if (d == mask.flatten.sum) 1.0 else 0.0 }
+      {d => if (d == mask.flatten.sum) 1.0 else 0.0 }
     )
   }
 
   /**
     * Number of steps to fully close the image (morpho maths)
     *
-    * @param matrix
+    * @param matrix matrix
+    * @param convol convolution function
     * @return
     */
   def fullDilationSteps(matrix: Array[Array[Double]],
-                        convol: (Array[Array[Double]],Array[Array[Double]],(Double=> Double))=> Array[Array[Double]] = Convolution.convolution2dDirect
+                        convol: (Array[Array[Double]],Array[Array[Double]],Double=> Double)=> Array[Array[Double]] = Convolution.convolution2dDirect
                        ): Double = {
     var steps = 0
     var complete = false
     var currentworld = matrix
-    //if(matrix.flatten.sum==0){return(Double.PositiveInfinity)}
-    if(matrix.flatten.sum==0){return(0.0)}
+    if(matrix.flatten.sum==0){return 0.0}
     while(!complete){
-      //println("dilating "+steps+" ; "+currentworld.flatten.sum+"/"+currentworld.flatten.length+" ; "+currentworld.length+" - "+currentworld(0).length)
-      //println(Grid.gridToString(currentworld)+"\n\n")
       currentworld = dilation(currentworld,convol)
       complete = currentworld.flatten.sum == currentworld.flatten.length
       steps = steps + 1
@@ -500,20 +504,17 @@ object GridMorphology {
 
   /**
     * Number of steps to fully erode the image
-    * @param matrix
+    * @param matrix matrix
     * @return
     */
   def fullErosionSteps(matrix: Array[Array[Double]],
-                       convol: (Array[Array[Double]],Array[Array[Double]],(Double=> Double))=> Array[Array[Double]] = Convolution.convolution2dDirect
+                       convol: (Array[Array[Double]],Array[Array[Double]],Double=> Double)=> Array[Array[Double]] = Convolution.convolution2dDirect
                       ): Double = {
     var steps = 0
     var complete = false
     var currentworld = matrix
-    //if(matrix.flatten.sum==matrix.flatten.length){return(Double.PositiveInfinity)}
-    if(matrix.flatten.sum==matrix.flatten.length){return(0.0)}
+    if(matrix.flatten.sum==matrix.flatten.length){return 0.0}
     while(!complete){
-      //println("eroding "+steps+" ; "+currentworld.flatten.sum+"/"+currentworld.flatten.length)
-      //println(Grid.gridToString(currentworld)+"\n\n")
       currentworld = erosion(currentworld,convol)
       complete = currentworld.flatten.sum == 0
       steps = steps + 1
@@ -525,25 +526,21 @@ object GridMorphology {
   /**
     * Closing is the erosion of the dilation
     *
-    * @param matrix
+    * @param matrix matrix
     * @return
     */
   def fullClosingSteps(matrix: Array[Array[Double]],
-                       convol: (Array[Array[Double]],Array[Array[Double]],(Double=> Double))=> Array[Array[Double]] = Convolution.convolution2dDirect
+                       convol: (Array[Array[Double]],Array[Array[Double]],Double=> Double)=> Array[Array[Double]] = Convolution.convolution2dDirect
                       ): Double = {
     var steps = 0
     var complete = false
     var currentworld = matrix
-    //if(matrix.flatten.sum==0.0){return(Double.PositiveInfinity)}
-    if(matrix.flatten.sum==0.0){return(0.0)} // by convention return 0 instead of infty for easier reading of csv files
+    if(matrix.flatten.sum==0.0){return 0.0} // Double.PositiveInfinity - by convention return 0 instead of infty for easier reading of csv files
     while(!complete){
-      //println("closing "+steps+" ; "+currentworld.flatten.sum+"/"+currentworld.flatten.length)
-      //println(Grid.gridToString(currentworld)+"\n\n")
       val prevworld = currentworld.map{_.clone()}
       currentworld = erosion(dilation(currentworld,convol),convol)
       val diff = prevworld.zip(currentworld).map{case (d1,d2) => d1.zip(d2).map{case (dd1,dd2)=> math.abs(dd1-dd2)}.sum}.sum
-      //println("diff = "+diff)
-      complete = (diff==0.0)
+      complete = diff==0.0
       steps = steps + 1
     }
     steps
@@ -553,25 +550,21 @@ object GridMorphology {
   /**
     * Opening is dilating the erosion
     * @param matrix matrix to open
-    *               @param convol
+    * @param convol convolution function
     * @return
     */
   def fullOpeningSteps(matrix: Array[Array[Double]],
-                       convol: (Array[Array[Double]],Array[Array[Double]],(Double=> Double))=> Array[Array[Double]] = Convolution.convolution2dDirect
+                       convol: (Array[Array[Double]],Array[Array[Double]],Double=> Double)=> Array[Array[Double]] = Convolution.convolution2dDirect
                       ): Double = {
     var steps = 0
     var complete = false
     var currentworld = matrix
-    //if(matrix.flatten.sum==matrix.flatten.length){return(Double.PositiveInfinity)}
-    if(matrix.flatten.sum==matrix.flatten.length){return(0.0)}
+    if(matrix.flatten.sum==matrix.flatten.length){return 0.0}
     while(!complete){
-      //println("opening "+steps+" ; "+currentworld.flatten.sum+"/"+currentworld.flatten.length)
-      //println(Grid.gridToString(currentworld)+"\n\n")
       val prevworld = currentworld.map{_.clone()}
       currentworld = dilation(erosion(currentworld,convol),convol)
       val diff = prevworld.zip(currentworld).map{case (d1,d2) => d1.zip(d2).map{case (dd1,dd2)=> math.abs(dd1-dd2)}.sum}.sum
-      //println("diff = "+diff)
-      complete = (diff==0.0)
+      complete = diff==0.0
       steps = steps + 1
     }
     steps

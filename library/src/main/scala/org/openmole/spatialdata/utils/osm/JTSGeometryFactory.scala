@@ -3,17 +3,18 @@ package org.openmole.spatialdata.utils.osm
 import org.locationtech.jts.geom._
 import org.locationtech.jts.geom.impl.CoordinateArraySequence
 
-import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.util.control.Breaks
+
+import org.openmole.spatialdata.utils.osm.OSMObject._
 
 /**
   * Creates JTS geometries out of OSM nodes, ways and relations.
   */
-class JtsGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFactory) {
-  def createPoint(node: Node) = geometryFactory.createPoint(new Coordinate(node.getX, node.getY))
+class JTSGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFactory) {
+  def createPoint(node: Node): Point = geometryFactory.createPoint(new Coordinate(node.getX, node.getY))
 
-  def createLineString(way: Way) = {
+  def createLineString(way: Way): LineString = {
     val coordinates = new Array[Coordinate](way.getNodes.size)
     val nodes = way.getNodes
     var i = 0
@@ -31,7 +32,7 @@ class JtsGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
     else throw new RuntimeException("Way expected not to be a polygon.")
   }
 
-  def createPolygon(way: Way) = {
+  def createPolygon(way: Way): Polygon = {
     val coordinates = way.getNodes.map(node=>new Coordinate(node.getX, node.getY)).toArray
     if (!way.isPolygon) throw new RuntimeException("Way expected to be a polygon.")
     else geometryFactory.createPolygon(geometryFactory.createLinearRing(coordinates), null)
@@ -45,7 +46,7 @@ class JtsGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
     * @param relation relation
     * @return
     */
-  def createOuterWaysPolygon(relation: Relation) = {
+  def createOuterWaysPolygon(relation: Relation): Polygon = {
     val lines = new mutable.ArrayBuffer[mutable.ArrayBuffer[Coordinate]](relation.getMembers.size)
     for (member <- relation.getMembers) {
       if (!"outer".equalsIgnoreCase(member.getRole)) throw new RuntimeException
@@ -69,19 +70,18 @@ class JtsGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
         lineIterator.hasNext
       }) {
         val line = lineIterator.next
-        var stop = false
         val loop = new Breaks
         loop.breakable {
           for (testLine <- sorted.toSeq) {
             if (testLine(testLine.size - 1) == line(0)) {
               sorted.append(line)
-              lines.remove(lines.indexOf(line)) // FIXME check if compatible with the iterator
-              loop.break //todo: break is not supported
+              lines.remove(lines.indexOf(line)) // ! check if compatible with the iterator
+              loop.break
             }
             else if (testLine(testLine.size - 1) == line(line.size - 1)) {
               sorted.append(line.reverse)
-              lines.remove(lines.indexOf(line)) // FIXME
-              loop.break //todo: break is not supported
+              lines.remove(lines.indexOf(line))
+              loop.break
             }
           }
         }
@@ -107,18 +107,19 @@ class JtsGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
     * Asserts that relation members are in order and the same direction.
     * Does not support polygons with holes (role=inner)
     *
-    * @param relation
+    * @param relation relation
     * @return
     */
-  def createMultiPolygon(relation: Relation) = {
+  def createMultiPolygon(relation: Relation): MultiPolygon = {
     val linearRings = new java.util.ArrayList[LinearRing]
     val nodes = new mutable.ArrayBuffer[Node]
     var firstNode: Node = null
     for (membership <- relation.getMembers) {
       Breaks.breakable {
-        if (!"outer".equalsIgnoreCase(membership.getRole)) Breaks.break //todo: continue is not supported// todo inner as holes!
+        if (!"outer".equalsIgnoreCase(membership.getRole)) Breaks.break//! continue is not supported
+        // ! inner as holes!
         if (firstNode == null) {
-          firstNode = membership.getObject.accept(new OsmObjectVisitor[Node]() {
+          firstNode = membership.getObject.accept(new OSMObjectVisitor[Node]() {
             override def visit(node: Node): Node = node
             override def visit(way: Way): Node = way.getNodes()(0)
             override def visit(relation: Relation): Node = relation.accept(this)
@@ -131,7 +132,7 @@ class JtsGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
           if (nextNodes(0) == previousNode) nodes.addAll(nextNodes)
           else if (nextNodes(nextNodes.size - 1) == previousNode) {
             //java.util.Collections.reverse(nextNodes)
-            // FIXME check this replacement
+            // ! check this replacement
             nodes.addAll(nextNodes.reverse)
           }
           else {
@@ -190,16 +191,16 @@ class JtsGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
     else if (coordinateEquals(l1(l1.size - 1), l2(0))) false
     else true
 
-  private class NodesCollector extends OsmObjectVisitor[mutable.ArrayBuffer[Node]] {
-    override def visit(node: Node) = {
+  private class NodesCollector extends OSMObjectVisitor[mutable.ArrayBuffer[Node]] {
+    override def visit(node: Node): mutable.ArrayBuffer[Node] = {
       val nodes = new mutable.ArrayBuffer[Node](1)
       nodes.append(node)
       nodes
     }
 
-    override def visit(way: Way) = way.getNodes
+    override def visit(way: Way): mutable.ArrayBuffer[Node] = way.getNodes
 
-    override def visit(relation: Relation) = {
+    override def visit(relation: Relation): mutable.ArrayBuffer[Node] = {
       val lines = new mutable.ArrayBuffer[mutable.ArrayBuffer[Node]]
       for (membership <- relation.getMembers) {
         lines.append(membership.getObject.accept(new NodesCollector))

@@ -1,4 +1,4 @@
-package org.openmole.spatialdata.utils.osm.api
+package org.openmole.spatialdata.utils.osm
 
 import java.io.{InputStreamReader, StringReader, StringWriter}
 import java.util
@@ -8,24 +8,22 @@ import org.apache.http.NameValuePair
 import org.apache.http.client.entity.UrlEncodedFormEntity
 import org.apache.http.client.methods.HttpPost
 import org.apache.http.message.BasicNameValuePair
-import org.openmole.spatialdata.utils.http.HttpService
 import org.openmole.spatialdata.utils
-import org.openmole.spatialdata.utils.osm._
-import org.openmole.spatialdata.utils.osm.xml.InstantiatedOsmXmlParser
+import org.openmole.spatialdata.utils.http.HttpService
 
 
-case class Overpass(
-                     serverURL: String = Overpass.defaultServerURL,
-                     httpService: HttpService = HttpService("OSM Overpass request")
+case class APIOverpass(
+                        serverURL: String = APIOverpass.defaultServerURL,
+                        httpService: HttpService = HttpService("OSM Overpass request")
                    )  {
 
 
   def get(south: Double, west: Double, north: Double, east: Double,
-          hasKeyValue: (String,Seq[String])=("",Seq(""))): PojoRoot = {
+          hasKeyValue: (String,Seq[String])=("",Seq(""))): OSMRoot = {
     utils.log(s"Getting OSM data from Overpass API for bbox $east $north $south $west")
 
-    val root = new PojoRoot
-    val parser = InstantiatedOsmXmlParser.newInstance
+    val root = new OSMRoot
+    val parser = OSMXmlParser.apply()
     parser.setRoot(root)
     val query = s"""
                    |  <query type="way">
@@ -51,7 +49,7 @@ case class Overpass(
     * @param queryDescription query description
     * @return
     */
-  @throws[Overpass.OverpassException]
+  @throws[APIOverpass.OverpassException]
   def execute(overpassQuery: String, queryDescription: String = null): String = try {
     val post = new HttpPost(serverURL)
     post.setHeader("User-Agent", httpService.userAgent)
@@ -93,13 +91,13 @@ case class Overpass(
     buffer.toString
   } catch {
     case e: Exception =>
-      throw Overpass.OverpassException(e.getMessage, e)
+      throw APIOverpass.OverpassException(e.getMessage, e)
   }
 
 
 }
 
-object Overpass {
+object APIOverpass {
 
   val defaultServerURL: String = "http://www.overpass-api.de/api/interpreter"
 

@@ -4,7 +4,7 @@ package org.openmole.spatialdata.application.urbanmorphology
 import org.openmole.spatialdata.grid.measures.GridMorphology
 import org.openmole.spatialdata.grid.real.OSMGridSampling
 import org.openmole.spatialdata.utils.io.CSV
-import org.openmole.spatialdata.utils.osm.api.APIExtractor._
+import org.openmole.spatialdata.utils.osm.APIExtractor._
 
 import scala.util.Random
 

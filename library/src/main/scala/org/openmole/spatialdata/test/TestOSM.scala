@@ -2,9 +2,8 @@ package org.openmole.spatialdata.test
 
 import org.openmole.spatialdata.grid.measures.GridMorphology
 import org.openmole.spatialdata.grid.real.{OSMGridGenerator, OSMGridSampling}
-import org.openmole.spatialdata.utils.osm.PojoRoot
-import org.openmole.spatialdata.utils.osm.api.APIExtractor.Buildings.asPolygonSeq
-import org.openmole.spatialdata.utils.osm.api.Overpass
+import org.openmole.spatialdata.utils.osm.{OSMRoot, APIOverpass}
+import org.openmole.spatialdata.utils.osm.APIExtractor.Buildings.asPolygonSeq
 import org.openmole.spatialdata.utils.osm.xml.InstantiatedOsmXmlParser
 //import org.openmole.spatialdata.utils.visualization
 
@@ -20,9 +19,9 @@ object TestOSM {
 
     import java.io.StringReader
 
-    val overpass = new Overpass
+    val overpass = new APIOverpass
 
-    val root = new PojoRoot
+    val root = new OSMRoot
     val parser = InstantiatedOsmXmlParser.newInstance
     parser.setRoot(root)
 

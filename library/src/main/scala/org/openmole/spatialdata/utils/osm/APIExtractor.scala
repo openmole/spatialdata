@@ -1,16 +1,14 @@
-package org.openmole.spatialdata.utils.osm.api
+package org.openmole.spatialdata.utils.osm
 
 import java.sql.Connection
 import java.util.Locale
 
 import org.locationtech.jts.geom._
-
 import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.utils.database.{MongoConnection, PostgisConnection}
 import org.openmole.spatialdata.utils.gis.GISUtils.WGS84toPseudoMercatorFilter
 import org.openmole.spatialdata.utils.gis.PoligonizerUtils
-import org.openmole.spatialdata.utils.osm.JtsGeometryFactory
-import org.openmole.spatialdata.utils.osm._
+import org.openmole.spatialdata.utils.osm.OSMObject.{Node, Way}
 import org.openmole.spatialdata.vector.Points
 
 import scala.util.Try
@@ -31,9 +29,9 @@ object APIExtractor {
     */
   object Buildings {
 
-    def asPolygonSeq(e: Root.Enumerator[Way]): Seq[Polygon] = {
+    def asPolygonSeq(e: OSMRoot.Enumerator[Way]): Seq[Polygon] = {
       var result = scala.collection.mutable.Buffer[Polygon]()
-      val fact = new JtsGeometryFactory()
+      val fact = new JTSGeometryFactory()
       var way: Way = e.next
       while (way != null) {
         val building = way.getTag("building")
@@ -65,13 +63,13 @@ object APIExtractor {
       Locale.setDefault(Locale.ENGLISH)
       mode match {
         case OSMOverpass =>
-          val overpass = new Overpass
+          val overpass = new APIOverpass
           val root = overpass.get(south, west, north, east, hasKeyValue=("building",Seq("yes")))
           utils.log("retrieved via overpass " + east + " n=" + north + " s=" + south + "w=" + west)
           asPolygonSeq(root.enumerateWays)
 
         case OSMDirect =>
-          val api = new ApiConnection()
+          val api = new APIConnection()
           val res = api.get(south, west, north, east)
           utils.log("retrieved via standard api " + east + " n=" + north + " s=" + south + "w=" + west)
           asPolygonSeq(res.enumerateWays)
@@ -148,9 +146,9 @@ object APIExtractor {
       * @param tags tags to keep
       * @return
       */
-    def asLineStringSeq(e: Root.Enumerator[Way], tags: Map[String,Seq[String]]): Seq[LineString] = {
+    def asLineStringSeq(e: OSMRoot.Enumerator[Way], tags: Map[String,Seq[String]]): Seq[LineString] = {
       val result = scala.collection.mutable.Buffer[LineString]()
-      val fact = new JtsGeometryFactory()
+      val fact = new JTSGeometryFactory()
       var way: Way = e.next
       while (way != null) {
         val validway = tags.toSeq.map{
@@ -192,7 +190,7 @@ object APIExtractor {
       Locale.setDefault(Locale.ENGLISH)
       mode match {
         case OSMOverpass =>
-          val overpass = new Overpass
+          val overpass = new APIOverpass
           // if only one tag requested, use as a filter in the overpass request
           val root = overpass.get(south, west, north, east,
             hasKeyValue=("",Seq("")) //if (tags.size==1) tags.toSeq(0) else ("",Seq(""))
@@ -202,7 +200,7 @@ object APIExtractor {
           res
 
         case OSMDirect =>
-          val api = new ApiConnection()
+          val api = new APIConnection()
           val root = api.get(south, west, north, east)
           val res = asLineStringSeq(root.enumerateWays,tags)
           utils.log("Highways from OSM (API): "+res)
@@ -223,9 +221,9 @@ object APIExtractor {
       * @param tags tags
       * @return
       */
-    def asPoints(root: Root.Enumerator[Node], tags: Map[String,Seq[String]]): org.openmole.spatialdata.vector.Points = {
+    def asPoints(root: OSMRoot.Enumerator[Node], tags: Map[String,Seq[String]]): org.openmole.spatialdata.vector.Points = {
       val result = scala.collection.mutable.Buffer[Point]()
-      val fact = new JtsGeometryFactory()
+      val fact = new JTSGeometryFactory()
       var node: Node = root.next
       while (node != null) {
         val validnode = tags.toSeq.map{
@@ -268,7 +266,7 @@ object APIExtractor {
       Locale.setDefault(Locale.ENGLISH)
       mode match {
         case OSMOverpass =>
-          val overpass = new Overpass
+          val overpass = new APIOverpass
           // if only one tag requested, use as a filter in the overpass request
           val root = overpass.get(south, west, north, east,
             hasKeyValue=("",Seq("")) //if (tags.size==1) tags.toSeq(0) else ("",Seq(""))
@@ -278,7 +276,7 @@ object APIExtractor {
           res
 
         case OSMDirect =>
-          val api = new ApiConnection()
+          val api = new APIConnection()
           val root = api.get(south, west, north, east)
           val res = asPoints(root.enumerateNodes,tags)
           utils.log("Nodes from OSM (API): "+res)

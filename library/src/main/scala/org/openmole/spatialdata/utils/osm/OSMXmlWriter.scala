@@ -1,14 +1,14 @@
-package org.openmole.spatialdata.utils.osm.xml
+package org.openmole.spatialdata.utils.osm
 
 import java.io.{IOException, Writer}
 import java.text.{DecimalFormat, SimpleDateFormat}
 import java.util.Date
 
 import org.apache.commons.text.StringEscapeUtils
-import org.openmole.spatialdata.utils.osm._
 
+import org.openmole.spatialdata.utils.osm.OSMObject._
 
-class OsmXmlWriter @throws[IOException]
+class OSMXmlWriter @throws[IOException]
 (var xml: Writer) extends Writer {
   writeHeader()
   private val version = "0.6"
@@ -16,7 +16,7 @@ class OsmXmlWriter @throws[IOException]
   private val generator = getClass.getName
 
   @throws[IOException]
-  def writeHeader() = {
+  def writeHeader(): Unit = {
     xml.write("<?xml version='1.0' encoding='UTF-8'?>\n")
     xml.write("<osm version='")
     xml.write(version)
@@ -33,11 +33,11 @@ class OsmXmlWriter @throws[IOException]
   }
 
   @throws[IOException]
-  def writeFooter() = {
+  def writeFooter(): Unit = {
     xml.write("</osm>\n")
   }
 
-  private val writeVisitor = new OsmObjectVisitor[Void]() {
+  private val writeVisitor = new OSMObjectVisitor[Void]() {
     override def visit(node: Node): Void = {
       try
         write(node)
@@ -70,12 +70,12 @@ class OsmXmlWriter @throws[IOException]
   }
 
   @throws[IOException]
-  def write(`object`: OsmObject): Void = {
+  def write(`object`: OSMObject): Void = {
     `object`.accept(writeVisitor)
   }
 
   @throws[IOException]
-  def write(root: PojoRoot): Unit = {
+  def write(root: OSMRoot): Unit = {
     for (node <- root.getNodes.values) {
       write(node)
     }
@@ -88,7 +88,7 @@ class OsmXmlWriter @throws[IOException]
   }
 
   @throws[IOException]
-  def writeTags(osmObject: OsmObject): Unit = { // <tag k='landuse' v='farmland' />
+  def writeTags(osmObject: OSMObject): Unit = { // <tag k='landuse' v='farmland' />
     if (osmObject.getTags != null) {
 
       for (tag <- osmObject.getTags.toSeq) {
@@ -142,7 +142,7 @@ class OsmXmlWriter @throws[IOException]
   }
 
   @throws[IOException]
-  def write(relation: Relation) = { // <relation id='3146471' timestamp='2013-08-16T01:39:33Z' uid='194367' user='Karl Wettin' visible='true' version='1' changeset='17366616'>
+  def write(relation: Relation): Unit = {
     writeObjectHead(relation)
     xml.write(" >\n")
     if (relation.getMembers != null) {
@@ -164,7 +164,7 @@ class OsmXmlWriter @throws[IOException]
   }
 
   @throws[IOException]
-  private def writeObjectHead(osmObject: OsmObject) = {
+  private def writeObjectHead(osmObject: OSMObject): Unit = {
     xml.write("\t<")
     xml.append(osmObject.accept(getOsmObjectTypeName))
     Option(osmObject.getId) match {
@@ -196,9 +196,9 @@ class OsmXmlWriter @throws[IOException]
       case None =>
     }
     Option(osmObject.getVersion) match {
-      case Some(version) =>
+      case Some(v) =>
         xml.write(" version='")
-        xml.write(String.valueOf(version))
+        xml.write(String.valueOf(v))
         xml.write("'")
       case None =>
     }
@@ -214,7 +214,7 @@ class OsmXmlWriter @throws[IOException]
   private var wroteHeader = false
 
   @throws[IOException]
-  override def write(cbuf: Array[Char], off: Int, len: Int) = {
+  override def write(cbuf: Array[Char], off: Int, len: Int): Unit = {
     if (!wroteHeader) {
       wroteHeader = true
       writeHeader()
@@ -223,12 +223,12 @@ class OsmXmlWriter @throws[IOException]
   }
 
   @throws[IOException]
-  override def flush() = {
+  override def flush(): Unit = {
     xml.flush()
   }
 
   @throws[IOException]
-  override def close() = {
+  override def close(): Unit = {
     writeFooter()
     xml.close()
   }

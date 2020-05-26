@@ -1,89 +1,112 @@
-package org.openmole.spatialdata.utils.osm.xml
+package org.openmole.spatialdata.utils.osm
 
-import java.io.{InputStream, InputStreamReader, Reader, UnsupportedEncodingException}
-import java.text.ParseException
+import java.io._
+import java.text.{DateFormat, FieldPosition, ParsePosition, SimpleDateFormat}
+import java.util
+import java.util.Date
 
-import org.apache.commons.io.input.ReaderInputStream
-import org.openmole.spatialdata.utils.osm._
-import org.openmole.spatialdata.utils.osm.xml.AbstractStreamingInstantiatedOsmXmlParser.StreamException
+import javax.xml.stream.{XMLInputFactory, XMLStreamConstants, XMLStreamException, XMLStreamReader}
+import org.openmole.spatialdata.utils
+import org.openmole.spatialdata.utils.osm.OSMXmlParser._
+import org.openmole.spatialdata.utils.osm.OSMObject._
 
-import scala.util.control.Breaks
+import scala.collection.mutable
+import scala.util.control.Breaks._
 
 
-/**
-  * OSM parser
-  */
-object AbstractStreamingInstantiatedOsmXmlParser {
-//  private val log = LoggerFactory.getLogger(classOf[AbstractStreamingInstantiatedOsmXmlParser])
+class OSMXmlParser {
+  /**
+    * if false, OSM objects with a version greater than +1 of the current object in root will throw an exception.
+    */
+  protected var allowingMissingVersions = true
+  protected var timestampFormat = new OSMXmlParser.OsmXmlTimestampFormat
+  protected var root: OSMRoot = new OSMRoot
+  protected var tagKeyIntern = new OSMXmlParser.HashConsing[String]
+  protected var tagValueIntern = new OSMXmlParser.HashConsing[String]
+  protected var userIntern = new OSMXmlParser.HashConsing[String]
+  protected var roleIntern = new OSMXmlParser.HashConsing[String]
 
-  class StreamException(message: String, cause: Throwable) extends Exception(message, cause) {
-    def this(message: String) {
-      this(message, null)
-    }
+  /**
+    * Overrides use to java Reader
+    *
+    * @param xml xml string
+    * @return
+    * @throws OsmXmlParserException parser exception
+    */
+  @throws[OsmXmlParserException]
+  final def parse(xml: String):OsmXmlParserDelta = parse(new StringReader(xml))
 
-    def this(cause: Throwable) {
-      this("", cause)
-    }
+  @throws[OsmXmlParserException]
+  def parse(xml: InputStream):OsmXmlParserDelta = try parse(new InputStreamReader(xml, "utf8"))
+  catch {
+    case e: UnsupportedEncodingException =>
+      throw new OsmXmlParserException(e)
   }
 
-  abstract class Stream {
-    @throws[StreamException]
-    def getEventType: Int
+  def processParsedNode(node: Node, state: State.Value): Unit = {}
 
-    @throws[StreamException]
-    def isEndDocument(eventType: Int): Boolean
+  def processParsedWay(way: Way, state: State.Value): Unit = {}
 
-    @throws[StreamException]
-    def next: Int
+  def processParsedRelation(relation: Relation, state: State.Value): Unit = {}
 
-    @throws[StreamException]
-    def isStartElement(eventType: Int): Boolean
+  def isAllowingMissingVersions: Boolean = allowingMissingVersions
 
-    @throws[StreamException]
-    def isEndElement(eventType: Int): Boolean
-
-    @throws[StreamException]
-    def getLocalName: String
-
-    @throws[StreamException]
-    def getAttributeValue(what: String, key: String): String
-
-    @throws[StreamException]
-    def getAttributeCount: Int
-
-    @throws[StreamException]
-    def getAttributeValue(index: Int): String
-
-    @throws[StreamException]
-    def getAttributeLocalName(index: Int): String
-
-    @throws[StreamException]
-    def close(): Unit
+  def setAllowingMissingVersions(allowingMissingVersions: Boolean): Unit = {
+    this.allowingMissingVersions = allowingMissingVersions
   }
 
-}
+  def getTimestampFormat: OsmXmlTimestampFormat = timestampFormat
 
-abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsmXmlParser {
-  @throws[StreamException]
-  def readerFactory(xml: Reader): AbstractStreamingInstantiatedOsmXmlParser.Stream = readerFactory(new ReaderInputStream(xml, "utf8"))
+  def setTimestampFormat(timestampFormat: OsmXmlTimestampFormat): Unit = {
+    this.timestampFormat = timestampFormat
+  }
+
+  def getRoot: OSMRoot = root
+
+  def setRoot(root: OSMRoot): Unit = {
+    this.root = root
+  }
+
+  def getTagKeyIntern: HashConsing[String] = tagKeyIntern
+
+  def setTagKeyIntern(tagKeyIntern: Nothing): Unit = {
+    this.tagKeyIntern = tagKeyIntern
+  }
+
+  def getTagValueIntern: HashConsing[String] = tagValueIntern
+
+  def setTagValueIntern(tagValueIntern: Nothing): Unit = {
+    this.tagValueIntern = tagValueIntern
+  }
+
+  def getUserIntern: HashConsing[String] = userIntern
+
+  def setUserIntern(userIntern: Nothing): Unit = {
+    this.userIntern = userIntern
+  }
+
+  def getRoleIntern: HashConsing[String] = roleIntern
+
+  def setRoleIntern(roleIntern: Nothing): Unit = {
+    this.roleIntern = roleIntern
+  }
+
 
   @throws[StreamException]
-  def readerFactory(xml: InputStream): AbstractStreamingInstantiatedOsmXmlParser.Stream = try
+  def readerFactory(xml: InputStream):  OSMXmlParser.Stream  = try
     readerFactory(new InputStreamReader(xml, "utf8"))
   catch {
     case e: UnsupportedEncodingException =>
-      throw new AbstractStreamingInstantiatedOsmXmlParser.StreamException(e)
+      throw new StreamException(e)
   }
 
   @throws[OsmXmlParserException]
-  override def parse(xml: Reader) = {
+  def parse(xml: Reader): OsmXmlParserDelta = {
     val started = System.currentTimeMillis
-//    AbstractStreamingInstantiatedOsmXmlParser.log.debug("Begin parsing...")
-//    println("Begin parsing...")
-    val delta = new InstantiatedOsmXmlParserDelta
+    val delta = OsmXmlParserDelta()
     try {
-      val xmlr: AbstractStreamingInstantiatedOsmXmlParser.Stream = readerFactory(xml)
-      var current: OsmObject = null
+      val xmlr:  OSMXmlParser.Stream  = readerFactory(xml)
+      var current: OSMObject = null
       var currentNode: Node = null
       var currentRelation: Relation = null
       var currentWay: Way = null
@@ -92,28 +115,18 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
       var eventType = xmlr.getEventType // START_DOCUMENT
       eventType = xmlr.next
       while (!xmlr.isEndDocument(eventType)) {
-        import util.control.Breaks._
         breakable {
           if (xmlr.isStartElement(eventType)) {
             if ("create" == xmlr.getLocalName) state = State.create
             else if ("modify" == xmlr.getLocalName) state = State.modify
             else if ("delete" == xmlr.getLocalName) state = State.delete
             else if ("node" == xmlr.getLocalName) {
-              /**
-                *
-                * NN  NN   OOOO   DDDDD  EEEEE
-                * NNN NN  OO  OO  DD  DD EE
-                * NNNNNN  OO  OO  DD  DD EEEE
-                * NN NNN  OO  OO  DD  DD EE
-                * NN  NN   OOOO   DDDDD  EEEEE
-                */
               val identity = xmlr.getAttributeValue(null, "id").toLong
               if ((state == State.none) || (state == State.create)) {
                 currentNode = root.getNode(identity)
                 if (currentNode != null && currentNode.isLoaded && currentNode.getVersion != null) {
                   val version = Integer.valueOf(xmlr.getAttributeValue(null, "version"))
                   if (version <= currentNode.getVersion) {
-                    //              AbstractStreamingInstantiatedOsmXmlParser.log.warn("Inconsistency, old version detected during create node.")
                     skipCurrentObject = true
                     break //was:continue
                     //              } else if (version > currentNode.getVersion() + 1) {
@@ -130,7 +143,7 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
                 parseObjectAttributes(xmlr, currentNode, "id", "lat", "lon")
                 currentNode.setLoaded(true)
                 current = currentNode
-                delta.getCreatedNodes.add(currentNode)
+                delta.createdNodes.add(currentNode)
                 root.add(currentNode)
               }
               else if (state == State.modify) {
@@ -138,8 +151,7 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
                 if (currentNode == null) throw new OsmXmlParserException("Inconsistency, node " + identity + " does not exists.")
                 val version = Integer.valueOf(xmlr.getAttributeValue(null, "version"))
                 if (version <= currentNode.getVersion) {
-                  //            AbstractStreamingInstantiatedOsmXmlParser.log.warn("Inconsistency, old version detected during modify node.")
-                  println("Inconsistency, old version detected during modify node.")
+                  utils.log("Inconsistency, old version detected during modify node.")
                   skipCurrentObject = true
                   break //was:continue
                 }
@@ -151,46 +163,35 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
                 currentNode.setLongitude(xmlr.getAttributeValue(null, "lon").toDouble)
                 parseObjectAttributes(xmlr, currentNode, "id", "lat", "lon")
                 current = currentNode
-                delta.getModifiedNodes.add(currentNode)
+                delta.modifiedNodes.add(currentNode)
                 root.add(currentNode)
               }
               else if (state == State.delete) {
                 val nodeToRemove = root.getNode(identity)
                 if (nodeToRemove == null) {
-                  //            AbstractStreamingInstantiatedOsmXmlParser.log.warn("Inconsistency, node " + identity + " does not exists.")
-                  println("Inconsistency, node " + identity + " does not exists.")
+                  utils.log("Inconsistency, node " + identity + " does not exists.")
                   skipCurrentObject = true
                   break //was:continue
                 }
                 val version = Integer.valueOf(xmlr.getAttributeValue(null, "version"))
                 if (version < nodeToRemove.getVersion) {
-                  //            AbstractStreamingInstantiatedOsmXmlParser.log.warn("Inconsistency, old version detected during delete node.")
-                  println("Inconsistency, old version detected during delete node.")
+                  utils.log("Inconsistency, old version detected during delete node.")
                   skipCurrentObject = true
                   break //was:continue
                 }
                 else if (version > nodeToRemove.getVersion + 1 && !isAllowingMissingVersions) throw new OsmXmlParserException("Inconsistency, too great version found during delete node.")
                 root.remove(nodeToRemove)
-                delta.getDeletedNodes.add(nodeToRemove)
+                delta.deletedNodes.add(nodeToRemove)
               }
             }
             else if ("way" == xmlr.getLocalName) {
-              /**
-                *
-                * WW  WW  WW   AA   YY  YY
-                * WW WW WW   AAAA   YYYY
-                * WWWWWWWW  AA  AA   YY
-                * WW  WW   AAAAAA   YY
-                * WW  WW   AA  AA   YY
-                */
               val identity = xmlr.getAttributeValue(null, "id").toLong
               if ((state == State.none) || (state == State.create)) {
                 currentWay = root.getWay(identity)
                 if (currentWay != null && currentWay.isLoaded && currentWay.getVersion != null) {
                   val version = Integer.valueOf(xmlr.getAttributeValue(null, "version"))
                   if (version <= currentWay.getVersion) {
-                    //              AbstractStreamingInstantiatedOsmXmlParser.log.warn("Inconsistency, old version detected during create way.")
-                    println("Inconsistency, old version detected during create way.")
+                    utils.log("Inconsistency, old version detected during create way.")
                     skipCurrentObject = true
                     break //was:continue
                     //              } else if (version > currentWay.getVersion() + 1) {
@@ -205,22 +206,21 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
                 parseObjectAttributes(xmlr, currentWay, "id")
                 currentWay.setLoaded(true)
                 current = currentWay
-                delta.getCreatedWays.add(currentWay)
-                root.add(currentWay)//FIXME: added line
+                delta.createdWays.add(currentWay)
+                root.add(currentWay)// added line
               }
               else if (state == State.modify) {
                 currentWay = root.getWay(identity)
                 if (currentWay == null) throw new OsmXmlParserException("Inconsistency, way " + identity + " does not exists.")
                 val version = Integer.valueOf(xmlr.getAttributeValue(null, "version"))
                 if (version <= currentWay.getVersion) {
-                  //            AbstractStreamingInstantiatedOsmXmlParser.log.warn("Inconsistency, old version detected during modify way.")
                   println("Inconsistency, old version detected during modify way.")
                   skipCurrentObject = true
                   break //was:continue
                 }
                 else if (version > currentWay.getVersion + 1 && !isAllowingMissingVersions) throw new OsmXmlParserException("Inconsistency, found too great version in new data during modify way.")
                 else if (version == currentWay.getVersion) throw new OsmXmlParserException("Inconsistency, found same version in new data during modify way.")
-//                currentWay.setTags(null)
+                //                currentWay.setTags(null)
                 currentWay.setAttributes(null)
                 if (currentWay.getNodes != null) {
                   for (node <- currentWay.getNodes) {
@@ -231,31 +231,29 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
                 currentWay.setNodes(null)
                 parseObjectAttributes(xmlr, currentWay, "id")
                 current = currentWay
-                delta.getModifiedWays.add(currentWay)
+                delta.modifiedWays.add(currentWay)
               }
               else if (state == State.delete) {
                 val wayToRemove = root.getWay(identity)
                 if (wayToRemove == null) {
-                  //            AbstractStreamingInstantiatedOsmXmlParser.log.warn("Inconsistency, way " + identity + " does not exists.")
                   println("Inconsistency, way \" + identity + \" does not exists.")
                   skipCurrentObject = true
                   break //was:continue
                 }
                 val version = Integer.valueOf(xmlr.getAttributeValue(null, "version"))
                 if (version < wayToRemove.getVersion) {
-                  //            AbstractStreamingInstantiatedOsmXmlParser.log.warn("Inconsistency, old version detected during delete way.")
                   println("Inconsistency, old version detected during delete way.")
                   skipCurrentObject = true
                   break //was:continue
                 }
                 else if (version > wayToRemove.getVersion + 1 && !isAllowingMissingVersions) throw new OsmXmlParserException("Inconsistency, too great way version found during delete way.")
                 root.remove(wayToRemove)
-                delta.getDeletedWays.add(wayToRemove)
+                delta.deletedWays.add(wayToRemove)
               }
             }
             else if ("nd" == xmlr.getLocalName) { // a node reference inside of a way
               if (skipCurrentObject) break //was:continue
-              //todo: continue is not supported
+              //! continue is not supported
               val identity = xmlr.getAttributeValue(null, "ref").toLong
               if ((state == State.none) || (state == State.create) || (state == State.modify)) {
                 var node = root.getNode(identity)
@@ -272,14 +270,6 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
               }
             }
             else if ("relation" == xmlr.getLocalName) {
-              /**
-                *
-                * RRRRR  EEEEEE  LL       AA   TTTTTTTT  II   OOOOO   NN  NN
-                * RR  RR EE      LL      AAAA     TT     II  OO   OO  NNN NN
-                * RRRRR  EEEEEE  LL     AA  AA    TT     II  OO   OO  NNNNNN
-                * RR  RR EE      LL     AAAAAA    TT     II  OO   OO  NN NNN
-                * RR  RR EEEEEE  LLLLL  AA  AA    TT     II   OOOOO   NN  NN
-                */
               // multi polygon, etc
               val identity = xmlr.getAttributeValue(null, "id").toLong
               if ((state == State.none) || (state == State.create)) {
@@ -287,7 +277,6 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
                 if (currentRelation != null && currentRelation.isLoaded && currentRelation.getVersion != null) {
                   val version = Integer.valueOf(xmlr.getAttributeValue(null, "version"))
                   if (version <= currentRelation.getVersion) {
-                    //              AbstractStreamingInstantiatedOsmXmlParser.log.warn("Inconsistency, old version detected during create relation.")
                     println("Inconsistency, old version detected during create relation.")
                     skipCurrentObject = true
                     break //was:continue
@@ -303,15 +292,14 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
                 parseObjectAttributes(xmlr, currentRelation, "id")
                 currentRelation.setLoaded(true)
                 current = currentRelation
-                delta.getCreatedRelations.add(currentRelation)
+                delta.createdRelations.add(currentRelation)
               }
               else if (state == State.modify) {
                 currentRelation = root.getRelation(identity)
                 if (currentRelation == null) throw new OsmXmlParserException("Inconsistency, relation " + identity + " does not exists.")
                 val version = Integer.valueOf(xmlr.getAttributeValue(null, "version"))
                 if (version < currentRelation.getVersion) {
-                  //            AbstractStreamingInstantiatedOsmXmlParser.log.warn("Inconsistency, old version detected during modify relation.")
-                  println("Inconsistency, old version detected during modify relation.")
+                  utils.log("Inconsistency, old version detected during modify relation.")
                   skipCurrentObject = true
                   break //was:continue
                 }
@@ -329,20 +317,18 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
                 currentRelation.setTags(null)
                 current = currentRelation
                 parseObjectAttributes(xmlr, currentRelation, "id")
-                delta.getModifiedRelations.add(currentRelation)
+                delta.modifiedRelations.add(currentRelation)
               }
               else if (state == State.delete) {
                 val relationToRemove = root.getRelation(identity)
                 if (relationToRemove == null) {
-                  //            AbstractStreamingInstantiatedOsmXmlParser.log.warn("Inconsistency, relation " + identity + " does not exist.")
-                  println("Inconsistency, relation \" + identity + \" does not exist.")
+                  utils.log("Inconsistency, relation \" + identity + \" does not exist.")
                   skipCurrentObject = true
                   break //was:continue
                 }
                 val version = Integer.valueOf(xmlr.getAttributeValue(null, "version"))
                 if (version < relationToRemove.getVersion) {
-                  //            AbstractStreamingInstantiatedOsmXmlParser.log.warn("Inconsistency, old version detected during delete relation.")
-                  println("Inconsistency, old version detected during delete relation.")
+                  utils.log("Inconsistency, old version detected during delete relation.")
                   skipCurrentObject = true
                   break //was:continue
                 }
@@ -355,7 +341,7 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
                   relationToRemove.setMembers(null)
                 }
                 root.remove(relationToRemove)
-                delta.getDeletedRelations.add(relationToRemove)
+                delta.deletedRelations.add(relationToRemove)
               }
             }
             else if ("member" == xmlr.getLocalName) { // multi polygon member
@@ -445,20 +431,16 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
       }
       xmlr.close()
     } catch {
-      case ioe: AbstractStreamingInstantiatedOsmXmlParser.StreamException =>
+      case ioe: StreamException =>
         throw new OsmXmlParserException(ioe)
     }
-//    AbstractStreamingInstantiatedOsmXmlParser.log.debug("Done parsing.")
-//    AbstractStreamingInstantiatedOsmXmlParser.log.debug("Delta " + delta.getCreatedNodes.size + "/" + delta.getModifiedNodes.size + "/" + delta.getDeletedNodes.size + " nodes, " + delta.getCreatedWays.size + "/" + delta.getModifiedWays.size + "/" + delta.getDeletedWays.size + " ways, " + delta.getCreatedRelations.size + "/" + delta.getModifiedRelations.size + "/" + delta.getDeletedRelations.size + " relations created/modified/deleted.")
-//    println("Done parsing.")
-//    println("Delta " + delta.getCreatedNodes.size + "/" + delta.getModifiedNodes.size + "/" + delta.getDeletedNodes.size + " nodes, " + delta.getCreatedWays.size + "/" + delta.getModifiedWays.size + "/" + delta.getDeletedWays.size + " ways, " + delta.getCreatedRelations.size + "/" + delta.getModifiedRelations.size + "/" + delta.getDeletedRelations.size + " relations created/modified/deleted.")
     val timespent = System.currentTimeMillis - started
-//    AbstractStreamingInstantiatedOsmXmlParser.log.info("Parsed in " + timespent + " milliseconds.")
+    utils.log(s"time spent = $timespent ms")
     delta
   }
 
   @throws[StreamException]
-  private def parseObjectAttributes(xmlr: AbstractStreamingInstantiatedOsmXmlParser.Stream, `object`: OsmObject, parsedAttributes: String*) = {
+  private def parseObjectAttributes(xmlr: OSMXmlParser.Stream, `object`: OSMObject, parsedAttributes: String*): Unit = {
     var attributeIndex = 0
     while ( {
       attributeIndex < xmlr.getAttributeCount
@@ -473,22 +455,21 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
       else if ("timestamp" == key) try {
         `object`.setTimestamp(timestampFormat.parse(value).getTime)
       } catch {
-        case pe: ParseException =>
+        case pe: Exception =>
           throw new RuntimeException(pe)
       }
       else {
         var parsed = false
-        Breaks.breakable {
+        breakable {
           for (parsedAttribute <- parsedAttributes) {
             if (parsedAttribute == key) {
               parsed = true
-              Breaks.break
+              break
             }
           }
         }
         if (!parsed) {
           `object`.setAttribute(key, value)
-//          AbstractStreamingInstantiatedOsmXmlParser.log.warn("Unknown attribute " + key + "='" + value + "' added to object")
         }
       }
       {
@@ -496,4 +477,219 @@ abstract class AbstractStreamingInstantiatedOsmXmlParser extends InstantiatedOsm
       }
     }
   }
+
+
+
+  private val xmlif = XMLInputFactory.newInstance
+
+  @throws[StreamException]
+  def readerFactory(xml: Reader):  OSMXmlParser.Stream = {
+    var xmlr: XMLStreamReader = null
+    try
+      xmlr = xmlif.createXMLStreamReader(xml)
+    catch {
+      case e: XMLStreamException =>
+        throw new StreamException(e)
+    }
+    new  OSMXmlParser.Stream  {
+      @throws[StreamException]
+      def getEventType: Int = xmlr.getEventType
+
+      @throws[StreamException]
+      def isEndDocument(eventType: Int): Boolean = eventType == XMLStreamConstants.END_DOCUMENT
+
+      @throws[StreamException]
+      def next: Int = try
+        xmlr.next
+      catch {
+        case e: XMLStreamException =>
+          throw new StreamException(e)
+      }
+
+      @throws[StreamException]
+      def isStartElement(eventType: Int): Boolean = eventType == XMLStreamConstants.START_ELEMENT
+
+      @throws[StreamException]
+      def isEndElement(eventType: Int): Boolean = eventType == XMLStreamConstants.END_ELEMENT
+
+      @throws[StreamException]
+      def getLocalName: String = xmlr.getLocalName
+
+      @throws[StreamException]
+      def getAttributeValue(what: String, key: String): String = xmlr.getAttributeValue(what, key)
+
+      @throws[StreamException]
+      def getAttributeCount: Int = xmlr.getAttributeCount
+
+      @throws[StreamException]
+      def getAttributeValue(index: Int): String = xmlr.getAttributeValue(index)
+
+      @throws[StreamException]
+      def getAttributeLocalName(index: Int): String = xmlr.getAttributeLocalName(index)
+
+      @throws[StreamException]
+      def close(): Unit = {
+        try
+          xmlr.close()
+        catch {
+          case e: XMLStreamException =>
+            throw new StreamException(e)
+        }
+      }
+    }
+  }
+
+
+
 }
+
+
+
+/**
+  * OSM data parser
+  */
+object OSMXmlParser {
+
+
+  class HashConsing[T] extends Serializable {
+    private val map = new mutable.HashMap[T, T]()
+
+    def intern(obj: T): T = {
+      map.get(obj) match {
+        case None =>
+          map.put(obj, obj)
+          obj
+        case Some(t) => t
+      }
+    }
+  }
+
+
+
+  var factoryClass:Class[OSMXmlParser] = _
+
+  /**
+    * @return a new instance depending on underlying OS. E.g. Android or Java.
+    */
+  def apply(): OSMXmlParser = {
+    classOf[OSMXmlParser].synchronized {
+      if (factoryClass == null) try
+        factoryClass = Class.forName(classOf[OSMXmlParser].getName + "Impl").asInstanceOf[Class[OSMXmlParser]]
+      catch {
+        case e: ClassNotFoundException =>
+          throw new RuntimeException(e)
+      }
+    }
+
+    try
+      factoryClass.newInstance
+    catch {
+      case e: InstantiationException =>
+        throw new RuntimeException(e)
+      case e: IllegalAccessException =>
+        throw new RuntimeException(e)
+    }
+  }
+
+  object State extends Enumeration {
+    type State = Value
+    val none, create, modify, delete = Value
+  }
+
+  /**
+    * formats for xml timestamp
+    */
+  class OsmXmlTimestampFormat extends DateFormat {
+
+    private val format1 = "yyyy-MM-dd'T'HH:mm:ss'Z'"
+    private val format2 = "yyyy-MM-dd'T'HH:mm:ss"
+
+    private val implementation1 = new SimpleDateFormat(format1)
+    private val implementation2 = new SimpleDateFormat(format2)
+
+    override def format(date: Date, stringBuffer: StringBuffer, fieldPosition: FieldPosition): StringBuffer = implementation1.format(date, stringBuffer, fieldPosition)
+
+    override def parse(s: String, parsePosition: ParsePosition): Date = {
+      if (s.length - parsePosition.getIndex == format1.length)
+        return implementation1.parse(s, parsePosition)
+      implementation2.parse(s, parsePosition)
+    }
+  }
+
+  case class OsmXmlParserDelta(
+                            createdNodes: util.Set[Node] = new util.HashSet[Node],
+                            modifiedNodes: util.Set[Node] = new util.HashSet[Node],
+                            deletedNodes: util.Set[Node] = new util.HashSet[Node],
+                            createdWays: util.Set[Way] = new util.HashSet[Way],
+                            modifiedWays: util.Set[Way] = new util.HashSet[Way],
+                            deletedWays: util.Set[Way] = new util.HashSet[Way],
+                            createdRelations: util.Set[Relation] = new util.HashSet[Relation],
+                            modifiedRelations: util.Set[Relation] = new util.HashSet[Relation],
+                            deletedRelations: util.Set[Relation] = new util.HashSet[Relation]
+                         )
+
+  /**
+    * parsing exception
+    * @param s message
+    * @param throwable exception
+    */
+  class OsmXmlParserException(s: String, throwable: Throwable) extends Exception(s, throwable) {
+    def this(s: String) {
+      this(s, null)
+    }
+    def this(throwable: Throwable) {
+      this("", throwable)
+    }
+  }
+
+
+
+  class StreamException(message: String, cause: Throwable) extends Exception(message, cause) {
+    def this(message: String) {
+      this(message, null)
+    }
+
+    def this(cause: Throwable) {
+      this("", cause)
+    }
+  }
+
+  abstract class Stream {
+    @throws[StreamException]
+    def getEventType: Int
+
+    @throws[StreamException]
+    def isEndDocument(eventType: Int): Boolean
+
+    @throws[StreamException]
+    def next: Int
+
+    @throws[StreamException]
+    def isStartElement(eventType: Int): Boolean
+
+    @throws[StreamException]
+    def isEndElement(eventType: Int): Boolean
+
+    @throws[StreamException]
+    def getLocalName: String
+
+    @throws[StreamException]
+    def getAttributeValue(what: String, key: String): String
+
+    @throws[StreamException]
+    def getAttributeCount: Int
+
+    @throws[StreamException]
+    def getAttributeValue(index: Int): String
+
+    @throws[StreamException]
+    def getAttributeLocalName(index: Int): String
+
+    @throws[StreamException]
+    def close(): Unit
+  }
+
+
+}
+
+

@@ -6,7 +6,7 @@ import org.openmole.spatialdata.grid.RasterLayerData
 import org.openmole.spatialdata.grid.GridGenerator
 import org.openmole.spatialdata.utils.gis.GISUtils
 import org.openmole.spatialdata.utils.osm.APIExtractor
-import org.openmole.spatialdata.utils.osm.api.APIExtractor.{OSMAPIMode, OSMOverpass}
+import org.openmole.spatialdata.utils.osm.APIExtractor.{OSMAPIMode, OSMOverpass}
 
 import scala.util.{Random, Try}
 
@@ -56,8 +56,7 @@ object OSMGridGenerator {
       if(value.isSuccess) ((i,j),value.get) else ((i,j),0.0)
     }
     val values = cells.toMap
-    //println(values.keys.size)
-    Array.tabulate(worldWidth,worldWidth){case k=> values(k)}
+    Array.tabulate(worldWidth,worldWidth){case k: (Int,Int)=> values(k)}
   }
 
 }

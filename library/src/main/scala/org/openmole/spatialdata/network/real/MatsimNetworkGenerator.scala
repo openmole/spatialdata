@@ -15,7 +15,7 @@ case class MatsimNetworkGenerator(
 object MatsimNetworkGenerator {
 
   def readFromMatsimXML(file: String): Network = {
-
+    Network.empty
   }
 
 }

@@ -2,9 +2,8 @@ package org.openmole.spatialdata.test
 
 import org.openmole.spatialdata.grid.measures.GridMorphology
 import org.openmole.spatialdata.grid.real.{OSMGridGenerator, OSMGridSampling}
-import org.openmole.spatialdata.utils.osm.{OSMRoot, APIOverpass}
+import org.openmole.spatialdata.utils.osm.{APIOverpass, OSMRoot, OSMXmlParser}
 import org.openmole.spatialdata.utils.osm.APIExtractor.Buildings.asPolygonSeq
-import org.openmole.spatialdata.utils.osm.xml.InstantiatedOsmXmlParser
 //import org.openmole.spatialdata.utils.visualization
 
 import scala.util.Random
@@ -22,7 +21,7 @@ object TestOSM {
     val overpass = new APIOverpass
 
     val root = new OSMRoot
-    val parser = InstantiatedOsmXmlParser.newInstance
+    val parser = OSMXmlParser.apply()
     parser.setRoot(root)
 
     parser.parse(new StringReader(overpass.execute(

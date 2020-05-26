@@ -129,7 +129,7 @@ class OSMXmlWriter @throws[IOException]
     xml.write("\t</way>\n")
   }
 
-  private val getOsmObjectTypeName = new OsmObjectVisitor[String]() {
+  private val getOsmObjectTypeName = new OSMObjectVisitor[String]() {
     override def visit(node: Node) = "node"
 
     override

@@ -1,3 +1,6 @@
 [submodule "docs/paper"]
 	path = docs/paper
 	url = git@github.com:JusteRaimbault/UrbanForm-paper.git
+[submodule "spatialsampling"]
+	path = spatialsampling
+	url = git@github.com:openmole/spatialsampling.git

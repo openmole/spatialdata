@@ -6,40 +6,27 @@ import org.openmole.spatialdata.grid.GridGenerator
 
 import scala.util.Random
 
-
+/**
+  *
+  *  - implement additional rotation ? -> pb as adds additional parameters
+  *
+  * @param size size of the grid
+  * @param blocks number of blocks randomly added
+  * @param blockMinSize minimal width/height of blocks
+  * @param blockMaxSize maximal width/height of blocks
+  * @param rotationMax maximal value of random rotation
+  */
 case class BlocksGridGenerator(
-                                /**
-                                  * size of the grid
-                                  */
                               size: RasterDim,
-
-                                /**
-                                  * number of blocks randomly added
-                                  */
                               blocks: Int,
-
-                                /**
-                                  * minimal width/height of blocks
-                                  */
                               blockMinSize: Int,
-
-
-                                /**
-                                  * maximal width/height of blocks
-                                  */
-                                blockMaxSize: Int,
-
-                                /**
-                                  * Maximal value of random rotation
-                                  */
-                              // TODO implement additional rotation ? -> pb as adds additional parameters
-                                rotationMax: Double = 0.0
-
+                              blockMaxSize: Int,
+                              rotationMax: Double = 0.0
                               ) extends GridGenerator {
 
   /**
     *
-    * @param rng
+    * @param rng rng
     * @return
     */
   override def generateGrid(implicit rng: Random): RasterLayerData[Double] = BlocksGridGenerator.blocksGrid(size,blocks,blockMinSize,blockMaxSize,rng)
@@ -53,15 +40,15 @@ object BlocksGridGenerator {
 
   /**
     *
-    * @param size
+    * @param size size
     * @return
     */
   def blocksGrid(size: RasterDim,blocks: Int,blockMinSize: Int, blockMaxSize: Int,rng: Random): RasterLayerData[Double] = {
     //println("Blocks grid of size "+size+" ; "+blocks+" ; "+blockMinSize+" ; "+blockMaxSize)
     val maxsize = math.max(blockMinSize,blockMaxSize)
     val minsize = math.min(blockMinSize,blockMaxSize)
-    val w = size match {case Left(l) => l; case Right((w,_)) => w}
-    val h = size match {case Left(l) => l; case Right((_,h)) => h}
+    val w = size match {case Left(l) => l; case Right((ww,_)) => ww}
+    val h = size match {case Left(l) => l; case Right((_,hh)) => hh}
     val vals = Array.fill(w,h)(0.0)
     for(_ <- 0 until blocks){
       val (i,j) = (rng.nextInt(w),rng.nextInt(h))

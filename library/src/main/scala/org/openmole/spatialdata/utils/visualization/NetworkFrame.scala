@@ -2,7 +2,7 @@ package org.openmole.spatialdata.utils.visualization
 
 import java.awt._
 
-import javax.swing.{JComponent, JFrame}
+import javax.swing.{JComponent, JFrame, WindowConstants}
 import javax.swing.plaf.ComponentUI
 import org.openmole.spatialdata.network.{Link, Network, Node}
 import org.openmole.spatialdata.vector.Point
@@ -21,7 +21,7 @@ case class NetworkFrame(networks: Seq[Network],
     frameInit()
     setSize(frameWidth+2*margin,frameHeight+2*margin)
     setLocation(100,100)
-    setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
+    setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
     add(new JComponent {
       setUI(new ComponentUI {
         override def paint(g: Graphics, c: JComponent): Unit = {

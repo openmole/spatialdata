@@ -3,16 +3,15 @@ package org.openmole.spatialdata.utils.osm
 import java.io.Serializable
 
 import org.openmole.spatialdata.utils.osm.OSMObject._
-import org.openmole.spatialdata.utils.osm.OSMRoot.Enumerator
 
 import scala.collection.mutable
 
 
 
 class OSMRoot extends Serializable {
-  private var nodes:mutable.Map[Long, Node] = new mutable.HashMap[Long, Node]()
-  private var ways:mutable.Map[Long, Way] = new mutable.HashMap[Long, Way]()
-  private var relations:mutable.Map[Long, Relation] = new mutable.HashMap[Long, Relation]()
+  val nodes:mutable.Map[Long, Node] = new mutable.HashMap[Long, Node]()
+  val ways: mutable.Map[Long, Way] = new mutable.HashMap[Long, Way]()
+  val relations:mutable.Map[Long, Relation] = new mutable.HashMap[Long, Relation]()
 
   def removeNode(identity: Long): Node = {
     val node = getNode(identity)
@@ -32,30 +31,20 @@ class OSMRoot extends Serializable {
     relation
   }
 
-  def enumerateNodes: OSMRoot.Enumerator[Node] = new OSMRoot.Enumerator[Node]() {
-    val iterator: Iterator[(Long,Node)] = getNodes.iterator
-    override def next: Node = if (iterator.hasNext) iterator.next._2 else null
-  }
+  def getNodes: Seq[Node] = nodes.values.toSeq
 
-  def enumerateWays: Enumerator[Way] =
-    new OSMRoot.Enumerator[Way]() {
-      val iterator: Iterator[(Long,Way)] = getWays.iterator
-      override def next: Way = if (iterator.hasNext) iterator.next._2 else null
-  }
+  def getWays: Seq[Way] = ways.values.toSeq
 
-  def enumerateRelations: Enumerator[Relation] = new OSMRoot.Enumerator[Relation]() {
-    val iterator: Iterator[(Long,Relation)] = getRelations.iterator
-    override def next: Relation = if (iterator.hasNext) iterator.next._2 else null
-  }
+  def getRelations: Seq[Relation] = relations.values.toSeq
 
-  def getNode(identity: Long): Node = getNodes.getOrElse(identity,null)
+  def getNode(identity: Long): Node = nodes.getOrElse(identity,null)
 
-  def getWay(identity: Long): Way = getWays.getOrElse(identity,null)
+  def getWay(identity: Long): Way = ways.getOrElse(identity,null)
 
-  def getRelation(identity: Long): Relation = getRelations.getOrElse(identity,null)
+  def getRelation(identity: Long): Relation = relations.getOrElse(identity,null)
 
-  def remove(`object`: OSMObject): java.util.Set[OSMObject] = {
-    val affectedRelations = `object`.accept(removeVisitor)
+  def remove(o: OSMObject): java.util.Set[OSMObject] = {
+    val affectedRelations = o.accept(removeVisitor)
     affectedRelations
   }
 
@@ -67,35 +56,35 @@ class OSMRoot extends Serializable {
       if (node.getWaysMemberships != null) {
         for (way <- node.getWaysMemberships) { // need to loop in case we visit this node multiple times, eg a polygon where this is start and stop
           while ( {
-            way.getNodes.contains(node)
-          }) way.getNodes.remove(way.getNodes.indexOf(node))
+            way.nodes.contains(node)
+          }) way.nodes.remove(way.nodes.indexOf(node))
           affectedRelations.add(way)
         }
       }
       node.setWaysMemberships(null)
       if (node.getRelationMemberships != null) {
         for (member <- node.getRelationMemberships) {
-          member.getRelation.getMembers.remove(member.getRelation.getMembers.indexOf(member))
+          member.getRelation.members.remove(member.getRelation.members.indexOf(member))
           affectedRelations.add(member.getRelation)
         }
       }
       node.setRelationMemberships(null)
-      OSMRoot.this.getNodes.remove(node.getId)
+      OSMRoot.this.nodes.remove(node.id)
       affectedRelations
     }
 
     override def visit(way: Way): java.util.Set[OSMObject] = {
       val affectedRelations = new java.util.HashSet[OSMObject](1024)
-      if (way.getNodes != null) {
-        for (node <- way.getNodes) {
+      if (way.nodes != null) {
+        for (node <- way.nodes) {
           node.getWaysMemberships.remove(node.getWaysMemberships.indexOf(way))
           affectedRelations.add(node)
         }
-        way.setNodes(null)
+        way.nodes = null
       }
       if (way.getRelationMemberships != null) {
         for (member <- way.getRelationMemberships) {
-          member.getRelation.getMembers.remove(member.getRelation.getMembers.indexOf(member))
+          member.getRelation.members.remove(member.getRelation.members.indexOf(member))
           affectedRelations.add(member.getRelation)
         }
         way.setRelationMemberships(null)
@@ -105,34 +94,33 @@ class OSMRoot extends Serializable {
 
     override def visit(relation: Relation): java.util.Set[OSMObject] = {
       val affectedRelations = new java.util.HashSet[OSMObject](1024)
-      if (relation.getMembers != null) {
-        for (member <- relation.getMembers) {
-          member.getObject.getRelationMemberships.remove(member.getObject.getRelationMemberships.indexOf(member))
-          if (member.getObject.getRelationMemberships.isEmpty) {
-            member.getObject.setRelationMemberships(null)
-            affectedRelations.add(member.getObject)
+      if (relation.members != null) {
+        for (member <- relation.members) {
+          member.getOsmObject.getRelationMemberships.remove(member.getOsmObject.getRelationMemberships.indexOf(member))
+          if (member.getOsmObject.getRelationMemberships.isEmpty) {
+            member.getOsmObject.setRelationMemberships(null)
+            affectedRelations.add(member.getOsmObject)
           }
         }
-        relation.setMembers(null)
+        relation.members = null
       }
       affectedRelations
     }
   }
 
-  @SerialVersionUID(1L)
   class AddVisitor extends OSMObjectVisitor[Void] with Serializable {
     override def visit(node: Node): Null = {
-      getNodes.put(node.getId, node)
+      nodes.put(node.id, node)
       null
     }
 
     override def visit(way: Way): Null = {
-      getWays.put(way.getId, way)
+      ways.put(way.id, way)
       null
     }
 
     override def visit(relation: Relation): Null = {
-      getRelations.put(relation.getId, relation)
+      relations.put(relation.id, relation)
       null
     }
   }
@@ -143,23 +131,6 @@ class OSMRoot extends Serializable {
     osmObject.accept(addVisitor)
   }
 
-  def getNodes: mutable.Map[Long, Node] = nodes
-
-  def setNodes(nodes: mutable.Map[Long, Node]): Unit = {
-    this.nodes = nodes
-  }
-
-  def getWays: mutable.Map[Long, Way] = ways
-
-  def setWays(ways: mutable.Map[Long, Way]): Unit = {
-    this.ways = ways
-  }
-
-  def getRelations: mutable.Map[Long, Relation] = relations
-
-  def setRelations(relations: mutable.Map[Long, Relation]): Unit = {
-    this.relations = relations
-  }
 
   /**
     * @param f returns true if instance is to be removed from results
@@ -172,24 +143,20 @@ class OSMRoot extends Serializable {
 
   def gatherAllOsmObjects: mutable.HashSet[OSMObject] = {
     val objects = new mutable.HashSet[OSMObject](getWays.size + getRelations.size + getNodes.size,1.0)
-    objects.addAll(getWays.values)
-    objects.addAll(getRelations.values)
-    objects.addAll(getNodes.values)
+    objects.addAll(ways.values)
+    objects.addAll(relations.values)
+    objects.addAll(nodes.values)
     objects
   }
 
   def findNodeByLatitudeAndLongitude(latitude: Double, longitude: Double): mutable.ArrayBuffer[Node] = {
-    val nodes = new mutable.ArrayBuffer[Node](100)
-    for (node <- getNodes.values) {
-      if (node.getLatitude == latitude && node.getLongitude == longitude) nodes.append(node)
+    val res = new mutable.ArrayBuffer[Node](100)
+    for (node <- nodes.values) {
+      if (node.getLatitude == latitude && node.getLongitude == longitude) res.append(node)
     }
-    nodes
+    res
   }
 
 }
 
-object OSMRoot {
-  abstract class Enumerator[T] {
-    def next: T
-  }
-}
+

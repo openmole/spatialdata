@@ -70,19 +70,19 @@ class OSMXmlWriter @throws[IOException]
   }
 
   @throws[IOException]
-  def write(`object`: OSMObject): Void = {
-    `object`.accept(writeVisitor)
+  def write(o: OSMObject): Void = {
+    o.accept(writeVisitor)
   }
 
   @throws[IOException]
   def write(root: OSMRoot): Unit = {
-    for (node <- root.getNodes.values) {
+    for (node <- root.getNodes) {
       write(node)
     }
-    for (way <- root.getWays.values) {
+    for (way <- root.getWays) {
       write(way)
     }
-    for (relation <- root.getRelations.values) {
+    for (relation <- root.getRelations) {
       write(relation)
     }
   }
@@ -119,11 +119,11 @@ class OSMXmlWriter @throws[IOException]
   def write(way: Way): Unit = {
     writeObjectHead(way)
     xml.write(" >\n")
-    for (node <- way.getNodes) {
+    for (node <- way.nodes) {
       xml.append("\t\t<nd ref='")
-      xml.append(String.valueOf(node.getId))
+      xml.append(String.valueOf(node.id))
       xml.append("' />\n")
-      node.getId
+      node.id
     }
     writeTags(way)
     xml.write("\t</way>\n")
@@ -145,13 +145,13 @@ class OSMXmlWriter @throws[IOException]
   def write(relation: Relation): Unit = {
     writeObjectHead(relation)
     xml.write(" >\n")
-    if (relation.getMembers != null) {
-      for (membership <- relation.getMembers) {
+    if (relation.members != null) {
+      for (membership <- relation.members) {
         xml.write("\t\t<member type='")
-        xml.write(membership.getObject.accept(getOsmObjectTypeName))
+        xml.write(membership.getOsmObject.accept(getOsmObjectTypeName))
         xml.write("'")
         xml.write(" ref='")
-        xml.write(String.valueOf(membership.getObject.getId))
+        xml.write(String.valueOf(membership.getOsmObject.id))
         xml.write("'")
         xml.write(" role='")
         xml.write(membership.getRole)
@@ -167,7 +167,7 @@ class OSMXmlWriter @throws[IOException]
   private def writeObjectHead(osmObject: OSMObject): Unit = {
     xml.write("\t<")
     xml.append(osmObject.accept(getOsmObjectTypeName))
-    Option(osmObject.getId) match {
+    Option(osmObject.id) match {
       case Some(id) =>
         xml.write(" id='")
         xml.write(String.valueOf(id))

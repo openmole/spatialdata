@@ -21,14 +21,14 @@ case class Node(id: Int,
 
   /**
     * lexicographic order
-    * @param n2
+    * @param n2 other node
     * @return
     */
   def <=(n2: Node): Boolean = x<n2.x||(x==n2.x&&y<=n2.y)
 
   /**
     * Find the projection of a node on a set of links
-    * @param links
+    * @param links links
     * @return
     */
   def projection(links: Set[Link]): (Node,Link) = {
@@ -42,7 +42,7 @@ case class Node(id: Int,
 
   /**
     * projection on one link
-    * @param link
+    * @param link link
     * @return
     */
   def projection(link: Link): Node = {
@@ -54,13 +54,13 @@ case class Node(id: Int,
     if (m2m == 0) return link.e2
     val cost1 = (((x - x1)*(x2 - x1)) + ((y - y1)*(y2 - y1)))/(m1m * m1m2)
     val cost2 = (((x - x2)*(x1 - x2)) + ((y - y2)*(y1 - y2)))/(m2m * m1m2)
-    if (cost1 < 0) return link.e1
+    if (cost1 < 0) link.e1
     else {
-      if (cost2 < 0) return link.e2
+      if (cost2 < 0) link.e2
       else {
         val mq = m1m * math.sqrt(math.abs(1 - math.pow(cost1,2)))
         val m1q = math.sqrt(math.pow(m1m,2) - math.pow(mq,2))
-        return Node(0,x1 + m1q * (x2 - x1) / m1m2 ,y1 + m1q * (y2 - y1) / m1m2)
+        Node(0,x1 + m1q * (x2 - x1) / m1m2 ,y1 + m1q * (y2 - y1) / m1m2)
       }
     }
   }

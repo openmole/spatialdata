@@ -31,7 +31,7 @@ object TestOSM {
         |</union>
         |<print mode="meta"/>
       """.stripMargin)))
-    asPolygonSeq(root.enumerateWays).foreach(println)
+    asPolygonSeq(root.getWays).foreach(println)
   }
 
 

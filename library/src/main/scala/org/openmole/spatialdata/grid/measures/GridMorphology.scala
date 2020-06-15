@@ -105,7 +105,7 @@ object GridMorphology {
       if (indicators.contains(Entropy())) Statistics.entropy(grid) else 0.0,
       if (indicators.contains(Slope())) Statistics.slope(grid) else (0.0,0.0),
       density(grid),
-      0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+      Double.NaN,Double.NaN,Double.NaN,Double.NaN,Double.NaN,Double.NaN,Double.NaN,Double.NaN
     )
   }
 
@@ -125,7 +125,7 @@ object GridMorphology {
       grid.flatten.sum,
       moranDirect(grid),
       distanceMeanDirect(grid),
-      0.0,(0.0,0.0),
+      Double.NaN,(Double.NaN,Double.NaN),
       density(grid),
       components(grid,Some(cachedNetwork)),
       avgDetour(grid,Some(cachedNetwork)),
@@ -133,8 +133,8 @@ object GridMorphology {
       avgComponentArea(grid),
       fullDilationSteps(grid),
       fullErosionSteps(grid),
-      0.0,//fullClosingSteps(grid),
-      0.0//fullOpeningSteps(grid)
+      Double.NaN,
+      Double.NaN
     )
   }
 
@@ -178,11 +178,9 @@ object GridMorphology {
     * @return
     */
   def avgBlockArea(world: Array[Array[Double]],cachedNetwork: Option[Network] = None): Double = {
-    //val inversedNetwork = Network.gridToNetwork(world.map{_.map{case x => 1.0 - x}})
     val nw = cachedNetwork match {case None => network.gridToNetwork(world);case n => n.get}
     val components = GraphAlgorithms.connectedComponents(nw)
     val avgblockarea = components.size match {case n if n == 0 => 0.0;case _ => components.map{_.nodes.size}.sum/components.size.toDouble}
-    //println("avgblockarea = "+avgblockarea)
     avgblockarea
   }
 
@@ -194,7 +192,6 @@ object GridMorphology {
   def avgComponentArea(world: Array[Array[Double]]): Double = {
     val inversedNetwork = network.gridToNetwork(world.map{_.map{x => 1.0 - x}})
     val components = GraphAlgorithms.connectedComponents(inversedNetwork)
-    //println("avgblockarea = "+avgblockarea)
     if(components.nonEmpty){
       components.map{_.nodes.size}.sum/components.size
     }else 0.0
@@ -202,7 +199,9 @@ object GridMorphology {
 
 
   /**
-    * average detour compared to euclidian
+    * Average detour compared to euclidian
+    *  - too costly to do all shortest paths => sample
+    *  - should sample points within connected components?
     * @param world world
     * @param cachedNetwork cached network
     * @param sampledPoints number of sampling points
@@ -211,15 +210,8 @@ object GridMorphology {
   def avgDetour(world: Array[Array[Double]],cachedNetwork: Option[Network] = None,sampledPoints: Int=50)(implicit rng: Random): Double = {
     if(world.flatten.sum==world.map{_.length}.sum) return 0.0
     val nw = cachedNetwork match {case None => network.gridToNetwork(world);case n => n.get}
-    // too costly to do all shortest paths => sample
-    //val shortestPaths = Network.allPairsShortestPath(network)
-    //val avgdetour = shortestPaths.values.map{_.map{_.weight}.sum}.zip(shortestPaths.keys.map{case (n1,n2)=> math.sqrt((n1.x-n2.x)*(n1.x-n2.x)+(n1.y-n2.y)*(n1.y-n2.y))}).map{case (dn,de)=>dn/de}.sum/shortestPaths.size
-    //println("avgdetour = "+avgdetour)
-    // should sample points within connected components
-    val sampled = nw.nodes.sampleWithoutReplacement(sampledPoints)(rng) //  no shuffling here? Not needed
+    val sampled = nw.nodes.sampleWithoutReplacement(sampledPoints)(rng)
     val paths = GraphAlgorithms.shortestPaths(nw, sampled, sampled)
-
-    // ! in scala 2.13 no more implicit conversion Map -> Seq
     val avgdetour = paths.toSeq.filter{!_._2._3.isInfinite}.map{
       case (_,(nodes,_,d))=>
         val (n1,n2) = (nodes(0),nodes.last)
@@ -357,17 +349,12 @@ object GridMorphology {
   }
 
   /**
-    * Default spatial weights for Moran
-    *
-    *  ! non square size
+    * Default spatial weights for Moran 1/d_{ij}
     *
     * @param matrix matrix
     * @return
     */
   def spatialWeights(matrix: Array[Array[Double]]): Array[Array[Double]] = {
-    /*val (n,p) = (2 * (matrix.length - 1) + 1,2 * (matrix(0).length - 1) + 1)
-    val (ic,jc) = ((n-1)/2 + 1,(p-1)/2 + 1)
-    Array.tabulate(n, p) { (i, j) => if (i == ic && j == jc) 0.0 else 1 / math.sqrt((i - ic) * (i - ic) + (j - jc) * (j - jc)) }*/
     val (n,p) = (2 * matrix.length - 1,2 * matrix(0).length - 1)
     Array.tabulate(n, p) { (i, j) => if (i == n / 2 && j == p / 2) 0.0 else 1 / math.sqrt((i - n / 2) * (i - n / 2) + (j - p / 2) * (j - p / 2))}
   }
@@ -408,7 +395,6 @@ object GridMorphology {
   }
 
   def zipWithPosition(m :Array[Array[Double]]): Seq[(Double, (Int,Int))] = {
-    //  for ... yield also changed in 2.13 ?
     m.zipWithIndex.map{
       case (row,i) =>
         row.zipWithIndex.map{
@@ -456,8 +442,7 @@ object GridMorphology {
   }
 
 
-
-
+  val CROSS_KERNEL: Array[Array[Double]] = Array(Array(0.0,1.0,0.0),Array(1.0,1.0,1.0),Array(0.0,1.0,0.0))
 
   /**
     * Dilation with default cross mask
@@ -466,19 +451,18 @@ object GridMorphology {
     * @return
     */
   def dilation(matrix: Array[Array[Double]],
-               convol: (Array[Array[Double]],Array[Array[Double]],Double=> Double)=> Array[Array[Double]] = Convolution.convolution2dDirect
+               convol: (Array[Array[Double]],Array[Array[Double]],Double => Double)=> Array[Array[Double]] = Convolution.convolution2dDirect
               ): Array[Array[Double]] =
-    convol(matrix,Array(Array(0.0,1.0,0.0),Array(1.0,1.0,1.0),Array(0.0,1.0,0.0)),{d => if(d > 0.0)1.0 else 0.0})
+    convol(matrix,CROSS_KERNEL,{d => if(d > 0.0) 1.0 else 0.0})
 
   def erosion(matrix: Array[Array[Double]],
               convol: (Array[Array[Double]],Array[Array[Double]],Double=> Double)=> Array[Array[Double]] = Convolution.convolution2dDirect
-             ): Array[Array[Double]] = {
-    val mask = Array(Array(0.0, 1.0, 0.0), Array(1.0, 1.0, 1.0), Array(0.0, 1.0, 0.0))
+             ): Array[Array[Double]] =
     convol(matrix,
-      mask,
-      {d => if (d == mask.flatten.sum) 1.0 else 0.0 }
+      CROSS_KERNEL,
+      {d => if (d == CROSS_KERNEL.flatten.sum) 1.0 else 0.0 }
     )
-  }
+
 
   /**
     * Number of steps to fully close the image (morpho maths)

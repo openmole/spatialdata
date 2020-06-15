@@ -2,10 +2,10 @@ package org.openmole.spatialdata.utils.osm
 
 import org.locationtech.jts.geom._
 import org.locationtech.jts.geom.impl.CoordinateArraySequence
+import org.openmole.spatialdata.utils
 
 import scala.collection.mutable
 import scala.util.control.Breaks
-
 import org.openmole.spatialdata.utils.osm.OSMObject._
 
 /**
@@ -15,8 +15,8 @@ class JTSGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
   def createPoint(node: Node): Point = geometryFactory.createPoint(new Coordinate(node.getX, node.getY))
 
   def createLineString(way: Way): LineString = {
-    val coordinates = new Array[Coordinate](way.getNodes.size)
-    val nodes = way.getNodes
+    val coordinates = new Array[Coordinate](way.nodes.size)
+    val nodes = way.nodes
     var i = 0
     while ( {
       i < nodes.size
@@ -33,7 +33,7 @@ class JTSGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
   }
 
   def createPolygon(way: Way): Polygon = {
-    val coordinates = way.getNodes.map(node=>new Coordinate(node.getX, node.getY)).toArray
+    val coordinates = way.nodes.map(node=>new Coordinate(node.getX, node.getY)).toArray
     if (!way.isPolygon) throw new RuntimeException("Way expected to be a polygon.")
     else geometryFactory.createPolygon(geometryFactory.createLinearRing(coordinates), null)
   }
@@ -47,12 +47,12 @@ class JTSGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
     * @return
     */
   def createOuterWaysPolygon(relation: Relation): Polygon = {
-    val lines = new mutable.ArrayBuffer[mutable.ArrayBuffer[Coordinate]](relation.getMembers.size)
-    for (member <- relation.getMembers) {
+    val lines = new mutable.ArrayBuffer[mutable.ArrayBuffer[Coordinate]](relation.members.size)
+    for (member <- relation.members) {
       if (!"outer".equalsIgnoreCase(member.getRole)) throw new RuntimeException
-      val way = member.getObject.asInstanceOf[Way]
-      val line = new mutable.ArrayBuffer[Coordinate](way.getNodes.size)
-      for (node <- way.getNodes) {
+      val way = member.getOsmObject.asInstanceOf[Way]
+      val line = new mutable.ArrayBuffer[Coordinate](way.nodes.size)
+      for (node <- way.nodes) {
         line.append(new Coordinate(node.getX, node.getY))
       }
       lines.append(line)
@@ -114,18 +114,18 @@ class JTSGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
     val linearRings = new java.util.ArrayList[LinearRing]
     val nodes = new mutable.ArrayBuffer[Node]
     var firstNode: Node = null
-    for (membership <- relation.getMembers) {
+    for (membership <- relation.members) {
       Breaks.breakable {
         if (!"outer".equalsIgnoreCase(membership.getRole)) Breaks.break//! continue is not supported
         // ! inner as holes!
         if (firstNode == null) {
-          firstNode = membership.getObject.accept(new OSMObjectVisitor[Node]() {
+          firstNode = membership.getOsmObject.accept(new OSMObjectVisitor[Node]() {
             override def visit(node: Node): Node = node
-            override def visit(way: Way): Node = way.getNodes()(0)
+            override def visit(way: Way): Node = way.nodes(0)
             override def visit(relation: Relation): Node = relation.accept(this)
           })
         }
-        val nextNodes = membership.getObject.accept(new NodesCollector)
+        val nextNodes = membership.getOsmObject.accept(new NodesCollector)
         if (nodes.isEmpty) nodes.addAll(nextNodes)
         else {
           val previousNode = nodes(nodes.size - 1)
@@ -136,9 +136,9 @@ class JTSGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
             nodes.addAll(nextNodes.reverse)
           }
           else {
-            System.out.println("previous" + previousNode)
-            System.out.println("first" + nextNodes(0))
-            System.out.println("last" + nextNodes(nextNodes.size - 1))
+            utils.log("previous" + previousNode)
+            utils.log("first" + nextNodes(0))
+            utils.log("last" + nextNodes(nextNodes.size - 1))
             throw new RuntimeException("Non connected members in relation")
           }
         }
@@ -198,12 +198,12 @@ class JTSGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
       nodes
     }
 
-    override def visit(way: Way): mutable.ArrayBuffer[Node] = way.getNodes
+    override def visit(way: Way): mutable.ArrayBuffer[Node] = way.nodes
 
     override def visit(relation: Relation): mutable.ArrayBuffer[Node] = {
       val lines = new mutable.ArrayBuffer[mutable.ArrayBuffer[Node]]
-      for (membership <- relation.getMembers) {
-        lines.append(membership.getObject.accept(new NodesCollector))
+      for (membership <- relation.members) {
+        lines.append(membership.getOsmObject.accept(new NodesCollector))
       }
       lines.sortInPlaceWith(compareLines)
       var nodesCount = 0

@@ -21,7 +21,7 @@ case class PercolationNetworkGenerator(
 
 object PercolationNetworkGenerator {
 
-  implicit val doubleOrdering = Ordering.Double.TotalOrdering
+  implicit val doubleOrdering: Ordering[Double] = Ordering.Double.TotalOrdering
 
   /**
     * Basic bond percolation in an overlay network

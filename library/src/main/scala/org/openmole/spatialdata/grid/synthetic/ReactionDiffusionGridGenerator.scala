@@ -4,7 +4,6 @@ package org.openmole.spatialdata.grid.synthetic
 import org.openmole.spatialdata.grid._
 import org.openmole.spatialdata.grid.GridGenerator
 
-import scala.runtime.RichDouble
 import scala.util.Random
 
 
@@ -42,6 +41,9 @@ object ReactionDiffusionGridGenerator {
 
   /**
     * Reaction diffusion grid generation
+    *
+    *  - thematic Q : are negative pop increment just a bias in the heuristic or could be interpreted realistically? NO because get out only from boundaries: true if more sprawl, no meaning if external migration
+    *
     * @param size grid size
     * @param growthRate growth rate N_G
     * @param totalPopulation total population P_m
@@ -54,8 +56,7 @@ object ReactionDiffusionGridGenerator {
     * @return
     */
   def reactionDiffusionGrid(size: RasterDim, growthRate: Double, totalPopulation: Double, alphaAtt: Double, diffusion: Double, diffusionSteps: Int, initialConfiguration: Option[Seq[Seq[Double]]] = None,iterImpl: Boolean = true)(implicit rng: Random): Array[Array[Double]] = {
-    // FIXME inversion height - width
-    val (width,height)= if(initialConfiguration.isDefined) (initialConfiguration.get.length,initialConfiguration.get(0).length) else size match {case Left(s)=>(s,s);case Right(c)=> c}
+    val (width,height)= if(initialConfiguration.isDefined) (initialConfiguration.get.head.length,initialConfiguration.get.length) else size match {case Left(s)=>(s,s);case Right(c)=> c}
 
     var arrayVals: Array[Array[Double]] = if (initialConfiguration.isDefined) {
       val copyconfig = initialConfiguration.get.map{_.toVector}.toVector
@@ -72,8 +73,6 @@ object ReactionDiffusionGridGenerator {
     //assert(growthRate.toInt>0,"no meso growth : tot pop = "+arrayVals.flatten.sum)
     // growthRates < 1 will lead to no increment : either discretize in smaller units or keep this small discrepency ? (if really pop counts should be reasonable)
 
-
-    // FIXME thematic Q : are negative pop increment just a bias in the heuristic or could be interpreted realistically? NO because get out only from boundaries: true if more sprawl, no meaning if external migration
     while (population < totalPopulation && stepdeltapop>=0.0) {
 
       val prevpop = population
@@ -85,7 +84,7 @@ object ReactionDiffusionGridGenerator {
       }
       else {
 
-        val oldPop: Array[Array[Double]] = arrayVals.map { _.map { case x => math.pow(x / population, alphaAtt) } }
+        val oldPop: Array[Array[Double]] = arrayVals.map { _.map { x => math.pow(x / population, alphaAtt) } }
         val ptot = oldPop.flatten.filter(!_.isNaN).sum
 
         if (iterImpl) {

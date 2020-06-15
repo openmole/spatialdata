@@ -88,10 +88,7 @@ case class OSMXmlParser(
                   }
                   else throw new OsmXmlParserException("Inconsistency, node " + identity + " already exists.")
                 }
-                if (currentNode == null) {
-                  currentNode = new Node
-                  currentNode.setId(identity)
-                }
+                if (currentNode == null) currentNode = new Node(identity)
                 currentNode.setLatitude(xmlr.getAttributeValue(null, "lat").toDouble)
                 currentNode.setLongitude(xmlr.getAttributeValue(null, "lon").toDouble)
                 parseObjectAttributes(xmlr, currentNode, "id", "lat", "lon")
@@ -109,7 +106,7 @@ case class OSMXmlParser(
                   skipCurrentObject = true
                   break //was:continue
                 }
-                else if (version > currentNode.getVersion + 1 && !allowingMissingVersions) throw new OsmXmlParserException("Inconsistency, version " + version + " too great to modify node " + currentNode.getId + " with version " + currentNode.getVersion)
+                else if (version > currentNode.getVersion + 1 && !allowingMissingVersions) throw new OsmXmlParserException("Inconsistency, version " + version + " too great to modify node " + currentNode.id + " with version " + currentNode.getVersion)
                 else if (version == currentNode.getVersion) throw new OsmXmlParserException("Inconsistency, found same version in new data during modify node.")
                 currentNode.setTags(null)
                 currentNode.setAttributes(null)
@@ -153,10 +150,8 @@ case class OSMXmlParser(
                   }
                   else throw new OsmXmlParserException("Inconsistency, way " + identity + " already exists.")
                 }
-                if (currentWay == null) {
-                  currentWay = new Way
-                  currentWay.setId(identity)
-                }
+                if (currentWay == null) currentWay = new Way(identity)
+
                 parseObjectAttributes(xmlr, currentWay, "id")
                 currentWay.setLoaded(true)
                 current = currentWay
@@ -176,13 +171,13 @@ case class OSMXmlParser(
                 else if (version == currentWay.getVersion) throw new OsmXmlParserException("Inconsistency, found same version in new data during modify way.")
                 //                currentWay.setTags(null)
                 currentWay.setAttributes(null)
-                if (currentWay.getNodes != null) {
-                  for (node <- currentWay.getNodes) {
+                if (currentWay.nodes != null) {
+                  for (node <- currentWay.nodes) {
                     node.getWaysMemberships.remove(node.getWaysMemberships.indexOf(currentWay))
                     root.add(node)
                   }
                 }
-                currentWay.setNodes(null)
+                currentWay.nodes = new mutable.ArrayBuffer[Node]
                 parseObjectAttributes(xmlr, currentWay, "id")
                 current = currentWay
                 delta.modifiedWays.add(currentWay)
@@ -212,8 +207,7 @@ case class OSMXmlParser(
               if ((state == State.none) || (state == State.create) || (state == State.modify)) {
                 var node = root.getNode(identity)
                 if (node == null) {
-                  node = new Node
-                  node.setId(identity)
+                  node = new Node(identity)
                   root.add(node)
                 }
                 node.addWayMembership(currentWay)
@@ -240,8 +234,7 @@ case class OSMXmlParser(
                   else throw new OsmXmlParserException("Inconsistency, relation " + identity + " already exists.")
                 }
                 if (currentRelation == null) {
-                  currentRelation = new Relation
-                  currentRelation.setId(identity)
+                  currentRelation = new Relation(identity)
                 }
                 parseObjectAttributes(xmlr, currentRelation, "id")
                 currentRelation.setLoaded(true)
@@ -259,13 +252,13 @@ case class OSMXmlParser(
                 }
                 else if (version > currentRelation.getVersion + 1 && !allowingMissingVersions) throw new OsmXmlParserException("Inconsistency, too great version found during modify relation.")
                 else if (version == currentRelation.getVersion) throw new OsmXmlParserException("Inconsistency, same version found during modify relation.")
-                if (currentRelation.getMembers != null) {
+                if (currentRelation.members != null) {
 
-                  for (member <- currentRelation.getMembers) {
-                    member.getObject.getRelationMemberships.remove(member.getObject.getRelationMemberships.indexOf(member))
-                    if (member.getObject.getRelationMemberships.isEmpty) member.getObject.setRelationMemberships(null)
+                  for (member <- currentRelation.members) {
+                    member.getOsmObject.getRelationMemberships.remove(member.getOsmObject.getRelationMemberships.indexOf(member))
+                    if (member.getOsmObject.getRelationMemberships.isEmpty) member.getOsmObject.setRelationMemberships(null)
                   }
-                  currentRelation.setMembers(null)
+                  currentRelation.members = new mutable.ArrayBuffer[RelationMembership]
                 }
                 currentRelation.setAttributes(null)
                 currentRelation.setTags(null)
@@ -287,12 +280,12 @@ case class OSMXmlParser(
                   break //was:continue
                 }
                 else if (version > relationToRemove.getVersion + 1 && !allowingMissingVersions) throw new OsmXmlParserException("Inconsistency, too great version found during delete relation.")
-                if (relationToRemove.getMembers != null) {
-                  for (member <- relationToRemove.getMembers) {
-                    member.getObject.getRelationMemberships.remove(member.getObject.getRelationMemberships.indexOf(member))
-                    if (member.getObject.getRelationMemberships.isEmpty) member.getObject.setRelationMemberships(null)
+                if (relationToRemove.members != null) {
+                  for (member <- relationToRemove.members) {
+                    member.getOsmObject.getRelationMemberships.remove(member.getOsmObject.getRelationMemberships.indexOf(member))
+                    if (member.getOsmObject.getRelationMemberships.isEmpty) member.getOsmObject.setRelationMemberships(null)
                   }
-                  relationToRemove.setMembers(null)
+                  relationToRemove.members = new mutable.ArrayBuffer[RelationMembership]
                 }
                 root.remove(relationToRemove)
                 delta.deletedRelations.add(relationToRemove)
@@ -309,32 +302,29 @@ case class OSMXmlParser(
                 if ("way" == `type`) {
                   var way = root.getWay(identity)
                   if (way == null) {
-                    way = new Way
-                    way.setId(identity)
+                    way = new Way(identity)
                     root.add(way)
                   }
-                  member.setObject(way)
+                  member.setOsmObject(way)
                 }
                 else if ("node" == `type`) {
                   var node = root.getNode(identity)
                   if (node == null) {
-                    node = new Node
-                    node.setId(identity)
+                    node = new Node(identity)
                     root.add(node)
                   }
-                  member.setObject(node)
+                  member.setOsmObject(node)
                 }
                 else if ("relation" == `type`) {
                   var relation = root.getRelation(identity)
                   if (relation == null) {
-                    relation = new Relation
-                    relation.setId(identity)
+                    relation = new Relation(identity)
                     root.add(relation)
                   }
-                  member.setObject(relation)
+                  member.setOsmObject(relation)
                 }
                 else throw new RuntimeException("Unsupported relation member type: " + `type`)
-                member.getObject.addRelationMembership(member)
+                member.getOsmObject.addRelationMembership(member)
                 currentRelation.addMember(member)
               }
               else if (state == State.delete) {

@@ -2,7 +2,7 @@ package org.openmole.spatialdata.utils.visualization
 
 import java.awt._
 
-import javax.swing.{JComponent, JFrame}
+import javax.swing.{JComponent, JFrame, WindowConstants}
 import javax.swing.plaf.ComponentUI
 import org.openmole.spatialdata.grid.RasterLayerData
 
@@ -17,7 +17,7 @@ case class RasterFrame(
     frameInit()
     setSize(frameWidth,frameHeight)
     setLocation(100,100)
-    setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE)
+    setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
     add(new JComponent {
       setUI(new ComponentUI {
         override def paint(g: Graphics, c: JComponent): Unit = {

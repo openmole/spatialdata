@@ -29,21 +29,11 @@ object APIExtractor {
     */
   object Buildings {
 
-    def asPolygonSeq(e: OSMRoot.Enumerator[Way]): Seq[Polygon] = {
-      var result = scala.collection.mutable.Buffer[Polygon]()
+    def asPolygonSeq(ways: Seq[Way]): Seq[Polygon] = {
       val fact = new JTSGeometryFactory()
-      var way: Way = e.next
-      while (way != null) {
-        val building = way.getTag("building")
-        if (building != null /* && building.equals("yes")*/ ) {
-          val potentialPolygon = Try(fact.createPolygon(way))
-          if (potentialPolygon.isSuccess) {
-            result += potentialPolygon.get
-          }
-        }
-        way = e.next
-      }
-      result.toSeq
+      def toPolygon(way: OSMObject.Way): Option[Polygon] =
+        if (way.getTag("building") != null) Try(fact.createPolygon(way)).toOption else None
+      ways.flatMap(toPolygon)
     }
 
 
@@ -66,13 +56,13 @@ object APIExtractor {
           val overpass = new APIOverpass
           val root = overpass.get(south, west, north, east, hasKeyValue=("building",Seq("yes")))
           utils.log("retrieved via overpass " + east + " n=" + north + " s=" + south + "w=" + west)
-          asPolygonSeq(root.enumerateWays)
+          asPolygonSeq(root.getWays)
 
         case OSMDirect =>
           val api = new APIConnection()
           val res = api.get(south, west, north, east)
           utils.log("retrieved via standard api " + east + " n=" + north + " s=" + south + "w=" + west)
-          asPolygonSeq(res.enumerateWays)
+          asPolygonSeq(res.getWays)
 
         case Postgresql(port) =>
           implicit val connection: Connection = PostgisConnection.initPostgis(database ="buildings",port = port)
@@ -142,15 +132,13 @@ object APIExtractor {
 
     /**
       * Convert API result to a sequence of LineString
-      * @param e OSM enumerator
+      * @param ways ways
       * @param tags tags to keep
       * @return
       */
-    def asLineStringSeq(e: OSMRoot.Enumerator[Way], tags: Map[String,Seq[String]]): Seq[LineString] = {
-      val result = scala.collection.mutable.Buffer[LineString]()
+    def asLineStringSeq(ways: Seq[Way], tags: Map[String,Seq[String]]): Seq[LineString] = {
       val fact = new JTSGeometryFactory()
-      var way: Way = e.next
-      while (way != null) {
+      def toLineString(way: Way): Option[LineString] = {
         val validway = tags.toSeq.map{
           case (tag,values) =>
             val waytag = way.getTag(tag)
@@ -159,15 +147,9 @@ object APIExtractor {
               values.contains(waytag)
             }
         }.reduce(_&_)
-        if (validway) {
-          val potentialLine = Try(fact.createLineString(way))
-          if (potentialLine.isSuccess) {
-            result += potentialLine.get
-          }
-        }
-        way = e.next
+        if (validway) Try(fact.createLineString(way)).toOption else None
       }
-      result.toSeq
+      ways.flatMap(toLineString)
     }
 
     /**
@@ -195,14 +177,14 @@ object APIExtractor {
           val root = overpass.get(south, west, north, east,
             hasKeyValue=("",Seq("")) //if (tags.size==1) tags.toSeq(0) else ("",Seq(""))
           )
-          val res = asLineStringSeq(root.enumerateWays,tags)
+          val res = asLineStringSeq(root.getWays,tags)
           utils.log("Highways from overpass " +res)
           res
 
         case OSMDirect =>
           val api = new APIConnection()
           val root = api.get(south, west, north, east)
-          val res = asLineStringSeq(root.enumerateWays,tags)
+          val res = asLineStringSeq(root.getWays,tags)
           utils.log("Highways from OSM (API): "+res)
           res
 
@@ -213,19 +195,17 @@ object APIExtractor {
   }
 
 
-  object Points {
+  object OSMPoints {
 
     /**
       * OSM Node enumerator to Points
-      * @param root enumerator
+      * @param nodes nodes
       * @param tags tags
       * @return
       */
-    def asPoints(root: OSMRoot.Enumerator[Node], tags: Map[String,Seq[String]]): org.openmole.spatialdata.vector.Points = {
-      val result = scala.collection.mutable.Buffer[Point]()
+    def asPoints(nodes: Seq[Node], tags: Map[String,Seq[String]]): Points = {
       val fact = new JTSGeometryFactory()
-      var node: Node = root.next
-      while (node != null) {
+      def toPoint(node: Node): Option[Point] = {
         val validnode = tags.toSeq.map{
           case (tag,values) =>
             val nodetag = node.getTag(tag)
@@ -234,15 +214,9 @@ object APIExtractor {
               values.contains(nodetag)
             }
         }.reduce(_&_)
-        if (validnode) {
-          val potentialPoint = Try(fact.createPoint(node))
-          if (potentialPoint.isSuccess) {
-            result += potentialPoint.get
-          }
-        }
-        node = root.next
+        if (validnode) Try(fact.createPoint(node)).toOption else None
       }
-      org.openmole.spatialdata.vector.Points(result.toSeq, Map.empty)
+      Points(nodes.flatMap(toPoint), Map.empty)
     }
 
 
@@ -271,14 +245,14 @@ object APIExtractor {
           val root = overpass.get(south, west, north, east,
             hasKeyValue=("",Seq("")) //if (tags.size==1) tags.toSeq(0) else ("",Seq(""))
           )
-          val res = asPoints(root.enumerateNodes,tags)
+          val res = asPoints(root.getNodes,tags)
           utils.log("Nodes from overpass " +res)
           res
 
         case OSMDirect =>
           val api = new APIConnection()
           val root = api.get(south, west, north, east)
-          val res = asPoints(root.enumerateNodes,tags)
+          val res = asPoints(root.getNodes,tags)
           utils.log("Nodes from OSM (API): "+res)
           res
 

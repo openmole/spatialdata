@@ -57,7 +57,7 @@ object OSMNetworkGenerator {
     utils.log("Network from OSM: "+nw)
     // note: doing a second time the request may not be optimal, but simplifies the overpass request
     if(stationNodesTags.isDefined) {
-      val attributePoints = APIExtractor.Points.getPoints(south, west, north, east, stationNodesTags.get)
+      val attributePoints = APIExtractor.OSMPoints.getPoints(south, west, north, east, stationNodesTags.get)
       GISNetwork.addStationNodes(nw, attributePoints)
     } else nw
   }

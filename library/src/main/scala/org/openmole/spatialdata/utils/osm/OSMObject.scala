@@ -9,7 +9,9 @@ import scala.collection.mutable.ArrayBuffer
 
 
 
-abstract class OSMObject extends Serializable {
+abstract case class OSMObject(
+                             id: Long
+                             ) extends Serializable {
 
   def accept[R](visitor: OSMObject.OSMObjectVisitor[R]): R
 
@@ -17,16 +19,23 @@ abstract class OSMObject extends Serializable {
     * if true, then this object has not been loaded, it's just a referenced object
     */
   private var loaded = false
-  protected var id = 0L
-  private var attributes: mutable.Map[String, String] = _
-  private var version:Integer = _
-  private var changeset = 0L
+
+
+  @BeanProperty
+  var attributes: mutable.Map[String, String] = _
+  @BeanProperty
+  var version:Integer = _
+  @BeanProperty
+  var changeset = 0L
   private var uid = 0L
-  private var user:String = _
-  private var visible = false
+  @BeanProperty
+  var user:String = _
+  @BeanProperty
+  var visible = false
   private var timestamp = 0L
   private var tags: mutable.Map[String, String] = _
-  private var relationMemberships: mutable.ArrayBuffer[OSMObject.RelationMembership] = _
+  @BeanProperty
+  var relationMemberships: mutable.ArrayBuffer[OSMObject.RelationMembership] = _
 
   def addRelationMembership(member: OSMObject.RelationMembership): Unit = {
     if (relationMemberships == null) relationMemberships = new ArrayBuffer[OSMObject.RelationMembership](5)
@@ -38,17 +47,6 @@ abstract class OSMObject extends Serializable {
     relationMemberships.addOne(member)
   }
 
-  def getAttributes: mutable.Map[String, String] = attributes
-
-  def setAttributes(attributes: mutable.Map[String, String]): Unit = {
-    this.attributes = attributes
-  }
-
-  def getRelationMemberships: mutable.ArrayBuffer[OSMObject.RelationMembership] = relationMemberships
-
-  def setRelationMemberships(relationMemberships: mutable.ArrayBuffer[OSMObject.RelationMembership]): Unit = {
-    this.relationMemberships = relationMemberships
-  }
 
   def getAttribute(key: String): String = {
     if (attributes == null) return null
@@ -70,36 +68,6 @@ abstract class OSMObject extends Serializable {
       tags = new mutable.HashMap[String, String]
     }
     tags.put(key, value)
-  }
-
-  def getVersion: Integer = version
-
-  def setVersion(version: Integer): Unit = {
-    this.version = version
-  }
-
-  def getChangeset: Long = changeset
-
-  def setChangeset(changeset: Long): Unit = {
-    this.changeset = changeset
-  }
-
-  def getUser: String = user
-
-  def setUser(user: String): Unit = {
-    this.user = user
-  }
-
-  def isVisible: Boolean = visible
-
-  def setVisible(visible: Boolean): Unit = {
-    this.visible = visible
-  }
-
-  def getId: Long = id
-
-  def setId(id: Long): Unit = {
-    this.id = id
   }
 
   def getTags: mutable.Map[String, String] = tags
@@ -140,14 +108,13 @@ object OSMObject {
     def visit(relation: Relation): R
   }
 
-  class Node() extends OSMObject with Serializable {
+  class Node(id: Long) extends OSMObject(id) with Serializable {
     def accept[R](visitor: OSMObjectVisitor[R]): R = visitor.visit(this)
 
     def this(id: Long, latitude: Double, longitude: Double, tags: String*) {
-      this()
+      this(id)
       this.latitude = latitude
       this.longitude = longitude
-      setId(id)
       var i = 0
       while ( {
         i < tags.length
@@ -208,16 +175,11 @@ object OSMObject {
   }
 
 
-  class Way extends OSMObject with Serializable {
+  class Way(id: Long) extends OSMObject(id) with Serializable {
 
     override def accept[R](visitor: OSMObjectVisitor[R]): R = visitor.visit(this)
 
-    def Way(id: Long): Unit = {
-      this.id = id
-    }
-
-    @BeanProperty
-    var nodes: mutable.ArrayBuffer[Node] = _
+    var nodes: mutable.ArrayBuffer[Node] = new mutable.ArrayBuffer[Node]
 
     /**
       * @return true if an enclosed polygon
@@ -226,13 +188,10 @@ object OSMObject {
       if (!isLoaded) {
         throw new NotLoadedException(this)
       }
-      getNodes.size > 2 && getNodes()(0) == getNodes()(getNodes.size - 1)
+      nodes.size > 2 && nodes(0) == nodes(nodes.size - 1)
     }
 
     def addNode(node: Node): Way = {
-      if (nodes == null) {
-        nodes = new mutable.ArrayBuffer[Node](50)
-      }
       nodes.append(node)
       this
     }
@@ -241,21 +200,13 @@ object OSMObject {
   }
 
 
-  class Relation extends OSMObject with Serializable {
+  class Relation(id: Long) extends OSMObject(id) with Serializable {
     override def accept[R](visitor: OSMObjectVisitor[R]): R = visitor.visit(this)
 
-    private var members: mutable.ArrayBuffer[RelationMembership] = _
+    var members: mutable.ArrayBuffer[RelationMembership] = new mutable.ArrayBuffer[RelationMembership]
 
-    def addMember(member: RelationMembership): mutable.ArrayBuffer[RelationMembership] = {
-      if (members == null) members = new mutable.ArrayBuffer[RelationMembership](50)
+    def addMember(member: RelationMembership): mutable.ArrayBuffer[RelationMembership] =
       members.append(member)
-    }
-
-    def getMembers: mutable.ArrayBuffer[RelationMembership] = members
-
-    def setMembers(members: mutable.ArrayBuffer[RelationMembership]): Unit = {
-      this.members = members
-    }
 
     override def toString: String = "Relation{" + super.toString + "members=" + members + '}'
   }
@@ -263,7 +214,9 @@ object OSMObject {
 
   class RelationMembership extends Serializable {
     private var relation: Relation = _
-    private var `object`: OSMObject = _
+
+    @BeanProperty
+    var osmObject: OSMObject = _
     /**
       * todo intern in domain!
       */
@@ -275,26 +228,20 @@ object OSMObject {
       this.relation = relation
     }
 
-    def getObject: OSMObject = `object`
-
-    def setObject(`object`: OSMObject): Unit = {
-      this.`object` = `object`
-    }
-
     def getRole: String = role
 
     def setRole(role: String): Unit = {
       this.role = role
     }
 
-    override def toString: String = "RelationMembership{" + "role='" + role + '\'' + ", relation.id=" + (if (relation != null) relation.getId
-    else "null") + ", object.id=" + (if (`object` != null) `object`.getId
+    override def toString: String = "RelationMembership{" + "role='" + role + '\'' + ", relation.id=" + (if (relation != null) relation.id
+    else "null") + ", object.id=" + (if (osmObject != null) osmObject.id
     else "null") + '}'
   }
 
   class NotLoadedException(detailMessage: String, throwable: Throwable) extends java.lang.RuntimeException(detailMessage, throwable) {
-    def this(`object`: OSMObject) {
-      this(`object`.getClass.getSimpleName + "#id " + `object`.getId + " is not loaded!", null)
+    def this(o: OSMObject) {
+      this(o.getClass.getSimpleName + "#id " + o.id + " is not loaded!", null)
     }
     def this(detailMessage: String) {
       this(detailMessage, null)

@@ -11,12 +11,12 @@ import scala.math._
 /**
   * Network
   *
-  * TODO - many functions are a mess, in particular adding nodes and links - this must be fixed and made consistent with adjacency representation
-  * The sequence order may be used by functions needing it (adjacency matrix operations etc)
   *
-  * TODO add directed and weighted options
-  *
-  * TODO can we have a composition law for networks to have some sort of structure ?
+  * REFACTORING:
+  *   - many functions are a mess, in particular adding nodes and links - this must be fixed and made consistent with adjacency representation
+  *   - The sequence order may be used by functions needing it (adjacency matrix operations etc)
+  *   - add directed (make it consistent) and weighted options
+  *   - can we have a composition law for networks to have some sort of structure ?
   *
   * @param nodes set of nodes
   * @param links set of links
@@ -29,7 +29,7 @@ case class Network(
                     shortestPathsMethod: ShortestPathMethod = DijkstraJGraphT()
                   ) {
 
-  implicit val doubleOrdering = Ordering.Double.TotalOrdering
+  implicit val doubleOrdering: Ordering[Double] = Ordering.Double.TotalOrdering
 
   /**
     * Check if node index set is injective
@@ -51,7 +51,7 @@ case class Network(
 
   /**
     * shift node ids by a constant
-    * @param k
+    * @param k constant
     * @return
     */
   def shiftIds(k: Int): Network = Network( // ok it may be less painful to use lenses here
@@ -66,7 +66,7 @@ case class Network(
     *
     * weighting nodes and adding their weights should give a group
     *
-    * @param n2
+    * @param n2 other network
     * @return
     */
   def +(n2: Network): Network = Network(
@@ -259,15 +259,14 @@ case class Network(
       d = inters(i)._2.distance(inters(j)._2)
     } yield (inters(i)._2,(inters(j)._2,d))).filter(_._2._2<1e-10).toMap
     val newinters = inters.map{case (l,n) => if(toreplace.contains(n)) (l,toreplace(n)._1) else (l,n) }
-    val newlinks: Seq[Link] = newinters.groupBy(_._1).toSeq.flatMap{case (l,currentinters) => {
+    val newlinks: Seq[Link] = newinters.groupBy(_._1).toSeq.flatMap{case (l,currentinters) =>
       val nodeseq = (Seq(l.e1,l.e2)++currentinters.map(_._2)).sortWith{case (n1,n2)=> n1 <= n2}
-      nodeseq.dropRight(1).zip(nodeseq.drop(1)).map{case (n1,n2) => Link(n1,n2,false)}
-    }
+      nodeseq.dropRight(1).zip(nodeseq.drop(1)).map{case (n1,n2) => Link(n1,n2,directed = false)}
     }
     // return a new network with new links - need to reindex the ids
     val newlinksset = newlinks.toSet
     // keep old nodes that had no links
-    val newnodes = Link.getNodes(newlinksset).union(nodes.filter(n => !inters.map(_._2).contains(n)&&(!newinters.contains(n))))
+    val newnodes = Link.getNodes(newlinksset).union(nodes.filter(n => !inters.map(_._2).contains(n)&&(!newinters.map(_._2).contains(n))))
     val res = Network(newnodes,newlinksset)
     //println("----------\n"+res)
     //println(res.withConsistentIds)
@@ -357,9 +356,11 @@ object Network {
 
 
   /**
-    * additional links should be among nodes of this network ; otherwise they are added
-    * FIXME reindexing with indexed network ?
-    * FIXME  + node id consistency is assumed here ! do something to deactivate it/manage in a consistent way
+    * Additional links should be among nodes of this network ; otherwise they are added
+    *
+    * REFACTORING:
+    *  - reindexing with indexed network ?
+    *  - node id consistency is assumed here ! do something to deactivate it/manage in a consistent way
     *
     * @param network network
     * @param additionalLinks links to add
@@ -373,7 +374,7 @@ object Network {
   /**
     * Same than above with an empty network
     *  - reindexed if needed
-    * @param links
+    * @param links links
     * @return
     */
   def apply(links: Set[Link]): Network = {

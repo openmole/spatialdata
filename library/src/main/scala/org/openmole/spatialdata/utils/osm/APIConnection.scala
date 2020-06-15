@@ -1,6 +1,6 @@
 package org.openmole.spatialdata.utils.osm
 
-import java.io.{InputStreamReader, StringWriter}
+import java.io.InputStreamReader
 import java.text.{DecimalFormat, DecimalFormatSymbols}
 import java.util.regex.Pattern
 
@@ -8,8 +8,7 @@ import org.apache.commons.io.IOUtils
 import org.apache.http.auth.{AuthScope, UsernamePasswordCredentials}
 import org.apache.http.client.CredentialsProvider
 import org.apache.http.client.config.RequestConfig
-import org.apache.http.client.methods.{HttpGet, HttpPut}
-import org.apache.http.entity.StringEntity
+import org.apache.http.client.methods.HttpGet
 import org.apache.http.impl.client.{BasicCredentialsProvider, CloseableHttpClient, HttpClientBuilder}
 import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.utils.osm.OSMObject._
@@ -112,52 +111,6 @@ class APIConnection(userServerURL: String = APIConnection.defaultServerURL, val 
     } finally response.close()
   }
 
-  /**
-    *
-    * @param comment comment
-    * @return id of new changeset
-    */
-  @throws[Exception]
-  def createChangeset(comment: String): Long = {
-    val xml = new StringWriter(1024)
-    val generator = getClass.getName + "#createChangeset"
-    xml.write("<?xml version='1.0' encoding='UTF-8'?>\n")
-    xml.write("<osm version='")
-    xml.write(APIConnection.apiVersion)
-    xml.write("' generator='")
-    xml.write(generator)
-    xml.write("'>\n")
-    xml.write("<changeset>")
-    xml.write("<tag k='created_by' v='")
-    xml.write(generator)
-    xml.write("'/>")
-    if (comment != null) {
-      xml.write("<tag k='comment' v='")
-      xml.write(comment)
-      xml.write("'/>")
-    }
-    xml.write("</changeset>")
-    xml.write("</osm>\n")
-    val put = new HttpPut(prefix + "changeset/create")
-    put.setEntity(new StringEntity(xml.toString, "UTF8"))
-
-    utils.log(prefix + "changeset/create")
-    val response = httpClient.execute(put)
-    try {
-      if (response.getStatusLine.getStatusCode != 200) throw new RuntimeException("HTTP status " + response.getStatusLine.getStatusCode + ", " + response.getStatusLine.getReasonPhrase)
-      val id = IOUtils.toString(response.getEntity.getContent).toLong
-      id
-    } finally response.close()
-  }
-
-  @throws[Exception]
-  def closeChangeset(id: Long): Unit = {
-    val put = new HttpGet(prefix + "changeset/" + id + "/close")
-    val response = httpClient.execute(put)
-    try
-        if (response.getStatusLine.getStatusCode != 200) throw new RuntimeException("HTTP status " + response.getStatusLine.getStatusCode + ", " + response.getStatusLine.getReasonPhrase)
-    finally response.close()
-  }
 
   @throws[Exception]
   def getNode(id: Long): Node = {
@@ -213,72 +166,8 @@ class APIConnection(userServerURL: String = APIConnection.defaultServerURL, val 
     } finally response.close()
   }
 
-  @throws[Exception]
-  def create(changeset: Long, osmObject: OSMObject): Unit = {
-    osmObject.setTimestamp(System.currentTimeMillis)
-    osmObject.setChangeset(changeset)
-    val sw = new StringWriter(4096)
-    val xml = new OSMXmlWriter(sw)
-    xml.write(osmObject)
-    xml.close()
-    val put = new HttpPut(prefix + osmObject.accept(getApiType) + "/create")
-    put.setEntity(new StringEntity(sw.toString, "UTF8"))
-    val response = httpClient.execute(put)
-    try {
-      if (response.getStatusLine.getStatusCode != 200) throw new RuntimeException("HTTP status " + response.getStatusLine.getStatusCode + ", " + response.getStatusLine.getReasonPhrase)
-      val id = IOUtils.toString(response.getEntity.getContent).toLong
-      osmObject.setId(id)
-      osmObject.setVersion(1)
-      osmObject.setVisible(true)
-      osmObject.setUid(uid)
-      osmObject.setUser(displayName)
-    } finally response.close()
-    osmObject.setChangeset(changeset)
-  }
+  /*
+     Note: removed create, update and delete primitives - this is not the purpose of the library to write anything to OSM (only a source of data)
+   */
 
-  def update(osmObject: OSMObject): Unit = {
-    throw new UnsupportedOperationException
-  }
-
-  @throws[Exception]
-  def delete(changeset: Long, osmObject: OSMObject): Unit = {
-    val xml = new StringWriter(1024)
-    val generator = getClass.getName + "#createChangeset"
-    xml.write("<?xml version='1.0' encoding='UTF-8'?>\n")
-    xml.write("<osm version='")
-    xml.write(APIConnection.apiVersion)
-    xml.write("' generator='")
-    xml.write(generator)
-    xml.write("'>\n")
-    xml.write("<")
-    xml.write(osmObject.accept(getApiType))
-    xml.write(" id='")
-    xml.write(String.valueOf(osmObject.getId))
-    xml.write("' version='")
-    xml.write(String.valueOf(osmObject.getVersion))
-    xml.write("' changeset='")
-    xml.write(String.valueOf(changeset))
-    osmObject match {
-      case node: Node => xml.write("' lat='")
-        xml.write(String.valueOf(node.getLatitude))
-        xml.write("' lon='")
-        xml.write(String.valueOf(node.getLongitude))
-      case _ =>
-    }
-    xml.write("' />")
-    xml.write("</osm>\n")
-    val put = new HttpPut(prefix + osmObject.accept(getApiType) + "/" + osmObject.getId)
-    put.setHeader("X_HTTP_METHOD_OVERRIDE", "DELETE")
-    put.setEntity(new StringEntity(xml.toString, "UTF8"))
-    val response = httpClient.execute(put)
-    try {
-      if (response.getStatusLine.getStatusCode != 200) throw new RuntimeException("HTTP status " + response.getStatusLine.getStatusCode + ", " + response.getStatusLine.getReasonPhrase)
-      val version = Integer.valueOf(IOUtils.toString(response.getEntity.getContent))
-      osmObject.setVersion(version)
-      osmObject.setVisible(false)
-      osmObject.setUid(uid)
-      osmObject.setUser(displayName)
-    } finally response.close()
-    osmObject.setChangeset(changeset)
-  }
 }

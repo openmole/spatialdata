@@ -15,23 +15,22 @@ import math._
   * @param size grid size
   * @param centers Number of centers
   * @param maxValue Value of the exp at 0
-  * @param kernelRadius Radius of the exp kernel
-  * @param normalized Should the distribution be normalized TODO not really useful ?
+  * @param kernelRadiuses Radiuses of the exp kernel
   * @param centerCoordinates optional coordinates of centers
   */
 case class ExpMixtureGridGenerator(
                         size: RasterDim,
                         centers: Int,
                         maxValue: Double,
-                        kernelRadius: Double,
-                        normalized: Boolean = false,
+                        kernelRadiuses: Seq[Double],
                         centerCoordinates: Seq[Point] = Seq.empty
                         ) extends GridGenerator {
 
   override def generateGrid(implicit rng: Random): RasterLayerData[Double] = {
-    def expKernel(x: Double, y: Double): Double = maxValue*exp(-sqrt(pow(x,2.0)+pow(y,2.0))/kernelRadius)
+    def kernel(kernelRadius: Double)(x: Double, y: Double): Double = maxValue*exp(-sqrt(pow(x,2.0)+pow(y,2.0))/kernelRadius)
+    val expKernels: Seq[(Double,Double)=> Double] = kernelRadiuses.map(kernel)
     val eithcenters = centerCoordinates.size match {case 0 => Left(centers);case _ => Right(centerCoordinates.map(c => (c._1.toInt,c._2.toInt)))}
-    KernelMixture.kernelMixture(size,eithcenters,expKernel,rng)
+    KernelMixture.kernelMixture(size,eithcenters,expKernels,rng)
   }
 
 

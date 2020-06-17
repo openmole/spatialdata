@@ -13,11 +13,10 @@ object KernelMixture {
 
   def kernelMixture(worldSize: RasterDim,
                     centers: Either[Int,Seq[(Int,Int)]],
-                    kernel: (Double,Double)=>Double,
+                    kernels: Seq[(Double,Double)=>Double],
                     rng: Random
-                   ): Array[Array[Double]] //Seq[Seq[(Double,(Int,Int))]]
+                   ): Array[Array[Double]]
   = {
-    //val vals = Seq.fill(worldSize,worldSize)(0.0)
     val w = worldSize match {case Left(l) => l; case Right((ww,_)) => ww}
     val h = worldSize match {case Left(l) => l; case Right((_,hh)) => hh}
     val vals = Array.fill(w,h)(0.0)
@@ -26,12 +25,11 @@ object KernelMixture {
       case Right(c) => c
     }
     for(i<- 0 until w; j<- 0 until h){
-      for(c <- coords){
-        vals(i)(j) = vals(i)(j) + kernel(i - c._1,j - c._2)
+      for(c <- coords.indices){
+        def k(x: Double, y: Double): Double = if (kernels.size==1) kernels(1)(x,y) else kernels(c)(x,y)
+        vals(i)(j) = vals(i)(j) + k(i - coords(c)._1,j - coords(c)._2)
       }
     }
-    //array to seq
-    //Seq.tabulate(w,h){(i:Int,j:Int)=>(vals(i)(j),(i,j))}
     vals
   }
 

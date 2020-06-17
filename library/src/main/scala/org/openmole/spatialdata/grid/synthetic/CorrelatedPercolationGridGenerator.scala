@@ -7,7 +7,6 @@ import org.apache.commons.math3.transform.{DftNormalization, FastFourierTransfor
 import org.openmole.spatialdata.grid.measures.GridMorphology
 import org.openmole.spatialdata.grid.{GridGenerator, RasterLayerData}
 
-import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
 
@@ -16,18 +15,32 @@ import scala.util.Random
   * Implementation of the correlated percolation urban model described in
   *   Makse, H. A., Andrade, J. S., Batty, M., Havlin, S., & Stanley, H. E. (1998).
   *   Modeling urban growth patterns with correlated percolation. Physical Review E, 58(6), 7054.
+  *  ( see Makse, H. A., Havlin, S., Schwartz, M., & Stanley, H. E. (1996). Method for generating long-range correlations for large systems. Physical Review E, 53(5), 5445. for more details on correlated field generation)
+  *
+  * Model is generalized by
+  *  - adding an option to produce density values instead of a binary variable, by multiplying by the density gradient
+  *  - polycentric density gradient, for which radiuses scale such that theoretical population in each center scale, i.e. such that
+  *     lambda_i = \sqrt{2pi P_0/P_m i -alpha} = lambda_0 i -alpha/2
+  *
   *
   * @param gridSize grid size
   * @param densityGradient gradient of the exponential density mask
   * @param correlationRange correlation range
+  * @param maxPopulation used when not binary, to rescale occupied cells with the population gradient P_max exp(-lambda r)
+  * @param binary binary or rescaled population cells
   */
 case class CorrelatedPercolationGridGenerator(
                                              gridSize: Int,
                                              densityGradient: Double,
-                                             correlationRange: Double
+                                             correlationRange: Double,
+                                             maxPopulation: Double = 1.0,
+                                             binary: Boolean = true,
+                                             nCenters: Int = 1,
+                                             centersPopulationScaling: Double = 1.0
                                              ) extends GridGenerator {
 
-  override def generateGrid(implicit rng: Random): RasterLayerData[Double] = CorrelatedPercolationGridGenerator.correlatedPercolationGrid(gridSize, densityGradient, correlationRange)
+  override def generateGrid(implicit rng: Random): RasterLayerData[Double] =
+    CorrelatedPercolationGridGenerator.correlatedPercolationGrid(gridSize, densityGradient, correlationRange, maxPopulation, binary, nCenters, centersPopulationScaling)
 
 }
 
@@ -35,13 +48,43 @@ case class CorrelatedPercolationGridGenerator(
 
 object CorrelatedPercolationGridGenerator {
 
-  def correlatedPercolationGrid(gridSize: Int, densityGradient: Double, correlationRange: Double)(implicit rng: Random): RasterLayerData[Double] =
-    density(gridSize, densityGradient, correlatedField(gridSize,correlationRange))
+  def correlatedPercolationGrid(gridSize: Int,
+                                densityGradient: Double,
+                                correlationRange: Double,
+                                maxPopulation: Double,
+                                binary: Boolean,
+                                nCenters: Int,
+                                centersPopulationScaling: Double
+                               )(implicit rng: Random): RasterLayerData[Double] = {
+    //val pr = GridMorphology.distanceMatrix(gridSize, gridSize).map(_.map(r => math.exp(-densityGradient*r))) // for one center at the origin
+    val kernelSizes = (1 to nCenters).map(i => 1/(densityGradient*math.pow(i, centersPopulationScaling / 2)))
+    //println(kernelSizes)
+    val pr = ExpMixtureGridGenerator(Left(gridSize), nCenters, 1.0, kernelSizes).generateGrid
+    //println(pr)
+
+    val bin = density(pr, correlatedField(gridSize, correlationRange))
+
+    if (binary) bin
+    else {
+      bin.zip(pr).map{rows: (Array[Double],Array[Double]) =>
+        rows._1.zip(rows._2).map(d=> d._1*d._2*maxPopulation)
+      }
+    }
+  }
 
 
+  /**
+    * use density probabilities and correlated field to generate binary settlement result
+    * @param densityProbas p(r) in the paper
+    * @param field correlated field eta(r)
+    * @return
+    */
+  def density(
+               densityProbas: Array[Array[Double]],
+               field: Array[Array[Double]]
+              ): Array[Array[Double]] = {
 
-  def density(gridSize: Int, densityGradient: Double, field: Array[Array[Double]]): Array[Array[Double]] = {
-    val pr = GridMorphology.distanceMatrix(gridSize, gridSize).map(_.map(r => math.exp(-densityGradient*r)))
+
     val n = field.flatten.length.toDouble
     val sortedeta = field.flatten.groupBy(eta => eta).toIndexedSeq.sortBy(_._1)
     def cumcount(s: (IndexedSeq[Array[Double]],Double)): (IndexedSeq[Array[Double]],Double) = {
@@ -54,7 +97,7 @@ object CorrelatedPercolationGridGenerator {
       val i = cdf.indexWhere(_._1>=p)
       if(i>=0)cdf(i)._2 else cdf(cdf.length-1)._2
     }
-    val thetas = pr.map(_.map(theta))
+    val thetas = densityProbas.map(_.map(theta))
     def hside(th: Double, eta: Double): Double = if (th >= eta) 1.0 else 0.0
     thetas.zip(field).map{rows: (Array[Double],Array[Double]) =>
       rows._1.zip(rows._2).map(d=> hside(d._1,d._2))

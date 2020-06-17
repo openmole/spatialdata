@@ -23,14 +23,14 @@ object ReactionDiffusionMesoState {
 
   /**
     * monocentric initial metropolitan config
-    * @param gridSize
+    * @param gridSize gridsize
     * @return
     */
   def initialSyntheticState(gridSize: Int,centerDensity: Double,kernelRadius: Double,
                             alpha: Double,beta: Double,ndiff: Int,growthRate: Double,
                             mesoTimeSteps: Int)(implicit rng: Random): ReactionDiffusionMesoState = ReactionDiffusionMesoState(
     0,
-    ExpMixtureGridGenerator(gridSize,1,centerDensity,kernelRadius,false,Seq((gridSize/2,gridSize/2))).generateGrid.map{_.toVector}.toVector,
+    ExpMixtureGridGenerator(gridSize,1,centerDensity,Seq(kernelRadius),Seq((gridSize/2,gridSize/2))).generateGrid.map{_.toVector}.toVector,
     alpha,beta,ndiff,growthRate,mesoTimeSteps,0.0
   )
 
@@ -38,8 +38,8 @@ object ReactionDiffusionMesoState {
 
   /**
     * iterate a meso step for a set of meso states
-    * @param states
-    * @param rng
+    * @param states states
+    * @param rng rng
     * @return
     */
   def mesoStep(states: Vector[ReactionDiffusionMesoState])(implicit rng: Random): Vector[ReactionDiffusionMesoState] = {

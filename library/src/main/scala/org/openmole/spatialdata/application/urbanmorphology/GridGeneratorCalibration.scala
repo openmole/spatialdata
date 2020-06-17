@@ -3,6 +3,8 @@ package org.openmole.spatialdata.application.urbanmorphology
 import org.openmole.spatialdata.grid.measures.GridMorphology
 import org.openmole.spatialdata.grid.synthetic._
 import org.openmole.spatialdata.grid.Implicits._
+import org.openmole.spatialdata.grid.RasterLayerData
+import org.openmole.spatialdata.grid.measures.GridMorphology.GridMorphologyIndicator
 
 import scala.util.Random
 
@@ -11,12 +13,12 @@ object GridGeneratorCalibration {
   /**
     * generic calibration function
     *   note : better do separate scripts - different param names and types
-    * @param size
-    * @param params
-    * @param projection
-    * @param objective
-    * @param model
-    * @param rng
+    * @param size size
+    * @param params parameters
+    * @param projection projection of morphology
+    * @param objective objective
+    * @param model model
+    * @param rng rng
     * @return
     */
   def calibrateModel(size: Int, params: Array[Double], projection: GridMorphology => Array[Double], objective: Array[Double]=> Double, model : String)(implicit rng : Random): Double = {
@@ -32,9 +34,9 @@ object GridGeneratorCalibration {
 
     /**
       * mono-objective calibration
-      * @param projection
-      * @param objective
-      * @param rng
+      * @param projection projection
+      * @param objective objective
+      * @param rng rng
       * @return
       */
     def calibrate(projection: GridMorphology => Array[Double], objective: Array[Double]=> Double)(implicit rng : Random): Double
@@ -53,7 +55,19 @@ object GridGeneratorCalibration {
                                          ) extends Calibration {
 
     override def calibrate(projection: GridMorphology => Array[Double], objective: Array[Double]=> Double)(implicit rng : Random): Double = {
-      objective(projection(GridMorphology(BlocksGridGenerator(gridSize,blocksNumber,blocksMinSize,blocksMaxSize).generateGrid(rng).map{_.map{case d => if(d> 0.0) 1.0 else 0.0}})))
+      objective(
+        projection(
+          GridMorphology.apply(
+            grid = BlocksGridGenerator(
+              gridSize,
+              blocksNumber,
+              blocksMinSize,
+              blocksMaxSize
+            ).generateGrid(rng).map{_.map{ d => if(d> 0.0) 1.0 else 0.0}}.asInstanceOf[RasterLayerData[Double]]
+            ,indicators = Seq.empty[GridMorphologyIndicator]
+          )
+        )
+      )
     }
   }
 
@@ -64,9 +78,9 @@ object GridGeneratorCalibration {
                                              expThreshold: Double
                                              ) extends Calibration {
     override def calibrate(projection: GridMorphology => Array[Double], objective: Array[Double] => Double)(implicit rng: Random): Double = {
-      val intgrid = ExpMixtureGridGenerator(gridSize,expCenters,1.0,expRadius).generateGrid(rng)
+      val intgrid = ExpMixtureGridGenerator(gridSize,expCenters,1.0,Seq.fill(expCenters)(expRadius)).generateGrid(rng)
       val maxval = intgrid.flatten.max(Ordering.Double.TotalOrdering)
-      objective(projection(GridMorphology(intgrid.map{_.map{case d => if(d / maxval > expThreshold) 1.0 else 0.0}})))
+      objective(projection(GridMorphology.apply(intgrid.map{_.map{case d => if(d / maxval > expThreshold) 1.0 else 0.0}}.asInstanceOf[RasterLayerData[Double]],indicators = Seq.empty[GridMorphologyIndicator])))
     }
   }
 

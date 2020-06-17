@@ -7,76 +7,62 @@ import org.openmole.spatialdata.grid.synthetic._
 
 import scala.util.Random
 
+
 /**
-  *
   * Explorator for morphology of binary grids
   *
-  * @param generatorType
-  * @param gridSize
-  *
-  * @param expMixtureCenters
-  * @param expMixture
+  * @param generatorType type
+  * @param gridSize Size of the (square) grid
+  * @param randomDensity Random
+  * @param expMixtureCenters ExpMixture centers
+  * @param expMixtureRadius radius
+  * @param expMixtureThreshold threshold
+  * @param blocksNumber Blocks number
+  * @param blocksMinSize min size
+  * @param blocksMaxSize max size
+  * @param percolationProba percolation proba
+  * @param percolationBordPoints bord points
+  * @param percolationLinkWidth link width
   */
 case class GridGeneratorLauncher(
                                 generatorType: String,
-
-                                /**
-                                  * Size of the (square) grid
-                                  */
                                 gridSize: Int,
-
-                                /**
-                                  * Random
-                                  */
                                 randomDensity: Double,
-
-                                /**
-                                  * ExpMixture
-                                  */
                                 expMixtureCenters: Int,
                                 expMixtureRadius: Double,
                                 expMixtureThreshold: Double,
-
-                                /**
-                                  * blocks
-                                  */
                                 blocksNumber: Int,
                                 blocksMinSize: Int,
                                 blocksMaxSize: Int,
-
-                                /**
-                                  * percolation
-                                  */
                                 percolationProba: Double,
                                 percolationBordPoints: Int,
                                 percolationLinkWidth: Double
-
-
                                 ) {
 
   /**
     *
-    * @param rng
+    * @param rng rng
     * @return
     */
-  def getGrid(implicit rng: Random) = {
+  def getGrid(implicit rng: Random): Array[Array[Double]] = {
     val world: Array[Array[Double]] = generatorType match {
-      case "random" => RandomGridGenerator(gridSize).generateGrid(rng).map{_.map{case d => if(d < randomDensity) 1.0 else 0.0}}
-      case "expMixture" => {
-        val intgrid = ExpMixtureGridGenerator(gridSize,expMixtureCenters,1.0,expMixtureRadius).generateGrid(rng)
+      case "random" => RandomGridGenerator(gridSize).generateGrid(rng).map{_.map{ d => (if(d < randomDensity) 1.0 else 0.0).asInstanceOf[Double]}}
+      case "expMixture" =>
+        val intgrid = ExpMixtureGridGenerator(gridSize,expMixtureCenters,1.0,Seq.fill(expMixtureCenters)(expMixtureRadius)).generateGrid(rng)
         val maxval = intgrid.flatten.max(Ordering.Double.TotalOrdering)
-        intgrid.map{_.map{case d => if(d / maxval > expMixtureThreshold) 1.0 else 0.0}}
-      }
-      case "blocks" => BlocksGridGenerator(gridSize,blocksNumber,blocksMinSize,blocksMaxSize).generateGrid(rng).map{_.map{case d => if(d> 0.0) 1.0 else 0.0}}
+        intgrid.map{_.map{d => (if(d / maxval > expMixtureThreshold) 1.0 else 0.0).asInstanceOf[Double]}}
+      case "blocks" => BlocksGridGenerator(gridSize,blocksNumber,blocksMinSize,blocksMaxSize).generateGrid(rng).map{_.map{ d => (if(d> 0.0) 1.0 else 0.0).asInstanceOf[Double]}}
       case "percolation" => PercolationGridGenerator(gridSize,percolationProba,percolationBordPoints,percolationLinkWidth,10000).generateGrid(rng)
-      case _             => { assert(false, "Error : the requested generator does not exist"); Array.empty }
+      case _             =>
+        assert(assertion = false, "Error : the requested generator does not exist")
+        Array.empty
     }
     if (GridGeneratorLauncher.density(world) > 0.8) GridGeneratorLauncher.emptyGrid(world) else world
   }
 
   /**
     *
-    * @param rng
+    * @param rng rng
     * @return
     */
   def getMorphology(implicit rng: Random): GridMorphology = {

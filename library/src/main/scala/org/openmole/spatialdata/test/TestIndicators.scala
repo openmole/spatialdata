@@ -21,7 +21,7 @@ object TestIndicators {
 
 
     //(0 to 20).foreach{_ =>
-      val grid = ExpMixtureGridGenerator(50,3,1.0,10.0,normalized = true).generateGrid
+      val grid = ExpMixtureGridGenerator(50,3,1.0,Seq.fill(3)(10.0)).generateGrid
       val maxval = grid.flatten.max(Ordering.Double.TotalOrdering)
       val ngrid = grid.map{_.map{d => if(d / maxval > 0.6) 1.0 else 0.0}}
 
@@ -76,7 +76,7 @@ object TestIndicators {
 
     implicit val rng: Random = new Random
 
-    val gen = ExpMixtureGridGenerator((20,40),10,1.0,10.0)
+    val gen = ExpMixtureGridGenerator((20,40),10,1.0,Seq.fill(10)(10.0))
 
     val indics = (1 to 100).map{i =>
       println(i)

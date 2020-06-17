@@ -14,11 +14,11 @@ object TestSynthetic {
   def testCorrelatedPercolation(): Unit = {
     implicit val rng: Random = new Random
 
-    val gridSize = 200
+    val gridSize = 100
     val densityGradient = 0.02
     val correlationRange = 1.4
 
-    val grid = CorrelatedPercolationGridGenerator(gridSize, densityGradient, correlationRange).generateGrid
+    val grid = CorrelatedPercolationGridGenerator(gridSize, densityGradient, correlationRange, 1000.0, binary = false, 5).generateGrid
 
     //visualization.staticRasterVisualization(GridMorphology.distanceMatrix(gridSize, gridSize).map(_.map(r => math.exp(-densityGradient*r))))
     visualization.staticRasterVisualization(grid)

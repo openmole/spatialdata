@@ -45,7 +45,7 @@ case class PolycentricGridGravityFlowsGenerator(
 
   /**
     * polycentric flows
-    * @param rng
+    * @param rng rng
     * @return
     */
   override def generateFlows(implicit rng: Random): SpatialInteractionModel = {
@@ -53,10 +53,10 @@ case class PolycentricGridGravityFlowsGenerator(
     val centerCoords: Seq[Point] = Seq.fill(centers)((rng.nextDouble()*gridSize,rng.nextDouble()*gridSize))
     val origin: FieldGenerator[Double] = //() => ExpMixtureGridGenerator (gridSize, centers, maxOrigin, originRadius, false, centerCoords).generateGrid(rng).asSpatialField
     new FieldGenerator[Double] {
-      override def generateField(implicit rng: Random): SpatialField[Double] = ExpMixtureGridGenerator (gridSize, centers, maxOrigin, originRadius, false, centerCoords).generateGrid(rng).asSpatialField
+      override def generateField(implicit rng: Random): SpatialField[Double] = ExpMixtureGridGenerator(gridSize, centers, maxOrigin, Seq.fill(centers)(originRadius), centerCoords).generateGrid(rng).asSpatialField
     } // the SAM syntax does not work?
     val destination: FieldGenerator[Double] = new FieldGenerator[Double] {
-      override def generateField(implicit rng: Random): SpatialField[Double] = ExpMixtureGridGenerator(gridSize,centers,maxDestination,destinationRadius,false,centerCoords).generateGrid(rng).asSpatialField
+      override def generateField(implicit rng: Random): SpatialField[Double] = ExpMixtureGridGenerator(gridSize,centers,maxDestination,Seq.fill(centers)(destinationRadius),centerCoords).generateGrid(rng).asSpatialField
     }
 
     def dmat(pi: Seq[Point], pj: Seq[Point]): Matrix = {
@@ -74,7 +74,7 @@ case class PolycentricGridGravityFlowsGenerator(
 
     def originTransformation(a: Array[Double]): Double = math.pow(a(0),originExponent)
     def destinationTransformation(a: Array[Double]): Double = math.pow(a(0),destinationExponent)
-    def flowsFunction: (Seq[Double], Seq[Double], Matrix)=> Matrix = DoublyConstrainedSpIntModel.doublyConstrainedFlows(_,_,_,0.01)
+    def flowsFunction: (Seq[Double], Seq[Double], Matrix)=> Matrix = DoublyConstrainedSpIntModel.doublyConstrainedFlows(_,_,_)
     SyntheticFlowsGenerator(origin,destination,dmat,costFunction,originTransformation,destinationTransformation,flowsFunction).generateFlows
   }
 

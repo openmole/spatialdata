@@ -5,15 +5,17 @@ import java.awt._
 import javax.swing.{JComponent, JFrame, WindowConstants}
 import javax.swing.plaf.ComponentUI
 import org.openmole.spatialdata.grid.RasterLayerData
+import org.openmole.spatialdata.utils
 
 case class RasterFrame(
                         raster: RasterLayerData[Double],
-                        gradientColors: (Color,Color) = (Color.WHITE,Color.BLACK),
+                        gradientColors: (Color,Color) = (Color.WHITE, Color.BLACK),
                         projection: RasterLayerData[Double] => RasterLayerData[Double] = normalization,
                         frameWidth: Int = 600,
                         frameHeight: Int = 600
                       ) extends JFrame() {
-  def init: Unit = {
+  def init(): Unit = {
+    utils.log(s"Visualizing raster of size ${raster.length}x${raster(0).length}")
     frameInit()
     setSize(frameWidth,frameHeight)
     setLocation(100,100)
@@ -26,9 +28,9 @@ case class RasterFrame(
           gg.setStroke(new BasicStroke(1, BasicStroke.CAP_ROUND,BasicStroke.JOIN_ROUND))
           val colorArray = projection(raster).map{_.map{d =>
             new Color(
-              (gradientColors._1.getRed*d + (1 - d)*gradientColors._2.getRed).toInt,
-              (gradientColors._1.getGreen*d + (1 - d)*gradientColors._2.getGreen).toInt,
-              (gradientColors._1.getBlue*d + (1 - d)*gradientColors._2.getBlue).toInt
+              (gradientColors._1.getRed*(1 - d) + d*gradientColors._2.getRed).toInt,
+              (gradientColors._1.getGreen*(1 - d) + d*gradientColors._2.getGreen).toInt,
+              (gradientColors._1.getBlue*(1 - d) + d*gradientColors._2.getBlue).toInt
             )}}
           val (rowstep,colstep) = (frameHeight / colorArray.length,frameWidth/colorArray(0).length)
           colorArray.zipWithIndex.foreach{case (row,i)=>

@@ -53,7 +53,7 @@ package object visualization {
                                 projection: RasterLayerData[Double] => RasterLayerData[Double] = normalization
                                ): Unit = {
     val frame = RasterFrame(raster)
-    frame.init
+    frame.init()
   }
 
 

@@ -7,6 +7,7 @@ import org.apache.commons.math3.transform.{DftNormalization, FastFourierTransfor
 import org.openmole.spatialdata.grid.measures.GridMorphology
 import org.openmole.spatialdata.grid.{GridGenerator, RasterLayerData}
 
+import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
 
@@ -35,8 +36,38 @@ case class CorrelatedPercolationGridGenerator(
 object CorrelatedPercolationGridGenerator {
 
   def correlatedPercolationGrid(gridSize: Int, densityGradient: Double, correlationRange: Double)(implicit rng: Random): RasterLayerData[Double] =
-    densityMask(gridSize, densityGradient, correlatedField(gridSize,correlationRange))
+    density(gridSize, densityGradient, correlatedField(gridSize,correlationRange))
 
+
+
+  def density(gridSize: Int, densityGradient: Double, field: Array[Array[Double]]): Array[Array[Double]] = {
+    val pr = GridMorphology.distanceMatrix(gridSize, gridSize).map(_.map(r => math.exp(-densityGradient*r)))
+    val n = field.flatten.length.toDouble
+    val sortedeta = field.flatten.groupBy(eta => eta).toIndexedSeq.sortBy(_._1)
+    def cumcount(s: (IndexedSeq[Array[Double]],Double)): (IndexedSeq[Array[Double]],Double) = {
+      if (s._1.nonEmpty) (s._1.tail, s._2+s._1.head.length.toDouble / n) else s
+    }
+    val cdf = Iterator.iterate((sortedeta.map(_._2), 0.0.toDouble))(cumcount).takeWhile(_._1.nonEmpty).toSeq.map(_._2).zip(sortedeta.map(_._1))
+    //println(cdf.length+" / "+sortedeta.size)
+    //println(cdf)
+    def theta(p: Double): Double = {
+      val i = cdf.indexWhere(_._1>=p)
+      if(i>=0)cdf(i)._2 else cdf(cdf.length-1)._2
+    }
+    val thetas = pr.map(_.map(theta))
+    def hside(th: Double, eta: Double): Double = if (th >= eta) 1.0 else 0.0
+    thetas.zip(field).map{rows: (Array[Double],Array[Double]) =>
+      rows._1.zip(rows._2).map(d=> hside(d._1,d._2))
+    }
+  }
+
+  /**
+    *  Basic masking - does not take into account actual distribution of eta
+    * @param gridSize grid size
+    * @param densityGradient density gradient
+    * @param field field
+    * @return
+    */
   def densityMask(gridSize: Int, densityGradient: Double, field: Array[Array[Double]]): Array[Array[Double]] = {
     GridMorphology.distanceMatrix(gridSize, gridSize).map(_.map(r => math.exp(-densityGradient*r))).zip(field).map{
        rows: (Array[Double],Array[Double]) => rows._1.zip(rows._2).map{

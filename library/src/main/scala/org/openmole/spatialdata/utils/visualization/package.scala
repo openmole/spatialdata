@@ -47,10 +47,10 @@ package object visualization {
     val (mi,ma) = (r.flatten.min,r.flatten.max);r.map{_.map{d: Double => (d - mi) / (ma - mi)}}
   }
 
+  def normalizationLog = {r: RasterLayerData[Double] =>visualization.normalization(r.map{_.map{d => if(d<=0.0) 0.0 else scala.math.log10(d)}})}
 
   def staticRasterVisualization(raster: RasterLayerData[Double],
-                                projection: RasterLayerData[Double] => RasterLayerData[Double] = //normalization
-                                 {r =>visualization.normalization(r.map{_.map{d => if(d<=0.0) 0.0 else scala.math.log10(d)}})}
+                                projection: RasterLayerData[Double] => RasterLayerData[Double] = normalization
                                ): Unit = {
     val frame = RasterFrame(raster)
     frame.init

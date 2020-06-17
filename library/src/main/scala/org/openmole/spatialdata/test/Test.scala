@@ -23,7 +23,7 @@ object Test extends App {
   //TestNetwork.testPlanarization()
 
   // Matsim
-  TestMatsim.testMatsimNetworkGenerator
+  //TestMatsim.testMatsimNetworkGenerator()
 
   // OSM
   //TestOSM.testBuildingExtractor()
@@ -50,13 +50,15 @@ object Test extends App {
   //TestReactionDiffusion.benchmarkImplementation
 
   // Synthetic grids
-  //TestSynthetic.testRandomGrids
-  //TestSynthetic.testBlocksGrid
-  //TestSynthetic.testPercolationGrid
-  //TestSynthetic.testGeneratorLauncher
-  //TestSynthetic.testGeneratorCalibration
+  TestSynthetic.testCorrelatedPercolation()
+  //TestSynthetic.testRandomGrids()
+  //TestSynthetic.testBlocksGrid()
+  //TestSynthetic.testPercolationGrid()
+  //TestSynthetic.testGeneratorLauncher()
+  //TestSynthetic.testGeneratorCalibration()
 
   // Maths
+  //TestMaths.testFourierCorrelatedField()
   //TestMaths.testConvolution
   //TestMaths.testConvolution2D
 

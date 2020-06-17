@@ -13,6 +13,7 @@ lazy val commonSettings = Seq(
   ),
   libraryDependencies ++= Seq(
     "org.apache.commons" % "commons-math3" % "3.6.1",
+    "net.sourceforge.jdistlib" % "jdistlib" % "0.4.5",
     "com.github.pathikrit" %% "better-files" % "3.8.0",
     "org.locationtech.jts" % "jts" % "1.16.1" pomOnly(),
     "org.geotools" % "gt-shapefile" % "23.0" exclude("javax.media", "jai_core") exclude("com.vividsolutions", "jts-core"),

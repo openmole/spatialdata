@@ -46,11 +46,11 @@ object ExpMixtureGridGenerator {
     * Generate one exponential kernel mixture grid
     * -- DEPRECATED, function below is more general --
     *
-    * @param gridSize
-    * @param nCenters
-    * @param maxValue
-    * @param kernelRadius
-    * @param rng
+    * @param gridSize grid size
+    * @param nCenters centers
+    * @param maxValue max value
+    * @param kernelRadius kerbel radius
+    * @param rng random
     * @return
     */
   def expMixtureGrid1D(gridSize: Int, nCenters: Int, maxValue: Double, kernelRadius: Double, rng: scala.util.Random): RasterLayerData[Double] = {
@@ -71,11 +71,11 @@ object ExpMixtureGridGenerator {
   /**
     * A multilayer exponential mixture with same centers
     *
-    * @param gridSize
-    * @param nCenters
-    * @param maxValues
-    * @param kernelRadius
-    * @param rng
+    * @param gridSize grid size
+    * @param nCenters centers
+    * @param maxValues max value
+    * @param kernelRadius kernel radius
+    * @param rng random
     * @return
     */
   def expMixtureGridSameCenters(
@@ -124,12 +124,12 @@ object ExpMixtureGridGenerator {
   /**
     * Generate a sample of exponent kernel mixture grids
     *
-    * @param samples
-    * @param gridSize
-    * @param nCenters
-    * @param maxValue
-    * @param kernelRadius
-    * @param rng
+    * @param samples number of samples
+    * @param gridSize grid size
+    * @param nCenters centers
+    * @param maxValue max value
+    * @param kernelRadius kernel radius
+    * @param rng rng
     */
   def expMixtureGridSameCentersSample(
                                        samples:      Int,

@@ -72,8 +72,8 @@ object Convolution {
     *  2D convolution
     *  Using bijection [|1,N|]2 ~ [|1,N|] by flattening, after having good paddling
     *
-    * @param x
-    * @param k
+    * @param x array
+    * @param k kernel
     */
   def convolution2D(x: Array[Array[Double]], k: Array[Array[Double]]): Array[Array[Double]] = {
     assert(k.length%2==1&k(0).length%2==1,"Kernel must be centered")
@@ -94,16 +94,10 @@ object Convolution {
 
 
 
-
-  /**
-    * convolution 2d with mask using fft (pb: operator is sum by default)
+  /* convolution 2d with mask using fft (pb: operator is sum by default)
     *  - binary convol here operator is not applied during convol itself but linked to mask
-    * @param matrix
-    * @param mask
-    * @param operator
-    */
-  // FIXME DOES NOT WORK
-  /*def convolution(matrix: Array[Array[Double]],
+     ! DOES NOT WORK */
+  /* def convolution(matrix: Array[Array[Double]],
                   mask: Array[Array[Double]],
                   filter: Double=>Double = {case d => if(d > 0.0)1.0 else 0.0}
                  ): Array[Array[Double]] ={
@@ -130,7 +124,7 @@ object Convolution {
     */
   def convolution2dDirect(matrix: Array[Array[Double]],mask: Array[Array[Double]],
                         //operator: Array[Double]=>Double = {case a => if(a.filter(_>0.0).size>0)1.0 else 0.0})
-                        filter: Double=>Double = {case d => if(d > 0.0)1.0 else 0.0}
+                        filter: Double=>Double = {d => if(d > 0.0)1.0 else 0.0}
                        )
   : Array[Array[Double]] = {
     assert(mask.length%2==1&&mask(0).length%2==1,"mask should be of uneven size")
@@ -143,7 +137,7 @@ object Convolution {
     }
     val res = Array.fill(matrix.length+2*paddingx,matrix(0).length+2*paddingy)(0.0)
     for(i <- paddingx until (res.length - paddingx);j <- paddingy until (res(0).length-paddingy)){
-      val masked = Array.fill(mask.size,mask(0).size)(0.0)
+      val masked = Array.fill(mask.length,mask(0).length)(0.0)
       for(k <- - paddingx to paddingx;l <- - paddingy to paddingy){
         //assert(i+k<matrix.length&j+l<matrix(0).length,"size : "+i+" "+j+" "+k+" "+" "+l+" for a matrix of size "+matrix.length+";"+matrix(0).length)
         masked(k+paddingx)(l+paddingy)=padded(i+k)(j+l)*mask(k+paddingx)(l+paddingy)

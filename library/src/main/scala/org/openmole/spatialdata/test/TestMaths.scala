@@ -1,15 +1,24 @@
 package org.openmole.spatialdata.test
 
+import org.openmole.spatialdata.grid.synthetic.CorrelatedPercolationGridGenerator
 import org.openmole.spatialdata.utils.math.{Convolution, Stochastic}
-import org.openmole.spatialdata.utils.withTimer
+import org.openmole.spatialdata.utils.{visualization, withTimer}
 
 import scala.util.Random
 
 object TestMaths {
 
 
+  def testFourierCorrelatedField(): Unit = {
+    implicit val rng: Random = new Random
+    val res = CorrelatedPercolationGridGenerator.correlatedField(100, 0.2)
+    println(res.toSeq.map(_.toSeq))
+    visualization.staticRasterVisualization(res)
+  }
+
+
   def testStochastic(): Unit = {
-    implicit val rng = new Random(42)
+    implicit val rng: Random = new Random(42)
     val std = 1.5
     val lndraw = Stochastic.LogNormalDistribution(0.0,math.sqrt(math.log(std)+0.5)).draw
     assert(!lndraw.isNaN,s"NaN drawn from log-normal with mu = 0 and std $std")

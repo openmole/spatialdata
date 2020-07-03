@@ -22,6 +22,8 @@ import scala.util.Random
   *  - polycentric density gradient, for which radiuses scale such that theoretical population in each center scale, i.e. such that
   *     lambda_i = \sqrt{2pi P_0/P_m i -alpha} = lambda_0 i -alpha/2
   *
+  * Specific morphology indicators from the paper? study scaling exponents, require experiments varying lambda and alpha
+  *
   *
   * @param gridSize grid size
   * @param densityGradient gradient of the exponential density mask
@@ -48,6 +50,18 @@ case class CorrelatedPercolationGridGenerator(
 
 object CorrelatedPercolationGridGenerator {
 
+  /**
+    * Polycentric correlated percolation combining: polycentric probability density with a scaling law with a correlated random field
+    * @param gridSize size
+    * @param densityGradient density gradient (maximal value among centers)
+    * @param correlationRange correlation range
+    * @param maxPopulation max population
+    * @param binary binary output?
+    * @param nCenters number of centers
+    * @param centersPopulationScaling scaling of centers
+    * @param rng rng
+    * @return
+    */
   def correlatedPercolationGrid(gridSize: Int,
                                 densityGradient: Double,
                                 correlationRange: Double,
@@ -58,9 +72,7 @@ object CorrelatedPercolationGridGenerator {
                                )(implicit rng: Random): RasterLayerData[Double] = {
     //val pr = GridMorphology.distanceMatrix(gridSize, gridSize).map(_.map(r => math.exp(-densityGradient*r))) // for one center at the origin
     val kernelSizes = (1 to nCenters).map(i => 1/(densityGradient*math.pow(i, centersPopulationScaling / 2)))
-    //println(kernelSizes)
     val pr = ExpMixtureGridGenerator(Left(gridSize), nCenters, 1.0, kernelSizes).generateGrid
-    //println(pr)
 
     val bin = density(pr, correlatedField(gridSize, correlationRange))
 
@@ -111,7 +123,10 @@ object CorrelatedPercolationGridGenerator {
     * @param field field
     * @return
     */
-  def densityMask(gridSize: Int, densityGradient: Double, field: Array[Array[Double]]): Array[Array[Double]] = {
+  def densityMask(gridSize: Int,
+                  densityGradient: Double,
+                  field: Array[Array[Double]]
+                 ): Array[Array[Double]] = {
     GridMorphology.distanceMatrix(gridSize, gridSize).map(_.map(r => math.exp(-densityGradient*r))).zip(field).map{
        rows: (Array[Double],Array[Double]) => rows._1.zip(rows._2).map{
          d: (Double,Double) =>

@@ -64,6 +64,7 @@ object Coevolution {
   }*/
 
   /**
+    * Construct from real data file and parameter values
     *
     * @param populationsFile path for pop file
     * @param distancesFile path for distance matrix file
@@ -127,6 +128,9 @@ object Coevolution {
 
   /**
     * run a coevolution model
+    *
+    *  ! network evolution not yet implemented
+    *
     * @param model model
     * @return
     */
@@ -161,7 +165,7 @@ object Coevolution {
   }
 
 
-  /**
+  /*
     * Direct flows between cities given a distance matrix
     */
   /*
@@ -169,9 +173,6 @@ object Coevolution {
     Array.empty
   }*/
 
-  /**
-    *
-    */
   /*
   def updatePopulations(populations: Populations,flows: Array[Array[Double]]): Populations = {
     Array.empty

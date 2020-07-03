@@ -8,6 +8,7 @@ import org.openmole.spatialdata.vector.SpatialField
 
 /**
   *
+  * Raster functionalities.
   *
   * Potential generator: Quadtrees Morgan, F., & O’Sullivan, D. (2009, June). Using binary space partitioning to generate urban spatial patterns. In 4th International Conference on Computers in Urban Planning and Urban Management (pp. 1-16).
   *

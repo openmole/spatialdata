@@ -29,9 +29,14 @@ object MacroModel {
     deltaPops.zip(deltaPops.map(_/deltaPopsmax)).zip(deltaAccs.map(_/deltaAccsmax)).map{case ((dp,dpr),dz) => (dp,dpr,dz)}
   }
 
+
   /**
-    * macroscopic step
-    * @param state macro state
+    * Macroscopic step, following a superposition of processes driving growth rates
+    *  Population is updated as (P(t+1) - P(t)) / P(t) = delta_t* total growth rate
+    *
+    * @param state macro state before the step
+    * @param additiveGrowthRates components to sum for the total growth rate
+    * @param deltat time difference
     * @return
     */
   def macroStep(state: MacroState,

@@ -4,7 +4,8 @@ import org.openmole.spatialdata.utils.math.{DenseMatrix, Linear, Matrix}
 
 
 /**
-  * Simulation result for a macroscopic model
+  * Simulation result for a macroscopic model run on a real system
+  *
   * @param targetPopulation target population matrix
   * @param simulatedPopulation simulated population matrix
   * @param logmse log(MSE)

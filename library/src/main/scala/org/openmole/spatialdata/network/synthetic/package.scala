@@ -3,6 +3,8 @@ package org.openmole.spatialdata.network
 
 /**
   *
+  * Synthetic network generators
+  *
   * - Synthetic network generator to implement: https://arxiv.org/abs/2001.08180
   *
   */

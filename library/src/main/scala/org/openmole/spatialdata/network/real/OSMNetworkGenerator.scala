@@ -10,6 +10,8 @@ import org.openmole.spatialdata.vector.Implicits._
 import scala.util.Random
 
 /**
+  * Construct a network from OpenStreetMap
+  *   api.openstreetmap.org
   *
   * @param lon window center longitude
   * @param lat window center latitude

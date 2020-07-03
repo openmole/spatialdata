@@ -9,6 +9,10 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
+/**
+  * Read a network from a Matsim xml file
+  * @param networkFile file
+  */
 case class MatsimNetworkGenerator(
                                  networkFile: String
                                  ) extends NetworkGenerator {

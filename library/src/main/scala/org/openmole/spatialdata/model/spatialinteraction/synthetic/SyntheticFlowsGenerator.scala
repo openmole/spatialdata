@@ -1,8 +1,8 @@
 package org.openmole.spatialdata.model.spatialinteraction.synthetic
 
 import org.openmole.spatialdata.model.spatialinteraction.{FlowsGenerator, SpatialInteractionData, SpatialInteractionModel}
-import org.openmole.spatialdata.utils.math.{Matrix, SparseMatrix}
-import org.openmole.spatialdata.vector.{FieldGenerator, Point, Points, SpatialField}
+import org.openmole.spatialdata.utils.math.Matrix
+import org.openmole.spatialdata.vector.{FieldGenerator, Point}
 
 import scala.util.Random
 
@@ -10,12 +10,12 @@ import scala.util.Random
 /**
   * Generate a synthetic urban system with O/D flows produced by a spatial interaction model
   *
-  * @param originFieldGenerator
-  * @param destinationFieldGenerator
-  * @param distanceMatrix
-  * @param costFunction
-  * @param originTransformation
-  * @param destinationTransformation
+  * @param originFieldGenerator field generator for origin
+  * @param destinationFieldGenerator field generator for destination
+  * @param distanceMatrix distance matrix
+  * @param costFunction cost function (applied to the matrix)
+  * @param originTransformation transformation of the origin field
+  * @param destinationTransformation transformation of the destination field
   * @param flowsFunction create flows from fields and cost matrix - note that it could only take fields and include cost matrix computation, but better to stay generic at this higher level
   */
 case class SyntheticFlowsGenerator(
@@ -38,13 +38,13 @@ object SyntheticFlowsGenerator {
   /**
     * Generic function for synthetic flows
     *
-    * @param originFieldGenerator
-    * @param destinationFieldGenerator
-    * @param distanceMatrix
-    * @param costFunction
-    * @param originTransformation
-    * @param destinationTransformation
-    * @param rng
+    * @param originFieldGenerator generator for origin field
+    * @param destinationFieldGenerator generator for destination field
+    * @param distanceMatrix distance matrix
+    * @param costFunction cost function applied to the distance matrix
+    * @param originTransformation transformation of the origin field
+    * @param destinationTransformation transformation of the destination field
+    * @param rng rng
     * @return
     */
   def syntheticFlows(originFieldGenerator: FieldGenerator[Double],

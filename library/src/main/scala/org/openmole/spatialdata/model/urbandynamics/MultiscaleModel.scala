@@ -7,30 +7,49 @@ import org.openmole.spatialdata.utils.math.Matrix.MatrixImplementation
 
 import scala.util.Random
 
+
+/**
+  * A multiscale model of urban growth, with a strong coupling between scales
+  *   Raimbault, J. (2019). A multi-scalar model for system of cities. Conference on Complex Systems, September 2019, Singapore.
+  *
+  *
+  * @param timeSteps number of macro time steps
+  * @param macroNcities number of cities (macro parameters)
+  * @param macroInitialHierarchy initial hierarchy at the macro level
+  * @param macroInitialMaxPop initial max population
+  * @param macroRange geographical span of the system
+  * @param macroGrowthRate macroscopic growth rate
+  * @param macroInteractionDecay macroscopic gravity decay
+  * @param macroInteractionWeight macroscopic weight of interaction component
+  * @param macroInteractionGamma macroscopic hierarchy
+  * @param mesoGridSize size of raster representation of cities (meso parameters)
+  * @param mesoCenterDensity density of the center cell
+  * @param mesoAlpha aggregation at the mesoscopic scale
+  * @param mesoBeta diffusion at the mesoscopic scale
+  * @param mesoNdiff number of diffusion steps at the mesoscopic scale
+  * @param mesoTimeSteps number of time steps within a macroscopic time step
+  * @param macroMesoBetaUpdateMax impact of macro level on beta - in share of beta (coupling parameters)
+  * @param macroMesoAlphaUpdateMax impact of macro level on alpha
+  * @param mesoMacroCongestionCost impact of meso level on macro level through congestion cost
+  * @param mesoMacroDecayUpdateMax impact of meso level on macro decay
+  */
 case class MultiscaleModel(
                             timeSteps: Int,
-                            // macro parameters
                             macroNcities: Int,
                             macroInitialHierarchy: Double,
                             macroInitialMaxPop: Double,
                             macroRange : Double,
-
                             macroGrowthRate: Double,
                             macroInteractionDecay: Double,
                             macroInteractionWeight: Double,
                             macroInteractionGamma: Double,
-
-                            // meso parameters
                             mesoGridSize: Int,
                             mesoCenterDensity: Double,
-
                             mesoAlpha: Double,
                             mesoBeta: Double,
                             mesoNdiff: Int,
                             mesoTimeSteps: Int,
-
-                            // coupling parameters
-                            macroMesoBetaUpdateMax: Double, // in share of beta
+                            macroMesoBetaUpdateMax: Double,
                             macroMesoAlphaUpdateMax: Double,
                             mesoMacroCongestionCost: Double,
                             mesoMacroDecayUpdateMax: Double

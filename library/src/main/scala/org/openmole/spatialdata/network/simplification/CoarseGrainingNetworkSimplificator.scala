@@ -69,7 +69,7 @@ object CoarseGrainingNetworkSimplificator {
         // for better accuracy, should add several connectors (at least to each enclosing node) and include in shortest paths
         val centroid = p.getCentroid
         val ncentroid = withinnodes.map(n => (nodePointMap(n).distance(centroid), n)).sortBy(_._1)(Ordering.Double.TotalOrdering).head._2
-        Some((p, (network.subNetworkNodes(withinnodes.toSet, true), network.subNetworkNodes(withinnodes.toSet), ncentroid)))
+        Some((p, (network.subNetworkNodes(withinnodes.toSet, withNeighbors = true), network.subNetworkNodes(withinnodes.toSet), ncentroid)))
       }
     }.filter(_.isDefined).map(_.get).toMap
 
@@ -124,7 +124,7 @@ object CoarseGrainingNetworkSimplificator {
     }.toSeq
 
     // finally construct the final network. All polygons which can be neighbors (with nodes) are in the first set, used for nodes
-    val finalNodes = polyLinks.zipWithIndex.map{case ((p,d,neigh),i) => val coord = p.getCentroid.getCoordinate; (p,Node(i,coord.x,coord.y))}.toMap
+    val finalNodes = polyLinks.zipWithIndex.map{case ((p,_,_),i) => val coord = p.getCentroid.getCoordinate; (p,Node(i,coord.x,coord.y))}.toMap
     val links = polyLinks.flatMap{case (p,_,neigh) => neigh.map{case (n,d) => Link(finalNodes(p),finalNodes(n),weight=d)}}.toSet
     (Network(nodes = finalNodes.values.toSet, links = links),polyLinks.map(_._2))
   }

@@ -3,6 +3,15 @@ import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.utils.math.Matrix.MatrixImplementation
 import org.openmole.spatialdata.utils.math.{DenseMatrix, Matrix, RealMatrix}
 
+
+/**
+  * Network feedback component for macro growth rate, introduced by Raimbault, J. (2020). Indirect evidence of network effects in a system of cities. Environment and Planning B: Urban Analytics and City Science, 47(1), 138-155.
+  *
+  * @param feedbackWeights weight for the feedback component
+  * @param feedbackDecays gravity decay for the feedback process
+  * @param feedbackGammas hierarchy for the feedback process
+  * @param feedbackDistanceWeights generalized distance matrix for the feedback process
+  */
 case class NetworkFeedback(
                             feedbackWeights: Vector[Double],
                             feedbackDecays: Vector[Double],

@@ -17,6 +17,8 @@ import scala.util.Random
   * Generalization of the Favaro-Pumain model for urban systems dynamics based on the diffusion of innovation
   *
   *   Favaro, J. M., & Pumain, D. (2011). Gibrat Revisited: An Urban Growth Model Incorporating Spatial Interaction and Innovation Cycles. Geographical Analysis, 43(3), 261-286.
+  *   Raimbault, J. (2020). A model of urban evolution based on innovation diffusion. Artifical Life 2020 Proceedings.
+  *
   *
   * @param populationMatrix        Real population matrix
   * @param distanceMatrix          Distance matrix

@@ -4,10 +4,6 @@ import org.openmole.spatialdata.utils.math.Matrix
 
 
 /**
-  *
-  */
-
-/**
   * Macroscopic state
   *   rq : coordinates are not useful once the distance matrix has been computed ?
   *

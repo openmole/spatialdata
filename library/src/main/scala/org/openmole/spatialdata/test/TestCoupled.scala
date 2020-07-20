@@ -13,10 +13,10 @@ import scala.util.Random
 object TestCoupled {
 
   def testWeakCouplingNodePositions(gridSize:Int = 50, gridOccupation: Double = 0.5,nwNodes: Int = 25, nwLinks: Int = 250): Unit = {
-    implicit val rng = new Random
+    implicit val rng: Random = new Random
 
     val randomGrid = RandomGridGenerator(gridSize,1.0,gridOccupation).generateGrid
-    val points =  DensityPointsGenerator(nwNodes,randomGrid,true).generatePoints.asPointSeq
+    val points =  DensityPointsGenerator(nwNodes,randomGrid,normalize = true).generatePoints.asPointSeq
     println(points)
     val randomNetwork = RandomNetworkGenerator(nlinks = nwLinks,points=points,planarize = true).generateNetwork
     println(randomNetwork.isPlanar)
@@ -33,10 +33,10 @@ object TestCoupled {
 
   def testRandom(gridSize:Int = 50, gridOccupation: Double = 0.5,nwNodes: Int = 20, nwLinks: Int = 200): Unit = {
 
-    implicit val rng = new Random
+    implicit val rng: Random = new Random
 
     val randomGrid = RandomGridGenerator(gridSize,1.0,gridOccupation).generateGrid
-    val randomNetwork = RandomNetworkGenerator(nwNodes,nwLinks,true,false,false).generateNetwork
+    val randomNetwork = RandomNetworkGenerator(nwNodes,nwLinks,planarize = true,withIndex = false).generateNetwork
 
     println("Moran grid = "+GridMorphology.moran(randomGrid)+" ; Entropy = "+Statistics.entropy(randomGrid)+" ; slope = "+
     Statistics.slope(randomGrid)+" ; avg dist = "+GridMorphology.distanceMean(randomGrid)

@@ -6,7 +6,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 class ConvolutionSpec extends AnyFlatSpec {
 
   "FFT Convolution" should "be correct" in {
-    TestMaths.testConvolution()
+    TestMaths.testConvolution(quiet = true)
   }
 
   "2D convolution" should "be correct" in {

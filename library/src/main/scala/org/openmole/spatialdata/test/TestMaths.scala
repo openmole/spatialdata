@@ -9,11 +9,13 @@ import scala.util.Random
 object TestMaths {
 
 
-  def testFourierCorrelatedField(): Unit = {
+  def testFourierCorrelatedField(gui: Boolean = true): Unit = {
     implicit val rng: Random = new Random
     val res = CorrelatedPercolationGridGenerator.correlatedField(100, 0.2)
-    println(res.toSeq.map(_.toSeq))
-    visualization.staticRasterVisualization(res)
+    if (gui) {
+      println(res.toSeq.map(_.toSeq))
+      visualization.staticRasterVisualization(res)
+    }
   }
 
 
@@ -36,7 +38,7 @@ object TestMaths {
 
 
 
-  def testConvolution(): Unit = {
+  def testConvolution(quiet: Boolean = false): Unit = {
 
     val rng = new Random
 
@@ -50,11 +52,15 @@ object TestMaths {
     val (cdx,t2) = withTimer[Array[Double],Array[Double]]{Convolution.directConvol(_,k)}(x)
     //println(cx.toSeq)
     //println(cdx.toSeq)
-    println(t1)
-    println(t2)
+
+    if (!quiet) {
+      println(t1)
+      println(t2)
+    }
 
     val convdiff = cx.zip(cdx).map{case (c1,c2) => scala.math.abs(c1-c2)}.sum
-    println(convdiff)
+
+    if (!quiet) println(convdiff)
 
 
   }

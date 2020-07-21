@@ -6,7 +6,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 class CorrelatedPercolationGridGeneratorSpec extends AnyFlatSpec  {
 
   "Correlated field" should "have the correct properties" in {
-    TestMaths.testFourierCorrelatedField()
+    TestMaths.testFourierCorrelatedField(gui = false)
   }
 
 }

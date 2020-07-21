@@ -212,9 +212,9 @@ Wong, D. (2009). The modifiable areal unit problem (MAUP). The SAGE handbook of 
 
 
 
-\sframe{Approach proposed}{
+\sframe{Proposed approach}{
 
-$\implies$ \textbf{spatial configuration are parameters too}
+\textbf{Spatial configurations are parameters too!}
 
 \medskip
 
@@ -224,6 +224,9 @@ $\implies$ \textbf{spatial configuration are parameters too}
 	\item Model behaviors which are robust to noise in parametrization real datasets
 \end{itemize}
 
+\medskip
+
+$\implies$ \textit{\textbf{Construction of a generic library for spatial sensitivity analysis, including the generation of synthetic data, perturbation of real data and indicators}}
  
 }
 
@@ -235,7 +238,7 @@ $\implies$ \textbf{spatial configuration are parameters too}
 
 
 
-\sframe{General context}{
+\sframe{Synthetic data: general context}{
 
 \justify
 
@@ -298,7 +301,7 @@ Urban form indicators for building layouts:
 \medskip
 
 \begin{center}
-	\includegraphics[height=0.85\textheight]{figures/spatialsens_examplegenerators.png}
+	\includegraphics[height=0.82\textheight]{figures/spatialsens_examplegenerators.png}
 \end{center}
 
 
@@ -408,6 +411,8 @@ $\rightarrow$ Output measured by morphological indicators: Moran index, average 
 
 \sframe{Morphological indicators}{
 
+\footnotesize
+
 \begin{enumerate}
 \item Rank-size slope $\gamma$, given by $\ln \left( P_{\tilde{i}}/P_0\right) \sim k + \gamma\cdot \ln \left(\tilde{i}/i_0\right)$ where $\tilde{i}$ are the indexes of the distribution sorted in decreasing order.
 \item Entropy of the distribution:
@@ -435,7 +440,7 @@ where $d_M$ is a normalisation constant
 
 \sframe{Network Generation models}{
 
-\textit{currently being implemented}
+\textit{[currently being implemented]}
 
 \medskip
 
@@ -547,7 +552,7 @@ Adding new links with biological heuristic:
 
 % simpopnet generator
 
-\textit{Synthetic system of cities and network for the SimpopNet model} \cite{raimbault2018unveiling}
+\textit{Synthetic system of cities and network for the SimpopNet model} \cite{raimbault2020unveiling}
 
 \medskip
 
@@ -562,7 +567,7 @@ Adding new links with biological heuristic:
 
 % ex from cities nw paper
 
-\textit{Cities-network co-evolution model explored on synthetic systems of cities} \cite{raimbault2019modeling}
+\textit{Cities-network co-evolution model explored on synthetic systems of cities} \cite{raimbault2018modeling}
 
 \medskip
 
@@ -583,7 +588,7 @@ Adding new links with biological heuristic:
 \sframe{Real data perturbation}{
 
 
-\textit{currently being implemented}
+\textit{[currently being implemented]}
 
 \medskip
 
@@ -644,7 +649,30 @@ $\rightarrow$ \textit{How does perturbation of real data allows to explore scena
 \subsection{Integration into OpenMOLE}
 
 
-\sframe{Integration into OpenMOLE}{
+\sframe{Implementation: integration into OpenMOLE}{
+
+
+Library implemented in \texttt{scala}: advantages of functional and object programming; Apache Spark; no widely used GIS library in scala.
+
+\medskip
+
+\url{https://github.com/openmole/spatialdata}
+
+\medskip
+
+$\rightarrow$ integration into the OpenMOLE model exploration open source software \cite{reuillon2013openmole}
+
+\begin{center}
+\includegraphics[height=0.13\textheight]{figures/logos/iconOM.png}
+\includegraphics[height=0.13\textheight]{figures/logos/openmole.png}
+\end{center}
+
+
+\textit{Enables seamlessly (i) model embedding; (ii) access to HPC resources; (iii) exploration and optimization algorithms}
+
+\medskip
+
+\url{https://openmole.org/}
 
 }
 
@@ -776,7 +804,7 @@ $\rightarrow$ other generators have their own primitives\\(\texttt{ExpMixtureThr
 
 \footnotesize
 
-Raimbault, J., Cottineau, C., Texier, M. L., Néchet, F. L., \& Reuillon, R. (2018). Space Matters: extending sensitivity analysis to initial spatial conditions in geosimulation models. arXiv preprint arXiv:1812.06008.
+Raimbault, J., Cottineau, C., Le Texier, M., Le Nechet, F., \& Reuillon, R. (2019). Space Matters: Extending Sensitivity Analysis to Initial Spatial Conditions in Geosimulation Models. Journal of Artificial Societies and Social Simulation, 22(4).
 
 \bigskip
 
@@ -870,17 +898,19 @@ d_r\left(\mu_{\vec{\alpha}_1},\mu_{\vec{\alpha}_2}\right) = 2 \cdot \frac{d(\mu_
 
 % suggest: ecology (habitat / spatial niches ?) ; topography ; ?
 
-\textit{Spatial synthetic data in other disciplines ?}
+\textit{Developments}
 
 \medskip
 
 \begin{itemize}
-	\item spatial network generative models
+	\item more spatial network generative models \cite{raimbault2018multi}, correlated synthetic data \cite{raimbault2019second}
+	\item domain models: LUTI, urban dynamics
 	\item other disciplines, ecology, geosciences \cite{mogheir2004characterizing}?
 	\item interaction with data driven disciplines ? (planning, architecture, spatio-temporal datamining)
-	\item genericity of some models ? (reaction-diffusion)
+	\item genericity of some models? (reaction-diffusion)
 	\item synthetic data generation methods (synthetic populations)
-	\item synthetic data at the core of applied statistics methodology (not much in spatial statistics ?)
+	\item synthetic data at the core of applied statistics methodology (less in spatial statistics?)
+	\item port the library to more classic languages (python, R)
 \end{itemize}
 
 
@@ -1011,7 +1041,7 @@ d_r\left(\mu_{\vec{\alpha}_1},\mu_{\vec{\alpha}_2}\right) = 2 \cdot \frac{d(\mu_
 		
 		\medskip
 		
-		{\textcolor{red}\xmark}
+		{\textcolor{blue}\cmark}
 		
 		\medskip
 
@@ -1019,59 +1049,14 @@ d_r\left(\mu_{\vec{\alpha}_1},\mu_{\vec{\alpha}_2}\right) = 2 \cdot \frac{d(\mu_
 		
 		\medskip
 		
-		{\textcolor{red}\xmark}
+		{\textcolor{blue}\cmark}
 		
 		\medskip
 		
 		{\textcolor{blue}\cmark}
 	\end{column}
 	
-	
-	
-	\begin{column}{0.2\linewidth}
 		
-		\vspace{-0.3cm}
-		
-		\textbf{planned}
-		
-		\medskip
-		
-		{\textcolor{green}\cmark}
-		
-		\medskip
-		
-		{\textcolor{green}\cmark}
-		
-		\medskip
-		
-		{\textcolor{green}\cmark}
-			
-			\medskip
-		
-		{\textcolor{green}\cmark}
-		
-		\medskip
-		
-		{\textcolor{green}\cmark}
-		
-		\medskip
-		
-		{\textcolor{green}\cmark}
-		
-		\medskip
-		
-		{\textcolor{green}\cmark}
-		
-		\medskip
-		
-		{\textcolor{green}\cmark}
-		
-		\medskip
-		
-		{\textcolor{green}\cmark}
-	\end{column}
-
-	
 	
 	
 \end{columns}
@@ -1087,13 +1072,18 @@ d_r\left(\mu_{\vec{\alpha}_1},\mu_{\vec{\alpha}_2}\right) = 2 \cdot \frac{d(\mu_
 
 $\rightarrow$ \textbf{Space matters: } relevance of spatially-explicit models and spatial sensitivity analysis.
 
-\bigskip
+\medskip
 
 $\rightarrow$ \textbf{Synthetic data: } first experimental samplings included in OpenMOLE, soon more to come.
 
+\medskip
+
+$\rightarrow$ \textbf{Disciplinary context: } strong contingency on included models.
+
+\bigskip
 \bigskip
 
-$\rightarrow$ \textbf{Disciplinary context: } strong contingency on included models and forms, please provide feedbacks, suggestions, needs, ideas from your viewpoint.
+\textit{Get the library at } \url{https://github.com/openmole/spatialdata}
 
 \medskip
 

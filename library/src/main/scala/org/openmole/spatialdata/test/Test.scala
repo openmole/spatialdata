@@ -50,7 +50,8 @@ object Test extends App {
   //TestReactionDiffusion.benchmarkImplementation
 
   // Synthetic grids
-  TestSynthetic.testCorrelatedPercolation()
+  TestSynthetic.testGravityGrid()
+  //TestSynthetic.testCorrelatedPercolation()
   //TestSynthetic.testRandomGrids()
   //TestSynthetic.testBlocksGrid()
   //TestSynthetic.testPercolationGrid()

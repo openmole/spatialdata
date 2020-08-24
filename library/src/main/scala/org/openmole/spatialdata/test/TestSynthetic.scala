@@ -3,13 +3,30 @@ package org.openmole.spatialdata.test
 import org.openmole.spatialdata
 import org.openmole.spatialdata.application.urbanmorphology.GridGeneratorLauncher
 import org.openmole.spatialdata.grid.measures.GridMorphology
-import org.openmole.spatialdata.grid.synthetic.{BlocksGridGenerator, CorrelatedPercolationGridGenerator, PercolationGridGenerator, RandomGridGenerator}
+import org.openmole.spatialdata.grid.synthetic._
 import org.openmole.spatialdata.utils.visualization
 
 import scala.io.Source
 import scala.util.Random
 
 object TestSynthetic {
+
+
+  def testGravityGrid(): Unit = {
+    implicit val rng: Random = new Random
+
+    val gridSize = 100
+    val growthRate = 0.5
+    val gravity = 2.5
+    val populationHierarchy = 1.5
+    //val nCenters = 3
+    val nCenters = 1
+    val totalPopulation = 10000
+
+    val grid = GravityGridGenerator(gridSize, growthRate, gravity, populationHierarchy, nCenters, totalPopulation).generateGrid
+    println("gravity grid: max pop = "+grid.flatten.max)
+    visualization.staticRasterVisualization(grid)
+  }
 
   def testCorrelatedPercolation(): Unit = {
     implicit val rng: Random = new Random

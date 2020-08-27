@@ -18,13 +18,13 @@ object TestSynthetic {
     val gridSize = 100
     val growthRate = 0.5
     val gravity = 2.5
-    val populationHierarchy = 1.5
+    val populationHierarchy = 0.5
     //val nCenters = 3
     val nCenters = 1
     val totalPopulation = 10000
 
-    val grid = GravityGridGenerator(gridSize, growthRate, gravity, populationHierarchy, nCenters, totalPopulation).generateGrid
-    println("gravity grid: max pop = "+grid.flatten.max)
+    val grid = GravityGridGenerator(gridSize, gridSize, growthRate, gravity, populationHierarchy, nCenters, totalPopulation).generateGrid
+    println("gravity grid: max pop = "+grid.flatten.max(Ordering.Double.TotalOrdering))
     visualization.staticRasterVisualization(grid)
   }
 
@@ -35,7 +35,7 @@ object TestSynthetic {
     val densityGradient = 0.02
     val correlationRange = 1.4
 
-    val grid = CorrelatedPercolationGridGenerator(gridSize, densityGradient, correlationRange, 1000.0, binary = false, 5).generateGrid
+    val grid = CorrelatedPercolationGridGenerator(gridSize, correlationRange, 1000.0, binary = false, nCenters = 5,maxKernelRadius = densityGradient).generateGrid
 
     //visualization.staticRasterVisualization(GridMorphology.distanceMatrix(gridSize, gridSize).map(_.map(r => math.exp(-densityGradient*r))))
     visualization.staticRasterVisualization(grid)

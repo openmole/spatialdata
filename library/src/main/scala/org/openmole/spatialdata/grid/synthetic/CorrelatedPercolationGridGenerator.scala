@@ -26,23 +26,23 @@ import scala.util.Random
   *
   *
   * @param gridSize grid size
-  * @param densityGradient gradient of the exponential density mask
+  * @param maxKernelRadius gradient of the exponential density mask
   * @param correlationRange correlation range
   * @param maxPopulation used when not binary, to rescale occupied cells with the population gradient P_max exp(-lambda r)
   * @param binary binary or rescaled population cells
   */
 case class CorrelatedPercolationGridGenerator(
                                              gridSize: Int,
-                                             densityGradient: Double,
                                              correlationRange: Double,
                                              maxPopulation: Double = 1.0,
                                              binary: Boolean = true,
                                              nCenters: Int = 1,
-                                             centersPopulationScaling: Double = 1.0
+                                             centersPopulationScaling: Double = 1.0,
+                                             maxKernelRadius: Double = 1.0
                                              ) extends GridGenerator {
 
   override def generateGrid(implicit rng: Random): RasterLayerData[Double] =
-    CorrelatedPercolationGridGenerator.correlatedPercolationGrid(gridSize, densityGradient, correlationRange, maxPopulation, binary, nCenters, centersPopulationScaling)
+    CorrelatedPercolationGridGenerator.correlatedPercolationGrid(gridSize, maxKernelRadius, correlationRange, maxPopulation, binary, nCenters, centersPopulationScaling)
 
 }
 
@@ -53,7 +53,7 @@ object CorrelatedPercolationGridGenerator {
   /**
     * Polycentric correlated percolation combining: polycentric probability density with a scaling law with a correlated random field
     * @param gridSize size
-    * @param densityGradient density gradient (maximal value among centers)
+    * @param maxKernelRadius density gradient (maximal value among centers)
     * @param correlationRange correlation range
     * @param maxPopulation max population
     * @param binary binary output?
@@ -63,7 +63,7 @@ object CorrelatedPercolationGridGenerator {
     * @return
     */
   def correlatedPercolationGrid(gridSize: Int,
-                                densityGradient: Double,
+                                maxKernelRadius: Double,
                                 correlationRange: Double,
                                 maxPopulation: Double,
                                 binary: Boolean,
@@ -71,7 +71,7 @@ object CorrelatedPercolationGridGenerator {
                                 centersPopulationScaling: Double
                                )(implicit rng: Random): RasterLayerData[Double] = {
     //val pr = GridMorphology.distanceMatrix(gridSize, gridSize).map(_.map(r => math.exp(-densityGradient*r))) // for one center at the origin
-    val kernelSizes = (1 to nCenters).map(i => 1/(densityGradient*math.pow(i, centersPopulationScaling / 2)))
+    val kernelSizes = (1 to nCenters).map(i => maxKernelRadius/math.pow(i, centersPopulationScaling / 2))
     val pr = ExpMixtureGridGenerator(Left(gridSize), nCenters, 1.0, kernelSizes).generateGrid
 
     val bin = density(pr, correlatedField(gridSize, correlationRange))
@@ -159,7 +159,7 @@ object CorrelatedPercolationGridGenerator {
     // Fourier transform
     val tr = new FastFourierTransformer(DftNormalization.STANDARD)
     val cflength = math.pow(2.0, math.ceil(math.log(gridSize) / math.log(2.0))).toInt
-    println(cflength)
+    //println(cflength)
     val cf = randomField.map(r => TransformUtils.createComplexArray(Array(r.padTo(cflength, 0.0), Array.fill(cflength)(0.0)))).
       padTo(cflength.toInt,TransformUtils.createComplexArray(Array(Array.fill(cflength)(0.0),Array.fill(cflength)(0.0))))
     val transformedField: Array[Array[Complex]] = tr.mdfft(cf, TransformType.FORWARD).asInstanceOf[Array[Array[Complex]]]

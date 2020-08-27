@@ -26,7 +26,8 @@ import scala.util.Random
   * @param totalPopulation total population
   */
 case class GravityGridGenerator(
-                                gridSize: Int,
+                                height: Int,
+                                width: Int,
                                 growthRate: Double,
                                 gravity: Double,
                                 populationHierarchy: Double,
@@ -34,7 +35,7 @@ case class GravityGridGenerator(
                                 totalPopulation: Double
                                ) extends GridGenerator {
 
-  override def generateGrid(implicit rng: Random): RasterLayerData[Double] = GravityGridGenerator.gravityGrid(gridSize, growthRate, gravity, populationHierarchy, nCenters, totalPopulation)
+  override def generateGrid(implicit rng: Random): RasterLayerData[Double] = GravityGridGenerator.gravityGrid(height, width, growthRate, gravity, populationHierarchy, nCenters, totalPopulation)
 
 }
 
@@ -42,7 +43,8 @@ case class GravityGridGenerator(
 
 object GravityGridGenerator {
 
-  def gravityGrid(gridSize: Int,
+  def gravityGrid(height: Int,
+                  width: Int,
                   growthRate: Double,
                   gravity: Double,
                   populationHierarchy: Double,
@@ -50,28 +52,28 @@ object GravityGridGenerator {
                   totalPopulation: Double
                  )(implicit rng: Random): Array[Array[Double]] = {
     val initialcoords: Seq[(Int,Int)] = Stochastic.sampleWithReplacement(for {
-      i <- 0 until gridSize
-      j <- 0 until gridSize
+      i <- 0 until height
+      j <- 0 until width
     } yield (i,j), nCenters)
-    val res = Array.fill(gridSize,gridSize)(0.0)
+    val res = Array.fill(height,width)(0.0)
     initialcoords.foreach{case (i0,j0) => res(i0)(j0) = res(i0)(j0) + 1.0}
 
-    val gDistances: Array[Array[Double]] = GridMorphology.distanceMatrix(2 * gridSize - 1,2 * gridSize - 1).map {
+    val gDistances: Array[Array[Double]] = GridMorphology.distanceMatrix(2 * height - 1,2 * width - 1).map {
       row: Array[Double] => row.map{d: Double => if (d == 0.0) 0.0 else math.pow(d, -gravity)}
     }
-    val probadenom: Array[Array[Double]] = Convolution.convolution2D(Array.fill(gridSize,gridSize)(1.0),gDistances)
+    val probadenom: Array[Double] = Convolution.convolution2D(Array.fill(height,width)(1.0),gDistances).flatten
 
     def iteration(prevPop: Seq[Seq[Double]]): Seq[Seq[Double]] = {
-      val probanum: Array[Array[Double]] = Convolution.convolution2D(prevPop.map(_.map(d => math.pow(d,populationHierarchy)).toArray).toArray,gDistances)
-      val provprobas = probanum.flatten.asInstanceOf[Array[Double]].zip(probadenom.flatten.asInstanceOf[Array[Double]]).map{case (num,denom) => num/denom}
-      val maxproba = provprobas.max
+      val probanum: Array[Double] = Convolution.convolution2D(prevPop.map(_.map(d => math.pow(d,populationHierarchy)).toArray).toArray,gDistances).flatten
+      val provprobas = probanum.zip(probadenom).map{case (num,denom) => num/denom}
+      val maxproba = provprobas.max(Ordering.Double.TotalOrdering)
       val probas = provprobas.map(_ * growthRate / maxproba)
 
-      val nextPops = Array.fill(gridSize,gridSize)(0.0)
+      val nextPops = Array.fill(height,width)(0.0)
 
       probas.zip(for {
-        i <- 0 until gridSize
-        j <- 0 until gridSize
+        i <- 0 until height
+        j <- 0 until width
       } yield (i,j)).foreach{
         case (p,(i,j)) => if (rng.nextDouble() < p) nextPops(i)(j) = prevPop(i)(j) + 1 else nextPops(i)(j) = prevPop(i)(j)
       }

@@ -27,11 +27,11 @@ case class ReactionDiffusionCalibration(
                                        ) {
 
   def runModel: (Double,Double,Double,Double,Double,Double,Double,Double,Double,Double,Double,Double) = {
-    implicit val rng = new Random(seed)
+    implicit val rng: Random = new Random(seed)
     val (width,height) = (initialConfiguration(0).length,initialConfiguration.length)
     val deltaPop = popConstraint - initialConfiguration.flatten.filter(!_.isNaN).sum
     val growthrate = deltaPop / timeSteps
-    if(verbose) println(s"Calibrating for initial area of size ${width}x${height} ; deltaPop = ${deltaPop} ; alpha = ${alpha} ; beta = ${beta} ; tsteps = ${timeSteps} ; growthRate = ${growthrate} ; seed = ${seed}")
+    if(verbose) println(s"Calibrating for initial area of size ${width}x$height ; deltaPop = $deltaPop ; alpha = $alpha ; beta = $beta ; tsteps = $timeSteps ; growthRate = $growthrate ; seed = $seed")
     val generator = ReactionDiffusionGridGenerator((width,height),growthrate.toInt,popConstraint.toInt,alpha,beta,diffusionSteps.toInt,
       Some(initialConfiguration)
     )
@@ -39,11 +39,11 @@ case class ReactionDiffusionCalibration(
     val finalPop = generated.flatten.filter(!_.isNaN).sum
     val morphology = GridMorphology(generated,Seq(Moran(),AverageDistance(),Entropy(),Slope()))
     // basic relative squared cost function
-    if(verbose) println(s" Moran : ${morphology.moran} / ${moranObjective} ; avgDist : ${morphology.avgDistance} / ${avgDistObjective} ; Entropy : ${morphology.entropy} / ${entropyObjective} ; hierarchy : ${morphology.slope._1} / ${slopeObjective}")
+    if(verbose) println(s" Moran : ${morphology.moran} / $moranObjective ; avgDist : ${morphology.avgDistance} / $avgDistObjective ; Entropy : ${morphology.entropy} / $entropyObjective ; hierarchy : ${morphology.slope._1} / $slopeObjective")
     val mseindics = relSquare(moranObjective,morphology.moran) + relSquare(avgDistObjective,morphology.avgDistance) + relSquare(entropyObjective,morphology.entropy) + relSquare(slopeObjective,morphology.slope._1)
-    if(verbose) println(s"Sq Rel Error = ${mseindics}")
+    if(verbose) println(s"Sq Rel Error = $mseindics")
     val poperror = relSquare(finalPop,popConstraint)
-    if(verbose) println(s"Pop rel error = ${poperror}")
+    if(verbose) println(s"Pop rel error = $poperror")
     // if(poperror > 0.1) Double.MaxValue else // do not do that, may bias selection through stoch outsiders - better include pop error in mse
     val msepop = generated.flatten.map{d => if (d.isNaN) 0.0 else d}.zip(finalConfiguration.flatten.map{d => if (d.isNaN) 0.0 else d}).map{case (p1,p2) => math.pow(p1 - p2,2)}.sum
     (msepop,mseindics + poperror,poperror,relSquare(moranObjective,morphology.moran),relSquare(avgDistObjective,morphology.avgDistance),

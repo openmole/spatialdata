@@ -73,12 +73,15 @@ object CorrelatedPercolationGridGenerator {
     //val pr = GridMorphology.distanceMatrix(gridSize, gridSize).map(_.map(r => math.exp(-densityGradient*r))) // for one center at the origin
     val kernelSizes = (1 to nCenters).map(i => maxKernelRadius/math.pow(i, centersPopulationScaling / 2))
     val pr = ExpMixtureGridGenerator(Left(gridSize), nCenters, 1.0, kernelSizes).generateGrid
+    // need to renormalize in case of more than one center
+    val m = pr.flatten.max(Ordering.Double.TotalOrdering)
+    val prnorm = pr.map(_.map(_/m))
 
-    val bin = density(pr, correlatedField(gridSize, correlationRange))
+    val bin = density(prnorm, correlatedField(gridSize, correlationRange))
 
     if (binary) bin
     else {
-      bin.zip(pr).map{rows: (Array[Double],Array[Double]) =>
+      bin.zip(prnorm).map{rows: (Array[Double],Array[Double]) =>
         rows._1.zip(rows._2).map(d=> d._1*d._2*maxPopulation)
       }
     }
@@ -98,7 +101,7 @@ object CorrelatedPercolationGridGenerator {
 
 
     val n = field.flatten.length.toDouble
-    val sortedeta = field.flatten.groupBy(eta => eta).toIndexedSeq.sortBy(_._1)
+    val sortedeta = field.flatten.groupBy(eta => eta).toIndexedSeq.sortBy(_._1)(Ordering.Double.TotalOrdering)
     def cumcount(s: (IndexedSeq[Array[Double]],Double)): (IndexedSeq[Array[Double]],Double) = {
       if (s._1.nonEmpty) (s._1.tail, s._2+s._1.head.length.toDouble / n) else s
     }

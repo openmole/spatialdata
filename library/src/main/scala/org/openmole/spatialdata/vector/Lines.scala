@@ -21,3 +21,10 @@ case class Lines(
 
 }
 
+object Lines {
+  val empty = Lines(Seq.empty[geom.LineString], Map.empty[(Int,String),AnyRef])
+
+  //def ++(l1: Lines, l2: Lines): Lines = Lines(l1.lines++l2.lines, l1.attributes++l2.attributes.map{case ((i,s),v) => ((i+l1.lines.size,s),v)})
+  def ++(l1: Lines, l2: Lines): Lines = Lines(l1.lines++l2.lines,Map.empty)
+}
+

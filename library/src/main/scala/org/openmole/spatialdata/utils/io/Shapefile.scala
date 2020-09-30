@@ -31,7 +31,6 @@ object Shapefile {
           val geoms = new ArrayBuffer[(Geometry,Array[Double])]
           while(reader.hasNext){
             val feature = reader.next()
-            //println(feature)
             geoms.append((feature.getDefaultGeometry.asInstanceOf[Geometry],attributes.map{feature.getAttribute(_).toString.toDouble}))
           }
           geoms.toSeq

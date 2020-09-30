@@ -6,7 +6,7 @@ import org.openmole.spatialdata.vector.{Lines, Points}
 
 object GISNetwork {
 
-  implicit val doubleOrdering = Ordering.Double.TotalOrdering
+  implicit val doubleOrdering: Ordering[Double] = Ordering.Double.TotalOrdering
 
   /**
     * Import a network from gis linestrings

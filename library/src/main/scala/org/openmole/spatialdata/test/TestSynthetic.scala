@@ -5,22 +5,62 @@ import org.openmole.spatialdata.application.urbanmorphology.GridGeneratorLaunche
 import org.openmole.spatialdata.grid.measures.GridMorphology
 import org.openmole.spatialdata.grid.synthetic._
 import org.openmole.spatialdata.utils.visualization
+import org.openmole.spatialdata.grid.Implicits._
 
 import scala.io.Source
 import scala.util.Random
 
 object TestSynthetic {
 
+  def testReactionDiffusion(): Unit = {
+    val seed: Long = (new Random).nextLong()
+    println(s"Seed: $seed")
+    implicit val rng: Random = new Random(seed)
+
+    val gridSize = 200
+    val alpha = 0.8
+    val beta = 0.2
+    val diffusionSteps = 1
+    val growthRate = 100
+    val totalPopulation = 5000
+
+    val grid = ReactionDiffusionGridGenerator((gridSize,gridSize) , growthRate, totalPopulation, alpha, beta, diffusionSteps).generateGrid
+
+    visualization.staticRasterVisualization(grid)
+  }
+
+  def testExpMixture(): Unit = {
+    val seed: Long = (new Random).nextLong()
+    println(s"Seed: $seed")
+    implicit val rng: Random = new Random(seed)
+
+    val gridSize = 200
+    val nCenters = 10
+    val maxRadiusRate = 0.2
+    val hierarchy = 1.0
+
+    val radius = maxRadiusRate*gridSize.toDouble
+    val rieman = (1 to nCenters.toInt).map(i => math.pow(i.toDouble,-hierarchy)).sum
+    val density = 1.0 / (2*math.Pi*radius*radius*rieman)
+    val radiuses = (1 to nCenters).map(i => radius*math.pow(i.toDouble,-hierarchy/2.0))
+
+    val grid = ExpMixtureGridGenerator(size = (gridSize,gridSize), centers = nCenters, maxValue = density, kernelRadiuses = radiuses).generateGrid
+
+    visualization.staticRasterVisualization(grid)
+  }
+
 
   def testGravityGrid(): Unit = {
-    implicit val rng: Random = new Random
+    val seed: Long = (new Random).nextLong()
+    println(s"Seed: $seed")
+    implicit val rng: Random = new Random(seed)
 
-    val gridSize = 100
+    val gridSize = 200
     val growthRate = 0.5
-    val gravity = 2.5
-    val populationHierarchy = 0.5
-    //val nCenters = 3
+    val gravity = 2.0
+    val populationHierarchy = 2.0
     val nCenters = 1
+    //val nCenters = 1
     val totalPopulation = 10000
 
     val grid = GravityGridGenerator(gridSize, gridSize, growthRate, gravity, populationHierarchy, nCenters, totalPopulation).generateGrid

@@ -26,6 +26,7 @@ package object visualization {
                                  nodeColorClasses: Node=>Int={_ => 0},
                                  nodePositioning: Node => Point = {n => n.position}
                                 ): Unit = {
+    if (org.openmole.spatialdata.HEADLESS) return
     val frame = NetworkFrame(networks = networks,withLabel=withLabel,edgeColorClasses=edgeColorClasses,nodeColorClasses=nodeColorClasses,nodePositioning=nodePositioning)
     frame.init
   }
@@ -38,6 +39,7 @@ package object visualization {
 
   def staticFlowsVisualization(model: SpatialInteractionModel
                                 ): Unit = {
+    if (org.openmole.spatialdata.HEADLESS) return
     val frame = FlowsFrame(model)
     frame.init
   }
@@ -52,6 +54,7 @@ package object visualization {
   def staticRasterVisualization(raster: RasterLayerData[Double],
                                 projection: RasterLayerData[Double] => RasterLayerData[Double] = normalization
                                ): Unit = {
+    if (org.openmole.spatialdata.HEADLESS) return
     val frame = RasterFrame(raster)
     frame.init()
   }

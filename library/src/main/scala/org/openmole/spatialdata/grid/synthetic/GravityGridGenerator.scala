@@ -77,6 +77,7 @@ object GravityGridGenerator {
       } yield (i,j)).foreach{
         case (p,(i,j)) => if (rng.nextDouble() < p) nextPops(i)(j) = prevPop(i)(j) + 1 else nextPops(i)(j) = prevPop(i)(j)
       }
+      //println(nextPops.flatten.sum)
       nextPops.map(_.toSeq).toSeq
     }
 

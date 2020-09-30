@@ -10,7 +10,7 @@ import org.openmole.spatialdata.vector.Point
 
 object GISUtils {
 
-  val wgs84 = CRS.parseWKT("GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.01745329251994328,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]]")
+  val wgs84: CoordinateReferenceSystem = CRS.parseWKT("GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.01745329251994328,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]]")
 
 
   /**
@@ -19,7 +19,7 @@ object GISUtils {
     * @param lat latitude
     * @return Pseudo-Mercator coordinates
     */
-  def WGS84ToPseudoMercator(lon: Double, lat: Double) = {
+  def WGS84ToPseudoMercator(lon: Double, lat: Double): (Double, Double) = {
     val x = lon * 20037508.34 / 180
     val y = (Math.log(Math.tan((90 + lat) * Math.PI / 360)) / (Math.PI / 180) ) * 20037508.34 / 180
     (x, y)
@@ -30,7 +30,7 @@ object GISUtils {
     * @param y y
     * @return WGS84 - EPSG:4326 (lon, lat)
     */
-  def PseudoMercatorToWGS84Mercator(x: Double, y: Double) = {
+  def PseudoMercatorToWGS84Mercator(x: Double, y: Double): (Double, Double) = {
     val lon = (x / 20037508.34) * 180
     val lat = (y / 20037508.34) * 180
     (lon, 180 / Math.PI * (2 * Math.atan(Math.exp(lat * Math.PI / 180)) - Math.PI / 2))

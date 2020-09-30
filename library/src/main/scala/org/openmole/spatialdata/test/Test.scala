@@ -25,9 +25,12 @@ object Test extends App {
   // Matsim
   //TestMatsim.testMatsimNetworkGenerator()
 
+  // Real networks
+  TestNetwork.testGISNetwork()
+
   // OSM
   //TestOSM.testBuildingExtractor()
-  //TestOSM.testOSMGridSampling
+  //TestOSM.testOSMGridSampling()
 
   // Database
   //TestDatabase.testPostgis
@@ -50,8 +53,10 @@ object Test extends App {
   //TestReactionDiffusion.benchmarkImplementation
 
   // Synthetic grids
+  //TestSynthetic.testReactionDiffusion()
+  //TestSynthetic.testExpMixture()
   //TestSynthetic.testGravityGrid()
-  TestSynthetic.testCorrelatedPercolation()
+  //TestSynthetic.testCorrelatedPercolation()
   //TestSynthetic.testRandomGrids()
   //TestSynthetic.testBlocksGrid()
   //TestSynthetic.testPercolationGrid()

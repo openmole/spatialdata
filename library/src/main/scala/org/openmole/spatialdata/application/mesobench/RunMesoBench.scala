@@ -7,10 +7,11 @@ object RunMesoBench extends App {
 
   implicit val rng: Random = new Random
 
-  //val (width,height,alpha,beta,diffusionSteps,totalPopulation,growthRate) = (100.0,200.0,2.0,0.1,3.0,60000000.0,300000.0)
-  val (width,height,centers,hierarchy,maxRadiusRate) = (100.0,200.0,1.0,1.1,0.1)
-  //val (size, correlationRange, nCenters, maxKernelRadius, centersPopulationScaling) = (100.0, 10.0, 10.0,10.0,1.1)
-  //val (width, height,growthRate, gravity, populationHierarchy, nCenters, totalPopulation) = (100.0,200.0,0.1,2.0,2.0,5.0,10000.0)
+  val (width,height) = (100.0,200.0)
+  val (alpha,beta,diffusionSteps,totalPopulationRD,growthRateRD) = (2.0,0.1,3.0,60000000.0,300000.0)
+  val (centers,hierarchy,maxRadiusRate) = (1.0,1.1,0.1)
+  val (correlationRange, nCentersCP, maxKernelRadius, centersPopulationScaling) = ( 10.0, 10.0,10.0,1.1)
+  val (growthRateG, gravity, populationHierarchy, nCentersG, totalPopulationG) = (0.1,2.0,2.0,5.0,10000.0)
 
   val start = System.currentTimeMillis()
   //val morpho = ReactionDiffusionModel(width,height,alpha,beta,diffusionSteps,totalPopulation,growthRate,rng.nextLong()).runModel

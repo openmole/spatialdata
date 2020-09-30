@@ -3,7 +3,7 @@ package org.openmole.spatialdata.test
 import org.openmole.spatialdata.vector.Point
 import org.openmole.spatialdata.utils.Implicits._
 import org.openmole.spatialdata.network.measures.NetworkMeasures.ShortestPathsNetworkMeasures
-import org.openmole.spatialdata.network.real.OSMNetworkGenerator
+import org.openmole.spatialdata.network.real.{GISFileNetworkGenerator, OSMNetworkGenerator}
 import org.openmole.spatialdata.network.simplification.CoarseGrainingNetworkSimplificator
 import org.openmole.spatialdata.network.synthetic.{LocalLinksNetworkGenerator, RandomNetworkGenerator, TreeMinDistGenerator}
 import org.openmole.spatialdata.network.{Link, Network, Node, ShortestPaths}
@@ -62,6 +62,12 @@ object TestNetwork {
     visualization.staticNetworkVisualization(Seq(simplified),nodePositioning = position)
   }
 
+  def testGISNetwork(): Unit = {
+    val nw = GISFileNetworkGenerator(System.getenv("CS_HOME")+"/UrbanDynamics/Models/Matsim/Network/test/mygeodata/road_line.shp").generateNetwork
+    val (xmin,xmax,ymin,ymax) = (nw.nodes.map{_.x}.min,nw.nodes.map{_.x}.max,nw.nodes.map{_.y}.min,nw.nodes.map{_.y}.max)
+    def position(n: Node): Point = ((n.x - xmin)/(xmax-xmin),(n.y - ymin)/(ymax-ymin))
+    visualization.staticNetworkVisualization(Seq(nw),nodePositioning = position)
+  }
 
   def testOSMNetwork(): Unit = {
     val (lat,lon) = (51.5213835,-0.1347904)

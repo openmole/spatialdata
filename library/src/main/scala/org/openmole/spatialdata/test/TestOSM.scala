@@ -1,9 +1,11 @@
 package org.openmole.spatialdata.test
 
+import org.openmole.spatialdata.grid
 import org.openmole.spatialdata.grid.measures.GridMorphology
 import org.openmole.spatialdata.grid.real.{OSMGridGenerator, OSMGridSampling}
 import org.openmole.spatialdata.utils.osm.{APIOverpass, OSMRoot, OSMXmlParser}
 import org.openmole.spatialdata.utils.osm.APIExtractor.Buildings.asPolygonSeq
+import org.openmole.spatialdata.utils.osm.APIExtractor.OSMDirect
 //import org.openmole.spatialdata.utils.visualization
 
 import scala.util.Random
@@ -40,11 +42,11 @@ object TestOSM {
   def testOSMGridSampling(): Unit = {
 
     //val grids = OSMGridSampling.sampleGridsInLayer("data/cities_europe.shp",100,200,50)
-    val grids = OSMGridSampling.sampleGridsInLayer("data/cities_europe.shp",2,500,50)
+    val grids = OSMGridSampling.sampleGridsInLayer("data/cities_europe.shp",2,500,50, mode = OSMDirect)
 
     for (grid <- grids) {
-      //println(Grid.gridToString(grid)+"\n\n")
-      println(GridMorphology(grid._2))
+      println(org.openmole.spatialdata.grid.gridToString(grid._2)+"\n\n")
+      //println(GridMorphology(grid._2))
     }
 
     //println(SpatialSampling.samplePointsInLayer("data/cities_europe.shp",10))
@@ -64,8 +66,8 @@ object TestOSM {
 
 
     val g = OSMGridGenerator(lon,lat,shift,50).generateGrid
-    //println(grid.gridToString(g))
-    println(GridMorphology(g))
+    println(grid.gridToString(g))
+    //println(GridMorphology(g))
     //visualization.staticRasterVisualization(g)
 
     /*

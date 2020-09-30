@@ -1,6 +1,6 @@
 package org.openmole.spatialdata.utils.gis
 
-import org.locationtech.jts.geom.{Geometry, GeometryFactory}
+import org.locationtech.jts.geom.{Geometry, GeometryFactory, LineString, MultiLineString}
 import org.openmole.spatialdata.vector._
 
 object GeometryUtils {
@@ -30,6 +30,22 @@ object GeometryUtils {
   def convexHullPoints(pi: Array[Point]): Geometry = {
     val geomFactory = new GeometryFactory
     geomFactory.createMultiPoint(pi.map{case (x,y)=>geomFactory.createPoint(new org.locationtech.jts.geom.Coordinate(x,y))}).convexHull
+  }
+
+  /**
+    * Convert a geometry to lines
+    *  - support only MultiLineString for now, without attributes
+    * @param g geometry
+    * @return
+    */
+  def geometryToLines(g: Geometry): Lines = {
+    g.getGeometryType match {
+      case s if s == "MultiLineString" => {
+        val n = g.getNumGeometries
+        Lines((0 until n).map{i => g.asInstanceOf[MultiLineString].getGeometryN(i).asInstanceOf[LineString]},Map.empty)
+      }
+      case _ => Lines.empty
+    }
   }
 
 

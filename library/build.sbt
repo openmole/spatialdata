@@ -97,15 +97,17 @@ enablePlugins(SbtOsgi)
   * Assemble as a unique jar
   *  https://github.com/sbt/sbt-assembly#publishing-not-recommended
   */
-lazy val assemble = taskKey[Unit]("assemble")
+//lazy val assemble = taskKey[Unit]("assemble")
 lazy val assemblyMainClass = "org.openmole.spatialdata.test.Test"
-assemble := {
+//assemble := {
   assemblyMergeStrategy in assembly := {
     case PathList("META-INF", _@_*) => MergeStrategy.discard
     case _ => MergeStrategy.last
   }
 
-  assemblyJarName in assembly := name + "_" + scalaVersion + ".jar"
+  // ! scalaVersion not set: absurd file name; run assemble: no config (other key in sbt-assembly?)
+  //assemblyJarName in assembly := "spatialdata-assembly_" + scalaVersion + ".jar"
+  assemblyJarName in assembly := "spatialdata-assembly_2.13.jar"
 
   artifact in(Compile, assembly) := {
     val art = (artifact in(Compile, assembly)).value
@@ -116,8 +118,8 @@ assemble := {
 
   mainClass in (Compile, packageBin) := Some(assemblyMainClass)
 
-  (assembly in spatialdata).value
-}
+//  (assembly in spatialdata).value
+//}
 
 
 lazy val runtest = taskKey[Unit]("run test main class")

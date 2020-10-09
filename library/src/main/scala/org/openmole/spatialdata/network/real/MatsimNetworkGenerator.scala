@@ -1,6 +1,6 @@
 package org.openmole.spatialdata.network.real
 
-import java.io.FileReader
+import java.io.{BufferedWriter, FileReader, FileWriter}
 
 import javax.xml.stream.{XMLInputFactory, XMLStreamConstants, XMLStreamReader}
 import org.openmole.spatialdata.network.{Link, Network, NetworkGenerator, Node}
@@ -50,6 +50,40 @@ object MatsimNetworkGenerator {
     }
     val nw = Iterator.iterate((xml,mutable.HashMap.empty[String,Node],ArrayBuffer.empty[Link],0.toInt))(parseNextElement).takeWhile(_._4!=XMLStreamConstants.END_DOCUMENT).toSeq.last
     Network(nw._2.values.toSet,nw._3.toSet)
+  }
+
+
+  /**
+    * Write a network as Matsim xml (not in utils.io as very specific)
+    *
+    * @param nw network - must have injective ids
+    * @param file file
+    */
+  def writeMatsimXML(nw: Network, file: String): Unit = {
+
+    val HEADER = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE network SYSTEM \"http://www.matsim.org/files/dtd/network_v1.dtd\">\n<network name=\"spatialdata generated network\">"
+    val FOOTER = "</network>"
+
+    val xml = new BufferedWriter(new FileWriter(file))
+
+    xml.write(HEADER)
+
+    // write nodes
+    xml.write("<nodes>\n")
+    nw.nodes.foreach(n => xml.write(s"<node id=\"${n.id}\" x=\"${n.x}\" y=\"${n.y}\" />"))
+    xml.write("</nodes>\n\n")
+
+    // links
+    xml.write("<links capperiod=\"12:00:00\">\n")
+    nw.links.zipWithIndex.foreach{
+      case (l,i) =>
+        xml.write(s"<link id=\"$i\" from=\"${l.e1.id}\" to=\"${l.e2.id}\" length=\"${l.length}\" freespeed=\"${l.weight}\" capacity=\"1\" permlanes=\"1\" oneway=\"1\" origid=\"$i\" />")
+        if (!nw.directed) xml.write(s"<link id=\"${i+nw.links.size}\" from=\"${l.e2.id}\" to=\"${l.e1.id}\" length=\"${l.length}\" freespeed=\"${l.weight}\" capacity=\"1\" permlanes=\"1\" oneway=\"1\" origid=\"${i+nw.links.size}\" />")
+    }
+    xml.write("</links>")
+
+    xml.write(FOOTER)
+
   }
 
 }

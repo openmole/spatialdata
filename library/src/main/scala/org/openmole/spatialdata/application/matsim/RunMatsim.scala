@@ -10,11 +10,11 @@ object RunMatsim extends App {
   println("Data file: "+args(1))
   args(0) match {
     case "--network" =>
-      val nw = GISFileNetworkGenerator(args(0)).generateNetwork
+      val nw = GISFileNetworkGenerator(args(1)).generateNetwork
       //println(nw)
       // export network to matsim format
       //Gexf.writeGexf(nw,"/data/outputs/network.gexf")
-      MatsimNetworkGenerator.writeMatsimXML(nw, "/data/outputs/network.xml")
+      MatsimNetworkGenerator.writeMatsimXML(nw, args(2))
 
     case "--synthpop" =>
       // convert spenser synth pop files to Matsim population

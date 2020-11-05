@@ -16,6 +16,10 @@ object GeoPackage {
 
   /**
     * Read features from a gpkg file
+    * GeoPackage specification: https://www.geopackage.org/
+    *
+    * alternative lib: https://mvnrepository.com/artifact/org.geotools/gt-geopkg/22.2 (less painful for geom conversion?)
+    *
     * @param layer layer path
     * @param attributes attributes to be retrieved
     * @return
@@ -32,8 +36,7 @@ object GeoPackage {
         val geometryData: GeoPackageGeometryData = featureRow.getGeometry
         if (geometryData != null && !geometryData.isEmpty) {
           val geometry: Geometry = GeometryUtils.toJTSGeomtry(geometryData.getGeometry)
-          val features: FeatureColumns = featureRow.getColumns
-          res.append((geometry,attributes.map{s => (s,features.getColumn(s).getDefaultValue)}.toMap))
+          res.append((geometry,attributes.map{s => (s,featureRow.getValue(s))}.toMap))
         }
       }
     } finally {

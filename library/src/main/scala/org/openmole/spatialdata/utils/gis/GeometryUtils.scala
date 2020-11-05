@@ -4,6 +4,8 @@ import org.locationtech.jts.geom
 import org.locationtech.jts.geom.{Geometry, GeometryFactory, LineString, MultiLineString}
 import org.openmole.spatialdata.vector._
 
+import scala.jdk.CollectionConverters._
+
 object GeometryUtils {
 
   /**
@@ -18,14 +20,14 @@ object GeometryUtils {
 
   /**
     * Get the area of the convex hull of a set of points
-    * @param pi
+    * @param pi points
     * @return
     */
   def convexHullArea(pi: Array[Point]): Double = convexHullPoints(pi).getArea
 
   /**
     * Get the convex hull of a set of points
-    * @param pi
+    * @param pi points
     * @return
     */
   def convexHullPoints(pi: Array[Point]): Geometry = {
@@ -60,6 +62,31 @@ object GeometryUtils {
       case mil.nga.sf.GeometryType.POINT => {
         val p = g.asInstanceOf[mil.nga.sf.Point]
         fact.createPoint(new geom.Coordinate(p.getX,p.getY))
+      }
+      case mil.nga.sf.GeometryType.MULTIPOINT => {
+        val p = g.asInstanceOf[mil.nga.sf.MultiPoint]
+        val coords = p.getPoints.asScala.toArray.map(p => new geom.Coordinate(p.getX,p.getY))
+        fact.createMultiPointFromCoords(coords)
+      }
+      case mil.nga.sf.GeometryType.LINESTRING => {
+        val l = g.asInstanceOf[mil.nga.sf.LineString]
+        fact.createLineString(l.getPoints.asScala.toArray.map(p => new geom.Coordinate(p.getX,p.getY)))
+      }
+      case mil.nga.sf.GeometryType.MULTILINESTRING => {
+        val linestrings = g.asInstanceOf[mil.nga.sf.MultiLineString]
+        fact.createMultiLineString(linestrings.getLineStrings.asScala.toArray.map(
+          l => fact.createLineString(l.getPoints.asScala.toArray.map(p => new geom.Coordinate(p.getX,p.getY)))
+        ))
+      }
+      case mil.nga.sf.GeometryType.POLYGON => {
+        val p = g.asInstanceOf[mil.nga.sf.Polygon]
+        fact.createPolygon(p.getExteriorRing.getPoints.asScala.toArray.map(p => new geom.Coordinate(p.getX,p.getY)))
+      }
+      case mil.nga.sf.GeometryType.MULTIPOLYGON => {
+        val polygons = g.asInstanceOf[mil.nga.sf.MultiPolygon]
+        fact.createMultiPolygon(polygons.getPolygons.asScala.toArray.map{p =>
+          fact.createPolygon(p.getExteriorRing.getPoints.asScala.toArray.map(p => new geom.Coordinate(p.getX,p.getY)))
+        })
       }
     }
   }

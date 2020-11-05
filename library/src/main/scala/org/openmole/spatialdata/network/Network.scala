@@ -1,6 +1,6 @@
 package org.openmole.spatialdata.network
 
-import org.openmole.spatialdata.vector.{Point, Points}
+import org.openmole.spatialdata.vector.{Attributes, Point, Points}
 import org.openmole.spatialdata.utils.graph.GraphAlgorithms
 import org.openmole.spatialdata.utils.Implicits._
 import org.openmole.spatialdata.utils.graph.GraphAlgorithms.{DijkstraJGraphT, ShortestPathMethod}
@@ -335,7 +335,7 @@ case class Network(
     val nseq = nodes.toSeq
     (nseq,Points.fromPoints(
       nseq.map(_.position),
-      nseq.zipWithIndex.map{case (n,i) => ((i,"id".toString),n.id.asInstanceOf[AnyRef])}.toMap
+      nseq.map{n => Map("id".toString -> n.id.asInstanceOf[AnyRef])}
     ))
   }
 

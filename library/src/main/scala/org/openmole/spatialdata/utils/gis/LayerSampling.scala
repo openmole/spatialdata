@@ -1,8 +1,8 @@
 package org.openmole.spatialdata.utils.gis
 
-import org.locationtech.jts.geom.{GeometryCollection, MultiPolygon, Polygon}
+import org.locationtech.jts.geom.{Geometry, GeometryCollection, MultiPolygon, Polygon}
 import org.locationtech.jts.triangulate.ConformingDelaunayTriangulationBuilder
-import org.openmole.spatialdata.vector.Point
+import org.openmole.spatialdata.vector.{Attributes, Point}
 import org.openmole.spatialdata.utils.io.Shapefile
 
 import scala.util.{Random, Try}
@@ -25,13 +25,13 @@ object LayerSampling {
     * @return
     */
   def samplePointsInLayer(layer: String,nPoints: Int,weightAttribute: String = "")(implicit rng: Random): Seq[Point] = {
-    val polygons = weightAttribute match {
-      case w if w.length > 0 => Shapefile.readGeometry(layer,Array(weightAttribute))
-      case _ => Shapefile.readGeometry(layer).map{case (g,_)=>(g,Array(1.0))}
+    val polygons: Seq[(Geometry,Double)] = weightAttribute match {
+      case w if w.length > 0 => Shapefile.readGeometry(layer,Array(weightAttribute)).map{case (g,a) => (g,a(weightAttribute).asInstanceOf[Double])} // will raise exception if the weight attribute cannot be cast to Double
+      case _ => Shapefile.readGeometry(layer).map{case (g,_)=>(g,1.0)}
     }
-    val attrs = polygons.map{_._2(0)}
-    val s = attrs.sum
-    val weights = attrs.map{_/s}
+    val wvalues = polygons.map{_._2}
+    val s = wvalues.sum
+    val weights = wvalues.map{_/s}
 
     val pointTries: Seq[Try[Point]] = for{_ <- 1 to nPoints } yield {
       val r = rng.nextDouble()

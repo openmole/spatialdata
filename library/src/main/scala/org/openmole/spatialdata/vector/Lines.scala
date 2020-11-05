@@ -12,19 +12,19 @@ import org.locationtech.jts.geom
   */
 case class Lines(
                 lines: Seq[geom.LineString],
-                attributes: Map[(Int,String),AnyRef]
+                attributes: Seq[Attributes]
                 ) extends VectorFeatures {
 
-  def get(i: Int): (geom.LineString,Map[String, AnyRef]) = (lines(0),attributes.filter(_._1._1==i).map{case ((_,s),v) => (s,v)})
+  def get(i: Int): (geom.LineString,Attributes) = (lines(i),attributes(i))
 
-  def tail: Lines = Lines(lines.tail,attributes.filter(_._1._1>0))
+  def tail: Lines = Lines(lines.tail,attributes.tail)
 
 }
 
 object Lines {
-  val empty = Lines(Seq.empty[geom.LineString], Map.empty[(Int,String),AnyRef])
+  val empty = Lines(Seq.empty[geom.LineString], Seq.empty)
 
   //def ++(l1: Lines, l2: Lines): Lines = Lines(l1.lines++l2.lines, l1.attributes++l2.attributes.map{case ((i,s),v) => ((i+l1.lines.size,s),v)})
-  def ++(l1: Lines, l2: Lines): Lines = Lines(l1.lines++l2.lines,Map.empty)
+  def ++(l1: Lines, l2: Lines): Lines = Lines(l1.lines++l2.lines,Seq.empty)
 }
 

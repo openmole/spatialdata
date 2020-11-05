@@ -7,6 +7,7 @@ import org.geotools.data.shapefile.ShapefileDataStore
 import org.geotools.referencing.CRS
 import org.opengis.referencing.crs.CoordinateReferenceSystem
 import org.openmole.spatialdata.utils
+import org.openmole.spatialdata.vector.Attributes
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -19,7 +20,7 @@ object Shapefile {
     * @param attributes attributes to retrieve
     * @return
     */
-  def readGeometry(layer: String,attributes:Array[String]=Array.empty): Seq[(Geometry,Array[Double])] = {
+  def readGeometry(layer: String,attributes:Array[String]=Array.empty): Seq[(Geometry,Attributes)] = {
 
     val store = new ShapefileDataStore(new File(layer).toURI.toURL)
     try {
@@ -28,10 +29,10 @@ object Shapefile {
       try {
           //val featureReader = Iterator.continually{val next = reader.next;println(next);next}.takeWhile(_ => reader.hasNext)
           //filter(feature => filter(feature.getAttribute("attr").toString))
-          val geoms = new ArrayBuffer[(Geometry,Array[Double])]
+          val geoms = new ArrayBuffer[(Geometry,Attributes)]
           while(reader.hasNext){
             val feature = reader.next()
-            geoms.append((feature.getDefaultGeometry.asInstanceOf[Geometry],attributes.map{feature.getAttribute(_).toString.toDouble}))
+            geoms.append((feature.getDefaultGeometry.asInstanceOf[Geometry],attributes.map{s => (s,feature.getAttribute(s).toString.toDouble.asInstanceOf[AnyRef])}.toMap))
           }
           geoms.toSeq
         }finally reader.close()

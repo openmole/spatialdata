@@ -9,12 +9,12 @@ import scala.reflect.ClassTag
 /**
   * A spatial points data frame
   *
-  * @param points
-  * @param attributes
+  * @param points points
+  * @param attributes attributes
   */
 case class Points(
                  points: Seq[geom.Point],
-                 attributes: Map[(Int, String),AnyRef]
+                 attributes: Seq[Attributes]
                  ) extends VectorFeatures {
 
   /**
@@ -24,9 +24,9 @@ case class Points(
     * @return
     */
   def asSpatialField[T: ClassTag](defaultAttribute: T): SpatialField[T] = {
-    val attributesNames = attributes.keys.map(_._2).toSet.toArray
-    points.zipWithIndex.map{case (p,i) =>
-      ((p.getCoordinate.x,p.getCoordinate.y),attributesNames.map(s => attributes.getOrElse((i,s),defaultAttribute).asInstanceOf[T]))
+    val attributesNames = attributes(0).keys.toArray // assumes all features have all attributes names
+    points.zip(attributes).map{case (p,attr) =>
+      ((p.getCoordinate.x,p.getCoordinate.y),attributesNames.map(s => attr.getOrElse(s,defaultAttribute).asInstanceOf[T]))
     }.toMap
   }
 
@@ -41,30 +41,22 @@ case class Points(
 
 object Points {
 
-  val empty = Points(Seq.empty[org.locationtech.jts.geom.Point], Map.empty)
+  val empty = Points(Seq.empty[org.locationtech.jts.geom.Point], Seq.empty)
 
 
   /**
     * construct from points (can not be apply, same type than case class constructor)
-    * @param points
-    * @param attributes
+    * @param points points
+    * @param attributes atrributes
     * @return
     */
-  def fromPoints(points: Iterable[Point],attributes: Map[(Int, String),AnyRef]): Points = {
+  def fromPoints(points: Iterable[Point],attributes:Seq[Attributes] = Seq.empty): Points = {
     val factory = new GeometryFactory
     Points(
       points.map{p => factory.createPoint(new Coordinate(p._1,p._2))}.toSeq,
       attributes
     )
   }
-
-  /**
-    * points with no attributes
-    * @param points
-    * @return
-    */
-  def fromPoints(points: Iterable[Point]): Points = fromPoints(points, Map.empty[(Int, String),AnyRef])
-
 
 
 

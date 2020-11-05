@@ -216,7 +216,7 @@ object APIExtractor {
         }.reduce(_&_)
         if (validnode) Try(fact.createPoint(node)).toOption else None
       }
-      Points(nodes.flatMap(toPoint), Map.empty)
+      Points(nodes.flatMap(toPoint), Seq.empty)
     }
 
 

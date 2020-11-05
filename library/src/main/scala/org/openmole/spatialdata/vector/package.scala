@@ -15,12 +15,16 @@ package object vector {
     */
   type SpatialField[N] = Map[Point,Array[N]]
 
+  /**
+    * Attributes for vector features
+    */
+  type Attributes = Map[String,AnyRef]
 
   object Implicits {
 
     //implicit def pointAsGeomPoint(p: Point): org.locationtech.jts.geom.Point = new org.locationtech.jts.geom.Point(Coordinate(p._1,p._2), new PrecisionModel, 0)
 
-    implicit def linestringSeqAsLines(l: Seq[org.locationtech.jts.geom.LineString]): Lines = Lines(l,Map.empty)
+    implicit def linestringSeqAsLines(l: Seq[org.locationtech.jts.geom.LineString]): Lines = Lines(l,Seq.empty)
 
     implicit class SpatialFieldDecorator[N](s: SpatialField[N]){
       // note: not needed as the transform function already exists for maps

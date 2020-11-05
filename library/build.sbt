@@ -17,6 +17,7 @@ lazy val commonSettings = Seq(
     "com.github.pathikrit" %% "better-files" % "3.8.0",
     "org.locationtech.jts" % "jts" % "1.16.1" pomOnly(),
     "org.geotools" % "gt-shapefile" % "23.0" exclude("javax.media", "jai_core") exclude("com.vividsolutions", "jts-core"),
+    "mil.nga.geopackage" % "geopackage" % "4.0.0", // to read GeoPackage files (360k only)
     "com.github.tototoshi" %% "scala-csv" % "1.3.6",
     "org.postgresql" % "postgresql" % "42.2.5",
     "org.mongodb" % "mongo-java-driver" % "3.10.0",

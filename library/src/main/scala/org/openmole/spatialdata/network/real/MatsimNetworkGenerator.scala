@@ -70,7 +70,7 @@ object MatsimNetworkGenerator {
 
     // write nodes
     xml.write("<nodes>\n")
-    nw.nodes.foreach(n => xml.write("<node id=\""+n.id+"\" x=\""+n.x+"\" y=\""+n.y+"\" />"))
+    nw.nodes.foreach(n => xml.write("<node id=\""+n.id+"\" x=\""+n.x+"\" y=\""+n.y+"\" />\n"))
     xml.write("</nodes>\n\n")
 
     // links
@@ -78,11 +78,11 @@ object MatsimNetworkGenerator {
     nw.links.zipWithIndex.foreach{
       case (l,i) =>
         xml.write(
-          "<link id=\""+i+"\" from=\""+l.e1.id+"\" to=\""+l.e2.id+"\" length=\""+l.length+"\" freespeed=\""+l.weight+"\" capacity=\"1\" permlanes=\"1\" oneway=\"1\" origid=\""+i+"\" />"
+          "<link id=\""+i+"\" from=\""+l.e1.id+"\" to=\""+l.e2.id+"\" length=\""+l.length+"\" freespeed=\""+l.weight+"\" capacity=\"1\" permlanes=\"1\" oneway=\"1\" origid=\""+i+"\" />\n"
         )
-        if (!nw.directed) xml.write("<link id=\""+(i+nw.links.size).toString+"\" from=\""+l.e2.id+"\" to=\""+l.e1.id+"\" length=\""+l.length+"\" freespeed=\""+l.weight+"\" capacity=\"1\" permlanes=\"1\" oneway=\"1\" origid=\""+(i+nw.links.size).toString+"\" />")
+        if (!nw.directed) xml.write("<link id=\""+(i+nw.links.size).toString+"\" from=\""+l.e2.id+"\" to=\""+l.e1.id+"\" length=\""+l.length+"\" freespeed=\""+l.weight+"\" capacity=\"1\" permlanes=\"1\" oneway=\"1\" origid=\""+(i+nw.links.size).toString+"\" />\n")
     }
-    xml.write("</links>")
+    xml.write("</links>\n\n")
 
     xml.write(FOOTER)
     xml.close()

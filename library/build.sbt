@@ -19,7 +19,7 @@ lazy val commonSettings = Seq(
     "org.locationtech.jts" % "jts" % "1.16.1" pomOnly(),
     "org.geotools" % "gt-shapefile" % "23.0" exclude("javax.media", "jai_core") exclude("com.vividsolutions", "jts-core"),
     "org.geotools" % "gt-geopkg" % "23.0", // to read GeoPackage files (112k only)
-    "org.geotools" % "gt-epsg-hsql" % "23.0", // explicitly load for CRS decoding
+    "org.geotools" % "gt-epsg-hsql" % "23.0", // explicitly load for CRS decoding - enough? EPSG:54009 not found
     "com.github.tototoshi" %% "scala-csv" % "1.3.6",
     "org.postgresql" % "postgresql" % "42.2.5",
     "org.mongodb" % "mongo-java-driver" % "3.10.0",

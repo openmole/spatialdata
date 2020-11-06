@@ -4,5 +4,6 @@ import org.scalatest.Suites
 
 class UtilsIOSuite extends Suites(
   new BinarySpec,
-  new CSVSpec
+  new CSVSpec,
+  new GeoPackageSpec
 )

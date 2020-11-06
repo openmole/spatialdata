@@ -1,12 +1,26 @@
 package org.openmole.spatialdata.test
 
-import org.openmole.spatialdata.utils.io.{Binary, CSV}
+import java.io.File
+
+import org.locationtech.jts.io.WKTWriter
+import org.openmole.spatialdata.utils.io.{Binary, CSV, GeoPackage}
 import org.openmole.spatialdata.utils.math.{DenseMatrix, Matrix, Stochastic}
 
 import scala.util.Random
 
 
 object TestUtils {
+
+
+  def testGeopackageInput(): Unit = {
+    val path = System.getenv("CS_HOME")+"/Data/JRC_EC/GHS/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0_WGS84.gpkg"
+    if (new File(path).exists()){
+      val features = GeoPackage.readGeometry(path,featureName = "GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0_WGS84")
+      val wktwriter: WKTWriter = new WKTWriter()
+      features.foreach(f => println(wktwriter.write(f._1)))
+      println(s"Features: ${features.size}")
+    }
+  }
 
 
   def testCSVMatrix(): Unit = {

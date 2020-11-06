@@ -26,7 +26,7 @@ object Test extends App {
   //TestMatsim.testMatsimNetworkGenerator()
 
   // Real networks
-  TestNetwork.testGISNetwork()
+  //TestNetwork.testGISNetwork()
 
   // OSM
   //TestOSM.testBuildingExtractor()
@@ -69,6 +69,7 @@ object Test extends App {
   //TestMaths.testConvolution2D
 
   // Utils
+  TestUtils.testGeopackageInput()
   //TestUtils.testCSVMatrix
   //TestUtils.testBinaryIO
   //TestUtils.testSampling

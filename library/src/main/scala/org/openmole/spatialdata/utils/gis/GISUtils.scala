@@ -80,7 +80,7 @@ object GISUtils {
     val transform = CRS.findMathTransform(source, target, true)
     val geomFactory = new GeometryFactory
     points.map { p => {
-      val c = JTS.transform(geomFactory.createPoint(new Coordinate(p._1, p._2)), transform).getCoordinate;
+      val c = JTS.transform(geomFactory.createPoint(new Coordinate(p._1, p._2)), transform).getCoordinate
       (c.x, c.y)
       }
     }
@@ -91,7 +91,7 @@ object GISUtils {
     val transform = CRS.findMathTransform(source, target, true)
     val geomFactory = new GeometryFactory
     points.map { p => {
-      val c = JTS.transform(geomFactory.createPoint(new Coordinate(p._1, p._2)), transform).getCoordinate;
+      val c = JTS.transform(geomFactory.createPoint(new Coordinate(p._1, p._2)), transform).getCoordinate
       (c.x, c.y)
     }
     }

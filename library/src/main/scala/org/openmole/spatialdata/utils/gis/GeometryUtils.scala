@@ -1,10 +1,8 @@
 package org.openmole.spatialdata.utils.gis
 
-import org.locationtech.jts.geom
 import org.locationtech.jts.geom.{Geometry, GeometryFactory, LineString, MultiLineString}
 import org.openmole.spatialdata.vector._
 
-import scala.jdk.CollectionConverters._
 
 object GeometryUtils {
 
@@ -51,12 +49,15 @@ object GeometryUtils {
     }
   }
 
-  /**
+  /*
     * Convert a GeoPackage spatialfeature Geometry to a JTS Geometry
+    *
+    *  -- Not needed if use gt-geopkg library instead of mil.nga.Geopackage --
+    *
     * @param g geomtry
     * @return
     */
-  def toJTSGeomtry(g: mil.nga.sf.Geometry): geom.Geometry = {
+  /*def toJTSGeomtry(g: mil.nga.sf.Geometry): geom.Geometry = {
     val fact = new GeometryFactory
     g.getGeometryType match {
       case mil.nga.sf.GeometryType.POINT => {
@@ -90,6 +91,6 @@ object GeometryUtils {
       }
     }
   }
-
+  */
 
 }

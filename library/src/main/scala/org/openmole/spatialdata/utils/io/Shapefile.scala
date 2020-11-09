@@ -17,7 +17,7 @@ object Shapefile {
   /**
     * Read a shapefile
     * @param layer layer
-    * @param attributes attributes to retrieve as a Array of attributes names (necessary to have the type or not needed?)
+    * @param attributes attributes to retrieve as a Array of attributes names (necessary to have the type or not needed? getClass)
     * @return
     */
   def readGeometry(layer: String,attributes:Array[String]=Array.empty): Seq[(Geometry,Attributes)] = {
@@ -35,6 +35,7 @@ object Shapefile {
             geoms.append((feature.getDefaultGeometry.asInstanceOf[Geometry],
               attributes.map{s => (s,feature.getAttribute(s))}.toMap))
           }
+          utils.log("Read features: "+geoms.length)
           geoms.toSeq
         }finally reader.close()
       } finally store.dispose()

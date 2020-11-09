@@ -19,6 +19,11 @@ case class Lines(
 
   def tail: Lines = Lines(lines.tail,attributes.tail)
 
+  def filter(f: ((geom.LineString,Attributes)) => Boolean): Lines = {
+    val (fl,fattr) = lines.zip(attributes).filter(f).unzip
+    Lines(fl,fattr)
+  }
+
 }
 
 object Lines {

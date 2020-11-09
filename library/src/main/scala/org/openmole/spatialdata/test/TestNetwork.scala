@@ -63,7 +63,7 @@ object TestNetwork {
   }
 
   def testGISNetwork(): Unit = {
-    val nw = GISFileNetworkGenerator(System.getenv("CS_HOME")+"/UrbanDynamics/Models/Matsim/Network/test/mygeodata/road_line.shp").generateNetwork
+    val nw = GISFileNetworkGenerator(Seq(System.getenv("CS_HOME")+"/UrbanDynamics/Models/Matsim/Network/test/mygeodata/road_line.shp")).generateNetwork
     val (xmin,xmax,ymin,ymax) = (nw.nodes.map{_.x}.min,nw.nodes.map{_.x}.max,nw.nodes.map{_.y}.min,nw.nodes.map{_.y}.max)
     def position(n: Node): Point = ((n.x - xmin)/(xmax-xmin),(n.y - ymin)/(ymax-ymin))
     visualization.staticNetworkVisualization(Seq(nw),nodePositioning = position)

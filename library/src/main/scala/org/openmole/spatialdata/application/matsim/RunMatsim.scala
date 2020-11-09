@@ -17,8 +17,10 @@ object RunMatsim extends App {
       println("Running road network construction for MATSim model in UK")
       // FUA names as arguments - for testing purpose, Manchester, London are on 4 OSRoads tile, Exeter also but smaller in terms of data
       // Exeter: SS,ST,SX,SY
+      // Exeter test command
+      // run --network --FUAName=Exeter --FUAFile=/Users/juste/ComplexSystems/Data/JRC_EC/GHS/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0_WGS84.gpkg --datadir=/Users/juste/ComplexSystems/UrbanDynamics/Data/OrdnanceSurvey/OSOpenRoads --output=/Users/juste/ComplexSystems/UrbanDynamics/Data/OrdnanceSurvey/OSOpenRoads/Exeter_Roads.xml
 
-      if(args.length!=4) throw new IllegalArgumentException("Missing arguments; usage: --network --FUAName=$NAME1,$NAME2,...,$NAMEN --FUAFile=$PATH --datadir=$DATADIR")
+      if(args.length!=5) throw new IllegalArgumentException("Missing arguments; usage: --network --FUAName=$NAME1,$NAME2,...,$NAMEN --FUAFile=$PATH --datadir=$DATADIR --output=$OUTPUT")
 
       val fuanames: Array[String] = args(1).split("=")(1).split(",")
       println("Constructing network for FUA: "+fuanames.mkString(","))
@@ -44,13 +46,16 @@ object RunMatsim extends App {
 
       // find tiles with non empty intersection with FUAs
       val reqtiles: Seq[(geom.Polygon,Attributes)] = tiles.polygons.zip(tiles.attributes).filter(_._1.intersects(area))
-      println("Requested tiles names are: "+reqtiles.map(_._2.get("name")).mkString(","))
+      val tilenames = reqtiles.map(_._2.getOrElse("name",""))
+      println("Requested tiles names are: "+tilenames.mkString(","))
 
-      //val nw = GISFileNetworkGenerator(args(1)).generateNetwork
-      //println(nw)
+      // construct network - ! OS files do not have speed attribute?
+      val mask: Option[Either[geom.Geometry,String]] = Some(Left(area))
+      val nw = GISFileNetworkGenerator(tilenames.map{s => roaddatadir+"/"+s+"_RoadLink_WGS84.shp"}, weightAttribute = "", mask = mask).generateNetwork
+      println("Network size: |V| = "+nw.nodes.size+"; |E| = "+nw.links.size)
+
       // export network to matsim format
-      //Gexf.writeGexf(nw,"/data/outputs/network.gexf")
-      //MatsimNetworkGenerator.writeMatsimXML(nw, args(2))
+      MatsimNetworkGenerator.writeMatsimXML(nw, args(3).split("=")(1))
 
     case "--synthpop" =>
       // convert spenser synth pop files to Matsim population

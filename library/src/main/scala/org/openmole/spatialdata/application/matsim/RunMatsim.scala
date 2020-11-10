@@ -2,9 +2,11 @@ package org.openmole.spatialdata.application.matsim
 
 import org.openmole.spatialdata.network.real.{GISFileNetworkGenerator, MatsimNetworkGenerator}
 import org.openmole.spatialdata.utils.io.{GeoPackage, Shapefile}
-import org.openmole.spatialdata.vector.{Attributes, Polygons}
+import org.openmole.spatialdata.vector.{Attributes, Lines, Polygons}
 import org.locationtech.jts.geom
 import org.locationtech.jts.io.WKTWriter
+import org.openmole.spatialdata.utils
+import org.openmole.spatialdata.utils.gis.GeometryUtils
 
 import scala.util.Random
 
@@ -33,8 +35,8 @@ object RunMatsim extends App {
       // name field for FUAs assumed as eFUA_name (JRC file) - add this as an option?
       val fuas = allfuas.filter(f => fuanames.contains(f._2.getOrElse("eFUA_name","").asInstanceOf[String]))
       //val fuas = Polygons.fromGeometries(fuasgeoms,fuasattrs) // this fails as FUAs are multipolygons
-      // if several FUAs, take the counding box to ensure a connected network, otherwise juste the polygon
-      val area: geom.Geometry = if(fuas.size==1) fuas(0)._1 else Polygons(fuas.map(_._1.asInstanceOf[geom.Polygon])).getEnvelope
+      // if several FUAs, take the counding box to ensure a connected network, otherwise juste the polygon (take first of multipolygon)
+      val area: geom.Geometry = if(fuas.size==1) fuas(0)._1.asInstanceOf[geom.MultiPolygon].getGeometryN(0) else Polygons(fuas.map(_._1.asInstanceOf[geom.Polygon])).getEnvelope
       println("Target network area: "+new WKTWriter().write(area))
 
       // load road data coverage
@@ -50,12 +52,23 @@ object RunMatsim extends App {
       println("Requested tiles names are: "+tilenames.mkString(","))
 
       // construct network - ! OS files do not have speed attribute?
+      // why are coordinates translated? issue with shp vs geopkg?
       val mask: Option[Either[geom.Geometry,String]] = Some(Left(area))
-      val nw = GISFileNetworkGenerator(tilenames.map{s => roaddatadir+"/"+s+"_RoadLink_WGS84.shp"}, weightAttribute = "", mask = mask).generateNetwork
+      val reproject: Option[Lines => Lines] = Some({
+        lines: Lines =>
+          val reproj = lines.transform("EPSG:27700","EPSG:4326")
+          //utils.log("Before tr: "+reproj.lines.take(2).map(_.toString).mkString("\n"))
+          val trlines: Lines = Lines(reproj.lines.map(GeometryUtils.transpose(_).asInstanceOf[geom.LineString]),lines.attributes)
+          //utils.log("Transposed: "+trlines.lines.take(2).map(_.toString).mkString("\n"))
+          trlines
+      })
+      val nw = GISFileNetworkGenerator(tilenames.map{s => roaddatadir+"/"+s+"_RoadLink.shp"}, weightAttribute = "", mask = mask, reproject=reproject).generateNetwork
       println("Network size: |V| = "+nw.nodes.size+"; |E| = "+nw.links.size)
 
       // export network to matsim format
-      MatsimNetworkGenerator.writeMatsimXML(nw, args(3).split("=")(1))
+      val output = args(4).split("=")(1)
+      println("Exporting network to file "+output)
+      MatsimNetworkGenerator.writeMatsimXML(nw, output)
 
     case "--synthpop" =>
       // convert spenser synth pop files to Matsim population

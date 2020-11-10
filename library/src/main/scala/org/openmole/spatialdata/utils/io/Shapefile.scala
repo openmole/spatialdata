@@ -35,7 +35,9 @@ object Shapefile {
             geoms.append((feature.getDefaultGeometry.asInstanceOf[Geometry],
               attributes.map{s => (s,feature.getAttribute(s))}.toMap))
           }
-          utils.log("Read features: "+geoms.length)
+          //utils.log("Read features: "+geoms.length)
+          //utils.log("xmin = "+geoms.map(_._1.getEnvelopeInternal.getMinX).min+" ; xmax = "+geoms.map(_._1.getEnvelopeInternal.getMaxX).max+" ; ymin = "+geoms.map(_._1.getEnvelopeInternal.getMinY).min+" ; ymax = "+geoms.map(_._1.getEnvelopeInternal.getMaxY).max)
+          //utils.log(geoms.take(2).map(_.toString).mkString("\n"))
           geoms.toSeq
         }finally reader.close()
       } finally store.dispose()

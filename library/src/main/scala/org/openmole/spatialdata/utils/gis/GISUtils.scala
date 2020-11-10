@@ -1,11 +1,11 @@
 
 package org.openmole.spatialdata.utils.gis
 
+import org.locationtech.jts.geom
 import org.locationtech.jts.geom.{Coordinate, CoordinateSequence, CoordinateSequenceFilter, GeometryFactory}
 import org.geotools.geometry.jts.JTS
 import org.geotools.referencing.CRS
 import org.opengis.referencing.crs.CoordinateReferenceSystem
-
 import org.openmole.spatialdata.vector.Point
 
 object GISUtils {
@@ -39,7 +39,7 @@ object GISUtils {
     * CoordinateSequenceFilter to convert WGS84 coordinate sequences to WGS 84 / Pseudo-Mercator (EPSG:3857).
     */
   class WGS84toPseudoMercatorFilter extends CoordinateSequenceFilter {
-    def filter(seq: CoordinateSequence, i: Int) = {
+    def filter(seq: CoordinateSequence, i: Int): Unit = {
       if ((i != seq.size - 1) || (seq.getCoordinate(i) != seq.getCoordinate(0))) {
         val coord = seq.getCoordinate(i)
         val t = WGS84ToPseudoMercator(coord.x, coord.y)
@@ -69,9 +69,9 @@ object GISUtils {
 
   /**
     * Transform a set of points
-    * @param points
-    * @param sourceCRS
-    * @param targetCRS
+    * @param points points
+    * @param sourceCRS code of source CRS
+    * @param targetCRS code of target CRS
     * @return
     */
   def transform(points: Seq[Point],sourceCRS: String,targetCRS: String): Seq[Point] = {
@@ -86,6 +86,13 @@ object GISUtils {
     }
   }
 
+  /**
+    * Transform a set of points given CRS
+    * @param points points
+    * @param source source CRS
+    * @param target target CRS
+    * @return
+    */
   def transform(points: Seq[Point],source: CoordinateReferenceSystem,target: CoordinateReferenceSystem): Seq[Point] = {
 
     val transform = CRS.findMathTransform(source, target, true)
@@ -95,6 +102,20 @@ object GISUtils {
       (c.x, c.y)
     }
     }
+  }
+
+  /**
+    * Transform a geometry
+    * @param g geometry
+    * @param sourceCRS source CRS
+    * @param targetCRS target CRS
+    * @return
+    */
+  def transform(g: geom.Geometry, sourceCRS: String, targetCRS: String): geom.Geometry = {
+    val source = CRS.decode(sourceCRS)
+    val target = CRS.decode(targetCRS)
+    val transform = CRS.findMathTransform(source, target, true)
+    JTS.transform(g, transform)
   }
 
 

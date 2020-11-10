@@ -1,5 +1,6 @@
 package org.openmole.spatialdata.utils.gis
 
+import org.locationtech.jts.geom
 import org.locationtech.jts.geom.{Geometry, GeometryFactory, LineString, MultiLineString}
 import org.openmole.spatialdata.vector._
 
@@ -8,7 +9,7 @@ object GeometryUtils {
 
   /**
     * Get the centroid of the convex hull of a point cloud
-    * @param pi
+    * @param pi points
     * @return
     */
   def convexHullCentroid(pi: Array[Point]): Point = {
@@ -41,11 +42,25 @@ object GeometryUtils {
     */
   def geometryToLines(g: Geometry): Lines = {
     g.getGeometryType match {
-      case s if s == "MultiLineString" => {
+      case s if s == "MultiLineString" =>
         val n = g.getNumGeometries
         Lines((0 until n).map{i => g.asInstanceOf[MultiLineString].getGeometryN(i).asInstanceOf[LineString]},Seq.empty)
-      }
       case _ => Lines.empty
+    }
+  }
+
+  def transpose(c: geom.Coordinate): geom.Coordinate = new geom.Coordinate(c.getY,c.getX)
+
+  def transpose(g: Geometry): Geometry = {
+    val fact = new GeometryFactory
+    g.getGeometryType match {
+      case "Point" => val p = g.asInstanceOf[geom.Point]; fact.createPoint(transpose(p.getCoordinate))
+      case "MultiPoint" => val mp = g.asInstanceOf[geom.MultiPoint]; fact.createMultiPointFromCoords(mp.getCoordinates.map(transpose))
+      case "Polygon" => val p = g.asInstanceOf[geom.Polygon]; fact.createPolygon(p.getCoordinates.map(transpose))
+      case "MultiPolygon" => val mp = g.asInstanceOf[geom.MultiPolygon]; fact.createMultiPolygon((1 to mp.getNumGeometries).map{i => transpose(mp.getGeometryN(i)).asInstanceOf[geom.Polygon]}.toArray)
+      case "LineString" => val ls = g.asInstanceOf[geom.LineString]; fact.createLineString(ls.getCoordinates.map(transpose))
+      case "MultiLineString" => val mls = g.asInstanceOf[geom.MultiLineString]; fact.createMultiLineString((1 to mls.getNumGeometries).map{i => transpose(mls.getGeometryN(i)).asInstanceOf[geom.LineString]}.toArray)
+      case t => throw new UnsupportedOperationException("Cannot transpose geometry: "+t)
     }
   }
 

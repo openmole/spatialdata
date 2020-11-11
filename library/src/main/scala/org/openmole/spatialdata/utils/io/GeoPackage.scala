@@ -3,7 +3,7 @@ package org.openmole.spatialdata.utils.io
 import java.io.File
 
 import org.geotools.data.simple.SimpleFeatureReader
-import org.geotools.geopkg.{FeatureEntry, GeoPackage}
+import org.geotools.geopkg.FeatureEntry
 import org.locationtech.jts.geom.Geometry
 import org.opengis.feature.simple.SimpleFeature
 import org.openmole.spatialdata.vector.Attributes
@@ -32,7 +32,7 @@ object GeoPackage {
     * @return
     */
   def readGeometry(layer: String, featureIndex: Int = 0, featureName: String = "", attributes: Array[String]=Array.empty, geometryColumn: String = "geom"): Seq[(Geometry,Attributes)] = {
-    val geopkg: GeoPackage  = new GeoPackage(new File(layer))
+    val geopkg: org.geotools.geopkg.GeoPackage  = new org.geotools.geopkg.GeoPackage(new File(layer))
     val featureentry: FeatureEntry = if(featureName.length>0) geopkg.feature(featureName) else geopkg.features().get(featureIndex)
     val freader: SimpleFeatureReader = geopkg.reader(featureentry, null, null)
     val res: ArrayBuffer[(Geometry,Attributes)] = new ArrayBuffer

@@ -21,6 +21,8 @@ object RunMatsim extends App {
       // Exeter: SS,ST,SX,SY
       // Exeter test command
       // run --network --FUAName=Exeter --FUAFile=/Users/juste/ComplexSystems/Data/JRC_EC/GHS/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0_WGS84.gpkg --datadir=/Users/juste/ComplexSystems/UrbanDynamics/Data/OrdnanceSurvey/OSOpenRoads --output=/Users/juste/ComplexSystems/UrbanDynamics/Data/OrdnanceSurvey/OSOpenRoads/Exeter_Roads.xml
+      // Test London: SP,SU,TL,TQ
+
 
       if(args.length!=5) throw new IllegalArgumentException("Missing arguments; usage: --network --FUAName=$NAME1,$NAME2,...,$NAMEN --FUAFile=$PATH --datadir=$DATADIR --output=$OUTPUT")
 
@@ -31,12 +33,14 @@ object RunMatsim extends App {
       val fuapath: String = args(2).split("=")(1)
       val fualayername = fuapath.split("/").last.split("\\.")(0)
       println("FUAs file path: "+fuapath+" ; layername: "+fualayername)
-      val allfuas = GeoPackage.readGeometry(fuapath,featureName = fualayername, attributes = Array("eFUA_name"))
+      val allfuas = GeoPackage.readGeometry(fuapath,featureName = fualayername, attributes = Array("eFUA_name","Cntry_ISO"))
       // name field for FUAs assumed as eFUA_name (JRC file) - add this as an option?
-      val fuas = allfuas.filter(f => fuanames.contains(f._2.getOrElse("eFUA_name","").asInstanceOf[String]))
+      // hardcoded for UK (anyway done with file structure)
+      val fuas = allfuas.filter(f => fuanames.contains(f._2.getOrElse("eFUA_name","").asInstanceOf[String])&&f._2.getOrElse("Cntry_ISO","").asInstanceOf[String].equals("GBR"))
       //val fuas = Polygons.fromGeometries(fuasgeoms,fuasattrs) // this fails as FUAs are multipolygons
       // if several FUAs, take the counding box to ensure a connected network, otherwise juste the polygon (take first of multipolygon)
-      val area: geom.Geometry = if(fuas.size==1) fuas(0)._1.asInstanceOf[geom.MultiPolygon].getGeometryN(0) else Polygons(fuas.map(_._1.asInstanceOf[geom.Polygon])).getEnvelope
+      // (anyway mask is implemented with bbox in the GISNetworkGenerator)
+      val area: geom.Geometry = if(fuas.length==1) fuas(0)._1.asInstanceOf[geom.MultiPolygon].getGeometryN(0) else Polygons(fuas.map(_._1.asInstanceOf[geom.MultiPolygon].getGeometryN(0).asInstanceOf[geom.Polygon])).getEnvelope
       println("Target network area: "+new WKTWriter().write(area))
 
       // load road data coverage

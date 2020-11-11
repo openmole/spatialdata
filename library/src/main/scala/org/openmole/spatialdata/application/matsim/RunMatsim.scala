@@ -24,7 +24,7 @@ object RunMatsim extends App {
       // Test London: SP,SU,TL,TQ
 
 
-      if(args.length!=5) throw new IllegalArgumentException("Missing arguments; usage: --network --FUAName=$NAME1,$NAME2,...,$NAMEN --FUAFile=$PATH --TilesFile=$PATHTILES --datadir=$DATADIR --output=$OUTPUT")
+      if(args.length!=6) throw new IllegalArgumentException("Missing arguments; usage: --network --FUAName=$NAME1,$NAME2,...,$NAMEN --FUAFile=$PATH --TilesFile=$PATHTILES --datadir=$DATADIR --output=$OUTPUT")
 
       val fuanames: Array[String] = args(1).split("=")(1).split(",")
       println("Constructing network for FUA: "+fuanames.mkString(","))

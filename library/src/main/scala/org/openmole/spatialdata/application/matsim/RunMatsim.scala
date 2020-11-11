@@ -24,7 +24,7 @@ object RunMatsim extends App {
       // Test London: SP,SU,TL,TQ
 
 
-      if(args.length!=5) throw new IllegalArgumentException("Missing arguments; usage: --network --FUAName=$NAME1,$NAME2,...,$NAMEN --FUAFile=$PATH --datadir=$DATADIR --output=$OUTPUT")
+      if(args.length!=5) throw new IllegalArgumentException("Missing arguments; usage: --network --FUAName=$NAME1,$NAME2,...,$NAMEN --FUAFile=$PATH --TilesFile=$PATHTILES --datadir=$DATADIR --output=$OUTPUT")
 
       val fuanames: Array[String] = args(1).split("=")(1).split(",")
       println("Constructing network for FUA: "+fuanames.mkString(","))
@@ -45,8 +45,8 @@ object RunMatsim extends App {
 
       // load road data coverage
       // (note: specific to UK and split road dataset)
-      val roaddatadir: String = args(3).split("=")(1)
-      val (tilesgeoms,tilesattrs) = Shapefile.readGeometry(roaddatadir+"/OSOpenRoadsTiles.shp", Array("name")).unzip // tile layer name is hardcoded
+      val tilesfile: String = args(3).split("=")(1)
+      val (tilesgeoms,tilesattrs) = Shapefile.readGeometry(tilesfile, Array("name")).unzip // tile layer name is hardcoded
       val tiles = Polygons.fromGeometries(tilesgeoms,tilesattrs)
       println("Map tiles: "+tiles.polygons.size)
 
@@ -57,6 +57,7 @@ object RunMatsim extends App {
 
       // construct network - ! OS files do not have speed attribute?
       // why are coordinates translated? issue with shp vs geopkg?
+      val roaddatadir: String = args(4).split("=")(1)
       val mask: Option[Either[geom.Geometry,String]] = Some(Left(area))
       val reproject: Option[Lines => Lines] = Some({
         lines: Lines =>
@@ -70,7 +71,7 @@ object RunMatsim extends App {
       println("Network size: |V| = "+nw.nodes.size+"; |E| = "+nw.links.size)
 
       // export network to matsim format
-      val output = args(4).split("=")(1)
+      val output = args(5).split("=")(1)
       println("Exporting network to file "+output)
       MatsimNetworkGenerator.writeMatsimXML(nw, output)
 

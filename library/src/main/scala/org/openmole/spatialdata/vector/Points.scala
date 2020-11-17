@@ -24,7 +24,7 @@ case class Points(
     * @return
     */
   def asSpatialField[T: ClassTag](defaultAttribute: T): SpatialField[T] = {
-    val attributesNames = attributes(0).keys.toArray // assumes all features have all attributes names
+    val attributesNames = attributes.head.keys.toArray // assumes all features have all attributes names
     points.zip(attributes).map{case (p,attr) =>
       ((p.getCoordinate.x,p.getCoordinate.y),attributesNames.map(s => attr.getOrElse(s,defaultAttribute).asInstanceOf[T]))
     }.toMap
@@ -41,7 +41,7 @@ case class Points(
 
 object Points {
 
-  val empty = Points(Seq.empty[org.locationtech.jts.geom.Point], Seq.empty)
+  val empty: Points = Points(Seq.empty[org.locationtech.jts.geom.Point], Seq.empty)
 
 
   /**

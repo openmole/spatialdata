@@ -29,7 +29,8 @@ lazy val commonSettings = Seq(
     "org.apache.commons" % "commons-lang3" % "3.1",
     "org.scalanlp" %% "breeze" % "1.0",
     "com.github.fommil.netlib" % "all" % "1.1.2", // impl for breeze
-    "de.ruedigermoeller" % "fst" % "2.57"
+    "de.ruedigermoeller" % "fst" % "2.57",
+    "org.openstreetmap.pbf" % "osmpbf" % "1.4.0"
   ),
   cancelable in Global := true,
   scalacOptions in ThisBuild ++= Seq("-unchecked", "-deprecation","-feature")

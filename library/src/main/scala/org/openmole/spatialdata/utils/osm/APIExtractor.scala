@@ -1,5 +1,6 @@
 package org.openmole.spatialdata.utils.osm
 
+import java.io.{File, FileReader, InputStreamReader}
 import java.sql.Connection
 import java.util.Locale
 
@@ -15,12 +16,18 @@ import scala.util.Try
 
 object APIExtractor {
 
+  /**
+    * Mode to retrieve OSM data
+    *
+    * ! need to rewrite archi to be generic enough for API/file (bbox not needed in case of file)
+    */
   sealed trait OSMAPIMode
   case object OSMOverpass extends OSMAPIMode
   case object OSMDirect extends OSMAPIMode
   case class Postgresql(port: Int = 5433) extends OSMAPIMode
   case class Mongo(port: Int = 27017) extends OSMAPIMode
-
+  case class OSMFile(file: String) extends OSMAPIMode
+  case class OSMPBFFile(file: String) extends OSMAPIMode
 
   /**
     * Methods to extract buildings
@@ -49,7 +56,7 @@ object APIExtractor {
       * @param mode osm,overpass, postgresql
       * @return
       */
-    def getBuildings(south: Double, west: Double, north: Double, east: Double, mode: OSMAPIMode = OSMOverpass): Seq[Polygon] = {
+    def getBuildings(south: Double = 0.0, west: Double = 0.0, north: Double = 0.0, east: Double = 0.0, mode: OSMAPIMode = OSMOverpass): Seq[Polygon] = {
       Locale.setDefault(Locale.ENGLISH)
       mode match {
         case OSMOverpass =>
@@ -78,6 +85,15 @@ object APIExtractor {
           MongoConnection.closeMongo()
           polygons
 
+        case OSMFile(file) =>
+          val root = new OSMRoot
+          OSMXmlParser(root).parse(new FileReader(new File(file)))
+          asPolygonSeq(root.getWays)
+
+        case OSMPBFFile(file) =>
+          val fact = new GeometryFactory()
+          val (_,ways) = utils.osm.OSMPBFFile.readPBFFile(file)
+          ways.lines.map{l => fact.createPolygon(l.getCoordinates)}
       }
       /*
 
@@ -163,7 +179,7 @@ object APIExtractor {
       * @param north north coord
       * @param east east coord
       * @param tags tags
-      * @return FIXME
+      * @return
       *
       */
     def getHighways(south: Double, west: Double, north: Double, east: Double,

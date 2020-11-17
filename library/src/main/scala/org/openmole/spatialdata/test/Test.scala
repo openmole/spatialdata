@@ -31,6 +31,7 @@ object Test extends App {
   // OSM
   //TestOSM.testBuildingExtractor()
   //TestOSM.testOSMGridSampling()
+  TestOSM.testOSMPBFFile()
 
   // Database
   //TestDatabase.testPostgis
@@ -69,7 +70,7 @@ object Test extends App {
   //TestMaths.testConvolution2D
 
   // Utils
-  TestUtils.testGeopackageInput()
+  //TestUtils.testGeopackageInput()
   //TestUtils.testCSVMatrix
   //TestUtils.testBinaryIO
   //TestUtils.testSampling

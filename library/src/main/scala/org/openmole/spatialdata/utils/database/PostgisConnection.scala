@@ -21,8 +21,8 @@ object PostgisConnection {
 
   /**
     * Initializes and returns a connection with local postgis database
-    * @param database
-    * @param port
+    * @param database database name
+    * @param port port
     * @return
     */
   def initPostgis(database: String,port: Int = 5432): Connection = {
@@ -45,20 +45,22 @@ object PostgisConnection {
 
   /**
     * Close the implicit Postgis connection
-    * @param connection
+    * @param connection connection
     */
   def closeConnection()(implicit connection: Connection): Unit = connection.close()
 
   /**
-    * get polygons in a bbox
-    * @param xmin
-    * @param ymin
-    * @param xmax
-    * @param ymax
-    * @param table
+    * Get polygons in a bbox
+    *
+    * geotools postgis more performant ? for now via WKT
+    *
+    * @param lonmin min longitude
+    * @param latmin min latitude
+    * @param lonmax max longitude
+    * @param latmax max latitude
+    * @param table table name in which to request features
     * @return
     */
-  // FIXME geotools postgis more performant ? for now via WKT
   def bboxRequest(lonmin: Double,latmin: Double,lonmax: Double,latmax: Double,table: String)(implicit connection: Connection): Seq[Polygon] = {
 
     /*

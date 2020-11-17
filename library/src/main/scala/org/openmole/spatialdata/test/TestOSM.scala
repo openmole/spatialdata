@@ -1,11 +1,12 @@
 package org.openmole.spatialdata.test
 
+import org.locationtech.jts.io.WKTWriter
 import org.openmole.spatialdata.grid
 import org.openmole.spatialdata.grid.measures.GridMorphology
 import org.openmole.spatialdata.grid.real.{OSMGridGenerator, OSMGridSampling}
-import org.openmole.spatialdata.utils.osm.{APIOverpass, OSMRoot, OSMXmlParser}
+import org.openmole.spatialdata.utils.osm.{APIExtractor, APIOverpass, OSMRoot, OSMXmlParser}
 import org.openmole.spatialdata.utils.osm.APIExtractor.Buildings.asPolygonSeq
-import org.openmole.spatialdata.utils.osm.APIExtractor.OSMDirect
+import org.openmole.spatialdata.utils.osm.APIExtractor.{OSMDirect, OSMPBFFile}
 //import org.openmole.spatialdata.utils.visualization
 
 import scala.util.Random
@@ -14,6 +15,14 @@ object TestOSM {
 
   implicit val rng: Random = new Random
 
+
+  def testOSMPBFFile(): Unit = {
+    val buildings = APIExtractor.Buildings.getBuildings(mode = OSMPBFFile(//"http://download.geofabrik.de/europe/andorra-latest.osm.pbf"
+        "/Volumes/Maxtor/ComplexSystems/Data/OSM/Geofabrik/andorra/andorra-latest_20201117.osm.pbf"
+     ))
+    val wktwriter: WKTWriter = new WKTWriter()
+    println(buildings.map(wktwriter.write(_)).mkString("\n"))
+  }
 
 
   def testOverpass(): Unit = {

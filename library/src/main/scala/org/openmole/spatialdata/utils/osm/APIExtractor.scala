@@ -93,7 +93,13 @@ object APIExtractor {
         case OSMPBFFile(file) =>
           val fact = new GeometryFactory()
           val (_,ways) = utils.osm.OSMPBFFile.readPBFFile(file)
-          ways.lines.map{l => fact.createPolygon(l.getCoordinates)}
+          ways.lines.flatMap{l =>
+            val coords = l.getCoordinates
+            if (coords.length<=3) None else {
+              val closedcoords = if (coords(0).equals2D(coords.last)) coords else coords ++ Array(coords(0)) // force closing the linestring - should do the same in geom factory
+              Some(fact.createPolygon(closedcoords))
+            }
+          }
       }
       /*
 

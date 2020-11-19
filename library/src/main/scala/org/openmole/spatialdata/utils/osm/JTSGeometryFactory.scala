@@ -15,27 +15,15 @@ class JTSGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
   def createPoint(node: Node): Point = geometryFactory.createPoint(new Coordinate(node.getX, node.getY))
 
   def createLineString(way: Way): LineString = {
-    val coordinates = new Array[Coordinate](way.nodes.size)
-    val nodes = way.nodes
-    var i = 0
-    while ( {
-      i < nodes.size
-    }) {
-      val node = nodes(i)
-      coordinates(i) = new Coordinate(node.getX, node.getY)
-
-      {
-        i += 1; i - 1
-      }
-    }
-    if (!way.isPolygon) geometryFactory.createLineString(coordinates)
-    else throw new RuntimeException("Way expected not to be a polygon.")
+    geometryFactory.createLineString(way.nodes.map(n => new Coordinate(n.getX, n.getY)).toArray)
+    //else throw new RuntimeException("Way expected not to be a polygon.") can have closed linestrings
   }
 
   def createPolygon(way: Way): Polygon = {
     val coordinates = way.nodes.map(node=>new Coordinate(node.getX, node.getY)).toArray
-    if (!way.isPolygon) throw new RuntimeException("Way expected to be a polygon.")
-    else geometryFactory.createPolygon(geometryFactory.createLinearRing(coordinates), null)
+    //if (!way.isPolygon) throw new RuntimeException("Way expected to be a polygon.")
+    //else geometryFactory.createPolygon(geometryFactory.createLinearRing(coordinates), null)
+    geometryFactory.createPolygon(geometryFactory.createLinearRing(if (way.isPolygon) coordinates else coordinates++Array(coordinates.last)), null)
   }
 
   /**

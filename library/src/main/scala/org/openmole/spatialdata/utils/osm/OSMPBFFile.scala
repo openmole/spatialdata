@@ -5,15 +5,16 @@ import java.io.{File, FileInputStream}
 import crosby.binary.BinaryParser
 import crosby.binary.Osmformat._
 import crosby.binary.file.BlockInputStream
-import org.locationtech.jts.geom
 import org.locationtech.jts.geom.{Coordinate, GeometryFactory}
 import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.vector.{Lines, Points}
-import spire.compat.numeric
 
 import scala.collection.mutable
 import scala.jdk.CollectionConverters._
 
+/**
+  * See https://wiki.openstreetmap.org/wiki/PBF_Format for pbf format specification
+  */
 object OSMPBFFile {
 
   /**
@@ -40,6 +41,7 @@ object OSMPBFFile {
       Lines(
         waysSeq.map{case (ids,_) =>
           factory.createLineString(ids.map{l =>
+            //if (! nodes.contains(l)) println(l)
             val n = nodes.getOrElse(l,(0.0,0.0,Map.empty))
             new Coordinate(n._1,n._2)
           }.toArray)
@@ -60,6 +62,11 @@ object OSMPBFFile {
       //rels.asScala.map{r: Relation => r.getKeysList} // do nothing
     }
 
+    /**
+      * No attributes for dense nodes?
+      *  -> parse keyval array with delimiter '0'
+      * @param denseNodes dense nodes
+      */
     protected override def parseDense(denseNodes: DenseNodes): Unit = {
       var (id,lat,lon): (Long,Long,Long) = (0L,0L,0L)
       (0 until denseNodes.getIdCount).foreach{i =>
@@ -81,6 +88,7 @@ object OSMPBFFile {
     protected override def parseWays(wys: java.util.List[Way]): Unit = {
       wys.asScala.foreach { w =>
         val attrs: Map[String, String] = (0 until w.getKeysCount).map(i => (getStringById(w.getKeys(i)), getStringById(w.getVals(i)))).toMap
+        println(w.getRefsList.asScala.toSeq.map(_.asInstanceOf[Long]))
         val nodesids: Seq[Long] = utils.math.cumsum(w.getRefsList.asScala.toSeq.map(_.asInstanceOf[Long]))(Numeric.LongIsIntegral)
         ways.add((nodesids,attrs))
       }

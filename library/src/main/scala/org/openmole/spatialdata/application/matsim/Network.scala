@@ -25,26 +25,15 @@ object Network {
 
     if(args.length!=6) throw new IllegalArgumentException("Missing arguments; usage: --network --FUAName=$NAME1,$NAME2,...,$NAMEN --FUAFile=$PATH --TilesFile=$PATHTILES --datadir=$DATADIR --output=$OUTPUT")
 
-    val fuanames: Array[String] = args(1).split("=")(1).split(",")
+    val fuanames= Matsim.parseArg(args, "FUAName").split(",")
     println("Constructing network for FUA: "+fuanames.mkString(","))
-
-    // load FUAs as polygons
-    val fuapath: String = args(2).split("=")(1)
-    val fualayername = fuapath.split("/").last.split("\\.")(0)
-    println("FUAs file path: "+fuapath+" ; layername: "+fualayername)
-    val allfuas = GeoPackage.readGeometry(fuapath,featureName = fualayername, attributes = Array("eFUA_name","Cntry_ISO"))
-    // name field for FUAs assumed as eFUA_name (JRC file) - add this as an option?
-    // hardcoded for UK (anyway done with file structure)
-    val fuas = allfuas.filter(f => fuanames.contains(f._2.getOrElse("eFUA_name","").asInstanceOf[String])&&f._2.getOrElse("Cntry_ISO","").asInstanceOf[String].equals("GBR"))
-    //val fuas = Polygons.fromGeometries(fuasgeoms,fuasattrs) // this fails as FUAs are multipolygons
-    // if several FUAs, take the counding box to ensure a connected network, otherwise juste the polygon (take first of multipolygon)
-    // (anyway mask is implemented with bbox in the GISNetworkGenerator)
-    val area: geom.Geometry = if(fuas.length==1) fuas(0)._1.asInstanceOf[geom.MultiPolygon].getGeometryN(0) else Polygons(fuas.map(_._1.asInstanceOf[geom.MultiPolygon].getGeometryN(0).asInstanceOf[geom.Polygon])).getEnvelope
+    val fuapath=Matsim.parseArg(args, "FUAFile")
+    val area = Matsim.loadArea(fuanames, fuapath)
     println("Target network area: "+new WKTWriter().write(area))
 
     // load road data coverage
     // (note: specific to UK and split road dataset)
-    val tilesfile: String = args(3).split("=")(1)
+    val tilesfile = Matsim.parseArg(args, "TilesFile")
     val (tilesgeoms,tilesattrs) = Shapefile.readGeometry(tilesfile, Array("name")).unzip // tile layer name is hardcoded
     val tiles = Polygons.fromGeometries(tilesgeoms,tilesattrs)
     println("Map tiles: "+tiles.polygons.size)
@@ -56,7 +45,7 @@ object Network {
 
     // construct network - ! OS files do not have speed attribute?
     // why are coordinates translated? issue with shp vs geopkg?
-    val roaddatadir: String = args(4).split("=")(1)
+    val roaddatadir: String = Matsim.parseArg(args, "datadir")
     val mask: Option[Either[geom.Geometry,String]] = Some(Left(area))
     val reproject: Option[Lines => Lines] = Some({
       lines: Lines =>
@@ -70,7 +59,7 @@ object Network {
     println("Network size: |V| = "+nw.nodes.size+"; |E| = "+nw.links.size)
 
     // export network to matsim format
-    val output = args(5).split("=")(1)
+    val output = Matsim.parseArg(args, "output")
     println("Exporting network to file "+output)
     MatsimNetworkGenerator.writeMatsimXML(nw, output)
   }

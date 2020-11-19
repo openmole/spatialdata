@@ -12,11 +12,12 @@ import scala.util.Random
 
 object RunMatsim extends App {
 
-  args(0) match {
-    case "--network" => Network.runNetworkProcessing(args)
-    case "--synthpop" => Population.runPopulationConstruction(args)
-    case _ => ()
+  if (args.length>0) {
+    args(0) match {
+      case "--network" => Network.runNetworkProcessing(args)
+      case "--synthpop" => Population.runPopulationConstruction(args)
+      case _ => ()
+    }
   }
-
 
 }

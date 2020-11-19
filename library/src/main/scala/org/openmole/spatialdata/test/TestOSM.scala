@@ -21,7 +21,7 @@ object TestOSM {
         System.getenv("CS_HOME_EXT2")+"/Data/OSM/Geofabrik/andorra/andorra_buildings_20201117.osm.pbf"
      ))
     val wktwriter: WKTWriter = new WKTWriter()
-    //println(buildings.map(wktwriter.write(_)).mkString("\n"))
+    println(buildings.map(wktwriter.write(_)).mkString("\n"))
     println("Buildings: "+buildings.size)
   }
 

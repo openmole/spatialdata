@@ -1,12 +1,20 @@
 package org.openmole.spatialdata.test
 
 import org.openmole.spatialdata.grid.synthetic.CorrelatedPercolationGridGenerator
+import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.utils.math.{Convolution, Stochastic}
 import org.openmole.spatialdata.utils.{visualization, withTimer}
 
 import scala.util.Random
 
 object TestMaths {
+
+
+  def testCumsum(): Unit = {
+    val res = utils.math.cumsum(Seq(1,2,1,2,1))
+    println("cumsum = "+res)
+    assert(res==Seq(1,3,4,6,7))
+  }
 
 
   def testFourierCorrelatedField(gui: Boolean = true): Unit = {

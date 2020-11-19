@@ -65,6 +65,7 @@ object Test extends App {
   //TestSynthetic.testGeneratorCalibration()
 
   // Maths
+  //TestMaths.testCumsum()
   //TestMaths.testFourierCorrelatedField()
   //TestMaths.testConvolution
   //TestMaths.testConvolution2D

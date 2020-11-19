@@ -19,7 +19,7 @@ package object math {
         (state._1.tail,state._2++Seq(numeric.plus(state._2.last,state._1.head)))
       }
     }
-    Iterator.iterate((a,Seq(numeric.zero)))(it).takeWhile(_._1.nonEmpty).toSeq.last._2
+    it(Iterator.iterate((a,Seq(numeric.zero)))(it).takeWhile(_._1.nonEmpty).toSeq.last)._2.tail
   }
 
   def cumsum[T: ClassTag](a: Array[T])(implicit numeric: Numeric[T]): Array[T] = cumsum(a.toSeq).toArray[T]

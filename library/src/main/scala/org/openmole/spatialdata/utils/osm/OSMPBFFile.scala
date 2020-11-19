@@ -41,7 +41,6 @@ object OSMPBFFile {
       Lines(
         waysSeq.map{case (ids,_) =>
           factory.createLineString(ids.map{l =>
-            //if (! nodes.contains(l)) println(l)
             val n = nodes.getOrElse(l,(0.0,0.0,Map.empty))
             new Coordinate(n._1,n._2)
           }.toArray)
@@ -88,7 +87,6 @@ object OSMPBFFile {
     protected override def parseWays(wys: java.util.List[Way]): Unit = {
       wys.asScala.foreach { w =>
         val attrs: Map[String, String] = (0 until w.getKeysCount).map(i => (getStringById(w.getKeys(i)), getStringById(w.getVals(i)))).toMap
-        println(w.getRefsList.asScala.toSeq.map(_.asInstanceOf[Long]))
         val nodesids: Seq[Long] = utils.math.cumsum(w.getRefsList.asScala.toSeq.map(_.asInstanceOf[Long]))(Numeric.LongIsIntegral)
         ways.add((nodesids,attrs))
       }

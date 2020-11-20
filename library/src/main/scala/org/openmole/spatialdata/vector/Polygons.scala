@@ -29,6 +29,9 @@ object Polygons {
 
   /**
     * Construct Polygons from geometries and attributes
+    *
+    * ! should split multipolygons into several instead of keeping the first only?
+    *
     * @param geoms geometries
     * @param attributes attributes
     * @return
@@ -46,6 +49,8 @@ object Polygons {
       attributes
     )
   }
+
+  def apply(geoms: Seq[(geom.Geometry,Attributes)]): Polygons = fromGeometries(geoms.map(_._1), geoms.map(_._2))
 
 
 }

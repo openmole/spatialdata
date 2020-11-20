@@ -4,7 +4,6 @@ import org.openmole.spatialdata.grid.measures.GridMorphology
 import org.openmole.spatialdata.grid.measures.GridMorphology.{AverageDistance, Entropy, Moran, Slope}
 import org.openmole.spatialdata.grid.Implicits._
 import org.openmole.spatialdata.grid.synthetic.ExpMixtureGridGenerator
-import org.openmole.spatialdata.utils.math.Statistics
 
 import scala.util.Random
 
@@ -19,7 +18,6 @@ import scala.util.Random
   * @param centers number of centers
   * @param hierarchy rank-size hierarchy between centers
   * @param maxRadiusRate size of larger city radius in proportion of max(height,width)
-  * @param totalPopulation total population
   * @param seed seed
   */
 case class ExpMixtureModel(

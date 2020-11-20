@@ -2,7 +2,7 @@ package org.openmole.spatialdata.application.mesobench
 
 import org.openmole.spatialdata.grid.measures.GridMorphology
 import org.openmole.spatialdata.grid.measures.GridMorphology.{AverageDistance, Entropy, Moran, Slope}
-import org.openmole.spatialdata.grid.synthetic.{CorrelatedPercolationGridGenerator, ReactionDiffusionGridGenerator}
+import org.openmole.spatialdata.grid.synthetic.CorrelatedPercolationGridGenerator
 
 import scala.util.Random
 

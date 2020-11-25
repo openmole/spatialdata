@@ -23,6 +23,8 @@ package object utils {
 
   }
 
+  def concat[A](s1: Seq[A], s2: Seq[A]): Seq[A] = s1++s2
+
   /**
     * tic toc a void function
     * @param fun function

@@ -1,10 +1,13 @@
 package org.openmole.spatialdata.application.matsim
 
 import org.locationtech.jts.geom
-import Matsim._
+
+import org.openmole.spatialdata.application.matsim.Matsim._
 import org.openmole.spatialdata.application.matsim.SpenserSynthPop.{Household, Individual}
+import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.utils.io.{CSV, GIS}
 import org.openmole.spatialdata.vector.{Attributes, Polygons}
+
 
 object Population {
 
@@ -84,13 +87,13 @@ object Population {
       indivcsv.values.head.indices.map{ i =>
         Individual(indivcsv.keys.map(k => (k,indivcsv(k)(i))).toMap)
       }
-    }.reduce{case (s1,s2)=> s1++s2}
+    }.reduce(utils.concat[Individual])
     val households: Seq[Household] = reqladcodes.map{code =>
       val householdcsv = CSV.readCSV(spenserDir+"/ass_hh_"+code+"_OA11_2020.csv")
       householdcsv.values.head.indices.map{ i =>
         Household(householdcsv.keys.map(k => (k,householdcsv(k)(i))).toMap)
       }
-    }.reduce{case (s1,s2)=> s1++s2}
+    }.reduce(utils.concat[Household])
     SpenserSynthPop(individuals, households)
   }
 

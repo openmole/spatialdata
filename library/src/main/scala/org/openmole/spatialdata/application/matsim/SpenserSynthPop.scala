@@ -17,7 +17,7 @@ case class SpenserSynthPop(
     * @return
     */
   def sample(proportion: Double)(implicit rng: Random): SpenserSynthPop = {
-    val keptIndivs = Stochastic.sampleWithoutReplacement(individuals, (proportion*individuals.size).toInt).toSeq
+    val keptIndivs = Stochastic.sampleWithoutReplacement(individuals, (proportion*individuals.size).toInt)
     val hids = keptIndivs.map(_.householdId)
     val keptHouseholds = households.filter(h => hids.contains(h.hid))
     SpenserSynthPop(keptIndivs, keptHouseholds)
@@ -27,6 +27,18 @@ case class SpenserSynthPop(
 
 object SpenserSynthPop {
 
+  /**
+    * Spenser individual, enriched with home locations, job locations and plans
+    *
+    * @param id id
+    * @param msoaCode home msoa
+    * @param sex sex
+    * @param age age
+    * @param householdId household id
+    * @param homeLocation home
+    * @param workLocation work
+    * @param plans plans
+    */
   case class Individual(
                        id: Int,
                        msoaCode: String,
@@ -34,7 +46,8 @@ object SpenserSynthPop {
                        age: Int,
                        householdId: Int, // do not store the full household to avoid redundancy
                        homeLocation: Point = (0.0,0.0),
-                       workLocation: Point = (0.0,0.0)
+                       workLocation: Point = (0.0,0.0),
+                       plans: Seq[Plan] = Seq.empty
                        )
 
   object Individual {
@@ -61,6 +74,23 @@ object SpenserSynthPop {
   case object Male extends Sex
   case object Female extends Sex
 
+  /**
+    * Spenser household
+    *
+    * @param hid household id
+    * @param msoaCode home msoa
+    * @param housingType housing type
+    * @param tenureType tenure type
+    * @param persons number of persons
+    * @param rooms rooms
+    * @param bedrooms bedrooms
+    * @param centralHeating central heating
+    * @param refPersonJobCategory job category of referent person
+    * @param cars number of cars
+    * @param refPersonId id of referent person
+    * @param filled filled by the spenser algorithm
+    * @param homeLocation home location (enriched)
+    */
   case class Household(
                       hid: Int,
                       msoaCode: String,
@@ -154,6 +184,34 @@ object SpenserSynthPop {
     }
   }
 
+
+  /**
+    * Plan for individual during a day
+    *
+    * @param actions actions - must have one more than legs (and end in the same place as start?)
+    * @param legs legs
+    */
+  case class Plan(
+                  actions: Seq[Plan.Action],
+                  legs: Seq[Plan.Leg]
+                 )
+
+  object Plan {
+
+    /**
+      * ! check that ation coordinates are same format/CRS than network coordinates
+      * @param actionType type of action (home, work, ...)
+      * @param place place
+      * @param startTime start time - format 08:00:00 - 08:00 also fine
+      * @param endTime end time
+      */
+    case class Action(actionType: String, place: Point, startTime: String, endTime: String){
+      def xml: String = "<act type=\""+actionType+"\" x=\""+place._1+"\" y=\""+place._2+"\" start_time=\""+startTime+"\" end_time=\""+endTime+"\" />"
+    }
+    case class Leg(mode: String) {
+      def xml: String = "<leg mode=\""+mode+"\" />"
+    }
+  }
 
 
 }

@@ -1,5 +1,7 @@
 package org.openmole.spatialdata.application.matsim
 
+import java.io.{BufferedWriter, FileWriter}
+
 import org.locationtech.jts.geom
 import org.openmole.spatialdata.application.matsim.Matsim._
 import org.openmole.spatialdata.application.matsim.SpenserSynthPop.{Household, Individual}
@@ -19,6 +21,8 @@ object Population {
     *  - Uniform within MSOA, random job location within FUA
     *  - Buildings and population density, random job location
     *  - Buildings and population density, jobs extrapolated from commuting flows (spatial interaction model?)
+    *
+    * Population distribution does not require network in Matsim spec (but same coordinate system): closest node is taken
     *
     * ! add optional seed argument?
     *
@@ -166,8 +170,34 @@ object Population {
   }
 
 
+  /**
+    * Export to matsim xml population
+    *
+    * @param population population
+    * @param file file
+    */
   def exportMatsimXML(population: SpenserSynthPop, file: String): Unit = {
+    val HEADER = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE population SYSTEM \"http://www.matsim.org/files/dtd/population_v1.dtd\">\n<population name=\"SPENSER/spatialdata generated population\">"
+    val FOOTER = "</population>"
+    val xml = new BufferedWriter(new FileWriter(file))
+    xml.write(HEADER)
 
+    population.individuals.foreach{person =>
+      xml.write("<person id="+person.id+">\n")
+      person.plans.foreach{plan =>
+        xml.write("<plan>\n")
+        xml.write(plan.actions.head.xml+"\n")
+        plan.legs.zip(plan.actions.tail).foreach{case (leg,act) =>
+          xml.write(leg.xml+"\n")
+          xml.write(act.xml+"\n")
+        }
+        xml.write("</plan>\n")
+      }
+      xml.write("</person>\n\n")
+    }
+
+    xml.write(FOOTER)
+    xml.close()
   }
 
 }

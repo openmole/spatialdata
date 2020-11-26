@@ -1,12 +1,28 @@
 package org.openmole.spatialdata.application.matsim
 
+import org.openmole.spatialdata.utils.math.Stochastic
 import org.openmole.spatialdata.vector.Point
+
+import scala.util.Random
 
 
 case class SpenserSynthPop(
                           individuals: Seq[SpenserSynthPop.Individual],
                           households: Seq[SpenserSynthPop.Household]
-                          )
+                          ) {
+
+  /**
+    * Sample a given proportion of individuals (keep all associated households)
+    * @param proportion proportion
+    * @return
+    */
+  def sample(proportion: Double)(implicit rng: Random): SpenserSynthPop = {
+    val keptIndivs = Stochastic.sampleWithoutReplacement(individuals, (proportion*individuals.size).toInt).toSeq
+    val hids = keptIndivs.map(_.householdId)
+    val keptHouseholds = households.filter(h => hids.contains(h.hid))
+    SpenserSynthPop(keptIndivs, keptHouseholds)
+  }
+}
 
 
 object SpenserSynthPop {

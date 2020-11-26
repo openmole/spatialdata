@@ -16,7 +16,7 @@ object RunMatsim extends App {
     args(0) match {
       case "--network" => Network.runNetworkProcessing(args)
       case "--synthpop" => Population.runPopulationConstruction(args)
-      case _ => ()
+      case s => println("No action for "+s+"; usage: --network|--synthpop")
     }
   }
 

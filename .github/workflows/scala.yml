@@ -18,4 +18,4 @@ jobs:
       with:
         java-version: 1.8
     - name: Run tests
-      run: cd library; sbt "project test; testOnly org.openmole.spatialdata.scalatest.TestSuite"
+      run: cd library; export SBT_OPTS="-XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=2G -Xmx4G"; sbt "project test; testOnly org.openmole.spatialdata.scalatest.TestSuite"

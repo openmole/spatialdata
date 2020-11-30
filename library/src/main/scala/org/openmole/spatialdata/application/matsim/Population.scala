@@ -3,16 +3,34 @@ package org.openmole.spatialdata.application.matsim
 import java.io.{BufferedWriter, FileWriter}
 
 import org.locationtech.jts.geom
+import org.locationtech.jts.geom.GeometryFactory
 import org.openmole.spatialdata.application.matsim.Matsim._
-import org.openmole.spatialdata.application.matsim.SpenserSynthPop.{Household, Individual}
+import org.openmole.spatialdata.application.matsim.SpenserSynthPop.{Household, Individual, Plan}
 import org.openmole.spatialdata.utils
+import org.openmole.spatialdata.utils.gis.LayerSampling
 import org.openmole.spatialdata.utils.io.{CSV, GIS}
-import org.openmole.spatialdata.vector.{Attributes, Polygons}
+import org.openmole.spatialdata.vector.{Attributes, Point, Polygons}
 
 import scala.util.Random
 
 
 object Population {
+
+  val usage: String = "Missing arguments; usage:\n" +
+    "--synthpop\n" +
+    "--popMode={uniform|detailed}\n" +
+    "--jobMode={random|sample|gravity}\n" +
+    "--planMode={default}\n" +
+    "--sample=$SAMPLE" +
+    "--FUAName=$NAME1,$NAME2,...,$NAMEN\n" +
+    "--FUAFile=$PATH\n" +
+    "--LAFile=$PATH\n"+
+    "--MSOAFile=$PATH\n" +
+    "--SPENSERDir=$DIR\n" +
+    "--output=$OUTPUT"
+
+  val msoaID: String = "MSOA11CD"
+  val ladID: String = "lad19cd"
 
   /**
     * Convert spenser synth pop files to Matsim population
@@ -35,24 +53,17 @@ object Population {
     println("Running population generation for MATSim model in UK")
 
     // for test on Glasgow: Local Authorities S12000008 S12000011 S12000021 S12000029 S12000030 S12000038 S12000039 S12000045 S12000049 S12000050
-    // run --synthpop --popMode=uniform --jobMode=random --planMode=default --sample=0.01 --FUAName=Glasgow --FUAFile=/Users/juste/ComplexSystems/Data/JRC_EC/GHS/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0_WGS84.gpkg --LAFile=/Users/juste/ComplexSystems/UrbanDynamics/Data/OrdnanceSurvey/LADistricts/Local_Authority_Districts__December_2019__Boundaries_UK_BUC-shp/LAD_WGS84.shp --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/Population/test/Glasgow.xml
+    // runMain org.openmole.spatialdata.application.matsim.RunMatsim --synthpop --popMode=uniform --jobMode=random --planMode=default --sample=0.01 --FUAName=Glasgow --FUAFile=/Users/juste/ComplexSystems/Data/JRC_EC/GHS/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0_WGS84.gpkg --LAFile=/Users/juste/ComplexSystems/UrbanDynamics/Data/OrdnanceSurvey/LADistricts/Local_Authority_Districts__December_2019__Boundaries_UK_BUC-shp/LAD_WGS84.shp --MSOAFile=/Users/juste/ComplexSystems/UrbanDynamics/Data/QUANT/geography/EnglandWalesScotland_MSOAWGS84.shp --SPENSERDir=/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/ --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/Population/test/Glasgow.xml
 
-    if(args.length<2) throw new IllegalArgumentException("Missing arguments; usage:\n" +
-      "--synthpop\n" +
-      "--popMode={uniform|detailed}\n" +
-      "--jobMode={random|sample|gravity}\n" +
-      "--planMode={default}\n" +
-      "--sample=$SAMPLE" +
-      "--FUAName=$NAME1,$NAME2,...,$NAMEN\n" +
-      "--FUAFile=$PATH\n" +
-      "--LAFile=$PATH\n"+
-      "--MSOAFile=$PATH\n" +
-      "--SPENSERDir=$DIR\n" +
-      "--output=$OUTPUT")
+    if(args.length<2) throw new IllegalArgumentException(usage)
+
+
 
     val areas = loadAreas(parseArg(args, "FUAName").split(";").map(_.split(",").toSeq).toSeq, parseArg(args, "FUAFile"))
-    val msoas = Polygons(GIS.readGeometry(parseArg(args, "MSOAFile"), Array("MSOA11CD")))
-    val localAuthorities = Polygons(GIS.readGeometry(parseArg(args, "LAFile"), Array("lad19cd"))) // only used for synthpop but better consistence to have same level args
+    val msoas = Polygons(GIS.readGeometry(parseArg(args, "MSOAFile"), Array(msoaID)))
+    val lads = GIS.readGeometry(parseArg(args, "LAFile"), Array(ladID))
+    //println(lads)
+    val localAuthorities = Polygons(lads) // only used for synthpop but better consistence to have same level args
 
     areas.foreach { area =>
       val pop = loadSyntheticPopulation(area, localAuthorities, parseArg(args, "SPENSERDir"))
@@ -64,7 +75,7 @@ object Population {
       }
 
       val jobLocator: SpenserSynthPop => SpenserSynthPop = parseArg(args, "jobMode") match {
-        case "random" => p: SpenserSynthPop => JobLocation.randomJobLocationPopulation(p)
+        case "random" => p: SpenserSynthPop => JobLocation.randomJobLocationPopulation(p, msoas)
         case "sample" => p: SpenserSynthPop => JobLocation.empiricalSamplingJobLocationPopulation(p)
         case "gravity" => p: SpenserSynthPop => JobLocation.gravityJobLocationPopulation(p)
         case _ => throw new IllegalArgumentException("Available job modes: --jobMode={random|sample|gravity}")
@@ -78,8 +89,10 @@ object Population {
 
       val finalPopulation = (planComposer compose jobLocator compose locator) (pop).sample(parseArg(args, "sample").toDouble)
 
+      println("Final population size = "+finalPopulation.individuals.size)
+
       // export the population
-      println(finalPopulation.individuals.map(_.homeLocation))
+      //println(finalPopulation.individuals.map(_.homeLocation))
       exportMatsimXML(finalPopulation, parseArg(args, "output"))
     }
   }
@@ -95,12 +108,27 @@ object Population {
       * @param msoas      msoa polygons
       * @return
       */
-    def uniformHomeLocationPopulation(population: SpenserSynthPop, msoas: Polygons): SpenserSynthPop = {
-      //population.households.map()
-      SpenserSynthPop(Seq.empty, Seq.empty)
+    def uniformHomeLocationPopulation(population: SpenserSynthPop, msoas: Polygons)(implicit rng: Random): SpenserSynthPop = {
+      val lochouseholds = population.households.map{household =>
+        val (homemsoa,_) =  msoas.getPolygonByKeyValue(msoaID, household.msoaCode).get
+        household.copy(homeLocation = LayerSampling.PolygonSampler(homemsoa).sample)
+      }
+      val hmap = lochouseholds.map(h => (h.hid,h)).toMap
+      val locindividuals = population.individuals.map{individual =>
+        individual.copy(homeLocation = hmap(individual.householdId).homeLocation)
+      }
+      SpenserSynthPop(locindividuals, lochouseholds)
     }
 
 
+    /**
+      * Detailed population
+      *  - density grid
+      *  - buildings (OSM)
+      *
+      * @param population population
+      * @return
+      */
     def detailedHomeLocationPopulation(population: SpenserSynthPop): SpenserSynthPop = {
       SpenserSynthPop(Seq.empty, Seq.empty)
     }
@@ -113,8 +141,10 @@ object Population {
       * @param population synthetic population
       * @return
       */
-    def randomJobLocationPopulation(population: SpenserSynthPop): SpenserSynthPop = {
-      SpenserSynthPop(Seq.empty, Seq.empty)
+    def randomJobLocationPopulation(population: SpenserSynthPop, msoas: Polygons)(implicit rng: Random): SpenserSynthPop = {
+      val polygonSampler = LayerSampling.PolygonSampler((new GeometryFactory).createMultiPolygon(msoas.polygons.toArray))
+      val jobLocations: Seq[Point] = population.individuals.indices.map(_ => polygonSampler.sample)
+      SpenserSynthPop(population.individuals.zip(jobLocations).map{case (ind,loc) => ind.copy(workLocation = loc)}, population.households)
     }
 
     /**
@@ -139,8 +169,27 @@ object Population {
 
   object PlanComposition {
 
-    def randomPlansPopulation(population: SpenserSynthPop): SpenserSynthPop = {
-      SpenserSynthPop(Seq.empty, Seq.empty)
+    val workStartTimeUniformInterval: (Double,Double) = (7.0,10.0)
+    val workEndTimeUniformInterval: (Double,Double) = (17.0,20.0)
+
+    /**
+      * Most basic plan home-work; assumes home and work loc are defined
+      * @param population population
+      * @return
+      */
+    def randomPlansPopulation(population: SpenserSynthPop)(implicit rng: Random): SpenserSynthPop =
+      SpenserSynthPop(population.individuals.map(uniformTimesCommuterPlan), population.households)
+
+    /**
+      * ! only car commuting for now
+      * @param individual individual
+      * @param rng rng
+      * @return
+      */
+    def uniformTimesCommuterPlan(individual: Individual)(implicit rng: Random): Individual = {
+      val workStartTime = workStartTimeUniformInterval._1 + rng.nextDouble()*(workStartTimeUniformInterval._2 - workStartTimeUniformInterval._1)
+      val workEndTime = workEndTimeUniformInterval._1 + rng.nextDouble()*(workEndTimeUniformInterval._2 - workEndTimeUniformInterval._1)
+      individual.copy(plans = Seq(Plan.commutePlan(workStartTime, workEndTime, individual.homeLocation, individual.workLocation, "car")))
     }
 
   }
@@ -153,14 +202,19 @@ object Population {
     */
   def loadSyntheticPopulation(area: geom.Geometry, localAuthorities: Polygons, spenserDir: String): SpenserSynthPop = {
     val reqlads: Seq[(geom.Polygon,Attributes)] = localAuthorities.polygons.zip(localAuthorities.attributes).filter(_._1.intersects(area))
+    //println(reqlads.map(_._2))
     val reqladcodes = reqlads.map(_._2.getOrElse("lad19cd",""))
+    println("Req LAD codes: "+reqladcodes)
     val individuals: Seq[Individual] = reqladcodes.map{code =>
+      utils.log("    loading individuals for LAD "+code)
       val indivcsv = CSV.readCSV(spenserDir+"/ass_"+code+"_MSOA11_2020.csv") // fixed file name - assume 2020?
+      utils.log("    indivs: "+indivcsv.values.head.size)
       indivcsv.values.head.indices.map{ i =>
         Individual(indivcsv.keys.map(k => (k,indivcsv(k)(i))).toMap)
       }
     }.reduce(utils.concat[Individual])
     val households: Seq[Household] = reqladcodes.map{code =>
+      println("    loading households for LAD "+code)
       val householdcsv = CSV.readCSV(spenserDir+"/ass_hh_"+code+"_OA11_2020.csv")
       householdcsv.values.head.indices.map{ i =>
         Household(householdcsv.keys.map(k => (k,householdcsv(k)(i))).toMap)

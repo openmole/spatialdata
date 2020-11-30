@@ -22,6 +22,19 @@ case class Polygons(
     (new GeometryFactory).createPolygon(Array(new geom.Coordinate(xmin,ymin),new geom.Coordinate(xmax,ymin),new geom.Coordinate(xmax,ymax),new geom.Coordinate(xmin,ymax),new geom.Coordinate(xmin,ymin)))
   }
 
+  /**
+    * get first polygon matching attribute value
+    * @param key key
+    * @param value value
+    * @return
+    */
+  def getPolygonByKeyValue(key: String, value: String): Option[(geom.Polygon,Attributes)] = {
+    val inds = attributes.zipWithIndex.filter{case (a,_) => a.getOrElse(key,"").asInstanceOf[String].equals(value) }
+    if (inds.isEmpty) None else {
+      Some((polygons(inds.head._2),attributes(inds.head._2)))
+    }
+  }
+
 }
 
 

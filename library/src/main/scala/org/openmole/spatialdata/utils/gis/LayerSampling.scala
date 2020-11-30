@@ -1,6 +1,6 @@
 package org.openmole.spatialdata.utils.gis
 
-import org.locationtech.jts.geom.{Geometry, GeometryCollection, MultiPolygon, Polygon}
+import org.locationtech.jts.geom.{Geometry, GeometryCollection, GeometryFactory, MultiPolygon, Polygon}
 import org.locationtech.jts.triangulate.ConformingDelaunayTriangulationBuilder
 import org.openmole.spatialdata.vector.{Attributes, Point}
 import org.openmole.spatialdata.utils.io.Shapefile
@@ -68,6 +68,11 @@ object LayerSampling {
 
     lazy val totalArea: Double = triangles.last._1
 
+    /**
+      * ! implement simultanous multi sampling
+      * @param rng rng
+      * @return
+      */
     def sample(implicit rng: Random): (Double,Double) = {
       val s = rng.nextDouble() * totalArea
       val t = rng.nextDouble()
@@ -95,6 +100,12 @@ object LayerSampling {
     }
   }
 
+  object PolygonSampler {
+
+    def apply(polygon: Polygon): PolygonSampler =
+      PolygonSampler((new GeometryFactory).createMultiPolygon(Array(polygon)))
+
+  }
 
 
 }

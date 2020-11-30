@@ -199,6 +199,26 @@ object SpenserSynthPop {
   object Plan {
 
     /**
+      *
+      * ! convert double times to string
+      *
+      * @param start work start time
+      * @param end work end time
+      * @param homeLoc home location
+      * @param workLoc work location
+      * @param mode mode
+      * @return
+      */
+    def commutePlan(start: Double, end: Double, homeLoc: Point, workLoc: Point, mode: String): Plan = Plan(
+      actions = Seq(
+        Action("home", homeLoc, "00:00", start.toInt.toString+":00"),
+        Action("work", workLoc, start.toInt.toString+":00", end.toInt.toString+":00"),
+        Action("home", homeLoc, end.toInt.toString+":00", "23:59")
+      ),
+      legs = Seq(Leg(mode), Leg(mode))
+    )
+
+    /**
       * ! check that ation coordinates are same format/CRS than network coordinates
       * @param actionType type of action (home, work, ...)
       * @param place place

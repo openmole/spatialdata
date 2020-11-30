@@ -69,10 +69,10 @@ object CorrelatedPercolationGridGenerator {
                                 binary: Boolean,
                                 nCenters: Int,
                                 centersPopulationScaling: Double
-                               )(implicit rng: Random): RasterLayerData[Double] = {
+                               )(implicit rng: Random): Array[Array[Double]] = {
     //val pr = GridMorphology.distanceMatrix(gridSize, gridSize).map(_.map(r => math.exp(-densityGradient*r))) // for one center at the origin
     val kernelSizes = (1 to nCenters).map(i => maxKernelRadius/math.pow(i, centersPopulationScaling / 2))
-    val pr = ExpMixtureGridGenerator(Left(gridSize), nCenters, 1.0, kernelSizes).generateGrid
+    val pr: Array[Array[Double]] = ExpMixtureGridGenerator(Left(gridSize), nCenters, 1.0, kernelSizes).generateGrid
     // need to renormalize in case of more than one center
     val m = pr.flatten.max(Ordering.Double.TotalOrdering)
     val prnorm = pr.map(_.map(_/m))
@@ -110,7 +110,7 @@ object CorrelatedPercolationGridGenerator {
     //println(cdf)
     def theta(p: Double): Double = {
       val i = cdf.indexWhere(_._1>=p)
-      if(i>=0)cdf(i)._2 else cdf(cdf.length-1)._2
+      if(i>=0)cdf(i)._2 else cdf.last._2
     }
     val thetas = densityProbas.map(_.map(theta))
     def hside(th: Double, eta: Double): Double = if (th >= eta) 1.0 else 0.0
@@ -133,10 +133,10 @@ object CorrelatedPercolationGridGenerator {
     GridMorphology.distanceMatrix(gridSize, gridSize).map(_.map(r => math.exp(-densityGradient*r))).zip(field).map{
        rows: (Array[Double],Array[Double]) => rows._1.zip(rows._2).map{
          d: (Double,Double) =>
-          (d._2 match {
+          d._2 match {
             case ff if ff > d._1 => 1.0
             case _ => 0.0
-          }).asInstanceOf[Double]
+          }
       }
     }
   }

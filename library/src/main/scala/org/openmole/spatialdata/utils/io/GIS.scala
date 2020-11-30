@@ -15,8 +15,8 @@ object GIS extends GIS {
 
   def readGeometry(layer: String,attributes:Array[String]=Array.empty): Seq[(Geometry,Attributes)] = {
     layer.split("\\.").last match {
-      case "shp" => Shapefile.readGeometry(layer)
-      case "gpkg" => GeoPackage.readGeometry(layer)
+      case "shp" => Shapefile.readGeometry(layer, attributes)
+      case "gpkg" => GeoPackage.readGeometry(layer, attributes = attributes)
       case _ => throw new UnsupportedOperationException("Unknown GIS format")
     }
   }

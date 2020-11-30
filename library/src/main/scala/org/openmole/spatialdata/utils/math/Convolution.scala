@@ -116,10 +116,9 @@ object Convolution {
 
   /**
     * Naive two dimensional convolution for morpho math - default operator is average (dilation) - replace by product for erosion
-    *   (not efficient at all but no math commons to work in the gui)
-    * @param matrix
+    *   (not efficient at all but no math commons to work in gui apps with scalajs)
+    * @param matrix matrix
     * @param mask should be of uneven size
-    * @param operator sum by default
     * @return
     */
   def convolution2dDirect(matrix: Array[Array[Double]],mask: Array[Array[Double]],
@@ -145,7 +144,7 @@ object Convolution {
       res(i)(j) = filter(masked.flatten.sum)
     }
     //res.zip(matrix).map{case (row,initrow) => row.take(initrow.length + paddingy).takeRight(initrow.length)}.take(matrix.length+paddingx).takeRight(matrix.length)
-    res.map{case row => row.slice(paddingy,row.length-paddingy)}.slice(paddingx,res.length-paddingx)
+    res.map{row => row.slice(paddingy,row.length-paddingy)}.slice(paddingx,res.length-paddingx)
   }
 
 }

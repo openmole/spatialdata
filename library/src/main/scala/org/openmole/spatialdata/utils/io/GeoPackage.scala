@@ -6,9 +6,11 @@ import org.geotools.data.simple.SimpleFeatureReader
 import org.geotools.geopkg.FeatureEntry
 import org.locationtech.jts.geom.Geometry
 import org.opengis.feature.simple.SimpleFeature
+import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.vector.Attributes
 
 import scala.collection.mutable.ArrayBuffer
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 /**
   * Primitives to handle GeoPackage data
@@ -33,8 +35,10 @@ object GeoPackage {
     */
   def readGeometry(layer: String, featureIndex: Int = 0, featureName: String = "", attributes: Array[String]=Array.empty, geometryColumn: String = "geom"): Seq[(Geometry,Attributes)] = {
     val geopkg: org.geotools.geopkg.GeoPackage  = new org.geotools.geopkg.GeoPackage(new File(layer))
+    //utils.log("Reading geopkg: "+geopkg.features.asScala.map(_.getDescription).mkString(" ; "))
     val featureentry: FeatureEntry = if(featureName.length>0) geopkg.feature(featureName) else geopkg.features().get(featureIndex)
     val freader: SimpleFeatureReader = geopkg.reader(featureentry, null, null)
+    utils.log("Reading geopkg: "+freader.getFeatureType)
     val res: ArrayBuffer[(Geometry,Attributes)] = new ArrayBuffer
     while (freader.hasNext) {
       val feature: SimpleFeature = freader.next()

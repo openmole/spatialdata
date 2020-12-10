@@ -1,6 +1,10 @@
 package org.openmole.spatialdata.utils.math
 
 import scala.util.Random
+import org.apache.commons.rng.sampling.ListSampler
+import org.apache.commons.rng.simple.RandomSource
+
+import scala.jdk.CollectionConverters._
 
 object Stochastic {
 
@@ -83,6 +87,16 @@ object Stochastic {
   def sampleWithReplacement[T](sampled: Iterable[T], samples: Int)(implicit rng: Random): Vector[T] =
     sampleWithReplacementBy[T](sampled,_ => 1.0 / sampled.size.toDouble, samples)
 
+  /**
+    * Sample without replacement
+    *   ! this function is a disaster for large iterables
+    * @param sampled sampled
+    * @param probability proba function
+    * @param samples samples
+    * @param rng rng
+    * @tparam T type
+    * @return
+    */
   def sampleWithoutReplacementBy[T](sampled: Iterable[T], probability: T => Double, samples: Int)(implicit rng: Random): Vector[T] = {
     assert(samples <= sampled.size,"Can not sample more than vector size : "+samples+" / "+sampled.size)
     Iterator.iterate((sampled, Vector.empty[T])) { case (rest, res) =>
@@ -94,6 +108,7 @@ object Stochastic {
   }
 
   def sampleWithoutReplacement[T](sampled: Iterable[T], samples: Int)(implicit rng: Random): Vector[T] =
-    sampleWithoutReplacementBy[T](sampled,_ => 1.0 / sampled.size.toDouble, samples)
+    ListSampler.sample(RandomSource.create(RandomSource.MT, rng.nextLong), sampled.toList.asJava, samples).asScala.toVector
+    //sampleWithoutReplacementBy[T](sampled,_ => 1.0 / sampled.size.toDouble, samples)
 
 }

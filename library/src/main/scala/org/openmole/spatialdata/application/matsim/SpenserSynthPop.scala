@@ -66,6 +66,23 @@ object SpenserSynthPop {
       householdId = fields.getOrElse("HID","-1").toInt
     )
 
+    val csvIndices = Seq(0,1,2,3,5)
+
+    /**
+      * column indices
+      * @param row row
+      * @param indices indices
+      * @return
+      */
+    def apply(row: Array[String], indices: Seq[Int]): Individual = Individual(
+      id = row(indices.head).toInt,
+      msoaCode = row(indices(1)),
+      sex = row(indices(2)) match {case "0" => Sex; case "1" => Male; case "2" => Female; case _ => Sex},
+      age = row(indices(3)).toInt,
+      // ignore ethnic variable: too much modalities
+      householdId = row(indices(4)).toInt
+    )
+
 
   }
 
@@ -93,7 +110,7 @@ object SpenserSynthPop {
     */
   case class Household(
                       hid: Int,
-                      msoaCode: String,
+                      oaCode: String,
                       housingType: HousingType.HousingType,
                       tenureType: TenureType.TenureType,
                       persons: Int,
@@ -117,7 +134,7 @@ object SpenserSynthPop {
     def apply(fields: Map[String,String]): Household = {
       Household(
         hid = fields.getOrElse("HID","-1").toInt,
-        msoaCode = fields.getOrElse("Area","NA"),
+        oaCode = fields.getOrElse("Area","NA"),
         housingType = HousingType(fields.getOrElse("LC4402_C_TYPACCOM","-1")),
         // QS420_CELL land-use: not filled?
         tenureType = TenureType(fields.getOrElse("LC4402_C_TENHUK11","-1")),
@@ -133,6 +150,30 @@ object SpenserSynthPop {
         cars= fields.getOrElse("LC4202_C_CARSNO","0").toInt - 1,
         refPersonId = fields.getOrElse("HRPID","0").toInt,
         filled = fields.getOrElse("FILLED","False") match {case "True" => true; case _ => false}
+      )
+    }
+
+    val csvIndices = Seq(0,1,2,4,7,8,9,11,12,14,15,16)
+
+    def apply(row: Array[String], indices: Seq[Int]): Household = {
+      Household(
+        hid = row(indices.head).toInt,
+        oaCode = row(indices(1)),
+        housingType = HousingType(row(indices(2))),
+        // QS420_CELL land-use: not filled?
+        tenureType = TenureType(row(indices(3))),
+        // LC4408_C_AHTHUK11 ignored
+        // CommunalSize ignored
+        persons = row(indices(4)).toInt,
+        rooms = row(indices(5)).toInt,
+        bedrooms = row(indices(6)).toInt,
+        // LC4408EW_C_PPBROOMHEW11 ignored
+        centralHeating =  row(indices(7)) match {case "2" => true; case _ => false},
+        refPersonJobCategory = JobCategory(row(indices(8))),
+        //LC4202_C_ETHHUK11 ignored
+        cars= row(indices(9)).toInt - 1,
+        refPersonId =row(indices(10)).toInt,
+        filled = row(indices(11)) match {case "True" => true; case _ => false}
       )
     }
   }

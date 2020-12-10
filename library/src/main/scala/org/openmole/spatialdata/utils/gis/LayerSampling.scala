@@ -47,6 +47,16 @@ object LayerSampling {
     pointTries.flatMap(_.toOption)
   }
 
+  def sampleEnvelope(p: Polygon, nPoints: Int)(implicit rng: Random): Seq[Point] = {
+    val c = p.getCentroid
+    val env = p.getEnvelopeInternal
+    (0 until nPoints).map{ _ =>
+      (c.getX - env.getMinX + rng.nextDouble() * (env.getMaxX - env.getMinX),
+        c.getY - env.getMinY + rng.nextDouble() * (env.getMaxY - env.getMinY)
+      )
+    }
+  }
+
 
   case class PolygonSampler(polygon: MultiPolygon, tolerance: Double = 0.1) {
     lazy val triangles: Seq[(Double,Polygon)] = {
@@ -102,8 +112,8 @@ object LayerSampling {
 
   object PolygonSampler {
 
-    def apply(polygon: Polygon): PolygonSampler =
-      PolygonSampler((new GeometryFactory).createMultiPolygon(Array(polygon)))
+    def apply(polygon: Polygon, tolerance: Double): PolygonSampler =
+      PolygonSampler((new GeometryFactory).createMultiPolygon(Array(polygon)),tolerance)
 
   }
 

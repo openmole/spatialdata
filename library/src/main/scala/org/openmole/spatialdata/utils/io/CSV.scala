@@ -10,6 +10,7 @@ import org.openmole.spatialdata.utils.math.SparseMatrix.{SparseBreeze, SparseCom
 import org.openmole.spatialdata.utils.math.{BreezeSparseMatrix, SparseMatrix, SparseMatrixImpl}
 
 import scala.collection.mutable.ArrayBuffer
+import scala.io.Source
 
 
 object CSV {
@@ -43,6 +44,15 @@ object CSV {
     * @return
     */
   def readCSV(filename: String, sep: String = ",", withHeader: Boolean =true): Map[String,Seq[String]] = readCSVFile(new File(filename),sep, withHeader)
+
+  def readCSVraw(filename: String, sep: String = ",", header: Boolean = true):Array[Array[String]] = {
+    val s = Source.fromFile(filename)
+    val lines = if (header) s.getLines.toArray else s.getLines.toArray.tail
+    val res = lines.map(_.split(sep))
+    s.close()
+    res
+  }
+
 
   /**
     * read a numerical matrix

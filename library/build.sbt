@@ -14,6 +14,9 @@ lazy val commonSettings = Seq(
   ),
   libraryDependencies ++= Seq(
     "org.apache.commons" % "commons-math3" % "3.6.1",
+    "org.apache.commons" % "commons-lang3" % "3.1",
+    "org.apache.commons" % "commons-rng-sampling" % "1.3",
+    "org.apache.commons" % "commons-rng-simple" % "1.3",
     "net.sourceforge.jdistlib" % "jdistlib" % "0.4.5",
     "com.github.pathikrit" %% "better-files" % "3.8.0",
     "org.locationtech.jts" % "jts" % "1.16.1" pomOnly(),
@@ -26,7 +29,6 @@ lazy val commonSettings = Seq(
     "org.jgrapht" % "jgrapht-core" % "1.3.1",
     "org.apache.httpcomponents" % "httpclient" % "4.3.5",
     "commons-io" % "commons-io" % "2.3",
-    "org.apache.commons" % "commons-lang3" % "3.1",
     "org.scalanlp" %% "breeze" % "1.0",
     "com.github.fommil.netlib" % "all" % "1.1.2", // impl for breeze
     "de.ruedigermoeller" % "fst" % "2.57",

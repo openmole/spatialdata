@@ -66,7 +66,7 @@ object Population {
 
 
 
-    val areas = loadAreas(parseArg(args, "FUAName").split(";").map(_.split(",").toSeq).toSeq, parseArg(args, "FUAFile"))
+    val areas = loadAreas(parseArg(args, "FUAName").split(";").map(_.split(",").map(_.replace("\"","")).toSeq).toSeq, parseArg(args, "FUAFile"))
     val oas = Polygons(GIS.readGeometry(parseArg(args, "OAFile"), Array(oaID)))
     val lads = GIS.readGeometry(parseArg(args, "LAFile"), Array(ladID))
     //println(lads)

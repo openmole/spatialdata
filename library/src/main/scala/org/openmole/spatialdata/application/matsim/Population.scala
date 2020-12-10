@@ -1,6 +1,6 @@
 package org.openmole.spatialdata.application.matsim
 
-import java.io.{BufferedWriter, FileWriter}
+import java.io.{BufferedWriter, File, FileWriter}
 
 import org.locationtech.jts.geom
 import org.locationtech.jts.geom.GeometryFactory
@@ -26,7 +26,7 @@ object Population {
     "--FUAFile=$PATH\n" +
     "--LAFile=$PATH\n"+
     "--MSOAFile=$PATH\n" +
-    "--SPENSERDir=$DIR\n" +
+    "--SPENSERDirs=$DIR\n" +
     "--output=$OUTPUT"
 
   val msoaID: String = "MSOA11CD"
@@ -53,7 +53,10 @@ object Population {
     println("Running population generation for MATSim model in UK")
 
     // for test on Glasgow: Local Authorities S12000008 S12000011 S12000021 S12000029 S12000030 S12000038 S12000039 S12000045 S12000049 S12000050
-    // runMain org.openmole.spatialdata.application.matsim.RunMatsim --synthpop --popMode=uniform --jobMode=random --planMode=default --sample=0.01 --FUAName=Glasgow --FUAFile=/Users/juste/ComplexSystems/Data/JRC_EC/GHS/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0_WGS84.gpkg --LAFile=/Users/juste/ComplexSystems/UrbanDynamics/Data/OrdnanceSurvey/LADistricts/Local_Authority_Districts__December_2019__Boundaries_UK_BUC-shp/LAD_WGS84.shp --MSOAFile=/Users/juste/ComplexSystems/UrbanDynamics/Data/QUANT/geography/EnglandWalesScotland_MSOAWGS84.shp --SPENSERDir=/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/ --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/Population/test/Glasgow.xml
+    // runMain org.openmole.spatialdata.application.matsim.RunMatsim --synthpop --popMode=uniform --jobMode=random --planMode=default --sample=0.01 --FUAName=Glasgow --FUAFile=/Users/juste/ComplexSystems/Data/JRC_EC/GHS/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0_WGS84.gpkg --LAFile=/Users/juste/ComplexSystems/UrbanDynamics/Data/OrdnanceSurvey/LADistricts/Local_Authority_Districts__December_2019__Boundaries_UK_BUC-shp/LAD_WGS84.shp --MSOAFile=/Users/juste/ComplexSystems/UrbanDynamics/Data/QUANT/geography/EnglandWalesScotland_MSOAWGS84.shp --SPENSERDirs=/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/ --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/Population/test/Glasgow.xml
+    //
+    // Test on Exeter: LADs E07000040 E07000041 E07000042 E07000045 E07000047
+    //runMain org.openmole.spatialdata.application.matsim.RunMatsim --synthpop --popMode=uniform --jobMode=random --planMode=default --sample=0.01 --FUAName=Exeter --FUAFile=/Users/juste/ComplexSystems/Data/JRC_EC/GHS/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0_WGS84.gpkg --LAFile=/Users/juste/ComplexSystems/UrbanDynamics/Data/OrdnanceSurvey/LADistricts/Local_Authority_Districts__December_2019__Boundaries_UK_BUC-shp/LAD_WGS84.shp --MSOAFile=/Users/juste/ComplexSystems/UrbanDynamics/Data/QUANT/geography/EnglandWalesScotland_MSOAWGS84.shp --SPENSERDirs=/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/England,/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/Scotland,/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/Wales --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/Population/test/Exeter.xml
 
     if(args.length<2) throw new IllegalArgumentException(usage)
 
@@ -66,7 +69,7 @@ object Population {
     val localAuthorities = Polygons(lads) // only used for synthpop but better consistence to have same level args
 
     areas.foreach { area =>
-      val pop = loadSyntheticPopulation(area, localAuthorities, parseArg(args, "SPENSERDir"))
+      val pop = loadSyntheticPopulation(area, localAuthorities, parseArg(args, "SPENSERDirs").split(","))
 
       val locator: SpenserSynthPop => SpenserSynthPop = parseArg(args, "popMode") match {
         case "uniform" => p: SpenserSynthPop => HomeLocation.uniformHomeLocationPopulation(p, msoas)
@@ -200,14 +203,20 @@ object Population {
     * @param localAuthorities Polygons of local authorities
     * @return
     */
-  def loadSyntheticPopulation(area: geom.Geometry, localAuthorities: Polygons, spenserDir: String): SpenserSynthPop = {
+  def loadSyntheticPopulation(area: geom.Geometry,
+                              localAuthorities: Polygons,
+                              spenserDirs: Array[String],
+                              indivFileName: (String,String)=>String = {case (dir,code) =>dir+"/ass_"+code+"_MSOA11_2020.csv" },
+                              householdFileName: (String,String)=>String = {case (dir,code) =>dir+"/ass_hh_"+code+"_OA11_2020.csv" }
+                             ): SpenserSynthPop = {
     val reqlads: Seq[(geom.Polygon,Attributes)] = localAuthorities.polygons.zip(localAuthorities.attributes).filter(_._1.intersects(area))
-    //println(reqlads.map(_._2))
-    val reqladcodes = reqlads.map(_._2.getOrElse("lad19cd",""))
-    println("Req LAD codes: "+reqladcodes)
+    val reqladcodes = reqlads.map(_._2.getOrElse("lad19cd","").toString)
+    utils.log("Req LAD codes: "+reqladcodes)
     val individuals: Seq[Individual] = reqladcodes.map{code =>
       utils.log("    loading individuals for LAD "+code)
-      val indivcsv = CSV.readCSV(spenserDir+"/ass_"+code+"_MSOA11_2020.csv") // fixed file name - assume 2020?
+      val potfiles = spenserDirs.map(d => indivFileName(d,code)).filter(new File(_).exists())
+      if (potfiles.isEmpty) throw new RuntimeException("Population file could not be found for LAD: "+code)
+      val indivcsv = CSV.readCSV(potfiles.head) // take the first available file
       utils.log("    indivs: "+indivcsv.values.head.size)
       indivcsv.values.head.indices.map{ i =>
         Individual(indivcsv.keys.map(k => (k,indivcsv(k)(i))).toMap)
@@ -215,7 +224,9 @@ object Population {
     }.reduce(utils.concat[Individual])
     val households: Seq[Household] = reqladcodes.map{code =>
       println("    loading households for LAD "+code)
-      val householdcsv = CSV.readCSV(spenserDir+"/ass_hh_"+code+"_OA11_2020.csv")
+      val potfiles = spenserDirs.map(d => householdFileName(d,code)).filter(new File(_).exists())
+      if (potfiles.isEmpty) throw new RuntimeException("Household file could not be found for LAD: "+code)
+      val householdcsv = CSV.readCSV(potfiles.head)
       householdcsv.values.head.indices.map{ i =>
         Household(householdcsv.keys.map(k => (k,householdcsv(k)(i))).toMap)
       }

@@ -119,13 +119,15 @@ object Population {
       */
     def uniformHomeLocationPopulation(population: SpenserSynthPop, msoas: Polygons)(implicit rng: Random): SpenserSynthPop = {
       val lochouseholds = population.households.groupBy(_.oaCode).map{case (oaCode,hs) =>
-        val (homemsoa,_) =  msoas.getPolygonByKeyValue(oaID, oaCode).get
-        val (c,e) = (homemsoa.getCentroid, homemsoa.getEnvelopeInternal)
-        val (x, y, xmin, xmax, ymin, ymax) = (c.getX, c.getY, e.getMinX, e.getMaxX, e.getMinY, e.getMaxY)
+        val (homeoa,_) =  msoas.getPolygonByKeyValue(oaID, oaCode).get
+        //val (c,e) = (homeoa.getCentroid, homeoa.getEnvelopeInternal)
+        val e = homeoa.getEnvelopeInternal
+        //val (x, y, xmin, xmax, ymin, ymax) = (c.getX, c.getY, e.getMinX, e.getMaxX, e.getMinY, e.getMaxY)
+        val (xmin, xmax, ymin, ymax) = (e.getMinX, e.getMaxX, e.getMinY, e.getMaxY)
         hs.map{household =>
-          //val homeloc = LayerSampling.sampleEnvelope(homemsoa, 1).head
-          // val homeloc =  LayerSampling.PolygonSampler(homemsoa, 0.001).sample // issue with the polygon sampler
-          household.copy(homeLocation = (x - xmin + rng.nextDouble*(xmax-xmin), y - ymin+rng.nextDouble*(ymax-ymin)))
+          //val homeloc = LayerSampling.sampleEnvelope(homeoa, 1).head
+          // val homeloc =  LayerSampling.PolygonSampler(homeoa, 0.001).sample // issue with the polygon sampler
+          household.copy(homeLocation = (xmin + rng.nextDouble*(xmax-xmin), ymin+rng.nextDouble*(ymax-ymin)))
         }
       }.reduce(utils.concat[Household])
       utils.log("Located households = "+lochouseholds.size)

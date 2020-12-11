@@ -1,6 +1,6 @@
 package org.openmole.spatialdata.application.matsim
 
-import org.openmole.spatialdata.utils.math.Stochastic
+import org.openmole.spatialdata.utils.math.{Stochastic, Time}
 import org.openmole.spatialdata.vector.Point
 
 import scala.util.Random
@@ -241,7 +241,7 @@ object SpenserSynthPop {
 
     /**
       *
-      * ! convert double times to string
+      * Basic commute plan home-work-home
       *
       * @param start work start time
       * @param end work end time
@@ -252,9 +252,9 @@ object SpenserSynthPop {
       */
     def commutePlan(start: Double, end: Double, homeLoc: Point, workLoc: Point, mode: String): Plan = Plan(
       actions = Seq(
-        Action("home", homeLoc, "00:00", start.toInt.toString+":00"),
-        Action("work", workLoc, start.toInt.toString+":00", end.toInt.toString+":00"),
-        Action("home", homeLoc, end.toInt.toString+":00", "23:59")
+        Action("home", homeLoc, "00:00", Time.decimalHourToString(start)),
+        Action("work", workLoc, Time.decimalHourToString(start), Time.decimalHourToString(end)),
+        Action("home", homeLoc, Time.decimalHourToString(end), "23:59")
       ),
       legs = Seq(Leg(mode), Leg(mode))
     )

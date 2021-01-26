@@ -107,8 +107,11 @@ object Stochastic {
     }.take(samples).toSeq.last._2
   }
 
-  def sampleWithoutReplacement[T](sampled: Iterable[T], samples: Int)(implicit rng: Random): Vector[T] =
+  def sampleWithoutReplacement[T](sampled: Iterable[T], samples: Int)(implicit rng: Random): Vector[T] = {
+    if (samples<=0) Vector.empty else
     ListSampler.sample(RandomSource.create(RandomSource.MT, rng.nextLong), sampled.toList.asJava, samples).asScala.toVector
-    //sampleWithoutReplacementBy[T](sampled,_ => 1.0 / sampled.size.toDouble, samples)
+  }
+
+  //sampleWithoutReplacementBy[T](sampled,_ => 1.0 / sampled.size.toDouble, samples)
 
 }

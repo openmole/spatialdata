@@ -6,4 +6,6 @@ package object spatialdata {
 
   var HEADLESS = false
 
+  var APPLICATION = false
+
 }

@@ -33,6 +33,9 @@ object Population {
   val oaID: String = "OA11CD"
   val ladID: String = "lad19cd"
 
+  def spenserPopFile(code: String): String = "ass_"+code+"_MSOA11_2020.csv"
+  def spenserHouseholdFile(code: String): String = "ass_hh_"+code+"_OA11_2020.csv"
+
   /**
     * Convert spenser synth pop files to Matsim population
     *
@@ -51,7 +54,7 @@ object Population {
 
     implicit val rng: Random = new Random
 
-    println("Running population generation for MATSim model in UK")
+    utils.log("Running population generation for MATSim model in UK")
 
     // for test on Glasgow: Local Authorities S12000008 S12000011 S12000021 S12000029 S12000030 S12000038 S12000039 S12000045 S12000049 S12000050
     // runMain org.openmole.spatialdata.application.matsim.RunMatsim --synthpop --popMode=uniform --jobMode=random --planMode=default --sample=0.01 --FUAName=Glasgow --FUAFile=/Users/juste/ComplexSystems/Data/JRC_EC/GHS/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0_WGS84.gpkg --LAFile=/Users/juste/ComplexSystems/UrbanDynamics/Data/OrdnanceSurvey/LADistricts/Local_Authority_Districts__December_2019__Boundaries_UK_BUC-shp/LAD_WGS84.shp --OAFile=/Users/juste/ComplexSystems/UrbanDynamics/Data/QUANT/geography/EnglandWalesScotland_MSOAWGS84.shp --SPENSERDirs=/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/ --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/Population/test/Glasgow.xml
@@ -228,20 +231,23 @@ object Population {
   def loadSyntheticPopulation(area: geom.Geometry,
                               localAuthorities: Polygons,
                               spenserDirs: Array[String],
-                              indivFileName: (String,String)=>String = {case (dir,code) =>dir+"/ass_"+code+"_MSOA11_2020.csv" },
-                              householdFileName: (String,String)=>String = {case (dir,code) =>dir+"/ass_hh_"+code+"_OA11_2020.csv" },
+                              indivFileName: (String,String)=>String = {case (dir,code) =>dir+"/"+spenserPopFile(code) },
+                              householdFileName: (String,String)=>String = {case (dir,code) =>dir+"/"+spenserHouseholdFile(code) },
                               sampling: Double = 1.0
                              )(implicit rng: Random): SpenserSynthPop = {
     val reqlads: Seq[(geom.Polygon,Attributes)] = localAuthorities.polygons.zip(localAuthorities.attributes).filter(_._1.intersects(area))
-    val reqladcodes = reqlads.map(_._2.getOrElse("lad19cd","").toString)
+    val reqladcodes = reqlads.map(_._2.getOrElse(ladID,"").toString)
     utils.log("Req LAD codes: "+reqladcodes)
     val individuals: Seq[Individual] = reqladcodes.map{code =>
       utils.log("    loading individuals for LAD "+code)
       val potfiles = spenserDirs.map(d => indivFileName(d,code)).filter(new File(_).exists())
-      if (potfiles.isEmpty) throw new RuntimeException("Population file could not be found for LAD: "+code)
-      val indivcsv = CSV.readCSVraw(potfiles.head, header = false) // take the first available file
-      utils.log("    indivs: "+indivcsv.length)
-      indivcsv.map(r => Individual(r, Individual.csvIndices)).toSeq
+      //if (potfiles.isEmpty) throw new RuntimeException("Population file could not be found for LAD: "+code)
+      if (potfiles.isEmpty) Seq.empty
+      else {
+        val indivcsv = CSV.readCSVraw(potfiles.head, header = false) // take the first available file
+        utils.log("    indivs: " + indivcsv.length)
+        indivcsv.map(r => Individual(r, Individual.csvIndices)).toSeq
+      }
     }.reduce(utils.concat[Individual])
 
     val sampledindivs = if (sampling==1.0) individuals else Stochastic.sampleWithoutReplacement(individuals, (sampling*individuals.size).toInt)
@@ -250,10 +256,13 @@ object Population {
     val households: Seq[Household] = reqladcodes.map{code =>
       println("    loading households for LAD "+code)
       val potfiles = spenserDirs.map(d => householdFileName(d,code)).filter(new File(_).exists())
-      if (potfiles.isEmpty) throw new RuntimeException("Household file could not be found for LAD: "+code)
-      val householdcsv = CSV.readCSVraw(potfiles.head, header = false)
-      utils.log("    households: "+householdcsv.length)
-      householdcsv.flatMap(r => if (hids.contains(r(Household.csvIndices.head).toInt)) Some(Household(r, Household.csvIndices)) else None).toSeq
+      //if (potfiles.isEmpty) throw new RuntimeException("Household file could not be found for LAD: "+code)
+      if (potfiles.isEmpty) Seq.empty
+      else {
+        val householdcsv = CSV.readCSVraw(potfiles.head, header = false)
+        utils.log("    households: " + householdcsv.length)
+        householdcsv.flatMap(r => if (hids.contains(r(Household.csvIndices.head).toInt)) Some(Household(r, Household.csvIndices)) else None).toSeq
+      }
     }.reduce(utils.concat[Household])
     utils.log("Sampled pop size = "+sampledindivs.size+" ; "+households.size)
     SpenserSynthPop(sampledindivs, households)

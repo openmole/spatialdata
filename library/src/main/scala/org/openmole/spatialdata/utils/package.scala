@@ -72,7 +72,7 @@ package object utils {
     * log if debug
     * @param msg
     */
-  def log(msg: String): Unit = if(spatialdata.DEBUG) println(msg)
+  def log(msg: String): Unit = if(spatialdata.DEBUG||spatialdata.APPLICATION) println(msg)
 
 
 

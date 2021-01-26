@@ -2,10 +2,10 @@ package org.openmole.spatialdata.application.matsim
 
 import org.locationtech.jts.geom
 import org.locationtech.jts.io.WKTWriter
-import org.openmole.spatialdata.network
+import org.openmole.spatialdata.{network, utils}
 import org.openmole.spatialdata.network.real.{GISFileNetworkGenerator, MatsimNetworkGenerator}
 import org.openmole.spatialdata.utils.gis.GeometryUtils
-import org.openmole.spatialdata.utils.io.{GeoPackage, Shapefile}
+import org.openmole.spatialdata.utils.io.Shapefile
 import org.openmole.spatialdata.vector.{Attributes, Lines, Polygons}
 
 import scala.util.Random
@@ -65,28 +65,37 @@ object Network {
     }
   }
 
-  def constructNetwork(area: geom.Geometry, tiles: Polygons, roaddatadir: String): network.Network = {
+  /**
+    * Road network construction from area, tile using a GISFileNetworkGenerator
+    * @param area area
+    * @param tiles tiles
+    * @param roaddatadir directory for tile files
+    * @param sourceCRS if reprojection needed, source CRS (default to UK: EPSG:27700)
+    * @param targetCRS target CRS
+    * @return
+    */
+  def constructNetwork(area: geom.Geometry, tiles: Polygons, roaddatadir: String, sourceCRS: String = "EPSG:27700", targetCRS: String = "EPSG:4326"): network.Network = {
     // find tiles with non empty intersection with FUAs
     val reqtiles: Seq[(geom.Polygon,Attributes)] = tiles.polygons.zip(tiles.attributes).filter(_._1.intersects(area))
     val tilenames = reqtiles.map(_._2.getOrElse("name",""))
     // if no tile available: empty network!
     if (tilenames.isEmpty) return network.Network.empty
 
-    println("Requested tiles names are: "+tilenames.mkString(","))
+    utils.log("Requested tiles names are: "+tilenames.mkString(","))
 
     // construct network - ! OS files do not have speed attribute?
     // why are coordinates translated? issue with shp vs geopkg?
     val mask: Option[Either[geom.Geometry,String]] = Some(Left(area))
-    val reproject: Option[Lines => Lines] = Some({
+    val reproject: Option[Lines => Lines] = if(sourceCRS.contains("EPSG")) Some({
       lines: Lines =>
-        val reproj = lines.transform("EPSG:27700","EPSG:4326")
+        val reproj = lines.transform(sourceCRS,targetCRS)
         //utils.log("Before tr: "+reproj.lines.take(2).map(_.toString).mkString("\n"))
         val trlines: Lines = Lines(reproj.lines.map(GeometryUtils.transpose(_).asInstanceOf[geom.LineString]),lines.attributes)
         //utils.log("Transposed: "+trlines.lines.take(2).map(_.toString).mkString("\n"))
         trlines
-    })
-    val nw = GISFileNetworkGenerator(tilenames.map{s => roaddatadir+"/"+s+"_RoadLink.shp"}, weightAttribute = "", mask = mask, reproject=reproject).generateNetwork
-    println("Network size: |V| = "+nw.nodes.size+"; |E| = "+nw.links.size)
+    }) else None
+    val nw = GISFileNetworkGenerator(tilenames.map{s => roaddatadir+"/"+s+"_RoadLink.shp"}, mask = mask, reproject=reproject).generateNetwork
+    utils.log("Network size: |V| = "+nw.nodes.size+"; |E| = "+nw.links.size)
     nw
   }
 

@@ -68,16 +68,16 @@ object Population {
     if(args.length<2) throw new IllegalArgumentException(usage)
 
 
-
-    val areas = loadAreas(parseArg(args, "FUAName").split(";").map(_.split(",").map(_.replace("\"","")).toSeq).toSeq, parseArg(args, "FUAFile"))
+    val fuanames= parseArg(args, "FUAName").replace("\"","").split(";").toSeq
+    val areas = loadAreas(fuanames.map(_.split(",").toSeq), parseArg(args, "FUAFile"))
     val oas = Polygons(GIS.readGeometry(parseArg(args, "OAFile"), Array(oaID)))
     val lads = GIS.readGeometry(parseArg(args, "LAFile"), Array(ladID))
-    //println(lads)
     val localAuthorities = Polygons(lads) // only used for synthpop but better consistence to have same level args
 
     val sampling = parseArg(args, "sample").toDouble
 
-    areas.foreach { area =>
+    areas.zip(fuanames).foreach { case (area,name) =>
+      utils.log("Constructing synthetic population for FUA "+name)
       val pop = loadSyntheticPopulation(area, localAuthorities, parseArg(args, "SPENSERDirs").split(","), sampling = sampling)
 
       val locator: SpenserSynthPop => SpenserSynthPop = parseArg(args, "popMode") match {
@@ -101,11 +101,10 @@ object Population {
       // note: sampling in the end takes much more memory as all population must be constructed (including Plan objects, etc.)
       val finalPopulation = (planComposer compose jobLocator compose locator) (pop)//.sample(parseArg(args, "sample").toDouble)
 
-      println("Final population size = "+finalPopulation.individuals.size)
+      utils.log("Final population size = "+finalPopulation.individuals.size)
 
       // export the population
-      //println(finalPopulation.individuals.map(_.homeLocation))
-      exportMatsimXML(finalPopulation, parseArg(args, "output"))
+      exportMatsimXML(finalPopulation, parseArg(args, "output")+name.replace(",","_")+".xml")
     }
   }
 
@@ -254,7 +253,7 @@ object Population {
     val hids = sampledindivs.map(_.householdId).toSet
 
     val households: Seq[Household] = reqladcodes.map{code =>
-      println("    loading households for LAD "+code)
+      utils.log("    loading households for LAD "+code)
       val potfiles = spenserDirs.map(d => householdFileName(d,code)).filter(new File(_).exists())
       //if (potfiles.isEmpty) throw new RuntimeException("Household file could not be found for LAD: "+code)
       if (potfiles.isEmpty) Seq.empty

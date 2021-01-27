@@ -56,10 +56,14 @@ object MatsimNetworkGenerator {
   /**
     * Write a network as Matsim xml (not in utils.io as very specific)
     *
+    * Note: link distance is computed assuming a projection at link construction - working in wgs84 should still be accurate for medium sized areas
+    *   but link speed must be set accordingly
+    *
     * @param nw network - must have injective ids
     * @param file file
+    * @param linkSpeed default link speed (no speed in OS data, road caraterization not used yet) - set to 60km.h (urban areas) ~ 0.000166 deg.s
     */
-  def writeMatsimXML(nw: Network, file: String): Unit = {
+  def writeMatsimXML(nw: Network, file: String, linkSpeed: String = "0.000166"): Unit = {
 
     val HEADER = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE network SYSTEM \"http://www.matsim.org/files/dtd/network_v1.dtd\">\n<network name=\"spatialdata generated network\">"
     val FOOTER = "</network>"
@@ -74,13 +78,13 @@ object MatsimNetworkGenerator {
     xml.write("</nodes>\n\n")
 
     // links
-    xml.write("<links capperiod=\"12:00:00\">\n")
+    xml.write("<links capperiod=\"01:00:00\" effectivecellsize=\"7.5\" effectivelanewidth=\"3.75\">\n")
     nw.links.zipWithIndex.foreach{
       case (l,i) =>
         xml.write(
-          "<link id=\""+i+"\" from=\""+l.e1.id+"\" to=\""+l.e2.id+"\" length=\""+l.length+"\" freespeed=\""+l.weight+"\" capacity=\"1\" permlanes=\"1\" oneway=\"1\" origid=\""+i+"\" />\n"
+          "<link id=\""+i+"\" from=\""+l.e1.id+"\" to=\""+l.e2.id+"\" length=\""+l.length+"\" freespeed=\""+linkSpeed+"\" capacity=\"1\" permlanes=\"1\" oneway=\"1\" origid=\""+i+"\" />\n"
         )
-        if (!nw.directed) xml.write("<link id=\""+(i+nw.links.size).toString+"\" from=\""+l.e2.id+"\" to=\""+l.e1.id+"\" length=\""+l.length+"\" freespeed=\""+l.weight+"\" capacity=\"1\" permlanes=\"1\" oneway=\"1\" origid=\""+(i+nw.links.size).toString+"\" />\n")
+        if (!nw.directed) xml.write("<link id=\""+(i+nw.links.size).toString+"\" from=\""+l.e2.id+"\" to=\""+l.e1.id+"\" length=\""+l.length+"\" freespeed=\""+linkSpeed+"\" capacity=\"1\" permlanes=\"1\" oneway=\"1\" origid=\""+(i+nw.links.size).toString+"\" />\n")
     }
     xml.write("</links>\n\n")
 

@@ -40,11 +40,11 @@ object SpenserSynthPop {
     * @param plans plans
     */
   case class Individual(
-                       id: Int,
+                       id: String,
                        msoaCode: String,
                        sex: Sex,
                        age: Int,
-                       householdId: Int, // do not store the full household to avoid redundancy
+                       householdId: String, // do not store the full household to avoid redundancy
                        homeLocation: Point = (0.0,0.0),
                        workLocation: Point = (0.0,0.0),
                        plans: Seq[Plan] = Seq.empty
@@ -58,12 +58,12 @@ object SpenserSynthPop {
       * @return
       */
     def apply(fields: Map[String,String]): Individual = Individual(
-      id = fields.getOrElse("PID","-1").toInt,
+      id = fields.getOrElse("PID","-1"),
       msoaCode = fields.getOrElse("Area","NA"),
       sex = fields.getOrElse("DC1117EW_C_SEX","0") match {case "0" => Sex; case "1" => Male; case "2" => Female; case _ => Sex},
       age = fields.getOrElse("DC1117EW_C_AGE","0").toInt,
       // ignore ethnic variable: too much modalities
-      householdId = fields.getOrElse("HID","-1").toInt
+      householdId = fields.getOrElse("HID","-1")
     )
 
     val csvIndices = Seq(0,1,2,3,5)
@@ -74,13 +74,13 @@ object SpenserSynthPop {
       * @param indices indices
       * @return
       */
-    def apply(row: Array[String], indices: Seq[Int]): Individual = Individual(
-      id = row(indices.head).toInt,
+    def apply(row: Array[String], indices: Seq[Int], area: String): Individual = Individual(
+      id = area+"_"+row(indices.head),
       msoaCode = row(indices(1)),
       sex = row(indices(2)) match {case "0" => Sex; case "1" => Male; case "2" => Female; case _ => Sex},
       age = row(indices(3)).toInt,
       // ignore ethnic variable: too much modalities
-      householdId = row(indices(4)).toInt
+      householdId = area+"_"+row(indices(4))
     )
 
 
@@ -95,7 +95,7 @@ object SpenserSynthPop {
     * Spenser household
     *
     * @param hid household id
-    * @param msoaCode home msoa
+    * @param oaCode home output area
     * @param housingType housing type
     * @param tenureType tenure type
     * @param persons number of persons
@@ -109,7 +109,7 @@ object SpenserSynthPop {
     * @param homeLocation home location (enriched)
     */
   case class Household(
-                      hid: Int,
+                      hid: String,
                       oaCode: String,
                       housingType: HousingType.HousingType,
                       tenureType: TenureType.TenureType,
@@ -133,7 +133,7 @@ object SpenserSynthPop {
       */
     def apply(fields: Map[String,String]): Household = {
       Household(
-        hid = fields.getOrElse("HID","-1").toInt,
+        hid = fields.getOrElse("HID","-1"),
         oaCode = fields.getOrElse("Area","NA"),
         housingType = HousingType(fields.getOrElse("LC4402_C_TYPACCOM","-1")),
         // QS420_CELL land-use: not filled?
@@ -155,9 +155,9 @@ object SpenserSynthPop {
 
     val csvIndices = Seq(0,1,2,4,7,8,9,11,12,14,15,16)
 
-    def apply(row: Array[String], indices: Seq[Int]): Household = {
+    def apply(row: Array[String], indices: Seq[Int], area: String): Household = {
       Household(
-        hid = row(indices.head).toInt,
+        hid = area+"_"+row(indices.head),
         oaCode = row(indices(1)),
         housingType = HousingType(row(indices(2))),
         // QS420_CELL land-use: not filled?
@@ -267,7 +267,7 @@ object SpenserSynthPop {
       * @param endTime end time
       */
     case class Action(actionType: String, place: Point, startTime: String, endTime: String){
-      def xml: String = "<act type=\""+actionType+"\" x=\""+place._1+"\" y=\""+place._2+"\" start_time=\""+startTime+"\" end_time=\""+endTime+"\" />"
+      def xml: String = "<activity type=\""+actionType+"\" x=\""+place._1+"\" y=\""+place._2+"\" start_time=\""+startTime+"\" end_time=\""+endTime+"\" />"
     }
     case class Leg(mode: String) {
       def xml: String = "<leg mode=\""+mode+"\" />"

@@ -48,6 +48,18 @@ object Population {
     *
     * ! add optional seed argument?
     *
+    *  for test on Glasgow: Local Authorities S12000008 S12000011 S12000021 S12000029 S12000030 S12000038 S12000039 S12000045 S12000049 S12000050
+    *    runMain org.openmole.spatialdata.application.matsim.RunMatsim --synthpop --popMode=uniform --jobMode=random --planMode=default --sample=0.01 --FUAName=Glasgow --FUAFile=/Users/juste/ComplexSystems/Data/JRC_EC/GHS/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0_WGS84.gpkg --LAFile=/Users/juste/ComplexSystems/UrbanDynamics/Data/OrdnanceSurvey/LADistricts/Local_Authority_Districts__December_2019__Boundaries_UK_BUC-shp/LAD_WGS84.shp --OAFile=/Users/juste/ComplexSystems/UrbanDynamics/Data/QUANT/geography/EnglandWalesScotland_MSOAWGS84.shp --SPENSERDirs=/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/ --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/Population/test/Glasgow.xml
+    *
+    *  Test on Exeter: LADs E07000040 E07000041 E07000042 E07000045 E07000047
+    *    runMain org.openmole.spatialdata.application.matsim.RunMatsim --synthpop --popMode=uniform --jobMode=random --planMode=default --sample=0.01 --FUAName=Exeter --FUAFile=/Users/juste/ComplexSystems/Data/JRC_EC/GHS/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0_WGS84.gpkg --LAFile=/Users/juste/ComplexSystems/UrbanDynamics/Data/OrdnanceSurvey/LADistricts/Local_Authority_Districts__December_2019__Boundaries_UK_BUC-shp/LAD_WGS84.shp --OAFile=/Users/juste/ComplexSystems/UrbanDynamics/Data/QUANT/geography/EnglandWalesScotland_MSOAWGS84.shp --SPENSERDirs=/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/England,/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/Scotland,/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/Wales --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/Population/test/Exeter.xml
+    *
+    *  Test on Hereford: LADs
+    *    runMain org.openmole.spatialdata.application.matsim.RunMatsim --synthpop --popMode=uniform --jobMode=random --planMode=default --sample=0.01 --FUAName=Hereford --FUAFile=/Users/juste/ComplexSystems/Data/JRC_EC/GHS/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0_WGS84.gpkg --LAFile=/Users/juste/ComplexSystems/UrbanDynamics/Data/OrdnanceSurvey/LADistricts/Local_Authority_Districts__December_2019__Boundaries_UK_BUC-shp/LAD_WGS84.shp --OAFile=/Users/juste/ComplexSystems/Data/OrdnanceSurvey/Output_Areas__December_2011__Boundaries_EW_BGC-shp/OA2011_WGS84.shp --SPENSERDirs=/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/England,/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/Scotland,/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/Wales --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/Population/test/Hereford.xml
+    *
+    *  Test on Taunton
+    *     runMain org.openmole.spatialdata.application.matsim.RunMatsim --synthpop --popMode=uniform --jobMode=random --planMode=default --sample=0.01 --FUAName="Taunton" --FUAFile=/Users/juste/ComplexSystems/Data/JRC_EC/GHS/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0_WGS84.gpkg --LAFile=/Users/juste/ComplexSystems/UrbanDynamics/Data/OrdnanceSurvey/LADistricts/Local_Authority_Districts__December_2019__Boundaries_UK_BUC-shp/LAD_WGS84.shp --OAFile=/Users/juste/ComplexSystems/Data/OrdnanceSurvey/Output_Areas__December_2011__Boundaries_EW_BGC-shp/OA2011_WGS84.shp --SPENSERDirs=/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/England,/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/Scotland,/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/Wales --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/test/Plans
+    *
     * @param args arguments
     */
   def runPopulationConstruction(args: Array[String]): Unit = {
@@ -56,13 +68,6 @@ object Population {
 
     utils.log("Running population generation for MATSim model in UK")
 
-    // for test on Glasgow: Local Authorities S12000008 S12000011 S12000021 S12000029 S12000030 S12000038 S12000039 S12000045 S12000049 S12000050
-    // runMain org.openmole.spatialdata.application.matsim.RunMatsim --synthpop --popMode=uniform --jobMode=random --planMode=default --sample=0.01 --FUAName=Glasgow --FUAFile=/Users/juste/ComplexSystems/Data/JRC_EC/GHS/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0_WGS84.gpkg --LAFile=/Users/juste/ComplexSystems/UrbanDynamics/Data/OrdnanceSurvey/LADistricts/Local_Authority_Districts__December_2019__Boundaries_UK_BUC-shp/LAD_WGS84.shp --OAFile=/Users/juste/ComplexSystems/UrbanDynamics/Data/QUANT/geography/EnglandWalesScotland_MSOAWGS84.shp --SPENSERDirs=/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/ --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/Population/test/Glasgow.xml
-    //
-    // Test on Exeter: LADs E07000040 E07000041 E07000042 E07000045 E07000047
-    //runMain org.openmole.spatialdata.application.matsim.RunMatsim --synthpop --popMode=uniform --jobMode=random --planMode=default --sample=0.01 --FUAName=Exeter --FUAFile=/Users/juste/ComplexSystems/Data/JRC_EC/GHS/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0_WGS84.gpkg --LAFile=/Users/juste/ComplexSystems/UrbanDynamics/Data/OrdnanceSurvey/LADistricts/Local_Authority_Districts__December_2019__Boundaries_UK_BUC-shp/LAD_WGS84.shp --OAFile=/Users/juste/ComplexSystems/UrbanDynamics/Data/QUANT/geography/EnglandWalesScotland_MSOAWGS84.shp --SPENSERDirs=/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/England,/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/Scotland,/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/Wales --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/Population/test/Exeter.xml
-    // Test on Hereford: LADs
-    //runMain org.openmole.spatialdata.application.matsim.RunMatsim --synthpop --popMode=uniform --jobMode=random --planMode=default --sample=0.01 --FUAName=Hereford --FUAFile=/Users/juste/ComplexSystems/Data/JRC_EC/GHS/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0_WGS84.gpkg --LAFile=/Users/juste/ComplexSystems/UrbanDynamics/Data/OrdnanceSurvey/LADistricts/Local_Authority_Districts__December_2019__Boundaries_UK_BUC-shp/LAD_WGS84.shp --OAFile=/Users/juste/ComplexSystems/Data/OrdnanceSurvey/Output_Areas__December_2011__Boundaries_EW_BGC-shp/OA2011_WGS84.shp --SPENSERDirs=/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/England,/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/Scotland,/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/Wales --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/Population/test/Hereford.xml
 
 
     if(args.length<2) throw new IllegalArgumentException(usage)
@@ -78,7 +83,7 @@ object Population {
 
     areas.zip(fuanames).foreach { case (area,name) =>
       utils.log("Constructing synthetic population for FUA "+name)
-      val pop = loadSyntheticPopulation(area, localAuthorities, parseArg(args, "SPENSERDirs").split(","), sampling = sampling)
+      val pop = loadSyntheticPopulation(area, name, localAuthorities, parseArg(args, "SPENSERDirs").split(","), sampling = sampling)
 
       val locator: SpenserSynthPop => SpenserSynthPop = parseArg(args, "popMode") match {
         case "uniform" => p: SpenserSynthPop => HomeLocation.uniformHomeLocationPopulation(p, oas)
@@ -104,7 +109,7 @@ object Population {
       utils.log("Final population size = "+finalPopulation.individuals.size)
 
       // export the population
-      exportMatsimXML(finalPopulation, parseArg(args, "output")+name.replace(",","_")+".xml")
+      exportMatsimXML(finalPopulation, parseArg(args, "output")+"_"+name.replace(",","_")+".xml")
     }
   }
 
@@ -120,6 +125,7 @@ object Population {
       * @return
       */
     def uniformHomeLocationPopulation(population: SpenserSynthPop, msoas: Polygons)(implicit rng: Random): SpenserSynthPop = {
+      utils.log("    Uniform home location")
       val lochouseholds = population.households.groupBy(_.oaCode).map{case (oaCode,hs) =>
         val (homeoa,_) =  msoas.getPolygonByKeyValue(oaID, oaCode).get
         //val (c,e) = (homeoa.getCentroid, homeoa.getEnvelopeInternal)
@@ -165,6 +171,7 @@ object Population {
       * @return
       */
     def randomJobLocationPopulation(population: SpenserSynthPop, area: geom.Geometry)(implicit rng: Random): SpenserSynthPop = {
+      utils.log("    Random job locations")
       val polygonSampler = LayerSampling.PolygonSampler((new GeometryFactory).createMultiPolygon(Array(area.asInstanceOf[geom.Polygon])))
       utils.log("Sampling jobs randomly into polygon of area "+area.getArea)
       val jobLocations: Seq[Point] = population.individuals.indices.map(_ => polygonSampler.sample)
@@ -214,6 +221,7 @@ object Population {
       * @return
       */
     def uniformTimesCommuterPlan(individual: Individual)(implicit rng: Random): Individual = {
+      //utils.log("    Uniform times commuter plan")
       val workStartTime = workStartTimeUniformInterval._1 + rng.nextDouble()*(workStartTimeUniformInterval._2 - workStartTimeUniformInterval._1)
       val workEndTime = workEndTimeUniformInterval._1 + rng.nextDouble()*(workEndTimeUniformInterval._2 - workEndTimeUniformInterval._1)
       individual.copy(plans = Seq(Plan.commutePlan(workStartTime, workEndTime, individual.homeLocation, individual.workLocation, "car")))
@@ -228,6 +236,7 @@ object Population {
     * @return
     */
   def loadSyntheticPopulation(area: geom.Geometry,
+                              areaname: String,
                               localAuthorities: Polygons,
                               spenserDirs: Array[String],
                               indivFileName: (String,String)=>String = {case (dir,code) =>dir+"/"+spenserPopFile(code) },
@@ -245,12 +254,13 @@ object Population {
       else {
         val indivcsv = CSV.readCSVraw(potfiles.head, header = false) // take the first available file
         utils.log("    indivs: " + indivcsv.length)
-        indivcsv.map(r => Individual(r, Individual.csvIndices)).toSeq
+        indivcsv.map(r => Individual(r, Individual.csvIndices, code)).toSeq
       }
     }.reduce(utils.concat[Individual])
 
     val sampledindivs = if (sampling==1.0) individuals else Stochastic.sampleWithoutReplacement(individuals, (sampling*individuals.size).toInt)
     val hids = sampledindivs.map(_.householdId).toSet
+    //println(hids)
 
     val households: Seq[Household] = reqladcodes.map{code =>
       utils.log("    loading households for LAD "+code)
@@ -260,7 +270,7 @@ object Population {
       else {
         val householdcsv = CSV.readCSVraw(potfiles.head, header = false)
         utils.log("    households: " + householdcsv.length)
-        householdcsv.flatMap(r => if (hids.contains(r(Household.csvIndices.head).toInt)) Some(Household(r, Household.csvIndices)) else None).toSeq
+        householdcsv.flatMap(r => if (hids.contains(code+"_"+r(Household.csvIndices.head))) Some(Household(r, Household.csvIndices, code)) else None).toSeq
       }
     }.reduce(utils.concat[Household])
     utils.log("Sampled pop size = "+sampledindivs.size+" ; "+households.size)
@@ -275,13 +285,14 @@ object Population {
     * @param file file
     */
   def exportMatsimXML(population: SpenserSynthPop, file: String): Unit = {
-    val HEADER = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE population SYSTEM \"http://www.matsim.org/files/dtd/population_v1.dtd\">\n<population name=\"SPENSER/spatialdata generated population\">"
+    val HEADER = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE population SYSTEM \"http://www.matsim.org/files/dtd/population_v6.dtd\">\n\n<population>\n\n"
+    // <population name="SPENSER/spatialdata generated population">
     val FOOTER = "</population>"
     val xml = new BufferedWriter(new FileWriter(file))
     xml.write(HEADER)
 
     population.individuals.foreach{person =>
-      xml.write("<person id="+person.id+">\n")
+      xml.write("<person id=\""+person.id+"\">\n")
       person.plans.foreach{plan =>
         xml.write("<plan>\n")
         xml.write(plan.actions.head.xml+"\n")

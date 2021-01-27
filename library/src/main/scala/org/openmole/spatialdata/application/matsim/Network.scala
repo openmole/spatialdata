@@ -18,10 +18,15 @@ object Network {
     * Construct networks for given areas
     *
     * FUA names as arguments - for testing purpose, Manchester, London are on 4 OSRoads tile, Exeter also but smaller in terms of data
-    *   Exeter: SS,ST,SX,SY
-    *   Exeter test command
-    *   run --network --FUAName=Exeter --FUAFile=$CS_HOME/Data/JRC_EC/GHS/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0_WGS84.gpkg --TilesFile=$CS_HOME/UrbanDynamics/Models/Matsim/Network/data/OSOpenRoadsTiles.shp --datadir=$CS_HOME/UrbanDynamics/Data/OrdnanceSurvey/OSOpenRoads --output=$CS_HOME/UrbanDynamics/Data/OrdnanceSurvey/OSOpenRoads/Exeter_Roads.xml
+    *
+    *   Exeter test command (Exeter tiles: SS,ST,SX,SY)
+    *     run --network --FUAName=Exeter --FUAFile=$CS_HOME/Data/JRC_EC/GHS/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0_WGS84.gpkg --TilesFile=$CS_HOME/UrbanDynamics/Models/Matsim/Network/data/OSOpenRoadsTiles.shp --datadir=$CS_HOME/UrbanDynamics/Data/OrdnanceSurvey/OSOpenRoads --output=$CS_HOME/UrbanDynamics/Data/OrdnanceSurvey/OSOpenRoads/Exeter_Roads.xml
+    *
+    *   Taunton test
+    *     runMain org.openmole.spatialdata.application.matsim.RunMatsim --network --FUAName="Taunton" --FUAFile=/Users/juste/ComplexSystems/Data/JRC_EC/GHS/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0_WGS84.gpkg --TilesFile=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/Network/data/OSOpenRoadsTiles.shp --datadir=/Users/juste/ComplexSystems/UrbanDynamics/Data/OrdnanceSurvey/OSOpenRoads --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/test/Plans
+    *
     *   Test London: SP,SU,TL,TQ
+    *
     *   Test several (small multi-FUAs areas): Taunton,Weston-super-Mare;Exeter,Torquay ... --output=$CS_HOME/UrbanDynamics/Data/OrdnanceSurvey/OSOpenRoads/Exeter_Roads.xml
     *
     * @param args arguments; usage: --network --FUAName="$NAME1,$NAME2,...,$NAMEN;...,...;..." --FUAFile=$PATH --TilesFile=$PATHTILES --datadir=$DATADIR --output=$OUTPUT
@@ -39,17 +44,17 @@ object Network {
       "--output=$OUTPUT")
 
     val fuanames= Matsim.parseArg(args, "FUAName").replace("\"","").split(";").toSeq
-    println("Constructing network for FUAs: "+fuanames.mkString("  ;  "))
+    utils.log("Constructing network for FUAs: "+fuanames.mkString("  ;  "))
     val fuapath=Matsim.parseArg(args, "FUAFile")
     val areas = Matsim.loadAreas(fuanames.map(_.split(",").toSeq), fuapath)
-    println("Target network areas: "+areas.map{area=>new WKTWriter().write(area.getEnvelope)}.mkString("\n"))
+    utils.log("Target network areas: "+areas.map{area=>new WKTWriter().write(area.getEnvelope)}.mkString("\n"))
 
     // load road data coverage
     // (note: specific to UK and split road dataset)
     val tilesfile = Matsim.parseArg(args, "TilesFile")
     val (tilesgeoms,tilesattrs) = Shapefile.readGeometry(tilesfile, Array("name")).unzip // tile layer name is hardcoded
     val tiles = Polygons.fromGeometries(tilesgeoms,tilesattrs)
-    println("Map tiles: "+tiles.polygons.size)
+    utils.log("Map tiles: "+tiles.polygons.size)
 
     val roaddatadir: String = Matsim.parseArg(args, "datadir")
 
@@ -57,10 +62,10 @@ object Network {
 
     // export network to matsim format
     val output = Matsim.parseArg(args, "output")
-    println("Exporting network to file prefix "+output)
+    utils.log("Exporting network to file prefix "+output)
 
     networks.zip(fuanames).foreach {case (nw,name) =>
-      println("Area: "+name+": |V|="+nw.nodes.size+"; |E|="+nw.links.size)
+      utils.log("Area: "+name+": |V|="+nw.nodes.size+"; |E|="+nw.links.size)
       MatsimNetworkGenerator.writeMatsimXML(nw, output+"_"+name.replace(",","-")+".xml")
     }
   }
@@ -96,6 +101,7 @@ object Network {
     }) else None
     val nw = GISFileNetworkGenerator(tilenames.map{s => roaddatadir+"/"+s+"_RoadLink.shp"}, mask = mask, reproject=reproject).generateNetwork
     utils.log("Network size: |V| = "+nw.nodes.size+"; |E| = "+nw.links.size)
+    utils.log("Duplicate ids: max nodes per id = "+nw.nodes.groupBy(_.id).values.map(_.size).max)
     nw
   }
 

@@ -61,7 +61,7 @@ object MatsimNetworkGenerator {
     *
     * @param nw network - must have injective ids
     * @param file file
-    * @param linkSpeed default link speed (no speed in OS data, road caraterization not used yet) - set to 60km.h (urban areas) ~ 0.000166 deg.s
+    * @param linkSpeed default link speed (no speed in OS data, road caraterization not used yet) - set to 60km.h (urban areas) ~ 0.000166 deg.s -> strange travel times, need speed x10? -> idem!
     */
   def writeMatsimXML(nw: Network, file: String, linkSpeed: String = "0.000166"): Unit = {
 

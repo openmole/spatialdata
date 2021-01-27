@@ -273,7 +273,7 @@ object GraphAlgorithms {
     */
   def largestConnectedComponent(network: Network, method: ComponentsMethod = ConnectedComponentsTraverse()): Network = {
     val components = connectedComponents(network, method)
-    val largestComp = components.sortWith { case (n1, n2) => n1.nodes.size > n2.nodes.size }(0)
+    val largestComp = components.sortWith { case (n1, n2) => n1.nodes.size > n2.nodes.size }.head
     largestComp
   }
 

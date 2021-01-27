@@ -3,7 +3,7 @@ package org.openmole.spatialdata.network
 import org.openmole.spatialdata.vector.{Attributes, Point, Points}
 import org.openmole.spatialdata.utils.graph.GraphAlgorithms
 import org.openmole.spatialdata.utils.Implicits._
-import org.openmole.spatialdata.utils.graph.GraphAlgorithms.{DijkstraJGraphT, ShortestPathMethod}
+import org.openmole.spatialdata.utils.graph.GraphAlgorithms.{ConnectedComponentsJGraphT, DijkstraJGraphT, ShortestPathMethod}
 
 import scala.util.Random
 import scala.math._
@@ -287,7 +287,8 @@ case class Network(
     } yield ((n1,n2),d)).toMap
     //  note: for performance should not recompute components at each step
     def connectClosestComponents(state: (Network,Int)): (Network,Int) = {
-      val components = GraphAlgorithms.connectedComponents(state._1)
+      val components = GraphAlgorithms.connectedComponents(state._1, method = ConnectedComponentsJGraphT())
+      println(components.size)
       if(components.size==1) (state._1,1)
       else {
         val (n1min, n2min, _) = (for {

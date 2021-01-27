@@ -5,6 +5,8 @@ import org.locationtech.jts.io.WKTWriter
 import org.openmole.spatialdata.{network, utils}
 import org.openmole.spatialdata.network.real.{GISFileNetworkGenerator, MatsimNetworkGenerator}
 import org.openmole.spatialdata.utils.gis.GeometryUtils
+import org.openmole.spatialdata.utils.graph.GraphAlgorithms
+import org.openmole.spatialdata.utils.graph.GraphAlgorithms.ConnectedComponentsJGraphT
 import org.openmole.spatialdata.utils.io.Shapefile
 import org.openmole.spatialdata.vector.{Attributes, Lines, Polygons}
 
@@ -102,7 +104,11 @@ object Network {
     val nw = GISFileNetworkGenerator(tilenames.map{s => roaddatadir+"/"+s+"_RoadLink.shp"}, mask = mask, reproject=reproject).generateNetwork
     utils.log("Network size: |V| = "+nw.nodes.size+"; |E| = "+nw.links.size)
     utils.log("Duplicate ids: max nodes per id = "+nw.nodes.groupBy(_.id).values.map(_.size).max)
-    nw
+    utils.log("Connected components : "+GraphAlgorithms.connectedComponents(nw,method = ConnectedComponentsJGraphT()).size)
+    //nw.weakComponentConnect // algo is inefficient
+    val largestcomponent = GraphAlgorithms.largestConnectedComponent(nw, method = ConnectedComponentsJGraphT())
+    utils.log("Final network size: |V| = "+largestcomponent.nodes.size+"; |E| = "+largestcomponent.links.size)
+    largestcomponent
   }
 
 

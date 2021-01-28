@@ -67,8 +67,11 @@ object LayerSampling {
       val triangleCollection = builder.getTriangles(polygon.getFactory).asInstanceOf[GeometryCollection]
       var areaSum = 0.0
       val trianglesInPolygon = (0 until triangleCollection.getNumGeometries).map(triangleCollection.getGeometryN(_).asInstanceOf[Polygon]).filter(p => {
-        val area = p.getArea
-        p.intersection(polygon).getArea > 0.99 * area
+        val res = Try({ // catch some topology issue: non-noded intersection
+          val area = p.getArea
+          p.intersection(polygon).getArea > 0.99 * area
+        })
+        res.getOrElse(polygon.contains(p)) // ! this may have unexpected effects to return all triangles? -> use contains instead?
       })
       trianglesInPolygon.map { triangle =>
         areaSum += triangle.getArea

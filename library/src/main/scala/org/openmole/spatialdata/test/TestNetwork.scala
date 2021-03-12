@@ -46,7 +46,7 @@ object TestNetwork {
     }
     def linkColor(l: Link): Int = nodeColor(l.e1)
 
-    visualization.staticNetworkVisualization(Seq(nw,simpl1,simpl2,simpl3),nodeColorClasses = nodeColor,edgeColorClasses = linkColor)
+    visualization.staticNetworkVisualization(Seq(nw,simpl1,simpl2,simpl3),nodeColoring = nodeColor,edgeColoring = linkColor)
   }
 
 
@@ -86,8 +86,8 @@ object TestNetwork {
     val cycles = GraphAlgorithms.cycles(nw)
     val colorMap: Map[Node,Int] = cycles.zipWithIndex.flatMap{case (nk,k) => nk.nodes.toSeq.map{(_,k)}}.toMap
     val linkColorMap = cycles.zipWithIndex.flatMap{case (nk,k) => nk.links.toSeq.map{(_,k)}}.toMap
-    visualization.staticNetworkVisualization(cycles,edgeColorClasses = linkColorMap,
-      nodeColorClasses = n => colorMap(n),
+    visualization.staticNetworkVisualization(cycles,edgeColoring = linkColorMap,
+      nodeColoring = n => colorMap(n),
       nodePositioning = n => (n.x + colorMap(n)/20,n.y + colorMap(n)/20)
     )
   }
@@ -101,7 +101,7 @@ object TestNetwork {
     //val nwrem = nw.removeLinks(nw.links.sampleWithoutReplacement(100).toSet)
     val nwrem = nw.removeRandomLinks(50)
     //println("Components = "+GraphAlgorithms.connectedComponents(nw).size)
-    visualization.staticNetworkVisualization(Seq(nwrem),nodeColorClasses = {_ => Seq(1,2,3,4,5,6,7,8).sampleWithReplacement(1).head})
+    visualization.staticNetworkVisualization(Seq(nwrem),nodeColoring = {_ => Seq(1,2,3,4,5,6,7,8).sampleWithReplacement(1).head})
   }
 
   /**

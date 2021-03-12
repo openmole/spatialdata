@@ -1,6 +1,7 @@
 package org.openmole.spatialdata.network
 
-import org.openmole.spatialdata.vector.{Attributes, Point, Points}
+import org.openmole.spatialdata.utils
+import org.openmole.spatialdata.vector.{Point, Points}
 import org.openmole.spatialdata.utils.graph.GraphAlgorithms
 import org.openmole.spatialdata.utils.Implicits._
 import org.openmole.spatialdata.utils.graph.GraphAlgorithms.{ConnectedComponentsJGraphT, DijkstraJGraphT, ShortestPathMethod}
@@ -76,7 +77,8 @@ case class Network(
 
 
   /**
-    * FIXME recompute if link weight function has changed - requires to cache the weight function
+    *  !! recompute if link weight function has changed - requires to cache the weight function !!
+    *
     * @param linkWeight link weight function
     * @return this network with cached shortest paths
     */
@@ -170,8 +172,10 @@ case class Network(
 
   /**
     * Remove a set of links and optionally corresponding nodes if belonging only to removed links
-    *  FIXME cached shortest paths are removed by default - could implement dynamic programming shortest paths and include here
-    *   (should work with link removal, only recompute path if deleted link on it - requires caching paths themselves but ok)
+    *
+    *   !! cached shortest paths are removed by default - could implement dynamic programming shortest paths and include here
+    *   (should work with link removal, only recompute path if deleted link on it - requires caching paths themselves but ok) !!
+    *
     * @param removedLinks links to be removed
     * @param keepNodes should isolated nodes be kept
     * @return
@@ -288,7 +292,7 @@ case class Network(
     //  note: for performance should not recompute components at each step
     def connectClosestComponents(state: (Network,Int)): (Network,Int) = {
       val components = GraphAlgorithms.connectedComponents(state._1, method = ConnectedComponentsJGraphT())
-      println(components.size)
+      utils.log("Remaining components: "+components.size)
       if(components.size==1) (state._1,1)
       else {
         val (n1min, n2min, _) = (for {

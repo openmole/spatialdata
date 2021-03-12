@@ -16,8 +16,8 @@ import scala.util.Random
   */
 case class GridNetworkGenerator(
                                  size: Int,
-                                 xstep: Int,
-                                 ystep: Int,
+                                 xstep: Double,
+                                 ystep: Double,
                                  withDiagLinks: Boolean = false
                                ) extends NetworkGenerator {
 
@@ -35,7 +35,7 @@ object GridNetworkGenerator {
     * @param size size
     * @return
     */
-  def apply(size: Int): GridNetworkGenerator = GridNetworkGenerator(size,size/10,size/10)
+  def apply(size: Int): GridNetworkGenerator = GridNetworkGenerator(size,size.toDouble/10.0,size.toDouble/10.0)
 
   /**
     * spatial grid network
@@ -44,33 +44,33 @@ object GridNetworkGenerator {
     * @param size size
     * @return
     */
-  def gridNetwork(xstep: Int,ystep: Int, size: Int,diagLinks: Boolean = false): Network = {
+  def gridNetwork(xstep: Double,ystep: Double, size: Int,diagLinks: Boolean = false): Network = {
 
     // create nodes
-    val ycoords = 0 to size by ystep
-    val xcoords = 0 to size by xstep
-    val coords: Seq[(Double,Double)] = xcoords.flatMap{xx: Int => ycoords.map{yy: Int => (xx.toDouble,yy.toDouble)}}
+    val ycoords = (0 to (size/ystep).toInt by 1).map(_*ystep)
+    val xcoords = (0 to (size/xstep).toInt by 1).map(_*xstep)
+    val coords: Seq[(Double,Double)] = xcoords.flatMap{x => ycoords.map{y => (x,y)}}
     val nodes: Seq[Seq[Node]] = coords.zipWithIndex.map{c=>  Node(c._2,c._1._1,c._1._2)}.sliding(ycoords.size,ycoords.size).toSeq
 
     // create edges
     val edges = ArrayBuffer[Link]()
     //dirty
-    for (i <- 0 until nodes.size ; j <- 0 until nodes(0).size) {
+    for (i <- nodes.indices ; j <- nodes.indices) {
       if(i-1>0){
         if(diagLinks&&j-1>0){edges.append(Link(nodes(i)(j),nodes(i-1)(j-1),0.0))}
         edges.append(Link(nodes(i)(j),nodes(i-1)(j),0.0))
-        if(diagLinks&&j+1<nodes(0).size){edges.append(Link(nodes(i)(j),nodes(i-1)(j+1),0.0))}
+        if(diagLinks&&j+1<nodes.head.size){edges.append(Link(nodes(i)(j),nodes(i-1)(j+1),0.0))}
       }
       if(j-1>0){
         edges.append(Link(nodes(i)(j),nodes(i)(j-1),0.0))
       }
-      if(j+1<nodes(0).size){
+      if(j+1<nodes.head.size){
         edges.append(Link(nodes(i)(j),nodes(i)(j+1),0.0))
       }
       if(i+1<nodes.size){
         if(diagLinks&&j-1>0){edges.append(Link(nodes(i)(j),nodes(i+1)(j-1),0.0))}
         edges.append(Link(nodes(i)(j),nodes(i+1)(j),0.0))
-        if(diagLinks&&j+1<nodes(0).size){edges.append(Link(nodes(i)(j),nodes(i+1)(j+1),0.0))}
+        if(diagLinks&&j+1<nodes.head.size){edges.append(Link(nodes(i)(j),nodes(i+1)(j+1),0.0))}
       }
     }
 

@@ -18,17 +18,28 @@ package object visualization {
 
 
   /**
-    * Quick visu for debugging purposes
+    * Network visualization
+    * @param networks set of networks
+    * @param withLabel display labels
+    * @param edgeColoring classes for edge colo
+    * @param edgeScaling edge size
+    * @param nodeColoring classes for node color
+    * @param nodePositioning node position
+    * @param nodeScaling node rescale
+    * @param nodeShaping node shape (0:square; 1:circle)
     */
   def staticNetworkVisualization(networks: Seq[Network],
                                  withLabel: Boolean = false,
-                                 edgeColorClasses: Link => Int = {_ => 0},
-                                 nodeColorClasses: Node=>Int={_ => 0},
-                                 nodePositioning: Node => Point = {n => n.position}
+                                 edgeColoring: Link => Int = {_ => 0},
+                                 edgeScaling: Link => Double = {_ => 2.0},
+                                 nodeColoring: Node=>Int={_ => 0},
+                                 nodePositioning: Node => Point = {n => n.position},
+                                 nodeScaling: Node => Double = {_ => 1.0},
+                                 nodeShaping: Node => Int = {_ => 0}
                                 ): Unit = {
     if (org.openmole.spatialdata.HEADLESS) return
-    val frame = NetworkFrame(networks = networks,withLabel=withLabel,edgeColorClasses=edgeColorClasses,nodeColorClasses=nodeColorClasses,nodePositioning=nodePositioning)
-    frame.init
+    val frame = NetworkFrame(networks = networks,withLabel=withLabel,edgeColoring=edgeColoring,edgeScaling=edgeScaling,nodeColoring=nodeColoring,nodePositioning=nodePositioning, nodeScaling=nodeScaling, nodeShaping=nodeShaping)
+    frame.init()
   }
 
   def normalizedPosition(networks: Seq[Network]): Node => Point = {
@@ -45,14 +56,15 @@ package object visualization {
   }
 
 
-  def normalization(r: RasterLayerData[Double]): RasterLayerData[Double] = {
-    val (mi,ma) = (r.flatten.min,r.flatten.max);r.map{_.map{d: Double => (d - mi) / (ma - mi)}}
+  def normalization(r: Array[Array[Double]]): Array[Array[Double]] = {
+    val (mi,ma) = (r.flatten.min,r.flatten.max)
+    r.map{_.map{d: Double => (d - mi) / (ma - mi)}}
   }
 
-  def normalizationLog = {r: RasterLayerData[Double] =>visualization.normalization(r.map{_.map{d => if(d<=0.0) 0.0 else scala.math.log10(d)}})}
+  def normalizationLog: Array[Array[Double]] => Array[Array[Double]] = {r: Array[Array[Double]] =>visualization.normalization(r.map{_.map{d => if(d<=0.0) 0.0 else scala.math.log10(d)}})}
 
-  def staticRasterVisualization(raster: RasterLayerData[Double],
-                                projection: RasterLayerData[Double] => RasterLayerData[Double] = normalization
+  def staticRasterVisualization(raster: RasterLayerData[Double]//,
+                                //projection: RasterLayerData[Double] => RasterLayerData[Double] = normalization
                                ): Unit = {
     if (org.openmole.spatialdata.HEADLESS) return
     val frame = RasterFrame(raster)

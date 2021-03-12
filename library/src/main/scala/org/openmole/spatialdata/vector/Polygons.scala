@@ -40,6 +40,8 @@ case class Polygons(
 
 object Polygons {
 
+  val empty: Polygons = Polygons(Seq.empty[geom.Polygon])
+
   /**
     * Construct Polygons from geometries and attributes
     *

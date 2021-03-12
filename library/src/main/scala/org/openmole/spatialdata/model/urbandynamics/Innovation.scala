@@ -160,7 +160,7 @@ object Innovation {
       case n if n > 0 => Matrix(CSV.readMat(distanceFile))
       case _ => DenseMatrix.zeros(populationMatrix.nrows,populationMatrix.ncols)
     }
-    val dates = CSV.readCSV(datesFile,withHeader=false).values.toSeq(0).map(_.toDouble).toArray
+    val dates = CSV.readCSV(datesFile,withHeader=false).values.toSeq.head.map(_.toDouble).toArray
 
     Innovation(populationMatrix,distancesMatrix,dates,rng,growthRate,innovationWeight,gravityDecay,innovationDecay,
       legacyInnovation(_,_,_,innovationUtilityGrowth,earlyAdoptersRate,newInnovationHierarchy,newInnovationPopulationProportion),

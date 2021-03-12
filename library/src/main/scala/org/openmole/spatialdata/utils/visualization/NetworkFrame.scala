@@ -13,11 +13,14 @@ case class NetworkFrame(networks: Seq[Network],
                         nodeSize: Int = 6,
                         margin: Int = 50,
                         withLabel: Boolean = true,
-                        edgeColorClasses: Link => Int = {_ => 0},
-                        nodeColorClasses: Node => Int = {_ => 0},
-                        nodePositioning: Node => Point = {n => n.position}
+                        edgeColoring: Link => Int = {_ => 0},
+                        edgeScaling: Link => Double = {_ => 2.0},
+                        nodeColoring: Node => Int = {_ => 0},
+                        nodePositioning: Node => Point = {n => n.position},
+                        nodeScaling: Node => Double = {_ => 1.0},
+                        nodeShaping: Node => Int = {_ => 0}
                        ) extends JFrame() {
-  def init: Unit = {
+  def init(): Unit = {
     frameInit()
     setSize(frameWidth+2*margin,frameHeight+2*margin)
     setLocation(100,100)
@@ -33,21 +36,30 @@ case class NetworkFrame(networks: Seq[Network],
           networks.foreach {network =>
             network.nodes.foreach { n => {
               val np = nodePositioning(n)
-              val (x, y) = (margin + (np._1 * frameWidth - nodeSize / 2).toInt, margin + (np._2 * frameHeight - nodeSize / 2).toInt)
+              val ns = (nodeSize*nodeScaling(n)).toInt
+              val nshape = nodeShaping(n)
+              val (x, y) = (margin + (np._1 * frameWidth - ns / 2).toInt, margin + (np._2 * frameHeight - ns / 2).toInt)
               //if (nodeColorClasses.isDefined) gg.setColor(palette(nodeColorClasses.get(n))) //slight perf loss without option?
-              gg.setColor(palette(nodeColorClasses(n)))
-              gg.fillRect(x, y, nodeSize, nodeSize)
-              if (withLabel) gg.drawString(n.id.toString, x + nodeSize, y + nodeSize)
+              gg.setColor(palette(nodeColoring(n)))
+              nshape match {
+                case 0 => gg.fillRect(x, y, ns, ns)
+                case 1 => gg.fillOval(x, y, ns, ns)
+                case _ => gg.fillRect(x, y, ns, ns)
+              }
+              if (withLabel) gg.drawString(n.id.toString, x + ns, y + ns)
             }
             }
 
             network.links.foreach { l =>
-              gg.setColor(palette(edgeColorClasses(l)))
-              gg.drawLine(
-                margin + (nodePositioning(l.e1)._1 * frameWidth).toInt,
-                margin + (nodePositioning(l.e1)._2 * frameHeight).toInt,
-                margin + (nodePositioning(l.e2)._1 * frameWidth).toInt,
-                margin + (nodePositioning(l.e2)._2 * frameHeight).toInt) }
+              val esize = edgeScaling(l).toInt
+              gg.setColor(palette(edgeColoring(l)))
+              val (x0,y0,x1,y1) = (margin + (nodePositioning(l.e1)._1 * frameWidth).toInt,margin + (nodePositioning(l.e1)._2 * frameHeight).toInt, margin + (nodePositioning(l.e2)._1 * frameWidth).toInt, margin + (nodePositioning(l.e2)._2 * frameHeight).toInt)
+              val n = math.sqrt(math.pow(x1-x0,2.0)+math.pow(y1-y0,2.0))
+              val (ux,uy) = ((y0-y1).toDouble/n, (x1-x0).toDouble/n)
+              (-esize/2 until esize/2).foreach {i =>
+                gg.drawLine((x0 + i*ux).toInt, (y0 + i*uy).toInt, (x1 + i*ux).toInt, (y1 + i*uy).toInt)
+              }
+            }
           }
         }
       })

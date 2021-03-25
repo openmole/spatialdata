@@ -22,6 +22,10 @@ import scala.util.Random
   *
   * check https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0225734 for landscape ecology metrics
   *
+  * check Nowosad, J. (2021). Motif: an open-source R tool for pattern-based spatial analysis. Landscape Ecology, 36(1), 29-43. for spatial pattern
+  *
+  *  // interdisciplinary comparison of approaches / metrics?
+  *
   * @param height height
   * @param width width
   * @param area area

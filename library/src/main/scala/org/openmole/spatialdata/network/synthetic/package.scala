@@ -6,6 +6,8 @@ package org.openmole.spatialdata.network
   * Synthetic network generators
   *
   * - Synthetic network generator to implement: https://arxiv.org/abs/2001.08180
+  * - Link addition for a bicycle path network: Natera Orozco, L. G., Battiston, F., Iñiguez, G., & Szell, M. (2020). Data-driven strategies for optimal bicycle network growth. Royal Society Open Science, 7(12), 201130.
+  * 
   *
   */
 package object synthetic {

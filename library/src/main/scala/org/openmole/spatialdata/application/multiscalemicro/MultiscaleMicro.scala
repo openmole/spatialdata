@@ -202,13 +202,15 @@ object MultiscaleMicro {
     // vis nw
     val lasttrnw = result.states.last.network
     val nws =  Seq(lasttrnw.network)
-    visualization.staticNetworkVisualization(
+    val lastpolys = result.states.last.buildings
+    val polygons = Seq(lastpolys)
+    visualization.staticVectorVisualization(
       networks =nws,
       edgeScaling = {l => if (lasttrnw.links.contains(l)) 5.0 else 0.0},
       edgeColoring = {l => if (lasttrnw.links.contains(l)) 2 else 0},
       nodeColoring = {n => if(lasttrnw.centres.contains(n)) 2 else 1 },
       nodePositioning = visualization.normalizedPosition(nws),
-      nodeScaling =  {n => if(lasttrnw.centres.contains(n)) 3.0 else 0.0 },
+      nodeScaling =  {n => if(lasttrnw.centres.contains(n)) 5.0 else 0.0 },
       nodeShaping = {_ => 1}
     )
   }

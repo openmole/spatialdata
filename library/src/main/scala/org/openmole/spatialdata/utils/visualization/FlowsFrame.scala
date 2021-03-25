@@ -17,7 +17,7 @@ case class FlowsFrame(model: SpatialInteractionModel,
                        ) extends JFrame() {
   def nodePositioning: Node => Point = {n => n.position}
 
-  def init: Unit = {
+  def init(): Unit = {
     frameInit()
     setSize(frameWidth+2*margin,frameHeight+2*margin)
     setLocation(100,100)

@@ -10,7 +10,7 @@ import org.openmole.spatialdata.utils
 case class RasterFrame(
                         raster: RasterLayerData[Double],
                         gradientColors: (Color,Color) = (Color.WHITE, Color.BLACK),
-                        projection: RasterLayerData[Double] => RasterLayerData[Double] = normalization,
+                        projection: Array[Array[Double]] => Array[Array[Double]] = normalization,
                         frameWidth: Int = 600,
                         frameHeight: Int = 600
                       ) extends JFrame() {

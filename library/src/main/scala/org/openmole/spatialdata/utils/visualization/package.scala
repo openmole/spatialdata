@@ -1,7 +1,7 @@
 package org.openmole.spatialdata.utils
 
 import org.openmole.spatialdata.grid._
-import org.openmole.spatialdata.vector.Point
+import org.openmole.spatialdata.vector.{Point, Polygons}
 import org.openmole.spatialdata.network.{Link, Network, Node}
 import java.awt._
 
@@ -16,6 +16,25 @@ package object visualization {
 
   def palette(i: Int): Color = {colors(i%colors.size)}
 
+
+  def staticVectorVisualization(
+                                 networks: Seq[Network] = Seq.empty,
+                                 withLabel: Boolean = false,
+                                 edgeColoring: Link => Int = {_ => 0},
+                                 edgeScaling: Link => Double = {_ => 2.0},
+                                 nodeColoring: Node=>Int={_ => 0},
+                                 nodePositioning: Node => Point = {n => n.position},
+                                 nodeScaling: Node => Double = {_ => 1.0},
+                                 nodeShaping: Node => Int = {_ => 0},
+                                 polygons: Seq[Polygons] = Seq.empty,
+                                 polygonsScaleColoringAttributes: Seq[String] = Seq.empty
+                               ): Unit = {
+    if (org.openmole.spatialdata.HEADLESS) return
+    val frame = VectorFrame(networks = networks,withLabel=withLabel,edgeColoring=edgeColoring,edgeScaling=edgeScaling,nodeColoring=nodeColoring,nodePositioning=nodePositioning, nodeScaling=nodeScaling, nodeShaping=nodeShaping,
+      polygons=polygons, polygonsScaleColoringAttributes=polygonsScaleColoringAttributes
+    )
+    frame.init()
+  }
 
   /**
     * Network visualization
@@ -52,7 +71,7 @@ package object visualization {
                                 ): Unit = {
     if (org.openmole.spatialdata.HEADLESS) return
     val frame = FlowsFrame(model)
-    frame.init
+    frame.init()
   }
 
 

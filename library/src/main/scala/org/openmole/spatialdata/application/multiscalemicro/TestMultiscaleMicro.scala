@@ -8,7 +8,7 @@ object TestMultiscaleMicro extends App {
    MultiscaleMicro(
       worldSize = 10,
       patchSize = 1.0,
-      nCenters = 10,
+      nCenters = 3,
       mesoStepInterval = 5,
       steps = 1,
       seed = (new Random).nextLong(),

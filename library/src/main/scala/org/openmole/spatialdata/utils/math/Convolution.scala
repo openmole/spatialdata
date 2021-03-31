@@ -69,6 +69,19 @@ object Convolution {
   }
 
   /**
+    * Spatial coord map as 2D array
+    * @param map map (kx,ky) -> value
+    * @return
+    */
+  def mapAs2DArray(map: Map[(Int,Int),Double]): Array[Array[Double]] = {
+    val kxmax = map.keys.map(_._1).max
+    val kymax = map.keys.map(_._2).max
+    val res: Array[Array[Double]] = Array.fill(kxmax + 1, kymax + 1)(0.0)
+    map.foreach{case ((kx,ky),v) => res(kx)(ky) = v}
+    res
+  }
+
+  /**
     *  2D convolution
     *  Using bijection [|1,N|]2 ~ [|1,N|] by flattening, after having good paddling
     *

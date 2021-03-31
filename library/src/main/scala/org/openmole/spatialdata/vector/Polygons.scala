@@ -35,6 +35,10 @@ case class Polygons(
     }
   }
 
+  def ++(otherPolygons: Polygons): Polygons = Polygons(polygons++otherPolygons.polygons, attributes++otherPolygons.attributes)
+
+  def foreach(f: (geom.Polygon, Attributes) => Unit): Unit = polygons.zip(attributes).foreach{case (p,a) => f(p,a)}
+
 }
 
 

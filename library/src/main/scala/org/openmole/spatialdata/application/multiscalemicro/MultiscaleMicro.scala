@@ -1,10 +1,9 @@
 package org.openmole.spatialdata.application.multiscalemicro
 
-import org.openmole.spatialdata.grid.RasterLayerData
 import org.openmole.spatialdata.network.synthetic.GridNetworkGenerator
 import org.openmole.spatialdata.network.{Link, Network, Node}
 import org.openmole.spatialdata.utils
-import org.openmole.spatialdata.utils.math.{Convolution, Stochastic}
+import org.openmole.spatialdata.utils.math.Convolution
 import org.openmole.spatialdata.utils.visualization
 import org.openmole.spatialdata.vector.{Attributes, Polygons}
 import org.openmole.spatialdata.vector.synthetic.RandomPointsGenerator
@@ -26,13 +25,15 @@ import scala.util.Random
   */
 case class MultiscaleMicro(
                           worldSize: Int,
-                          patchSize: Double = 1000,
+                          patchSize: Double = 1000, // 1km by default
                           nCenters: Int,
                           mesoStepInterval: Int = 10,
                           steps: Int,
                           seed: Long,
                           transportationLinkSpeed: Double,
-                          developersNumber: Int
+                          developersNumber: Int,
+                          developerSetupMode: String,
+                          lambdaDensity: Double = 0.001 // ~ 1 cell by default -> cut-off average kernel at 5 cells
                           ) {
 
   def run(): MultiscaleMicro.Result = MultiscaleMicro.run(this)
@@ -44,6 +45,16 @@ case class MultiscaleMicro(
 object MultiscaleMicro {
 
   implicit val doubleOrdering: Ordering[Double] = Ordering.Double.TotalOrdering
+
+  val densityKernelCutOff: Double = 0.01
+
+  // fixed initial config parameters
+  val initialBuildingsPerCenter: Int = 50
+  val initialBuildingsWidth: Double = 20.0
+  val initialBuildingsHeight: Int = 4
+  val initialShareHousing: Double = 0.5
+
+  val streetBuffer: Double = 5.0 // dense urban areas
 
   /**
     * State of the model
@@ -62,9 +73,7 @@ object MultiscaleMicro {
 
   object State {
 
-    def initialBuildings(initialNetwork: TransportationNetwork): Polygons = {
-      Polygons.empty
-    }
+
 
     /**
       * Initial state
@@ -75,12 +84,21 @@ object MultiscaleMicro {
       * @param rng rng
       * @return
       */
-    def initialState(worldSize: Int, patchSize: Double, nCenters: Int, transportationLinkSpeed: Double, nDevelopers: Int, developerSetupMode: String)(implicit rng: Random): State = {
+    def initialState(worldSize: Int, patchSize: Double, nCenters: Int, transportationLinkSpeed: Double, nDevelopers: Int, developerSetupMode: String, lambdaDensity: Double)(implicit rng: Random): State = {
       val nw = TransportationNetwork.initialNetwork(worldSize, patchSize, nCenters, transportationLinkSpeed)
-      val buildings  = State.initialBuildings()
-      val grid = Grid.initialGrid(nw, buildings)
-      State(grid, nw, buildings, DeveloperAgent.initialDeveloperAgents(nDevelopers, developerSetupMode))
+      //val buildings  = State.initialBuildings()
+      val grid = Grid.initialGrid(nw, patchSize, lambdaDensity)
+      val stateWithoutInitialBuildings = State(grid, nw, Polygons.empty, DeveloperAgent.initialDeveloperAgents(nDevelopers, developerSetupMode))
+      val centers = stateWithoutInitialBuildings.network.centres
+      def iterateCenters(s: (State, Seq[Node])): (State, Seq[Node]) = {
+        if (s._2.isEmpty) s
+        else (addBuildings(s._1, initialBuildingsPerCenter, initialBuildingsWidth, initialBuildingsHeight, initialShareHousing, streetBuffer, _ => initialBuildingsPositioning(s._2.head), patchSize=patchSize, lambdaDensity = lambdaDensity),
+          s._2.tail)
+      }
+      Iterator.iterate((stateWithoutInitialBuildings,centers))(iterateCenters).takeWhile(_._2.nonEmpty).toSeq.last._1
     }
+
+    def initialBuildingsPositioning(center: Node): (Double, Double) = center.position
 
 
     /**
@@ -93,36 +111,49 @@ object MultiscaleMicro {
       * @param positioning positioning function
       * @return
       */
-    def addBuildings(currentState: State, numberToAdd: Int, buildingWidth: Double, buildingHeight: Int, shareHousing: Double, streetBuffer: Double, positioning: State => (Double, Double)): State = {
-      utils.log(s"Adding $numberToAdd buildings")
+    def addBuildings(currentState: State, numberToAdd: Int, buildingWidth: Double, buildingHeight: Int, shareHousing: Double, streetBuffer: Double, positioning: State => (Double, Double), patchSize: Double, lambdaDensity: Double)(implicit rng: Random): State = {
 
       val (xmin,xmax,ymin,ymax) = bbox(currentState)
       val (x, y) = positioning(currentState)
-      val kxs = ((- math.floor((x - xmin)/(buildingWidth + streetBuffer))).toInt until 0)++(0 to math.floor((xmax - x)/(buildingWidth + streetBuffer)).toInt)
-      val kys = ((- math.floor((y - ymin)/(buildingWidth + streetBuffer))).toInt until 0)++(0 to math.floor((ymax - y)/(buildingWidth + streetBuffer)).toInt)
-      val xcoords = kxs.map(k => x + k.toDouble*(buildingWidth + streetBuffer))
-      val ycoords = kys.map(k => x + k.toDouble*(buildingWidth + streetBuffer))
+      val (xk,yk) = ((x - xmin / (buildingWidth + streetBuffer)).toInt, (y - ymin / (buildingWidth + streetBuffer)).toInt)
+
+      utils.log(s"Adding $numberToAdd buildings around position ($x,$y) in [$xmin,$xmax]x[$ymin,$ymax]")
+
+      //val kxs = 0 to (xmax - xmin / (buildingWidth + streetBuffer)).toInt   //((- math.floor((x - xmin)/(buildingWidth + streetBuffer))).toInt until 0)++(0 to math.floor((xmax - x)/(buildingWidth + streetBuffer)).toInt)
+      // cannot reasonably stage all possible positions - in a 10km world this yields (10000/15)^2 ~ 0.5 Mio
+      val kxs = xk - 2*(patchSize / (buildingWidth + streetBuffer)).toInt to xk + 2*(patchSize / (buildingWidth + streetBuffer)).toInt
+      //val kys = 0 to (xmax - xmin / (buildingWidth + streetBuffer)).toInt   // ((- math.floor((y - ymin)/(buildingWidth + streetBuffer))).toInt until 0)++(0 to math.floor((ymax - y)/(buildingWidth + streetBuffer)).toInt)
+      val kys = yk - 2*(patchSize / (buildingWidth + streetBuffer)).toInt to yk + 2*(patchSize / (buildingWidth + streetBuffer)).toInt
+
+      val xcoords = kxs.map(k => xmin + k.toDouble*(buildingWidth + streetBuffer)/patchSize)
+      val ycoords = kys.map(k => ymin + k.toDouble*(buildingWidth + streetBuffer)/patchSize)
       //val (kxmin,kxmax,kymin,kymax) = (kxs.min, kxs.max, kys.min, kys.max)
       val ks: Seq[(Int, Int)] = kxs.flatMap(kx => kys.map(ky => (kx,ky)))
-      val kdist: Seq[Double] = ks.map{case (kx,ky) => math.abs(kx)+math.abs(ky)}
+      val kdist: Seq[Double] = ks.map{case (kx,ky) => math.abs(kx-xk)+math.abs(ky-yk)}
+      utils.log(s"All slots: ${kdist.size}")
       val coords: Seq[(Double,Double)] = xcoords.flatMap(x => ycoords.map(y => (x,y)))
       val counts: mutable.HashMap[(Int,Int),Int] = new mutable.HashMap[(Int,Int),Int] // map (kx,ky) => building count
+      ks.foreach(counts(_)=0)
       val existingBuildings = currentState.buildings
+      utils.log(s"Previous buildings: ${existingBuildings.polygons.size}")
       existingBuildings.polygons.foreach{p =>
         val e = p.getEnvelopeInternal
         val (pxmin,pxmax,pymin,pymax) = (e.getMinX, e.getMaxX, e.getMinY, e.getMaxY)
-        val pkxs = math.floor(pxmin / (buildingWidth + streetBuffer)).toInt to math.floor(pxmax / (buildingWidth + streetBuffer)).toInt
-        val pkys = math.floor(pymin / (buildingWidth + streetBuffer)).toInt to math.floor(pymax / (buildingWidth + streetBuffer)).toInt
+        val pkxs = math.floor((pxmin - xmin) / (buildingWidth + streetBuffer)).toInt to math.floor((pxmax - xmin) / (buildingWidth + streetBuffer)).toInt
+        val pkys = math.floor((pymin - ymin) / (buildingWidth + streetBuffer)).toInt to math.floor((pymax - ymax) / (buildingWidth + streetBuffer)).toInt
+        //println("pkxs = "+pkxs); println(pkys)
         pkxs.foreach(pkx => pkys.foreach(pky => counts((pkx,pky)) = counts((pkx,pky))+1))
       }
-      val free = ks.map(counts(_)==0)
+      val free = ks.map{counts(_)==0}
+      utils.log(s"  -> free slots: ${free.count(b => b)} - to be sorted")
       val buildingCentroids = coords.zip(free.zip(kdist)).filter(_._2._1).sortBy(_._2._2).take(numberToAdd).map(_._1)
+      utils.log(s"Building centroids: $buildingCentroids")
       val buildingsToAdd = buildingsFromCentroids(buildingCentroids, buildingWidth, buildingHeight, shareHousing)
       val buildings = existingBuildings++buildingsToAdd
 
       // network and developers unchanged
       currentState.copy(
-        grid = Grid.aggregateBuildingsToGrid(currentState.grid, buildings),
+        grid = Grid.aggregateBuildingsToGrid(currentState.grid, buildings, lambdaDensity),
         buildings = buildings
       )
     }
@@ -142,7 +173,7 @@ object MultiscaleMicro {
     def buildingsFromCentroids(centroids: Seq[(Double,Double)], width: Double, height: Int, shareHousing: Double)(implicit rng: Random): Polygons = {
       val fact = new geom.GeometryFactory
       val polygons: Seq[geom.Polygon] = centroids.map{case (x,y) => fact.createPolygon(Array(new geom.Coordinate(x - width/2,y - width / 2),new geom.Coordinate(x - width/2, y + width / 2),new geom.Coordinate(x + width / 2, y + width / 2),new geom.Coordinate(x + width / 2, y - width / 2),new geom.Coordinate(x - width / 2,y - width / 2)))}
-      val attrs: Seq[Attributes] = centroids.map(_ => {Map("type" -> (if (rng.nextDouble()<shareHousing) 0 else 1), "height" -> height)})
+      val attrs: Seq[Attributes] = centroids.map(_ => {Map("type" -> (if (rng.nextDouble()<shareHousing) 0 else 1).asInstanceOf[AnyRef], "height" -> height.asInstanceOf[AnyRef])})
       Polygons(polygons, attrs)
     }
 
@@ -168,7 +199,7 @@ object MultiscaleMicro {
     * @param patchPopulations populations
     * @param patchEmployments employments
     * @param patchPopulationDensities population densities
-    * @param pathEmploymentDensities employment densities
+    * @param patchEmploymentDensities employment densities
     * @param nodesIndices matching node id -> patch index in sequences
     * @param patch2DIndices 2D -> 1D
     * @param patchIndices 1D -> 2D
@@ -181,7 +212,7 @@ object MultiscaleMicro {
                  patchPopulations: Seq[Double],
                  patchEmployments: Seq[Double],
                  patchPopulationDensities: Seq[Double],
-                 pathEmploymentDensities: Seq[Double],
+                 patchEmploymentDensities: Seq[Double],
                  nodesIndices: Map[Int,Int],
                  patch2DIndices: Map[(Int,Int),Int],
                  patchIndices: Map[Int,(Int,Int)],
@@ -196,13 +227,13 @@ object MultiscaleMicro {
       * @param initialNetwork initial network
       * @return
       */
-    def initialGrid(initialNetwork: TransportationNetwork, initialBuildings: Polygons, patchSize: Double): Grid = {
+    def initialGrid(initialNetwork: TransportationNetwork, patchSize: Double, lambdaDensity: Double): Grid = {
       val nodesidseq = initialNetwork.network.nodes.map(_.id).toSeq
       // each node is the center of a patch
       val (distToStationsMap, distToCentresMap) = distances(initialNetwork)
       val coordsMap = initialNetwork.network.nodes.map(n => (n.id,n.position)).toMap
       val empty = emptyGrid(nodesidseq, coordsMap, distToStationsMap, distToCentresMap, patchSize)
-      aggregateBuildingsToGrid(empty, initialBuildings)
+      aggregateBuildingsToGrid(empty, Polygons.empty, lambdaDensity)
     }
 
     def emptyGrid(nodesidseq: Seq[Int], coordsMap: Map[Int, (Double,Double)], distToStationsMap: Map[Int, Double], distToCentresMap: Map[Int, Double], patchSize: Double): Grid = {
@@ -217,7 +248,7 @@ object MultiscaleMicro {
         patchPopulations = Seq.fill(nodesidseq.size)(0.0),
         patchEmployments = Seq.fill(nodesidseq.size)(0.0),
         patchPopulationDensities = Seq.fill(nodesidseq.size)(0.0),
-        pathEmploymentDensities = Seq.fill(nodesidseq.size)(0.0),
+        patchEmploymentDensities = Seq.fill(nodesidseq.size)(0.0),
         nodesIndices = indices,
         patch2DIndices = patch2DIndices,
         patchIndices = patchIndices,
@@ -248,24 +279,47 @@ object MultiscaleMicro {
       * @param buildings buildings
       * @return
       */
-    def aggregateBuildingsToGrid(previousGrid: Grid, buildings: Polygons): Grid = {
-      val popCounts: mutable.HashMap[(Int,Int),Double] = new mutable.HashMap[(Int,Int),Double]
-      val jobCounts: mutable.HashMap[(Int,Int),Double] = new mutable.HashMap[(Int,Int),Double]
-      val patchSize = previousGrid.patchSize
-      val (xmin,ymin) = (previousGrid.patchCoordinates.map(_._1).min, previousGrid.patchCoordinates.map(_._2).min)
-      buildings.foreach{case (p,a) =>
-        val pc = p.getCentroid
-        val pe = p.getEnvelopeInternal
-        val (px,py) = (pc.getX, pc.getY)
-        val surface = (pe.getMaxX - pe.getMinX)*(pe.getMaxY - pe.getMinY)
-        val storeys = a.getOrElse("height",1.0).asInstanceOf[Double]
-        val key = (math.floor((px - xmin)/patchSize).toInt, math.floor((py - ymin)/patchSize).toInt)
-        if (a.getOrElse("type",0).asInstanceOf[Int] == 0) popCounts(key) = popCounts(key) + (surface*storeys) else jobCounts(key) = jobCounts(key) + (surface*storeys)
-      }
-      // compute spatial average for densities: map as arrays
-      val popRaster: Array[Array[Double]] = Convolution.mapAs2DArray(popCounts.toMap)
-      val jobRaster: Array[Array[Double]] = Convolution.mapAs2DArray(jobCounts.toMap)
+    def aggregateBuildingsToGrid(previousGrid: Grid, buildings: Polygons, lambdaDensity: Double): Grid = {
+      if (buildings.polygons.isEmpty) previousGrid else {
+        val popCounts: mutable.HashMap[(Int, Int), Double] = new mutable.HashMap[(Int, Int), Double]
+        val jobCounts: mutable.HashMap[(Int, Int), Double] = new mutable.HashMap[(Int, Int), Double]
+        previousGrid.patch2DIndices.keys.foreach{k => popCounts(k)=0.0; jobCounts(k)=0.0}
 
+        val patchSize = previousGrid.patchSize
+        val (xmin, ymin) = (previousGrid.patchCoordinates.map(_._1).min, previousGrid.patchCoordinates.map(_._2).min)
+        buildings.foreach { case (p, a) =>
+          val pc = p.getCentroid
+          val pe = p.getEnvelopeInternal
+          val (px, py) = (pc.getX, pc.getY)
+          val surface = (pe.getMaxX - pe.getMinX) * (pe.getMaxY - pe.getMinY)
+          val storeys = a.getOrElse("height", 1).asInstanceOf[Int]
+          val key = (math.floor((px - xmin) / patchSize).toInt, math.floor((py - ymin) / patchSize).toInt)
+          if (popCounts.contains(key)&&jobCounts.contains(key)) { // buildings not counted if outside of the world
+            if (a.getOrElse("type", 0).asInstanceOf[Int] == 0) popCounts(key) = popCounts(key) + (surface * storeys) else jobCounts(key) = jobCounts(key) + (surface * storeys)
+          }
+        }
+        // compute spatial average for densities: map as arrays
+        val popRaster: Array[Array[Double]] = Convolution.mapAs2DArray(popCounts.toMap)
+        val jobRaster: Array[Array[Double]] = Convolution.mapAs2DArray(jobCounts.toMap)
+        // averaging kernel: distance to border cell is k*patchSize with a kernel of width 2*k+1
+        // with an exponential kernel exp(-lambda d), cutting at 1% gives k = ceil(-ln(0.01)/(lambda*patchSize)) = ceil(4.6) for lambda = 0.001
+        val k = math.ceil(-math.log(densityKernelCutOff) / (lambdaDensity * patchSize)).toInt
+        val avgKernelUnnorm = (-k to k).toArray.map(kx => (-k to k).toArray.map(ky => math.exp(-lambdaDensity * patchSize * math.sqrt(kx * kx + ky * ky))))
+        val s = avgKernelUnnorm.flatten.sum
+        val avgKernel: Array[Array[Double]] = avgKernelUnnorm.map(_.map(_ / s))
+        val avgPopDensities: Array[Array[Double]] = Convolution.convolution2D(popRaster, avgKernel)
+        val avgJobDensities: Array[Array[Double]] = Convolution.convolution2D(jobRaster, avgKernel)
+        val populations: Seq[Double] = Seq.tabulate(previousGrid.patchCoordinates.size)(i => popCounts(previousGrid.patchIndices(i)))
+        val jobs: Seq[Double] = Seq.tabulate(previousGrid.patchCoordinates.size)(i => popCounts(previousGrid.patchIndices(i)))
+        val popDensities: Seq[Double] = Seq.tabulate(previousGrid.patchCoordinates.size) { i => val (kx, ky) = previousGrid.patchIndices(i); avgPopDensities(kx)(ky) }
+        val jobDensities: Seq[Double] = Seq.tabulate(previousGrid.patchCoordinates.size) { i => val (kx, ky) = previousGrid.patchIndices(i); avgJobDensities(kx)(ky) }
+        previousGrid.copy(
+          patchPopulations = populations,
+          patchEmployments = jobs,
+          patchPopulationDensities = popDensities,
+          patchEmploymentDensities = jobDensities
+        )
+      }
     }
 
 
@@ -312,6 +366,7 @@ object MultiscaleMicro {
       // connect initial stations
       val initialTrLinks = Network(centres.toSet, Set.empty[Link]).weakComponentConnect.links.map(_.copy(weight = 1 / transportationLinkSpeed))
       val nw = gridnw.addLinks(initialTrLinks)
+      utils.log(s"Network nodes coordinates in [${nw.nodes.map(_.position._1).min}, ${nw.nodes.map(_.position._1).max}] x [${nw.nodes.map(_.position._2).min}, ${nw.nodes.map(_.position._2).max}]")
       TransportationNetwork(nw, centres, initialTrLinks.toSeq, centres)
     }
   }
@@ -369,7 +424,15 @@ object MultiscaleMicro {
 
     implicit val rng: Random = new Random(seed)
 
-    val s0 = State.initialState(worldSize, patchSize, nCenters, transportationLinkSpeed)
+    val s0 = State.initialState(
+      worldSize = worldSize,
+      patchSize = patchSize,
+      nCenters = nCenters,
+      transportationLinkSpeed = transportationLinkSpeed,
+      nDevelopers = developersNumber,
+      developerSetupMode = developerSetupMode,
+      lambdaDensity=lambdaDensity
+    )
 
     MultiscaleMicro.Result(
       Seq(s0)++Iterator.iterate(s0){s: State => step(model,s)}.take(steps).toSeq
@@ -393,7 +456,9 @@ object MultiscaleMicro {
       nodeColoring = {n => if(lasttrnw.centres.contains(n)) 2 else 1 },
       nodePositioning = visualization.normalizedPosition(nws),
       nodeScaling =  {n => if(lasttrnw.centres.contains(n)) 5.0 else 0.0 },
-      nodeShaping = {_ => 1}
+      nodeShaping = {_ => 1},
+      polygons = polygons,
+      polygonsScaleColoringAttributes = Seq("height")
     )
   }
 

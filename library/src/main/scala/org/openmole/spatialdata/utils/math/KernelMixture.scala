@@ -26,7 +26,7 @@ object KernelMixture {
     }
     for(i<- 0 until w; j<- 0 until h){
       for(c <- coords.indices){
-        def k(x: Double, y: Double): Double = if (kernels.size==1) kernels(0)(x,y) else kernels(c)(x,y)
+        def k(x: Double, y: Double): Double = if (kernels.size==1) kernels.head(x,y) else kernels(c)(x,y)
         vals(i)(j) = vals(i)(j) + k(i - coords(c)._1,j - coords(c)._2)
       }
     }

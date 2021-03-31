@@ -69,7 +69,7 @@ object VectorFrame {
     polygons.zip(attributeScaleColoring).foreach{case (polys,coloring) =>
       polys.polygons.zip(polys.attributes).foreach{case (poly,attr) =>
         gg.setColor(coloring(attr))
-        gg.fillPolygon(poly.getCoordinates.map(_.x),poly.getCoordinates.map(_.y),poly.getCoordinates.length)
+        gg.fillPolygon(poly.getCoordinates.map(_.x.toInt),poly.getCoordinates.map(_.y.toInt),poly.getCoordinates.length)
       }
     }
 
@@ -83,11 +83,12 @@ object VectorFrame {
     * @return
     */
   def attributeGradientScale(attrName: String, gradientColors: (Color,Color) = (Color.LIGHT_GRAY, Color.BLACK))(a: Attributes): Color = {
-    val d = a.getOrElse(attrName,0.0).asInstanceOf[Double]
+    val value = a.get(attrName).asInstanceOf[Double]
+    //val value: Double = if (d.isInstanceOf[Int]) d.asInstanceOf[Int]*1.0 else d.asInstanceOf[Double]
     new Color(
-      (gradientColors._1.getRed*(1 - d) + d*gradientColors._2.getRed).toInt,
-      (gradientColors._1.getGreen*(1 - d) + d*gradientColors._2.getGreen).toInt,
-      (gradientColors._1.getBlue*(1 - d) + d*gradientColors._2.getBlue).toInt
+      (gradientColors._1.getRed*(1 - value) + value*gradientColors._2.getRed).toInt,
+      (gradientColors._1.getGreen*(1 - value) + value*gradientColors._2.getGreen).toInt,
+      (gradientColors._1.getBlue*(1 - value) + value*gradientColors._2.getBlue).toInt
     )
   }
 

@@ -2,6 +2,7 @@ package org.openmole.spatialdata.application.multiscalemicro
 
 import scala.util.Random
 
+// runMain org.openmole.spatialdata.application.multiscalemicro.TestMultiscaleMicro
 object TestMultiscaleMicro extends App {
 
   MultiscaleMicro.visualize(
@@ -11,7 +12,9 @@ object TestMultiscaleMicro extends App {
       mesoStepInterval = 5,
       steps = 1,
       seed = (new Random).nextLong(),
-      transportationLinkSpeed = 5.0
+      transportationLinkSpeed = 5.0,
+      developersNumber = 5,
+      developerSetupMode = "uniform"
     ).run()
   )
 }

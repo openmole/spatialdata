@@ -39,6 +39,14 @@ case class Polygons(
 
   def foreach(f: (geom.Polygon, Attributes) => Unit): Unit = polygons.zip(attributes).foreach{case (p,a) => f(p,a)}
 
+  def rescale(bbox: (Double,Double,Double,Double)): Polygons = {
+    val (xmin,xmax,ymin,ymax) = bbox
+    val fact = new GeometryFactory
+    this.copy(
+      polygons = polygons.map(p => fact.createPolygon(p.getCoordinates.map(c => new geom.Coordinate((c.x - xmin)/(xmax-xmin),(c.y-ymin)/(ymax-ymin)))))
+    )
+  }
+
 }
 
 

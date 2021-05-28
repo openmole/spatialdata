@@ -5,6 +5,7 @@ import java.awt.{BasicStroke, Color, Graphics, Graphics2D, RenderingHints}
 import javax.swing.{JComponent, JFrame, WindowConstants}
 import javax.swing.plaf.ComponentUI
 import org.openmole.spatialdata.network.{Link, Network, Node}
+import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.vector.{Attributes, Point, Polygons}
 
 case class VectorFrame(
@@ -60,8 +61,17 @@ object VectorFrame {
     */
   def drawPolygons(gg: Graphics2D,
                    polygons: Seq[Polygons],
-                   attributeScaleColoring: Seq[Attributes => Color]
+                   attributeScaleColoring: Seq[Attributes => Color],
+                   frameWidth: Int = 600,
+                   frameHeight: Int = 600,
+                   margin: Int = 50
                   ): Unit = {
+
+    utils.log(s"Drawing ${polygons.map(_.polygons.size).sum} polygons")
+
+    def rescaleWindow(coord: (Double,Double)): (Double, Double) = (margin + (coord._1 * frameWidth).toInt, margin + (coord._2 * frameHeight).toInt)
+
+
     gg.setColor(Color.BLACK)
     gg.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
     gg.setStroke(new BasicStroke(1, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND))
@@ -69,7 +79,11 @@ object VectorFrame {
     polygons.zip(attributeScaleColoring).foreach{case (polys,coloring) =>
       polys.polygons.zip(polys.attributes).foreach{case (poly,attr) =>
         gg.setColor(coloring(attr))
-        gg.fillPolygon(poly.getCoordinates.map(_.x.toInt),poly.getCoordinates.map(_.y.toInt),poly.getCoordinates.length)
+        //gg.setColor(Color.BLACK)
+        //println(poly.getCoordinates.map(_.x.toInt).toSeq)
+        //println(poly.getCoordinates.map(_.y.toInt).toSeq)
+        val (xcoords,ycoords) = poly.getCoordinates.map(_.x).zip(poly.getCoordinates.map(_.y)).map(rescaleWindow).map(d => (d._1.toInt,d._2.toInt)).unzip
+        gg.fillPolygon(xcoords,ycoords,poly.getCoordinates.length)
       }
     }
 
@@ -83,12 +97,15 @@ object VectorFrame {
     * @return
     */
   def attributeGradientScale(attrName: String, gradientColors: (Color,Color) = (Color.LIGHT_GRAY, Color.BLACK))(a: Attributes): Color = {
-    val value = a.get(attrName).asInstanceOf[Double]
-    //val value: Double = if (d.isInstanceOf[Int]) d.asInstanceOf[Int]*1.0 else d.asInstanceOf[Double]
+    val attr = a.getOrElse(attrName,1.0)
+    val value = attr match {
+      case i if i.isInstanceOf[Int] => i.asInstanceOf[Int].toDouble
+      case d => d.asInstanceOf[Double]
+    }
     new Color(
-      (gradientColors._1.getRed*(1 - value) + value*gradientColors._2.getRed).toInt,
-      (gradientColors._1.getGreen*(1 - value) + value*gradientColors._2.getGreen).toInt,
-      (gradientColors._1.getBlue*(1 - value) + value*gradientColors._2.getBlue).toInt
+      (gradientColors._1.getRed*(1.0 - value) + value*gradientColors._2.getRed).toInt,
+      (gradientColors._1.getGreen*(1.0 - value) + value*gradientColors._2.getGreen).toInt,
+      (gradientColors._1.getBlue*(1.0 - value) + value*gradientColors._2.getBlue).toInt
     )
   }
 

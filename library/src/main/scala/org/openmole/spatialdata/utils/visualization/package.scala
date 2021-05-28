@@ -61,11 +61,17 @@ package object visualization {
     frame.init()
   }
 
-  def normalizedPosition(networks: Seq[Network]): Node => Point = {
+  def normalizedPositionNode(networks: Seq[Network] = Seq.empty, polygons: Seq[Polygons] = Seq.empty): Node => Point = {
+    //val (xcoordsnw,ycoordsnw) = networks.flatMap(_.nodes.toSeq.map(_.position)).unzip
+    //val (xcoordspolys,ycoordspolys) = polygons.flatMap(_.polygons.flatMap(_.getCoordinates.toSeq.map(c => (c.x,c.y)))).unzip
+    //val (xcoords,ycoords) = (xcoordsnw++xcoordspolys, ycoordsnw++ycoordspolys)
+    // note: not efficient at all to recompute for each node
     val (xcoords,ycoords) = networks.flatMap(_.nodes.toSeq.map(_.position)).unzip
     val (minx,maxx,miny,maxy) = (xcoords.min,xcoords.max,ycoords.min,ycoords.max)
     n: Node => ((n.position._1 - minx) / (maxx - minx),(n.position._2 - miny) / (maxy - miny))
   }
+
+  //def normalizedPositionPolygon(networks: Seq[Network] = Seq.empty, polygons: Seq[Polygons] = Seq.empty): Polygon => Polygon
 
   def staticFlowsVisualization(model: SpatialInteractionModel
                                 ): Unit = {

@@ -91,11 +91,12 @@ object MultiscaleMicro {
       val stateWithoutInitialBuildings = State(grid, nw, Polygons.empty, DeveloperAgent.initialDeveloperAgents(nDevelopers, developerSetupMode))
       val centers = stateWithoutInitialBuildings.network.centres
       def iterateCenters(s: (State, Seq[Node])): (State, Seq[Node]) = {
+        val addedBuildings = addBuildings(s._1, initialBuildingsPerCenter, initialBuildingsWidth, initialBuildingsHeight, initialShareHousing, streetBuffer, _ => initialBuildingsPositioning(s._2.head), patchSize=patchSize, lambdaDensity = lambdaDensity)
         if (s._2.isEmpty) s
-        else (addBuildings(s._1, initialBuildingsPerCenter, initialBuildingsWidth, initialBuildingsHeight, initialShareHousing, streetBuffer, _ => initialBuildingsPositioning(s._2.head), patchSize=patchSize, lambdaDensity = lambdaDensity),
-          s._2.tail)
+        else (addedBuildings, s._2.tail)
       }
-      Iterator.iterate((stateWithoutInitialBuildings,centers))(iterateCenters).takeWhile(_._2.nonEmpty).toSeq.last._1
+      //Iterator.iterate((stateWithoutInitialBuildings,centers))(iterateCenters).takeWhile(_._2.nonEmpty).toSeq.last._1
+      Iterator.iterate((stateWithoutInitialBuildings,centers))(iterateCenters).take(centers.size+1).toSeq.last._1
     }
 
     def initialBuildingsPositioning(center: Node): (Double, Double) = center.position
@@ -115,7 +116,7 @@ object MultiscaleMicro {
 
       val (xmin,xmax,ymin,ymax) = bbox(currentState)
       val (x, y) = positioning(currentState)
-      val (xk,yk) = ((x - xmin / (buildingWidth + streetBuffer)).toInt, (y - ymin / (buildingWidth + streetBuffer)).toInt)
+      val (xk,yk) = ( ((x - xmin) / (buildingWidth + streetBuffer)).toInt, ((y - ymin) / (buildingWidth + streetBuffer)).toInt)
 
       utils.log(s"Adding $numberToAdd buildings around position ($x,$y) in [$xmin,$xmax]x[$ymin,$ymax]")
 
@@ -125,8 +126,8 @@ object MultiscaleMicro {
       //val kys = 0 to (xmax - xmin / (buildingWidth + streetBuffer)).toInt   // ((- math.floor((y - ymin)/(buildingWidth + streetBuffer))).toInt until 0)++(0 to math.floor((ymax - y)/(buildingWidth + streetBuffer)).toInt)
       val kys = yk - 2*(patchSize / (buildingWidth + streetBuffer)).toInt to yk + 2*(patchSize / (buildingWidth + streetBuffer)).toInt
 
-      val xcoords = kxs.map(k => xmin + k.toDouble*(buildingWidth + streetBuffer)/patchSize)
-      val ycoords = kys.map(k => ymin + k.toDouble*(buildingWidth + streetBuffer)/patchSize)
+      val xcoords = kxs.map(k => xmin + k.toDouble*(buildingWidth + streetBuffer))
+      val ycoords = kys.map(k => ymin + k.toDouble*(buildingWidth + streetBuffer))
       //val (kxmin,kxmax,kymin,kymax) = (kxs.min, kxs.max, kys.min, kys.max)
       val ks: Seq[(Int, Int)] = kxs.flatMap(kx => kys.map(ky => (kx,ky)))
       val kdist: Seq[Double] = ks.map{case (kx,ky) => math.abs(kx-xk)+math.abs(ky-yk)}
@@ -448,17 +449,24 @@ object MultiscaleMicro {
     val lasttrnw = result.states.last.network
     val nws =  Seq(lasttrnw.network)
     val lastpolys = result.states.last.buildings
-    val polygons = Seq(lastpolys)
+
+    val hmax = lastpolys.attributes.map(_.getOrElse("height",0).asInstanceOf[Int]).max
+    val (xcoords,ycoords) = nws.flatMap(_.nodes.toSeq.map(_.position)).unzip
+    val (minx,maxx,miny,maxy) = (xcoords.min,xcoords.max,ycoords.min,ycoords.max)
+    val polygons = Seq(lastpolys.copy(
+      attributes = lastpolys.attributes.map(a => (a.toSeq++Seq("color" -> a.getOrElse("height",0).asInstanceOf[Int].toDouble/hmax.toDouble)).toMap.asInstanceOf[Attributes]),
+      polygons = lastpolys.rescale((minx,maxx,miny,maxy)).polygons
+    ))
     visualization.staticVectorVisualization(
       networks =nws,
       edgeScaling = {l => if (lasttrnw.links.contains(l)) 5.0 else 0.0},
       edgeColoring = {l => if (lasttrnw.links.contains(l)) 2 else 0},
       nodeColoring = {n => if(lasttrnw.centres.contains(n)) 2 else 1 },
-      nodePositioning = visualization.normalizedPosition(nws),
+      nodePositioning = visualization.normalizedPositionNode(nws),
       nodeScaling =  {n => if(lasttrnw.centres.contains(n)) 5.0 else 0.0 },
       nodeShaping = {_ => 1},
       polygons = polygons,
-      polygonsScaleColoringAttributes = Seq("height")
+      polygonsScaleColoringAttributes = Seq("color")
     )
   }
 

@@ -7,7 +7,7 @@ package org.openmole.spatialdata.network
   *
   * - Synthetic network generator to implement: https://arxiv.org/abs/2001.08180
   * - Link addition for a bicycle path network: Natera Orozco, L. G., Battiston, F., Iñiguez, G., & Szell, M. (2020). Data-driven strategies for optimal bicycle network growth. Royal Society Open Science, 7(12), 201130.
-  * 
+  * - morphogenesis reaction-diffusion model to implement: Tirico, M., Balev, S., Dutot, A., & Olivier, D. (2018, December). Morphogenesis of complex networks: A reaction diffusion framework for spatial graphs. In International Conference on Complex Networks and their Applications (pp. 769-781). Springer, Cham.
   *
   */
 package object synthetic {

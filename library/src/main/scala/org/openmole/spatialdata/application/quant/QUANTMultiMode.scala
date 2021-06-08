@@ -10,32 +10,28 @@ object QUANTMultiMode {
 
 
   /**
-    * multi mode QUANT from files
-    * @param sparseFlowsFiles
-    * @param dmatFiles
+    * Multi mode QUANT from files
+    *
+    *  ! in the end should do a filtering on OiDjcij when sparsing the matrix
+    *
+    * @param sparseFlows sparse flow matrices
+    * @param sparseDistances sparse distance matrices
+    *
     * @return
     */
-  def quantMultiMode(sparseFlowsFiles: Array[String],
-                     dmatFiles: Array[String],
-                     csvInput: Boolean = false
+  def QUANTMultiMode(sparseFlows: Array[SparseMatrix],
+                     sparseDistances: Array[SparseMatrix]
                     )(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): SinglyConstrainedMultiModeSpIntModel = {
-    //SparseMatrix.SparseMatrixImplementation.setImplSparseBreeze
 
-    val dmats = if (csvInput) dmatFiles.map(dmatFile => CSV.readSparseMatFromDense(dmatFile, {d=> math.exp( - d / 60.0) > 0.3})) // FIXME in the end should do a filtering on OiDjcij
-    else dmatFiles.map(Binary.readBinary[SparseMatrix])
-    utils.log(s"sparse dmat: ${dmats.toSeq}")
-    val flowmats = if (csvInput) sparseFlowsFiles.map(sparseFlowsFile => CSV.readSparseMat(sparseFlowsFile))
-    else sparseFlowsFiles.map(Binary.readBinary[SparseMatrix])
-    utils.log(s"sparse flowmat: ${flowmats.toSeq}")
     // needs to sum all modes
-    // FIXME change in 2.13: reduce needs an explicit function - pb expansion?
+    // rq: change in 2.13: reduce needs an explicit function - pb expansion?
     def asum: (Array[Double],Array[Double]) => Array[Double] = {case a: (Array[Double],Array[Double]) => a._1.zip(a._2).map{case (o1,o2) => o1+o2}}
-    val originVals: Array[Double] = flowmats.map(_.rowSum).reduce(asum)
+    val originVals: Array[Double] = sparseFlows.map(_.rowSum).reduce(asum)
     utils.log(s"origin values length = ${originVals.length}")
     val origin: SpatialField[Double]=originVals.zipWithIndex.map{case (s,i) => ((i.toDouble,0.0),Array(s))}.toMap
-    val destination = flowmats.map(_.colSum).reduce(asum).zipWithIndex.map{case (s,j) => ((j.toDouble,0.0),Array(s))}.toMap
+    val destination = sparseFlows.map(_.colSum).reduce(asum).zipWithIndex.map{case (s,j) => ((j.toDouble,0.0),Array(s))}.toMap
     SinglyConstrainedMultiModeSpIntModel(
-      flowmats.zip(dmats).map{case (flowmat,dmat) =>
+      sparseFlows.zip(sparseDistances).map{case (flowmat,dmat) =>
         SinglyConstrainedSpIntModel(flowmat,dmat,origin,destination)
       }
     )

@@ -8,7 +8,7 @@ import org.openmole.spatialdata.vector.SpatialField
 
 
 /*
-// FIXME this is not necessary as introduces unnecessary redundancy, as long as only wraps a model (useful to have the QUANTOneMode type though)
+//  this is not necessary as introduces unnecessary redundancy, as long as only wraps a model (useful to have the QUANTOneMode type though)
 case class QUANTOneMode(
                 //override val observedFlows: Matrix,
                 //override val distances: Matrix,
@@ -16,7 +16,7 @@ case class QUANTOneMode(
                 //override val destinationValues: SpatialField[Double],
                 //override val predictedFlows: Matrix
                 model: SinglyConstrainedSpIntModel
-                ) extends SpatialInteractionModel with FittedSpIntModel  { // FIXME should extend SinglyConstr to have fittedParam property
+                ) extends SpatialInteractionModel with FittedSpIntModel  { //  should extend SinglyConstr to have fittedParam property
 
   //override def fit: SpatialInteractionModel => SpatialInteractionModel = QUANTOneMode.fit
 
@@ -43,26 +43,26 @@ object QUANTOneMode {
 
   /**
     * from processed files
-    * @param sparseFlowsFile
-    * @param dmatFile
+    *
+    *  ! in the end should do a filtering on OiDjcij for sparse Matrices?
+    *
+    * @param sparseFlows sparse flows matrix
+    * @param sparseDistances distance matrix
     * @return
     */
-  def quantOneMode(sparseFlowsFile: String, dmatFile: String)(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): SinglyConstrainedSpIntModel = {
-
-    //val dmatdense = DenseMatrix(CSV.readMat(dmatFile))
-    val dmat = CSV.readSparseMatFromDense(dmatFile, {d=> math.exp( - d / 60.0) > 0.3}) // FIXME in the end should do a filtering on OiDjcij
-    utils.log(s"sparse dmat: $dmat")
-    val flowmat = CSV.readSparseMat(sparseFlowsFile)
-    utils.log(s"sparse flowmat: $flowmat")
+  def QUANTOneMode(
+                    sparseFlows: SparseMatrix,
+                    sparseDistances: SparseMatrix
+                  )(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): SinglyConstrainedSpIntModel = {
     // note: at this stage, no need of coordinates and spatial fields, just O/D values indeed
     //println(s"flowmat: ${flowmat.nrows}x${flowmat.ncols}")
-    val originVals: Array[Double] = flowmat.rowSum
+    val originVals: Array[Double] = sparseFlows.rowSum
     //println(originVals.toSeq) //!  same keys in map: spatial field has unique value for each point
     val origin: SpatialField[Double]=originVals.zipWithIndex.map{case (s,i) => ((i.toDouble,0.0),Array(s))}.toMap
     //println(origin)
-    val destination = flowmat.colSum.zipWithIndex.map{case (s,j) => ((j.toDouble,0.0),Array(s))}.toMap
+    val destination = sparseFlows.colSum.zipWithIndex.map{case (s,j) => ((j.toDouble,0.0),Array(s))}.toMap
 
-    SinglyConstrainedSpIntModel(flowmat,dmat,origin,destination)
+    SinglyConstrainedSpIntModel(sparseFlows,sparseDistances,origin,destination)
   }
 
 

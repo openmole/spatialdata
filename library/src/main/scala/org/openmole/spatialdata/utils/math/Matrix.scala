@@ -7,6 +7,7 @@ import org.apache.commons.math3.linear.{LUDecomposition, MatrixUtils}
 import breeze.linalg
 import breeze.linalg._
 import breeze.util.ArrayUtil
+import org.openmole.spatialdata.utils
 
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
@@ -51,6 +52,14 @@ sealed trait Matrix {
     * @return submatrix
     */
   def getSubmat(i: Int, j: Int, nrows: Int, ncols: Int): Matrix
+
+  /**
+    * get non-continuous submatrix
+    * @param rowinds row indices
+    * @param colinds column indices
+    * @return
+    */
+  def getSubmat(rowinds: Array[Int], colinds: Array[Int]): Matrix
 
   def getRow(i: Int): Matrix = getSubmat(i,0,1,ncols)
   def getCol(j: Int): Matrix = getSubmat(0,j,nrows,1)
@@ -200,7 +209,8 @@ case class EmptyMatrix() extends Matrix {
   override def values: Array[Array[Double]] = Array.empty[Array[Double]]
   override def flatValues: Array[Double] = Array.empty[Double]
   override def get(i: Int, j: Int): Double = Double.NaN
-  override def getSubmat(i: Int, j: Int, nrows: Int, ncols: Int): Matrix = this//Array[Array[Double]] = Array.fill(nrows,ncols)(Double.NaN)
+  override def getSubmat(i: Int, j: Int, nrows: Int, ncols: Int): Matrix = this
+  override def getSubmat(rowinds: Array[Int], colinds: Array[Int]): Matrix = this
   override def set(i: Int, j: Int, v: Double): Matrix = this
   override def setM(i: Int, j: Int, v: Double): Unit = {}
   override def %*%(m: Matrix): Matrix = this
@@ -330,13 +340,19 @@ case class RealMatrix(m: linear.RealMatrix) extends DenseMatrix {
     * !!! using getSubmatrix should give issues with mutable -> necessary to copy (~ unoptimal)
     * @param i starting row
     * @param j starting column
-    * @param nrows number of rows
-    * @param ncols number of columns
+    * @param nrow number of rows
+    * @param ncol number of columns
     * @return submatrix
     */
-  override def getSubmat(i: Int, j: Int, nrows: Int, ncols: Int): Matrix = {
-    val dest: Array[Array[Double]] = Array.fill(nrows,ncols)(0.0)
-    m.copySubMatrix((i until i + nrows).toArray, (j until j + ncols).toArray,dest)
+  override def getSubmat(i: Int, j: Int, nrow: Int, ncol: Int): Matrix = {
+    val dest: Array[Array[Double]] = Array.fill(nrow,ncol)(0.0)
+    m.copySubMatrix((i until i + nrow).toArray, (j until j + ncol).toArray,dest)
+    RealMatrix(dest)
+  }
+
+  override def getSubmat(rowinds: Array[Int], colinds: Array[Int]): Matrix = {
+    val dest: Array[Array[Double]] = Array.fill(rowinds.length,colinds.length)(0.0)
+    m.copySubMatrix(rowinds, colinds,dest)
     RealMatrix(dest)
   }
 
@@ -402,8 +418,15 @@ case class BreezeDenseMatrix(m: linalg.DenseMatrix[Double]) extends DenseMatrix 
 
   override def values: Array[Array[Double]] = m.data.grouped(m.cols).toArray
   override def get(i: Int, j: Int): Double = m.valueAt(i,j)
-  override def getSubmat(i: Int, j: Int, nrows: Int, ncols: Int): Matrix =
-    BreezeDenseMatrix(m(i until i + nrows,j until j + ncols))
+  override def getSubmat(i: Int, j: Int, nrow: Int, ncol: Int): Matrix =
+    BreezeDenseMatrix(m(i until i + nrow,j until j + ncol))
+
+  override def getSubmat(rowinds: Array[Int], colinds: Array[Int]): Matrix = {
+    val values: Array[Array[Double]] = Array.fill(rowinds.length, colinds.length)(0.0)
+    for {i <- rowinds; j <- colinds}{values(i)(j) = m(i,j)}
+    BreezeDenseMatrix(values)
+  }
+
   override def set(i: Int, j: Int, v: Double): Matrix = {
     val d = clone.m
     d.data(d.linearIndex(i,j))=v
@@ -507,7 +530,7 @@ object SparseMatrix{
     //val inds: Seq[(Int,Int)] = Stochastic.sampleWithoutReplacement[(Int,Int)](for {i <- 0 until n;j <- 0 until p} yield (i,j), (n*p*density).toInt)
     //val inds = new mutable.HashSet[(Int,Int)]
     val inds = new ArrayBuffer[(Int,Int)]
-    def drawInds(numInds: Int): Int = {inds.addOne((rng.nextInt(n),rng.nextInt(p)));inds.size}
+    def drawInds: Int => Int = _ => {inds.addOne((rng.nextInt(n),rng.nextInt(p)));inds.size}
     val nentries = (n.toDouble*p.toDouble*density).toInt
     //println(nentries)
     Iterator.iterate(0)(drawInds).takeWhile(_<nentries).toSeq
@@ -554,8 +577,25 @@ case class SparseMatrixImpl(m: linear.OpenMapRealMatrix//,
 
   override def get(i: Int, j: Int): Double = m.getEntry(i,j)
 
+  /**
+    * ! not efficient, using getData
+    * @param i starting row
+    * @param j starting column
+    * @param nrows number of rows
+    * @param ncols number of columns
+    *  @return submatrix
+    */
   override def getSubmat(i: Int, j: Int, nrows: Int, ncols: Int): Matrix =
-    RealMatrix(m.getSubMatrix((i until i + nrows).toArray,(j until j + ncols).toArray))
+     SparseMatrixImpl(m.getSubMatrix((i until i + nrows).toArray,(j until j + ncols).toArray).getData)
+
+  /**
+    * ! not efficient
+    * @param rowinds row indices
+    * @param colinds column indices
+    *  @return
+    */
+  override def getSubmat(rowinds: Array[Int], colinds: Array[Int]): Matrix =
+    SparseMatrixImpl(m.getSubMatrix(rowinds,colinds).getData)
 
   /**
     * !!! does not exploit the sparse structure - should keep the index of non zero elements to iterate only on these?
@@ -691,8 +731,33 @@ case class BreezeSparseMatrix(m: linalg.CSCMatrix[Double]) extends SparseMatrix 
     if (ind < 0 ) 0.0 else m.data(ind)
   }
 
-  override def getSubmat(i: Int, j: Int, nrows: Int, ncols: Int): Matrix =
-    BreezeDenseMatrix(dense).getSubmat(i, j, nrows, ncols)
+  /**
+    * get submatrix
+    *  Rq: going through a dense is totally inefficient
+    *
+    * @param i starting row
+    * @param j starting column
+    * @param nrows number of rows
+    * @param ncols number of columns
+    *  @return submatrix
+    */
+  override def getSubmat(i: Int, j: Int, nrows: Int, ncols: Int): Matrix = getSubmat((i until (i + nrows)).toArray, (j until (j + ncols)).toArray)
+
+  override def getSubmat(rowinds: Array[Int], colinds: Array[Int]): Matrix = {
+    utils.log(s"Extracting submatrix of size ${rowinds.length}x${colinds.length} from BreezeSparseMatrix of size ${m.rows}x${m.cols}")
+    val builder = new CSCMatrix.Builder[Double](rows = rowinds.length, cols = colinds.length)
+    m.colPtrs.indices.dropRight(1).foreach{j =>
+      if (colinds.contains(j)) {
+        val start = m.colPtrs(j)
+        val end = m.colPtrs(j + 1)
+        (start until end).foreach{k =>
+          val i = m.rowIndices(k)
+          if (rowinds.contains(i)) builder.add(i, j, m.data(k))
+        }
+      }
+    }
+    BreezeSparseMatrix(builder.result())
+  }
 
   override def set(i: Int, j: Int, v: Double): Matrix = {
     val copy = clone()

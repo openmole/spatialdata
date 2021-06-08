@@ -16,6 +16,7 @@ object Matsim {
     "OAFile" -> (System.getenv("CS_HOME")+"/Data/OrdnanceSurvey/Output_Areas__December_2011__Boundaries_EW_BGC-shp/OA2011_WGS84.shp"),
     "SPENSERDirs" -> (System.getenv("CS_HOME")+"/UrbanDynamics/Data/SPENSER/2020/England,"+System.getenv("CS_HOME")+"/UrbanDynamics/Data/SPENSER/2020/Scotland,"+System.getenv("CS_HOME")+"/UrbanDynamics/Data/SPENSER/2020/Wales"),
     "OSMBuildingsDirs" -> (System.getenv("CS_HOME")+"/UrbanDynamics/Data/OSM/England,"+System.getenv("CS_HOME")+"/UrbanDynamics/Data/OSM/Scotland,"+System.getenv("CS_HOME")+"/UrbanDynamics/Data/OSM/Wales")
+    "QUANTFlowsFiles" ->
   )
 
 

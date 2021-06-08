@@ -44,9 +44,9 @@ object RunQUANT extends App {
     */
   def calibrateQUANTOneMode(): Unit = {
     utils.log("Running QUANT model with one mode")
-    utils.log("\tLoading flow data")
+    utils.log("    Loading flow data")
     val flowspath = QUANTObservedFlowsFiles("csv")(1)
-    utils.log("\tLoading distance data")
+    utils.log("    Loading distance data")
     val dmatpath = QUANTDistanceFiles("csv")(1)
     val modelfitted = QUANTOneMode.QUANTOneMode(loadQUANTFlows(Array(flowspath)).head,loadQUANTDistances(Array(dmatpath)).head).fitted
     utils.log(s"average predicted flow = ${modelfitted.predictedFlows.mean} ; fitted param = ${modelfitted.fittedParams.toSeq}")

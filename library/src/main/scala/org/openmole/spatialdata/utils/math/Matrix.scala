@@ -743,16 +743,24 @@ case class BreezeSparseMatrix(m: linalg.CSCMatrix[Double]) extends SparseMatrix 
     */
   override def getSubmat(i: Int, j: Int, nrows: Int, ncols: Int): Matrix = getSubmat((i until (i + nrows)).toArray, (j until (j + ncols)).toArray)
 
+  /**
+    * rebuild a sparse submat in O(nelements)
+    *
+    * @param rowinds row indices
+    * @param colinds column indices
+    *  @return
+    */
   override def getSubmat(rowinds: Array[Int], colinds: Array[Int]): Matrix = {
-    utils.log(s"Extracting submatrix of size ${rowinds.length}x${colinds.length} from BreezeSparseMatrix of size ${m.rows}x${m.cols}")
+    //utils.log(s"Extracting submatrix of size ${rowinds.length}x${colinds.length} from BreezeSparseMatrix of size ${m.rows}x${m.cols}")
     val builder = new CSCMatrix.Builder[Double](rows = rowinds.length, cols = colinds.length)
+    val (rowMap, colMap) = (rowinds.zipWithIndex.toMap, colinds.zipWithIndex.toMap)
     m.colPtrs.indices.dropRight(1).foreach{j =>
       if (colinds.contains(j)) {
         val start = m.colPtrs(j)
         val end = m.colPtrs(j + 1)
         (start until end).foreach{k =>
           val i = m.rowIndices(k)
-          if (rowinds.contains(i)) builder.add(i, j, m.data(k))
+          if (rowinds.contains(i)) builder.add(rowMap(i), colMap(j), m.data(k))
         }
       }
     }

@@ -10,14 +10,17 @@ import org.openmole.spatialdata.vector.Polygons
   */
 object Matsim {
 
-  val defaultArgs: Map[String, String] = Map(
+  val defaultLocalArgs: Map[String, String] = Map(
     "FUAFile" -> (System.getenv("CS_HOME")+"/Data/JRC_EC/GHS/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0_WGS84.gpkg"),
     "LAFile" -> (System.getenv("CS_HOME")+"/UrbanDynamics/Data/OrdnanceSurvey/LADistricts/Local_Authority_Districts__December_2019__Boundaries_UK_BUC-shp/LAD_WGS84.shp"),
     "OAFile" -> (System.getenv("CS_HOME")+"/Data/OrdnanceSurvey/Output_Areas__December_2011__Boundaries_EW_BGC-shp/OA2011_WGS84.shp"),
+    "MSOAFile" -> (System.getenv("CS_HOME")+"/UrbanDynamics/Data/OrdnanceSurvey/MSOA/EnglandWalesScotland_MSOAWGS84.shp"),
     "SPENSERDirs" -> (System.getenv("CS_HOME")+"/UrbanDynamics/Data/SPENSER/2020/England,"+System.getenv("CS_HOME")+"/UrbanDynamics/Data/SPENSER/2020/Scotland,"+System.getenv("CS_HOME")+"/UrbanDynamics/Data/SPENSER/2020/Wales"),
-    "OSMBuildingsDirs" -> (System.getenv("CS_HOME")+"/UrbanDynamics/Data/OSM/England,"+System.getenv("CS_HOME")+"/UrbanDynamics/Data/OSM/Scotland,"+System.getenv("CS_HOME")+"/UrbanDynamics/Data/OSM/Wales")
-    "QUANTFlowsFiles" ->
+    "OSMBuildingsDirs" -> (System.getenv("CS_HOME")+"/UrbanDynamics/Data/OSM/England,"+System.getenv("CS_HOME")+"/UrbanDynamics/Data/OSM/Scotland,"+System.getenv("CS_HOME")+"/UrbanDynamics/Data/OSM/Wales"),
+    "QUANTDataDir" ->(System.getenv("CS_HOME")+"/UrbanDynamics/Data/QUANT/converted/")
   )
+
+  val defaultDockerArgs: Map[String, String] = Map()
 
 
   /**
@@ -29,8 +32,14 @@ object Matsim {
   def parseArg(args: Array[String], key: String): String = {
     val filtered = args.filter(_.split("=")(0).substring(2).equals(key))
     if (filtered.isEmpty) {
-      if (defaultArgs.contains(key)) defaultArgs(key)
-      else throw new IllegalArgumentException("Required argument: --"+key)
+      // check if local or on docker: --local argument
+      if (args.exists(_.split("=")(0).substring(2).equals("local"))) {
+        if (defaultLocalArgs.contains(key)) defaultLocalArgs(key)
+        else throw new IllegalArgumentException("Required argument: --" + key)
+      } else {
+        if (defaultDockerArgs.contains(key)) defaultDockerArgs(key)
+        else throw new IllegalArgumentException("Required argument: --" + key)
+      }
     }
     else filtered(0).split("=")(1)
   }

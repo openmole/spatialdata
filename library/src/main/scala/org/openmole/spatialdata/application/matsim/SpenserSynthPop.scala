@@ -32,7 +32,7 @@ object SpenserSynthPop {
     * Spenser individual, enriched with home locations, job locations and plans
     *
     * @param id id
-    * @param msoaCode home msoa
+    * @param msoaCode home oa
     * @param sex sex
     * @param age age
     * @param householdId household id

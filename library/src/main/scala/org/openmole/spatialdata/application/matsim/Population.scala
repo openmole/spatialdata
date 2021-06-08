@@ -1,6 +1,6 @@
 package org.openmole.spatialdata.application.matsim
 
-import java.io.{BufferedWriter, File, FileWriter, FilenameFilter}
+import java.io.{BufferedWriter, File, FileWriter}
 
 import org.locationtech.jts.geom
 import org.locationtech.jts.geom.{GeometryFactory, Polygon}
@@ -34,6 +34,7 @@ object Population {
     "--output=$OUTPUT"
 
   val oaID: String = "OA11CD"
+  val msoaID: String = "MSOA11CD"
   val ladID: String = "lad19cd"
 
   def spenserPopFile(code: String): String = "ass_"+code+"_MSOA11_2020.csv"
@@ -54,19 +55,22 @@ object Population {
     * ! add optional seed argument?
     *
     *  for test on Glasgow: Local Authorities S12000008 S12000011 S12000021 S12000029 S12000030 S12000038 S12000039 S12000045 S12000049 S12000050
-    *    runMain org.openmole.spatialdata.application.matsim.RunMatsim --synthpop --popMode=uniform --jobMode=random --planMode=default --sample=0.01 --FUAName=Glasgow    --SPENSERDirs=/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/ --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/Population/test/Glasgow.xml
+    *    runMain org.openmole.spatialdata.application.matsim.RunMatsim --local --synthpop --popMode=uniform --jobMode=random --planMode=default --sample=0.01 --FUAName=Glasgow  --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/Population/test/Glasgow.xml
     *
     *  Test on Exeter: LADs E07000040 E07000041 E07000042 E07000045 E07000047
-    *    runMain org.openmole.spatialdata.application.matsim.RunMatsim --synthpop --popMode=detailed --jobMode=random --planMode=default --sample=0.01 --FUAName=Exeter --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/Population/test/Exeter.xml
+    *    runMain org.openmole.spatialdata.application.matsim.RunMatsim --synthpop --local --popMode=detailed --jobMode=random --planMode=default --sample=0.01 --FUAName=Exeter --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/Population/test/Exeter.xml
+    *
+    *   runMain org.openmole.spatialdata.application.matsim.RunMatsim --synthpop --local --popMode=uniform --jobMode=sample --planMode=default --sample=0.01 --FUAName=Exeter --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/Population/test/Exeter.xml
+    *
     *
     *  Test on Hereford:
-    *    runMain org.openmole.spatialdata.application.matsim.RunMatsim --synthpop --popMode=detailed --jobMode=random --planMode=default --sample=0.01 --FUAName=Hereford --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/Population/test/Hereford.xml
+    *    runMain org.openmole.spatialdata.application.matsim.RunMatsim --local --synthpop --popMode=detailed --jobMode=random --planMode=default --sample=0.01 --FUAName=Hereford --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/Population/test/Hereford.xml
     *
     *  Test on Taunton
-    *     runMain org.openmole.spatialdata.application.matsim.RunMatsim --synthpop --popMode=detailed --jobMode=random --planMode=default --sample=0.01 --FUAName=Taunton --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/test/Taunton.xml
+    *     runMain org.openmole.spatialdata.application.matsim.RunMatsim --synthpop --popMode=detailed --jobMode=sample --planMode=default --sample=0.01 --FUAName=Taunton --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/test/Taunton.xml
     *
     * Test on Birmingham
-    *     runMain org.openmole.spatialdata.application.matsim.RunMatsim --synthpop --popMode=uniform --jobMode=random --planMode=default --sample=0.01 --FUAName="Birmingham" --FUAFile=/Users/juste/ComplexSystems/Data/JRC_EC/GHS/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0_WGS84.gpkg --LAFile=/Users/juste/ComplexSystems/UrbanDynamics/Data/OrdnanceSurvey/LADistricts/Local_Authority_Districts__December_2019__Boundaries_UK_BUC-shp/LAD_WGS84.shp --OAFile=/Users/juste/ComplexSystems/Data/OrdnanceSurvey/Output_Areas__December_2011__Boundaries_EW_BGC-shp/OA2011_WGS84.shp --SPENSERDirs=/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/England,/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/Scotland,/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/Wales --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/test/Plans
+    *     runMain org.openmole.spatialdata.application.matsim.RunMatsim --synthpop --popMode=uniform --jobMode=random --planMode=default --sample=0.01 --FUAName="Birmingham" --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/test/Birmingham.xml
     *
     * @param args arguments
     */
@@ -85,6 +89,7 @@ object Population {
     val areas = loadAreas(fuanames.map(_.split(",").toSeq), parseArg(args, "FUAFile"))
     val oas = Polygons(GIS.readGeometry(parseArg(args, "OAFile"), Array(oaID))).filter{p => areas.exists(a => a.contains(p)||a.intersects(p))}
     utils.log(s"Filtered output areas: ${oas.polygons.size}")
+    val msoas = Polygons(GIS.readGeometry(parseArg(args, "MSOAFile"), Array(msoaID))).filter{p => areas.exists(a => a.contains(p)||a.intersects(p))}
     val lads = GIS.readGeometry(parseArg(args, "LAFile"), Array(ladID))
     val localAuthorities = Polygons(lads) // only used for synthpop but better consistence to have same level args
 
@@ -92,7 +97,7 @@ object Population {
 
     areas.zip(fuanames).foreach { case (area,name) =>
       utils.log("Constructing synthetic population for FUA "+name)
-      val pop = loadSyntheticPopulation(area, name, localAuthorities, parseArg(args, "SPENSERDirs").split(","), sampling = sampling)
+      val pop = loadSyntheticPopulation(area, localAuthorities, parseArg(args, "SPENSERDirs").split(","), sampling = sampling)
 
       val locator: SpenserSynthPop => SpenserSynthPop = parseArg(args, "popMode") match {
         case "uniform" => p: SpenserSynthPop => HomeLocation.uniformHomeLocationPopulation(p, oas)
@@ -105,8 +110,8 @@ object Population {
 
       val jobLocator: SpenserSynthPop => SpenserSynthPop = parseArg(args, "jobMode") match {
         case "random" => p: SpenserSynthPop => JobLocation.randomJobLocationPopulation(p, area)
-        case "sample" => p: SpenserSynthPop => JobLocation.empiricalSamplingJobLocationPopulation(p)
-        case "gravity" => p: SpenserSynthPop => JobLocation.gravityJobLocationPopulation(p)
+        case "sample" => p: SpenserSynthPop => JobLocation.empiricalSamplingJobLocationPopulation(p, parseArg(args, "QUANTDataDir"), area, msoas, oas)
+        case "gravity" => p: SpenserSynthPop => JobLocation.gravityJobLocationPopulation(p, parseArg(args, "QUANTDataDir"), area, msoas, oas)
         case _ => throw new IllegalArgumentException("Available job modes: --jobMode={random|sample|gravity}")
       }
 
@@ -139,15 +144,17 @@ object Population {
     def uniformHomeLocationPopulation(population: SpenserSynthPop, outputAreas: Polygons)(implicit rng: Random): SpenserSynthPop = {
       utils.log("    Uniform home location")
       val lochouseholds = population.households.groupBy(_.oaCode).map{case (oaCode,hs) =>
-        val (homeoa,_) =  outputAreas.getPolygonByKeyValue(oaID, oaCode).get
-        //val (c,e) = (homeoa.getCentroid, homeoa.getEnvelopeInternal)
-        val e = homeoa.getEnvelopeInternal
-        //val (x, y, xmin, xmax, ymin, ymax) = (c.getX, c.getY, e.getMinX, e.getMaxX, e.getMinY, e.getMaxY)
-        val (xmin, xmax, ymin, ymax) = (e.getMinX, e.getMaxX, e.getMinY, e.getMaxY)
-        hs.map{household =>
-          //val homeloc = LayerSampling.sampleEnvelope(homeoa, 1).head
-          // val homeloc =  LayerSampling.PolygonSampler(homeoa, 0.001).sample // issue with the polygon sampler
-          household.copy(homeLocation = (xmin + rng.nextDouble*(xmax-xmin), ymin+rng.nextDouble*(ymax-ymin)))
+        val homeoaOption =  outputAreas.getPolygonByKeyValue(oaID, oaCode)
+        if (homeoaOption.isEmpty) Seq.empty else {
+          //val (c,e) = (homeoa.getCentroid, homeoa.getEnvelopeInternal)
+          val e = homeoaOption.get._1.getEnvelopeInternal
+          //val (x, y, xmin, xmax, ymin, ymax) = (c.getX, c.getY, e.getMinX, e.getMaxX, e.getMinY, e.getMaxY)
+          val (xmin, xmax, ymin, ymax) = (e.getMinX, e.getMaxX, e.getMinY, e.getMaxY)
+          hs.map { household =>
+            //val homeloc = LayerSampling.sampleEnvelope(homeoa, 1).head
+            // val homeloc =  LayerSampling.PolygonSampler(homeoa, 0.001).sample // issue with the polygon sampler
+            household.copy(homeLocation = (xmin + rng.nextDouble * (xmax - xmin), ymin + rng.nextDouble * (ymax - ymin)))
+          }
         }
       }.reduce(utils.concat[Household])
       utils.log("Located households = "+lochouseholds.size)
@@ -219,11 +226,13 @@ object Population {
 
     /**
       * job location by sampling empirical census flows
+      *  - data loading done within the QUANT function as only used there (and only flows in that case)
+      *
       * @param population population
       * @return
       */
-    def empiricalSamplingJobLocationPopulation(population: SpenserSynthPop): SpenserSynthPop = {
-      SpenserSynthPop(Seq.empty, Seq.empty)
+    def empiricalSamplingJobLocationPopulation(population: SpenserSynthPop, QUANTDataDir: String, area: geom.Geometry, msoas: Polygons, oas: Polygons)(implicit rng: Random): SpenserSynthPop = {
+      QUANT.empiricalSamplingJobLocationPopulation(population, QUANTDataDir, area, msoas, oas)
     }
 
     /**
@@ -231,8 +240,8 @@ object Population {
       * @param population population
       * @return
       */
-    def gravityJobLocationPopulation(population: SpenserSynthPop): SpenserSynthPop = {
-      SpenserSynthPop(Seq.empty, Seq.empty)
+    def gravityJobLocationPopulation(population: SpenserSynthPop, QUANTDataDir: String, area: geom.Geometry, msoas: Polygons, oas: Polygons)(implicit rng: Random): SpenserSynthPop = {
+      QUANT.gravityJobLocationPopulation(population, QUANTDataDir, area, msoas, oas)
     }
   }
 
@@ -274,7 +283,6 @@ object Population {
     * @return
     */
   def loadSyntheticPopulation(area: geom.Geometry,
-                              areaname: String,
                               localAuthorities: Polygons,
                               spenserDirs: Array[String],
                               indivFileName: (String,String)=>String = {case (dir,code) =>dir+"/"+spenserPopFile(code) },
@@ -331,7 +339,7 @@ object Population {
     val allbuildings = new mutable.HashMap[String, Seq[Polygon]]
     LADs.foreach{ ladCode =>
       val buildings: Seq[Polygon] = OSMBuildingDirs.map{ dir =>
-        val potfiles = (new File(dir)).listFiles().filter(_.toString.contains(ladCode))
+        val potfiles = new File(dir).listFiles().filter(_.toString.contains(ladCode))
         if (potfiles.isEmpty) Seq.empty
         else {
           APIExtractor.Buildings.getBuildings(mode = OSMPBFFile(potfiles.head.toString))

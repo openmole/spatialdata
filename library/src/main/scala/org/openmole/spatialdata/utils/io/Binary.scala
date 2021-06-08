@@ -12,8 +12,8 @@ object Binary {
 
   /**
     * serialize any object in binary using FST
-    * @param o
-    * @param filePath
+    * @param o object
+    * @param filePath file path
     */
   def writeBinary(o: AnyRef, filePath: String): Unit = {
     val out: FSTObjectOutput = new FSTObjectOutput(new FileOutputStream(filePath))

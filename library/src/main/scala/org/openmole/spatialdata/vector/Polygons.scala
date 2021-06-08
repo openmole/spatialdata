@@ -47,6 +47,11 @@ case class Polygons(
     )
   }
 
+  def filter(f: geom.Polygon => Boolean): Polygons = {
+    val (polys,attrs) = polygons.zip(attributes).filter{case (p,_) => f(p)}.unzip
+    Polygons(polys, attrs)
+  }
+
 }
 
 

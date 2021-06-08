@@ -1,17 +1,20 @@
 package org.openmole.spatialdata.application.matsim
 
-import java.io.{BufferedWriter, File, FileWriter}
+import java.io.{BufferedWriter, File, FileWriter, FilenameFilter}
 
 import org.locationtech.jts.geom
-import org.locationtech.jts.geom.GeometryFactory
+import org.locationtech.jts.geom.{GeometryFactory, Polygon}
 import org.openmole.spatialdata.application.matsim.Matsim._
 import org.openmole.spatialdata.application.matsim.SpenserSynthPop.{Household, Individual, Plan}
 import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.utils.gis.LayerSampling
 import org.openmole.spatialdata.utils.io.{CSV, GIS}
 import org.openmole.spatialdata.utils.math.Stochastic
+import org.openmole.spatialdata.utils.osm.APIExtractor
+import org.openmole.spatialdata.utils.osm.APIExtractor.OSMPBFFile
 import org.openmole.spatialdata.vector.{Attributes, Point, Polygons}
 
+import scala.collection.mutable
 import scala.util.Random
 
 
@@ -36,6 +39,8 @@ object Population {
   def spenserPopFile(code: String): String = "ass_"+code+"_MSOA11_2020.csv"
   def spenserHouseholdFile(code: String): String = "ass_hh_"+code+"_OA11_2020.csv"
 
+  val jitterPositionAmplitude: Double = 0.0001
+
   /**
     * Convert spenser synth pop files to Matsim population
     *
@@ -49,16 +54,16 @@ object Population {
     * ! add optional seed argument?
     *
     *  for test on Glasgow: Local Authorities S12000008 S12000011 S12000021 S12000029 S12000030 S12000038 S12000039 S12000045 S12000049 S12000050
-    *    runMain org.openmole.spatialdata.application.matsim.RunMatsim --synthpop --popMode=uniform --jobMode=random --planMode=default --sample=0.01 --FUAName=Glasgow --FUAFile=/Users/juste/ComplexSystems/Data/JRC_EC/GHS/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0_WGS84.gpkg --LAFile=/Users/juste/ComplexSystems/UrbanDynamics/Data/OrdnanceSurvey/LADistricts/Local_Authority_Districts__December_2019__Boundaries_UK_BUC-shp/LAD_WGS84.shp --OAFile=/Users/juste/ComplexSystems/UrbanDynamics/Data/QUANT/geography/EnglandWalesScotland_MSOAWGS84.shp --SPENSERDirs=/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/ --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/Population/test/Glasgow.xml
+    *    runMain org.openmole.spatialdata.application.matsim.RunMatsim --synthpop --popMode=uniform --jobMode=random --planMode=default --sample=0.01 --FUAName=Glasgow    --SPENSERDirs=/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/ --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/Population/test/Glasgow.xml
     *
     *  Test on Exeter: LADs E07000040 E07000041 E07000042 E07000045 E07000047
-    *    runMain org.openmole.spatialdata.application.matsim.RunMatsim --synthpop --popMode=uniform --jobMode=random --planMode=default --sample=0.01 --FUAName=Exeter --FUAFile=/Users/juste/ComplexSystems/Data/JRC_EC/GHS/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0_WGS84.gpkg --LAFile=/Users/juste/ComplexSystems/UrbanDynamics/Data/OrdnanceSurvey/LADistricts/Local_Authority_Districts__December_2019__Boundaries_UK_BUC-shp/LAD_WGS84.shp --OAFile=/Users/juste/ComplexSystems/UrbanDynamics/Data/QUANT/geography/EnglandWalesScotland_MSOAWGS84.shp --SPENSERDirs=/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/England,/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/Scotland,/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/Wales --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/Population/test/Exeter.xml
+    *    runMain org.openmole.spatialdata.application.matsim.RunMatsim --synthpop --popMode=detailed --jobMode=random --planMode=default --sample=0.01 --FUAName=Exeter --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/Population/test/Exeter.xml
     *
-    *  Test on Hereford: LADs
-    *    runMain org.openmole.spatialdata.application.matsim.RunMatsim --synthpop --popMode=uniform --jobMode=random --planMode=default --sample=0.01 --FUAName=Hereford --FUAFile=/Users/juste/ComplexSystems/Data/JRC_EC/GHS/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0_WGS84.gpkg --LAFile=/Users/juste/ComplexSystems/UrbanDynamics/Data/OrdnanceSurvey/LADistricts/Local_Authority_Districts__December_2019__Boundaries_UK_BUC-shp/LAD_WGS84.shp --OAFile=/Users/juste/ComplexSystems/Data/OrdnanceSurvey/Output_Areas__December_2011__Boundaries_EW_BGC-shp/OA2011_WGS84.shp --SPENSERDirs=/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/England,/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/Scotland,/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/Wales --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/Population/test/Hereford.xml
+    *  Test on Hereford:
+    *    runMain org.openmole.spatialdata.application.matsim.RunMatsim --synthpop --popMode=detailed --jobMode=random --planMode=default --sample=0.01 --FUAName=Hereford --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/Population/test/Hereford.xml
     *
     *  Test on Taunton
-    *     runMain org.openmole.spatialdata.application.matsim.RunMatsim --synthpop --popMode=uniform --jobMode=random --planMode=default --sample=0.01 --FUAName="Taunton" --FUAFile=/Users/juste/ComplexSystems/Data/JRC_EC/GHS/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0_WGS84.gpkg --LAFile=/Users/juste/ComplexSystems/UrbanDynamics/Data/OrdnanceSurvey/LADistricts/Local_Authority_Districts__December_2019__Boundaries_UK_BUC-shp/LAD_WGS84.shp --OAFile=/Users/juste/ComplexSystems/Data/OrdnanceSurvey/Output_Areas__December_2011__Boundaries_EW_BGC-shp/OA2011_WGS84.shp --SPENSERDirs=/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/England,/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/Scotland,/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/Wales --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/test/Plans
+    *     runMain org.openmole.spatialdata.application.matsim.RunMatsim --synthpop --popMode=detailed --jobMode=random --planMode=default --sample=0.01 --FUAName=Taunton --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/test/Taunton.xml
     *
     * Test on Birmingham
     *     runMain org.openmole.spatialdata.application.matsim.RunMatsim --synthpop --popMode=uniform --jobMode=random --planMode=default --sample=0.01 --FUAName="Birmingham" --FUAFile=/Users/juste/ComplexSystems/Data/JRC_EC/GHS/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0_WGS84.gpkg --LAFile=/Users/juste/ComplexSystems/UrbanDynamics/Data/OrdnanceSurvey/LADistricts/Local_Authority_Districts__December_2019__Boundaries_UK_BUC-shp/LAD_WGS84.shp --OAFile=/Users/juste/ComplexSystems/Data/OrdnanceSurvey/Output_Areas__December_2011__Boundaries_EW_BGC-shp/OA2011_WGS84.shp --SPENSERDirs=/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/England,/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/Scotland,/Users/juste/ComplexSystems/UrbanDynamics/Data/SPENSER/2020/Wales --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/test/Plans
@@ -78,7 +83,8 @@ object Population {
 
     val fuanames= parseArg(args, "FUAName").replace("\"","").split(";").toSeq
     val areas = loadAreas(fuanames.map(_.split(",").toSeq), parseArg(args, "FUAFile"))
-    val oas = Polygons(GIS.readGeometry(parseArg(args, "OAFile"), Array(oaID)))
+    val oas = Polygons(GIS.readGeometry(parseArg(args, "OAFile"), Array(oaID))).filter{p => areas.exists(a => a.contains(p)||a.intersects(p))}
+    utils.log(s"Filtered output areas: ${oas.polygons.size}")
     val lads = GIS.readGeometry(parseArg(args, "LAFile"), Array(ladID))
     val localAuthorities = Polygons(lads) // only used for synthpop but better consistence to have same level args
 
@@ -90,7 +96,10 @@ object Population {
 
       val locator: SpenserSynthPop => SpenserSynthPop = parseArg(args, "popMode") match {
         case "uniform" => p: SpenserSynthPop => HomeLocation.uniformHomeLocationPopulation(p, oas)
-        case "detailed" => p: SpenserSynthPop => HomeLocation.detailedHomeLocationPopulation(p)
+        case "detailed" => p: SpenserSynthPop => {
+          val buildings = loadOSMPBFBuildings(p.LADs, parseArg(args, "OSMBuildingsDirs").split(","), oas)
+          HomeLocation.detailedHomeLocationPopulation(p, buildings, oas)
+        }
         case _ => throw new IllegalArgumentException("Available population modes: --popMode={uniform|detailed}")
       }
 
@@ -124,13 +133,13 @@ object Population {
       * Distribute population uniformally in MSOAs
       *
       * @param population spenser population
-      * @param msoas      msoa polygons
+      * @param outputAreas      msoa polygons
       * @return
       */
-    def uniformHomeLocationPopulation(population: SpenserSynthPop, msoas: Polygons)(implicit rng: Random): SpenserSynthPop = {
+    def uniformHomeLocationPopulation(population: SpenserSynthPop, outputAreas: Polygons)(implicit rng: Random): SpenserSynthPop = {
       utils.log("    Uniform home location")
       val lochouseholds = population.households.groupBy(_.oaCode).map{case (oaCode,hs) =>
-        val (homeoa,_) =  msoas.getPolygonByKeyValue(oaID, oaCode).get
+        val (homeoa,_) =  outputAreas.getPolygonByKeyValue(oaID, oaCode).get
         //val (c,e) = (homeoa.getCentroid, homeoa.getEnvelopeInternal)
         val e = homeoa.getEnvelopeInternal
         //val (x, y, xmin, xmax, ymin, ymax) = (c.getX, c.getY, e.getMinX, e.getMaxX, e.getMinY, e.getMaxY)
@@ -142,12 +151,8 @@ object Population {
         }
       }.reduce(utils.concat[Household])
       utils.log("Located households = "+lochouseholds.size)
-      val hmap = lochouseholds.map(h => (h.hid,h)).toMap
-      val indwithouthidcount = population.individuals.count(i => hmap.contains(i.householdId))
-      utils.log("indiv with households % = "+(100*indwithouthidcount.toDouble/population.individuals.size.toDouble))
-      val locindividuals = population.individuals.flatMap{individual =>
-        if (hmap.contains(individual.householdId)) Some(individual.copy(homeLocation = hmap(individual.householdId).homeLocation)) else None
-      }
+
+      val locindividuals = locateIndividuals(lochouseholds, population.individuals)
       utils.log("Located individuals = "+locindividuals.size)
       SpenserSynthPop(locindividuals, lochouseholds)
     }
@@ -159,10 +164,40 @@ object Population {
       *  - buildings (OSM)
       *
       * @param population population
+      * @param buildings Map OA code -> buildings
       * @return
       */
-    def detailedHomeLocationPopulation(population: SpenserSynthPop): SpenserSynthPop = {
-      SpenserSynthPop(Seq.empty, Seq.empty)
+    def detailedHomeLocationPopulation(population: SpenserSynthPop, buildings: Map[String,Polygons], outputAreas: Polygons)(implicit rng: Random): SpenserSynthPop = {
+      utils.log("    Buildings home location")
+
+      val lochouseholds = population.households.groupBy(_.oaCode).map{case (oaCode,hs) =>
+        val buildingsCentroids = buildings.getOrElse(oaCode, Polygons.empty).polygons.map{_.getCentroid}
+        val homeoaOption =  outputAreas.getPolygonByKeyValue(oaID, oaCode)
+        val n = buildingsCentroids.size
+        //utils.log(s"For OA $oaCode , buildings: $n, households: ${hs.size}")
+        if (n>0||homeoaOption.nonEmpty) {
+          hs.map { household =>
+            val loc = if (n > 0) buildingsCentroids(rng.nextInt(n)) else homeoaOption.get._1.getCentroid
+            household.copy(homeLocation = jitterPosition(loc.getX, loc.getY))
+          }
+        } else Seq.empty
+      }.reduce(utils.concat[Household])
+      utils.log("Located households = "+lochouseholds.size)
+
+      val locindividuals = locateIndividuals(lochouseholds, population.individuals)
+      utils.log("Located individuals = "+locindividuals.size)
+      SpenserSynthPop(locindividuals, lochouseholds)
+    }
+
+    def jitterPosition(x: Double, y: Double)(implicit rng: Random): (Double,Double) = (x - jitterPositionAmplitude/2 + rng.nextDouble()*jitterPositionAmplitude,y - jitterPositionAmplitude/2 + rng.nextDouble()*jitterPositionAmplitude)
+
+    def locateIndividuals(lochouseholds: Seq[Household], individuals: Seq[Individual]): Seq[Individual] = {
+      val hmap = lochouseholds.map(h => (h.hid,h)).toMap
+      //val indwithouthidcount = population.individuals.count(i => hmap.contains(i.householdId))
+      //utils.log("indiv with households % = "+(100*indwithouthidcount.toDouble/population.individuals.size.toDouble))
+      individuals.flatMap{individual =>
+        if (hmap.contains(individual.householdId)) Some(individual.copy(homeLocation = hmap(individual.householdId).homeLocation)) else None
+      }
     }
   }
 
@@ -192,7 +227,7 @@ object Population {
     }
 
     /**
-      * First two stages of four stage model
+      * Job location using a calibrated gravity model
       * @param population population
       * @return
       */
@@ -276,8 +311,44 @@ object Population {
         householdcsv.flatMap(r => if (hids.contains(code+"_"+r(Household.csvIndices.head))) Some(Household(r, Household.csvIndices, code)) else None).toSeq
       }
     }.reduce(utils.concat[Household])
+
     utils.log("Sampled pop size = "+sampledindivs.size+" ; "+households.size)
-    SpenserSynthPop(sampledindivs, households)
+
+    SpenserSynthPop(sampledindivs, households, reqladcodes)
+  }
+
+  /**
+    * Load OSM buildings
+    * @param LADs local authority ids
+    * @param OSMBuildingDirs directory with building files
+    * @param outputAreas output areas polygons
+    * @return
+    */
+  def loadOSMPBFBuildings(LADs: Seq[String],
+                    OSMBuildingDirs: Array[String],
+                    outputAreas: Polygons
+                   ): Map[String,Polygons] = {
+    val allbuildings = new mutable.HashMap[String, Seq[Polygon]]
+    LADs.foreach{ ladCode =>
+      val buildings: Seq[Polygon] = OSMBuildingDirs.map{ dir =>
+        val potfiles = (new File(dir)).listFiles().filter(_.toString.contains(ladCode))
+        if (potfiles.isEmpty) Seq.empty
+        else {
+          APIExtractor.Buildings.getBuildings(mode = OSMPBFFile(potfiles.head.toString))
+        }
+      }.toSeq.flatten
+
+      utils.log(s"Loaded ${buildings.size} buildings for LAD $ladCode")
+
+      outputAreas.polygons.zip(outputAreas.attributes).foreach{case (oapolygon,attrs) =>
+        val oabuildings = buildings.filter(p=> oapolygon.contains(p)||oapolygon.intersects(p))
+        val oacode = attrs.getOrElse(oaID,"NA").toString
+        allbuildings.put(oacode,
+          if (allbuildings.contains(oacode)) allbuildings(oacode)++oabuildings else oabuildings
+        )
+      }
+    }
+    allbuildings.map{case (k,v) => (k,Polygons(v))}.toMap
   }
 
 

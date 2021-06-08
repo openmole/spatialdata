@@ -24,8 +24,8 @@ object Binary {
 
   /**
     *
-    * @param filePath
-    * @tparam T
+    * @param filePath file path
+    * @tparam T read type
     */
   def readBinary[T](filePath: String): T = {
     val in: FSTObjectInput = new FSTObjectInput(new FileInputStream(filePath))
@@ -38,8 +38,8 @@ object Binary {
 
 
   /**
-    * FIXME not sure of the order
-    * @param x
+    * ! not sure of the order
+    * @param x byte array
     * @return
     */
   def byteArrayToFloat(x: Array[Byte]): Float = {
@@ -50,13 +50,11 @@ object Binary {
     java.lang.Float.intBitsToFloat(res)
   }
 
-  /**
-    * FIXME this does not work with files written by dotnet (not even the same size) - Bytes should be the same however?
-    *  seems that finary formats are not necessarily compatible accross platforms
-    * @param file
-    * @return
+  /*
+    * ! this does not work with files written by dotnet (not even the same size) - Bytes should be the same however?
+    *  seems that binary formats are not necessarily compatible accross platforms
     */
-  /*def readBinaryMatrix(file: String): Matrix = {
+   /*def readBinaryMatrix(file: String): Matrix = {
     val reader = new FileReader(new File(file))
     val data: Array[Byte] = IOUtils.toByteArray(reader)
     // or can use java.nio.files.Files.readAllBytes ?

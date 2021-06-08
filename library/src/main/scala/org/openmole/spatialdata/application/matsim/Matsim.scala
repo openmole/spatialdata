@@ -10,10 +10,28 @@ import org.openmole.spatialdata.vector.Polygons
   */
 object Matsim {
 
+  val defaultArgs: Map[String, String] = Map(
+    "FUAFile" -> (System.getenv("CS_HOME")+"/Data/JRC_EC/GHS/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0_WGS84.gpkg"),
+    "LAFile" -> (System.getenv("CS_HOME")+"/UrbanDynamics/Data/OrdnanceSurvey/LADistricts/Local_Authority_Districts__December_2019__Boundaries_UK_BUC-shp/LAD_WGS84.shp"),
+    "OAFile" -> (System.getenv("CS_HOME")+"/Data/OrdnanceSurvey/Output_Areas__December_2011__Boundaries_EW_BGC-shp/OA2011_WGS84.shp"),
+    "SPENSERDirs" -> (System.getenv("CS_HOME")+"/UrbanDynamics/Data/SPENSER/2020/England,"+System.getenv("CS_HOME")+"/UrbanDynamics/Data/SPENSER/2020/Scotland,"+System.getenv("CS_HOME")+"/UrbanDynamics/Data/SPENSER/2020/Wales"),
+    "OSMBuildingsDirs" -> (System.getenv("CS_HOME")+"/UrbanDynamics/Data/OSM/England,"+System.getenv("CS_HOME")+"/UrbanDynamics/Data/OSM/Scotland,"+System.getenv("CS_HOME")+"/UrbanDynamics/Data/OSM/Wales")
+  )
+
+
+  /**
+    * Parse command line arguments and return default if not provided
+    * @param args arguments
+    * @param key key
+    * @return
+    */
   def parseArg(args: Array[String], key: String): String = {
     val filtered = args.filter(_.split("=")(0).substring(2).equals(key))
-    if (filtered.isEmpty) throw new IllegalArgumentException("Required argument: --"+key)
-    filtered(0).split("=")(1)
+    if (filtered.isEmpty) {
+      if (defaultArgs.contains(key)) defaultArgs(key)
+      else throw new IllegalArgumentException("Required argument: --"+key)
+    }
+    else filtered(0).split("=")(1)
   }
 
   /**

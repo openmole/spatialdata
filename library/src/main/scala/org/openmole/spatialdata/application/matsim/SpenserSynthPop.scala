@@ -8,7 +8,8 @@ import scala.util.Random
 
 case class SpenserSynthPop(
                           individuals: Seq[SpenserSynthPop.Individual],
-                          households: Seq[SpenserSynthPop.Household]
+                          households: Seq[SpenserSynthPop.Household],
+                          LADs: Seq[String] = Seq.empty
                           ) {
 
   /**
@@ -20,7 +21,7 @@ case class SpenserSynthPop(
     val keptIndivs = Stochastic.sampleWithoutReplacement(individuals, (proportion*individuals.size).toInt)
     val hids = keptIndivs.map(_.householdId)
     val keptHouseholds = households.filter(h => hids.contains(h.hid))
-    SpenserSynthPop(keptIndivs, keptHouseholds)
+    this.copy(individuals=keptIndivs, households = keptHouseholds)
   }
 }
 

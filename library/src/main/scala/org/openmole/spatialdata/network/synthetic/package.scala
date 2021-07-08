@@ -8,8 +8,10 @@ package org.openmole.spatialdata.network
   * - Synthetic network generator to implement: https://arxiv.org/abs/2001.08180
   * - Link addition for a bicycle path network: Natera Orozco, L. G., Battiston, F., Iñiguez, G., & Szell, M. (2020). Data-driven strategies for optimal bicycle network growth. Royal Society Open Science, 7(12), 201130.
   * - morphogenesis reaction-diffusion model to implement: Tirico, M., Balev, S., Dutot, A., & Olivier, D. (2018, December). Morphogenesis of complex networks: A reaction diffusion framework for spatial graphs. In International Conference on Complex Networks and their Applications (pp. 769-781). Springer, Cham.
+  * - variations in Tirico, M. (2020). Morphogenesis of complex networks.: An application in urban growth (Doctoral dissertation, Normandie).
   * - El Gouj, H., & Lagesse, C. (2021). Road Network Analysis Based on Geo-Historical Data (No. 5453). EasyChair. (extends geometrical model physicists?)
-  *
+  * - Al-Sayed, K. (2014). Urban morphogenesis; how form-function complexity coupled temporal changes on street configurations in Manhattan and Barcelona over the past centuries (Doctoral dissertation, UCL (University College London)). : model?
+  * - Barthelemy, M. (2018). Morphogenesis of spatial networks. Cham, Switzerland: Springer International Publishing.
   */
 package object synthetic {
 

@@ -18,6 +18,11 @@ import scala.collection.mutable
 import scala.util.Random
 
 
+/**
+*
+* - for pop detailed distrib: check info of bulding floor - more realistic density
+*    -> see e.g. colouring London project UrbanDynamics/Matsim/colouringLondon.pdf (historical data)
+*/
 object Population {
 
   val usage: String = "Missing arguments; usage:\n" +
@@ -58,7 +63,7 @@ object Population {
     *    runMain org.openmole.spatialdata.application.matsim.RunMatsim --local --synthpop --popMode=uniform --jobMode=random --planMode=default --sample=0.01 --FUAName=Glasgow  --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/Population/test/Glasgow.xml
     *
     *  Test on Exeter: LADs E07000040 E07000041 E07000042 E07000045 E07000047
-    *    runMain org.openmole.spatialdata.application.matsim.RunMatsim --synthpop --local --popMode=detailed --jobMode=random --planMode=default --sample=0.01 --FUAName=Exeter --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/Population/test/Exeter.xml
+    *    runMain org.openmole.spatialdata.application.matsim.RunMatsim --synthpop --local --popMode=detailed --jobMode=sample --planMode=default --sample=1.0 --FUAName=Exeter --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/Population/test/Exeter_full_detailed-sample.xml
     *
     *   runMain org.openmole.spatialdata.application.matsim.RunMatsim --synthpop --local --popMode=uniform --jobMode=sample --planMode=default --sample=0.01 --FUAName=Exeter --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/Population/test/Exeter.xml
     *

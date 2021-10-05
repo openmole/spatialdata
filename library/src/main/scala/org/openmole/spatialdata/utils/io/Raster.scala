@@ -3,11 +3,10 @@ package org.openmole.spatialdata.utils.io
 
 import java.io.File
 
-import javax.imageio.ImageIO
-import org.geotools.coverage.grid.io.{AbstractGridFormat, GridCoverage2DReader, GridFormatFinder, OverviewPolicy}
+import org.geotools.coverage.grid.{GridCoordinates2D, GridCoverage2D}
+import org.geotools.coverage.grid.io.{AbstractGridFormat, GridFormatFinder, OverviewPolicy}
 import org.geotools.gce.geotiff.GeoTiffReader
-import org.geotools.parameter.ParameterGroup
-import org.opengis.parameter.{GeneralParameterValue, ParameterValue}
+import org.opengis.parameter.ParameterValue
 import org.openmole.spatialdata.grid.RasterLayerData
 import org.openmole.spatialdata.utils
 
@@ -25,7 +24,7 @@ object Raster {
     * @param layer raster file
     * @return
     */
-  def readGeotiff(layer: String): RasterLayerData[Double] = {
+  def readGeotiff(layer: String): GridCoverage2D = {
     val format: AbstractGridFormat = GridFormatFinder.findFormat(layer)
     utils.log(s"Raster format for file $layer: ${format.getDescription}")
     //val reader: GridCoverage2DReader = format.getReader(layer)
@@ -41,15 +40,40 @@ object Raster {
     val useJaiRead = AbstractGridFormat.USE_JAI_IMAGEREAD.createValue
     useJaiRead.setValue(true)
 
-    val raw = reader.read(Array(policy,gridsize,useJaiRead))
+    reader.read(Array(policy,gridsize,useJaiRead))
+  }
 
+
+  /**
+    * Get one band of a geotiff raster as a raw matrix
+    * @param layer layer
+    * @param band band (default 0)
+    * @return
+    */
+  def readGeotiffValues(layer: String, band: Int = 0): RasterLayerData[Double] = {
+    val raw: GridCoverage2D = readGeotiff(layer)
     val raster: java.awt.image.Raster = raw.getRenderedImage.getData
-    val res: ArrayBuffer[Array[Double]] = new ArrayBuffer
-    for {x <- raster.getMinX to (raster.getMinX + raster.getWidth)} {
-       val currentData = new Array[Double](raster.getHeight)
-       res.addOne(raster.getPixels(x,raster.getMinY,1,raster.getHeight,currentData))
+    val res = Array.fill(raster.getWidth*raster.getHeight)(0.0)
+    raster.getSamples(0,0,raster.getWidth, raster.getHeight,band,res)
+  }
+
+  /**
+    * get one band and coordinates of cells for a geotiff raster
+    * @param layer layer
+    * @param band band (default 0)
+    * @return
+    */
+  def readGeotiffValuesAndCoordinates(layer: String, band: Int = 0): (Array[Double], Array[Double], Array[Double]) = {
+    val raw: GridCoverage2D = readGeotiff(layer)
+    val raster: java.awt.image.Raster = raw.getRenderedImage.getData
+    val rastergeom = raw.getGridGeometry
+    val (v,xx,yy) = (new ArrayBuffer[Double], new ArrayBuffer[Double], new ArrayBuffer[Double])
+    for {x <- raster.getMinX to (raster.getMinX + raster.getWidth); y <- raster.getMinY to (raster.getMinY + raster.getHeight)} {
+      v.addOne(raster.getSampleDouble(x,y,band))
+      val p = rastergeom.gridToWorld(new GridCoordinates2D(x,y)).getCoordinate
+      xx.addOne(p(0));yy.addOne(p(1))
     }
-    res.toArray
+    (v.toArray, xx.toArray, yy.toArray)
   }
 
 }

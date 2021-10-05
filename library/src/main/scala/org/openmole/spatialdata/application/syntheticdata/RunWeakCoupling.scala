@@ -16,7 +16,7 @@ object RunWeakCoupling //extends App
   //runNullModel
 
 
-  def runNullModel: Unit = {
+  def runNullModel(): Unit = {
 
     val seedrng = new Random
     val repets = 80
@@ -25,7 +25,7 @@ object RunWeakCoupling //extends App
 
     def run(occ: Double,nodes: Int,links: Int, seed: Int, mode: String): Array[Double] = {
       println(s"Run : ${occ} ; ${nodes} ; ${links} ; ${mode} ; ${seed}")
-      implicit val rng = new Random(seed)
+      implicit val rng: Random = new Random(seed)
 
       val randomGrid = RandomGridGenerator(gridSize,occ).generateGrid
 

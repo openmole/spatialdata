@@ -3,7 +3,7 @@ package org.openmole.spatialdata.test
 import java.io.File
 
 import org.locationtech.jts.io.WKTWriter
-import org.openmole.spatialdata.utils.io.{Binary, CSV, GeoPackage}
+import org.openmole.spatialdata.utils.io.{Binary, CSV, GIS, GeoPackage}
 import org.openmole.spatialdata.utils.math.{DenseMatrix, Matrix, Stochastic}
 
 import scala.util.Random
@@ -11,6 +11,15 @@ import scala.util.Random
 
 object TestUtils {
 
+
+  def testRasterInput(): Unit = {
+    //val path = System.getenv("CS_HOME")+"/Data/JRC_EC/GHS/GHS_POP_GPW42015_GLOBE_R2015A_54009_1k_v1_0/GHS_POP_GPW42015_GLOBE_R2015A_54009_1k_v1_0.tif"
+    val path = System.getenv("CS_HOME")+"/Data/JRC_EC/GHS/GHS_POP_GPW42015_GLOBE_R2015A_54009_1k_v1_0/idf.tif"
+    if (new File(path).exists()){
+      val raster: Array[Array[Double]] = GIS.readRaster(path)
+      println(raster.map(_.toSeq).toSeq)
+    }
+  }
 
   def testGeopackageInput(): Unit = {
     val path = System.getenv("CS_HOME")+"/Data/JRC_EC/GHS/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0_WGS84.gpkg"

@@ -8,10 +8,12 @@ lazy val commonSettings = Seq(
     "apache" at "https://repo.maven.apache.org/maven2",
     "osgeo" at "https://repo.osgeo.org/repository/geotools-releases", // for geotools
     "imageio" at "https://maven.geo-solutions.it", // for some geotools deps
+    //"spring" at "https://repo.spring.io/plugins-release/",
     Resolver.sonatypeRepo("snapshots"),
     Resolver.sonatypeRepo("staging"),
     Resolver.mavenCentral
   ),
+  useCoursier := false, // needed to have jai_core, otherwise empty in Coursier
   libraryDependencies ++= Seq(
     "org.apache.commons" % "commons-math3" % "3.6.1",
     "org.apache.commons" % "commons-lang3" % "3.1",
@@ -20,9 +22,13 @@ lazy val commonSettings = Seq(
     "net.sourceforge.jdistlib" % "jdistlib" % "0.4.5",
     "com.github.pathikrit" %% "better-files" % "3.8.0",
     "org.locationtech.jts" % "jts" % "1.16.1" pomOnly(),
-    "org.geotools" % "gt-shapefile" % "23.0" exclude("javax.media", "jai_core") exclude("com.vividsolutions", "jts-core"),
+    "org.geotools" % "gt-shapefile" % "23.0" , //exclude("com.vividsolutions", "jts-core"), //exclude("javax.media", "jai_core")
     "org.geotools" % "gt-geopkg" % "23.0", // to read GeoPackage files (112k only)
     "org.geotools" % "gt-epsg-hsql" % "23.0", // explicitly load for CRS decoding - enough? EPSG:54009 not found
+    "org.geotools" % "gt-geotiff" % "23.0",
+    "org.geotools" % "gt-coverage" % "23.0",
+    // geotools deps are a mess - https://docs.geotools.org/stable/userguide/library/main/index.html - needed to have jai for geotif; bugging with Coursier but not with ivy2
+    "org.geotools" % "gt-opengis" % "23.0",
     "com.github.tototoshi" %% "scala-csv" % "1.3.6",
     "org.postgresql" % "postgresql" % "42.2.5",
     "org.mongodb" % "mongo-java-driver" % "3.10.0",
@@ -32,7 +38,8 @@ lazy val commonSettings = Seq(
     "org.scalanlp" %% "breeze" % "1.0",
     "com.github.fommil.netlib" % "all" % "1.1.2", // impl for breeze
     "de.ruedigermoeller" % "fst" % "2.57",
-    "org.openstreetmap.pbf" % "osmpbf" % "1.4.0"
+    "org.openstreetmap.pbf" % "osmpbf" % "1.4.0"//,
+    //"javax.media.jai" % "com.springsource.javax.media.jai.core" % "1.1.3"
   ),
   cancelable in Global := true,
   scalacOptions in ThisBuild ++= Seq("-unchecked", "-deprecation","-feature")
@@ -49,7 +56,7 @@ lazy val publishSettings = Seq(
     else Some("releases" at nexus + "service/local/staging/deploy/maven2")
   },
   publishConfiguration := publishConfiguration.value.withOverwrite(overwriteNonSnapshot),
-  credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
+  //credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
   licenses in ThisBuild := Seq("Affero GPLv3" -> url("http://www.gnu.org/licenses/")),
   homepage in ThisBuild := Some(url("https://github.com/openmole/spatialdata")),
   scmInfo in ThisBuild := Some(ScmInfo(url("https://github.com/openmole/spatialdata.git"), "scm:git:git@github.com:openmole/spatialdata.git")),

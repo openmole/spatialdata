@@ -8,8 +8,8 @@ import scala.util.Random
 
 /**
   * A tree network connected iteratively by minimal distance between weak components
-  * @param nnodes
-  * @param points
+  * @param nnodes number of nodes
+  * @param points points to connect
   */
 case class TreeMinDistGenerator(
                                 nnodes: Int,

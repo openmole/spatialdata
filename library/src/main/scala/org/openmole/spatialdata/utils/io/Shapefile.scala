@@ -11,7 +11,11 @@ import org.openmole.spatialdata.vector.Attributes
 
 import scala.collection.mutable.ArrayBuffer
 
-object Shapefile extends GIS {
+/**
+  * Shapefile geometry
+  *   - do not extend GIS, split vector / raster
+  */
+object Shapefile {
 
 
   /**

@@ -11,7 +11,9 @@ package org.openmole.spatialdata.network
   * - variations in Tirico, M. (2020). Morphogenesis of complex networks.: An application in urban growth (Doctoral dissertation, Normandie).
   * - El Gouj, H., & Lagesse, C. (2021). Road Network Analysis Based on Geo-Historical Data (No. 5453). EasyChair. (extends geometrical model physicists?)
   * - Al-Sayed, K. (2014). Urban morphogenesis; how form-function complexity coupled temporal changes on street configurations in Manhattan and Barcelona over the past centuries (Doctoral dissertation, UCL (University College London)). : model?
-  * - Barthelemy, M. (2018). Morphogenesis of spatial networks. Cham, Switzerland: Springer International Publishing.
+  * - Barthelemy, M. (2018). Morphogenesis of spatial networks. Cham, Switzerland: Springer International Publishing
+  * - Cats, O., Vermeulen, A., Warnier, M., & van Lint, H. (2020). Modelling growth principles of metropolitan public transport networks. Journal of Transport Geography, 82, 102567..
+  * - Synthetic networks? https://decentraland.org/blog/platform/designing-genesis-city-roads-urban-planning/
   */
 package object synthetic {
 

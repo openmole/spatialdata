@@ -30,13 +30,13 @@ object GISNetwork {
     def addLine(state: (Lines,Set[(Int,Int)],Set[(Int,Int,Int,Int)],Map[(Int,Int,Int,Int),Double])): (Lines,Set[(Int,Int)],Set[(Int,Int,Int,Int)],Map[(Int,Int,Int,Int),Double]) = {
       if (state._1.lines.isEmpty) return state // nothing to add
       val coords = state._1.lines.head.getCoordinates
-      val links: Set[(Int,Int,Int,Int)] = coords.dropRight(1).zip(coords.tail).map{
+      val links: Set[(Int,Int,Int,Int)] = coords.dropRight(1).zip(coords.tail).flatMap{
         case (p1,p2) =>
           val (i1,j1,i2,j2) = (icoord(p1.x),jcoord(p1.y),icoord(p2.x),jcoord(p2.y))
           if ((i1,j1)==(i2,j2)) None else {
             if ((i1, j1) <= (i2, j2)) Some((i1, j1, i2, j2)) else Some((i2, j2,i1, j1)) // sorting allows to not duplicate links in inverse direction
           }
-      }.flatten.toSet
+      }.toSet
       val nodes = links.flatMap{l=>Set((l._1,l._2),(l._3,l._4))}
       (state._1.tail,state._2++nodes,state._3++links,state._4++links.map(_ -> (if (weightAttribute.length>0) state._1.attributes.head.getOrElse(weightAttribute,1.0).asInstanceOf[Double] else 1.0)))
     }

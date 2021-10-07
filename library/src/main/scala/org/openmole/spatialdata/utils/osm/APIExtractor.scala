@@ -178,13 +178,13 @@ object APIExtractor {
       * Get highways from API
       *
       * ! should return Lines with specified attributes
-      * ! the has-kv with | does not work for highway
+      * ! the has-kv with | does not work for highway -> yes with regv, see https://wiki.openstreetmap.org/wiki/Overpass_API/Language_Guide#The_Overpass_API_languages
       *
       * @param south south coord
       * @param west west coord
       * @param north north coord
       * @param east east coord
-      * @param tags tags
+      * @param tags tags - used only with overpass query
       * @return
       *
       */
@@ -197,17 +197,17 @@ object APIExtractor {
           val overpass = new APIOverpass
           // if only one tag requested, use as a filter in the overpass request
           val root = overpass.get(south, west, north, east,
-            hasKeyValue=("",Seq("")) //if (tags.size==1) tags.toSeq(0) else ("",Seq(""))
+            hasKeyValue=if (tags.size==1) tags.toSeq.head else ("",Seq(""))
           )
           val res = asLineStringSeq(root.getWays,tags)
-          utils.log("Highways from overpass " +res)
+          //utils.log("Highways from overpass " +res)
           res
 
         case OSMDirect =>
           val api = new APIConnection()
           val root = api.get(south, west, north, east)
           val res = asLineStringSeq(root.getWays,tags)
-          utils.log("Highways from OSM (API): "+res)
+          //utils.log("Highways from OSM (API): "+res)
           res
 
         case _ => Seq.empty

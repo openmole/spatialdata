@@ -2,6 +2,7 @@ package org.openmole.spatialdata.test
 
 import java.io.File
 
+import org.geotools.coverage.grid.GridCoverage2D
 import org.locationtech.jts.io.WKTWriter
 import org.openmole.spatialdata.utils.io.{Binary, CSV, GIS, GeoPackage}
 import org.openmole.spatialdata.utils.math.{DenseMatrix, Matrix, Stochastic}
@@ -16,8 +17,8 @@ object TestUtils {
     //val path = System.getenv("CS_HOME")+"/Data/JRC_EC/GHS/GHS_POP_GPW42015_GLOBE_R2015A_54009_1k_v1_0/GHS_POP_GPW42015_GLOBE_R2015A_54009_1k_v1_0.tif"
     val path = System.getenv("CS_HOME")+"/Data/JRC_EC/GHS/GHS_POP_GPW42015_GLOBE_R2015A_54009_1k_v1_0/idf.tif"
     if (new File(path).exists()){
-      val raster: Array[Array[Double]] = GIS.readRaster(path)
-      println(raster.map(_.toSeq).toSeq)
+      val raster: GridCoverage2D = GIS.readRaster(path)
+      println(raster.getRenderedImage.getData.getSampleDouble(0,0,0))
     }
   }
 

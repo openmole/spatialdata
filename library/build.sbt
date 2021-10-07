@@ -1,6 +1,8 @@
 import sbt.Keys.publishMavenStyle
 import sbt.enablePlugins
 
+val geotoolsVersion = "23.0"
+
 lazy val commonSettings = Seq(
   scalaVersion := "2.13.1",
   organization := "org.openmole.library",
@@ -22,13 +24,15 @@ lazy val commonSettings = Seq(
     "net.sourceforge.jdistlib" % "jdistlib" % "0.4.5",
     "com.github.pathikrit" %% "better-files" % "3.8.0",
     "org.locationtech.jts" % "jts" % "1.16.1" pomOnly(),
-    "org.geotools" % "gt-shapefile" % "23.0" , //exclude("com.vividsolutions", "jts-core"), //exclude("javax.media", "jai_core")
-    "org.geotools" % "gt-geopkg" % "23.0", // to read GeoPackage files (112k only)
-    "org.geotools" % "gt-epsg-hsql" % "23.0", // explicitly load for CRS decoding - enough? EPSG:54009 not found
-    "org.geotools" % "gt-geotiff" % "23.0",
-    "org.geotools" % "gt-coverage" % "23.0",
+    "org.geotools" % "gt-shapefile" % geotoolsVersion , //exclude("com.vividsolutions", "jts-core"), //exclude("javax.media", "jai_core")
+    "org.geotools" % "gt-geopkg" % geotoolsVersion, // to read GeoPackage files (112k only)
+    "org.geotools" % "gt-referencing" % geotoolsVersion,
+    "org.geotools" % "gt-epsg-hsql" % geotoolsVersion, // explicitly load for CRS decoding - enough? EPSG:54009 not found
+    "org.geotools" % "gt-epsg-extension" % geotoolsVersion,
+    "org.geotools" % "gt-geotiff" % geotoolsVersion,
+    "org.geotools" % "gt-coverage" % geotoolsVersion,
     // geotools deps are a mess - https://docs.geotools.org/stable/userguide/library/main/index.html - needed to have jai for geotif; bugging with Coursier but not with ivy2
-    "org.geotools" % "gt-opengis" % "23.0",
+    "org.geotools" % "gt-opengis" % geotoolsVersion,
     "com.github.tototoshi" %% "scala-csv" % "1.3.6",
     "org.postgresql" % "postgresql" % "42.2.5",
     "org.mongodb" % "mongo-java-driver" % "3.10.0",

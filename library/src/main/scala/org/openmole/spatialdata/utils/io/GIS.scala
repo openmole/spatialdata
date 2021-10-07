@@ -1,7 +1,7 @@
 package org.openmole.spatialdata.utils.io
 
+import org.geotools.coverage.grid.GridCoverage2D
 import org.locationtech.jts.geom.Geometry
-import org.openmole.spatialdata.grid.RasterLayerData
 import org.openmole.spatialdata.vector.Attributes
 
 
@@ -26,7 +26,7 @@ object GIS {
     }
   }
 
-  def readRaster(layer: String): RasterLayerData[Double] = {
+  def readRaster(layer: String): GridCoverage2D = {
     layer.split("\\.").last match {
       case s if s.equals("tif")||s.equals(".tiff") =>Raster.readGeotiff(layer)
       case _ => throw new UnsupportedOperationException("Unknown raster format")

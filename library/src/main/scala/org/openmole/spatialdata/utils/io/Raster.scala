@@ -50,7 +50,7 @@ object Raster {
     * @param band band (default 0)
     * @return
     */
-  def readGeotiffValues(layer: String, band: Int = 0): RasterLayerData[Double] = {
+  def readGeotiffValues(layer: String, band: Int = 0): Array[Double] = {
     val raw: GridCoverage2D = readGeotiff(layer)
     val raster: java.awt.image.Raster = raw.getRenderedImage.getData
     val res = Array.fill(raster.getWidth*raster.getHeight)(0.0)

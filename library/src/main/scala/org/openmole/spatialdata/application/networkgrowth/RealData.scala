@@ -4,6 +4,7 @@ import org.openmole.spatialdata.network.real.OSMNetworkGenerator
 import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.utils.gis.{GISUtils, RasterUtils}
 import org.openmole.spatialdata.utils.io.{GeoPackage, Raster}
+import org.openmole.spatialdata.utils.visualization
 
 import scala.util.Random
 
@@ -37,6 +38,10 @@ object RealData {
         // rng is not used: dummy here
         val roadnetwork = OSMNetworkGenerator(bbox = (env.getEnvelopeInternal.getMinY, env.getEnvelopeInternal.getMinX, env.getEnvelopeInternal.getMaxY, env.getEnvelopeInternal.getMaxX)).generateNetwork(new Random)
         utils.log(s"OSM road network: ${roadnetwork.links.size} segments")
+
+        // raster to points
+        val popPoints = RasterUtils.gridCoverage2DAsPoints(pop)
+
     }
 
   }

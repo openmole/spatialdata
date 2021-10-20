@@ -1,11 +1,55 @@
 package org.openmole.spatialdata.utils.gis
 
 import org.locationtech.jts.geom
-import org.locationtech.jts.geom.{Geometry, GeometryFactory, LineString, MultiLineString}
+import org.locationtech.jts.geom.{Coordinate, Envelope, Geometry, GeometryCollection, GeometryFactory, LineString, MultiLineString}
+import org.locationtech.jts.index.quadtree.Quadtree
+import org.locationtech.jts.triangulate.ConformingDelaunayTriangulationBuilder
 import org.openmole.spatialdata.vector._
+
+import scala.collection.mutable.ArrayBuffer
+import scala.jdk.CollectionConverters.ListHasAsScala
 
 
 object GeometryUtils {
+
+  val minTolerance: Double = 0.0000000001
+
+  def triangulationOverlay(points: Seq[Point], background: Seq[Point]): Map[Point,Point] = {
+    val geometryFactory = new GeometryFactory
+    val triangulation = new ConformingDelaunayTriangulationBuilder
+    triangulation.setSites(geometryFactory.createMultiPoint(background.toArray.map{case (x,y) => geometryFactory.createPoint(new Coordinate(x,y))}))
+    triangulation.setConstraints(convexHullPoints(points.toArray))
+    triangulation.setTolerance(minTolerance)
+    val triangleCollection = triangulation.getTriangles(geometryFactory).asInstanceOf[GeometryCollection]
+
+    // construct spatial index
+    val spatialIndex = new Quadtree
+    val triangulMapSeq = new ArrayBuffer[(Geometry,Point)]
+    for {
+      i <- 0 until triangleCollection.getNumGeometries
+      t = triangleCollection.getGeometryN(i)
+      p = background(i)
+    }{
+      spatialIndex.insert(t.getEnvelopeInternal,t)
+      triangulMapSeq.addOne((t,p))
+    }
+
+    val triangulMap = triangulMapSeq.toSeq.toMap
+
+    val finalMapSeq = new ArrayBuffer[(Point,Point)]
+
+    for {p <- points} {
+      val potTriangles = spatialIndex.query(new Envelope(new Coordinate(p._1,p._2)))
+      for {t <- potTriangles.asScala} {
+        if (t.asInstanceOf[Geometry].contains(geometryFactory.createPoint(new Coordinate(p._1,p._2)))) {
+          finalMapSeq.addOne(p, triangulMap(t.asInstanceOf[Geometry]))
+        }
+      }
+    }
+
+    finalMapSeq.toSeq.toMap
+  }
+
 
   /**
     * Get the centroid of the convex hull of a point cloud

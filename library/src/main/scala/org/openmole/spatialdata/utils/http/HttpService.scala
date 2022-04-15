@@ -1,6 +1,6 @@
 package org.openmole.spatialdata.utils.http
 
-import org.apache.http.HttpRequest
+import org.apache.http.{HttpHost, HttpRequest}
 import org.apache.http.client.HttpClient
 import org.apache.http.client.config.RequestConfig
 import org.apache.http.impl.client.HttpClientBuilder
@@ -39,6 +39,11 @@ object HttpService {
     val requestBuilder = RequestConfig.custom()
     requestBuilder.setConnectTimeout(timeout)
     requestBuilder.setConnectionRequestTimeout(timeout)
+
+    // proxy set from system properties - should be included in case class?
+    val proxy = System.getProperty("http.proxyHost")
+    if (proxy!=null&&proxy.nonEmpty)
+      requestBuilder.setProxy(new HttpHost(proxy,System.getProperty("http.proxyPort").toInt))
     if(withTorPool){TorPoolManager.setupTorPoolConnexion(true)}
     HttpService(userAgent = userAgent, httpClient = HttpClientBuilder.create.setDefaultRequestConfig(requestBuilder.build()).build, minimumMillisecondsDelayBetweenRequests, timeout)
   }

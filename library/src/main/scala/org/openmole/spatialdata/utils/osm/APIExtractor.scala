@@ -1,16 +1,15 @@
 package org.openmole.spatialdata.utils.osm
 
-import java.io.{File, FileReader, InputStreamReader}
+import java.io.{File, FileReader}
 import java.sql.Connection
 import java.util.Locale
-
 import org.locationtech.jts.geom._
 import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.utils.database.{MongoConnection, PostgisConnection}
 import org.openmole.spatialdata.utils.gis.GISUtils.WGS84toPseudoMercatorFilter
 import org.openmole.spatialdata.utils.gis.PoligonizerUtils
 import org.openmole.spatialdata.utils.osm.OSMObject.{Node, Way}
-import org.openmole.spatialdata.vector.Points
+import org.openmole.spatialdata.vector.{Attributes, Points}
 
 import scala.util.Try
 
@@ -56,50 +55,59 @@ object APIExtractor {
       * @param mode osm,overpass, postgresql
       * @return
       */
-    def getBuildings(south: Double = 0.0, west: Double = 0.0, north: Double = 0.0, east: Double = 0.0, mode: OSMAPIMode = OSMOverpass): Seq[Polygon] = {
+    def getBuildings(south: Double = 0.0,
+                     west: Double = 0.0,
+                     north: Double = 0.0,
+                     east: Double = 0.0,
+                     mode: OSMAPIMode = OSMOverpass,
+                     attributes: Seq[String] = Seq.empty[String]
+                    ): (Seq[Polygon], Seq[Attributes]) = {
       Locale.setDefault(Locale.ENGLISH)
       mode match {
         case OSMOverpass =>
           val overpass = new APIOverpass
           val root = overpass.get(south, west, north, east, hasKeyValue=("building",Seq("yes")))
           utils.log("retrieved via overpass " + east + " n=" + north + " s=" + south + "w=" + west)
-          asPolygonSeq(root.getWays)
+          val ways = root.getWays
+          (asPolygonSeq(ways), ways.map(w => attributes.map(a => (a,w.getAttribute(a))).toMap))
 
         case OSMDirect =>
           val api = new APIConnection()
-          val res = api.get(south, west, north, east)
+          val root = api.get(south, west, north, east)
           utils.log("retrieved via standard api " + east + " n=" + north + " s=" + south + "w=" + west)
-          asPolygonSeq(res.getWays)
+          val ways = root.getWays
+          (asPolygonSeq(ways), ways.map(w => attributes.map(a => (a,w.getAttribute(a))).toMap))
 
         case Postgresql(port) =>
           implicit val connection: Connection = PostgisConnection.initPostgis(database ="buildings",port = port)
           val polygons = PostgisConnection.bboxRequest(west,south,east,north,"ways")
           utils.log("retrieved via postgresql " + east + " n=" + north + " s=" + south + "w=" + west+" : "+polygons.size+" buildings")
           PostgisConnection.closeConnection
-          polygons
+          (polygons, Seq.fill(polygons.length)(Attributes.empty))
 
         case Mongo(port) =>
           MongoConnection.initMongo(database = "buildings",port=port)
           val polygons = MongoConnection.bboxRequest(west,south,east,north,"buildings")
           utils.log("retrieved via mongo " + east + " n=" + north + " s=" + south + "w=" + west+" : "+polygons.size+" buildings")
           MongoConnection.closeMongo()
-          polygons
+          (polygons, Seq.fill(polygons.length)(Attributes.empty))
 
         case OSMFile(file) =>
           val root = new OSMRoot
           OSMXmlParser(root).parse(new FileReader(new File(file)))
-          asPolygonSeq(root.getWays)
+          val ways = root.getWays
+          (asPolygonSeq(ways), ways.map(w => attributes.map(a => (a,w.getAttribute(a))).toMap))
 
         case OSMPBFFile(file) =>
           val fact = new GeometryFactory()
           val (_,ways) = utils.osm.OSMPBFFile.readPBFFile(file)
-          ways.lines.flatMap{l =>
+          (ways.lines.flatMap{l =>
             val coords = l.getCoordinates
             if (coords.length<=3) None else {
               val closedcoords = if (coords(0).equals2D(coords.last)) coords else coords ++ Array(coords(0)) // force closing the linestring - should do the same in geom factory
               Some(fact.createPolygon(closedcoords))
             }
-          }
+          }, Seq.fill(ways.lines.length)(Attributes.empty))
       }
       /*
 
@@ -114,7 +122,7 @@ object APIExtractor {
     }
 
     def getBuildingIntersection(south: Double, west: Double, north: Double, east: Double, mode: OSMAPIMode = OSMOverpass): Seq[Geometry] = {
-      val buildings = getBuildings(south, west, north, east, mode)
+      val (buildings, _) = getBuildings(south, west, north, east, mode)
       val fact = new GeometryFactory()
       val env = fact.createPolygon(fact.createLinearRing(Array(new Coordinate(west, north), new Coordinate(east, north), new Coordinate(east, south), new Coordinate(west, south), new Coordinate(west, north))), Array())
       //buildings.map(_.intersection(env))
@@ -124,7 +132,7 @@ object APIExtractor {
 
 
     def getNegativeBuildingIntersection(south: Double, west: Double, north: Double, east: Double, mode: OSMAPIMode = OSMOverpass): Geometry = {
-      val buildings = getBuildings(south, west, north, east, mode)
+      val (buildings, _) = getBuildings(south, west, north, east, mode)
       val fact = new GeometryFactory()
       val env = fact.createPolygon(fact.createLinearRing(Array(new Coordinate(west, north), new Coordinate(east, north), new Coordinate(east, south), new Coordinate(west, south), new Coordinate(west, north))), Array())
 //      var res = Try {

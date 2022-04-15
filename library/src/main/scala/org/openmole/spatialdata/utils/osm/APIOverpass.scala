@@ -26,7 +26,7 @@ case class APIOverpass(
     val parser = OSMXmlParser(root)
     val query = s"""
                    |  <query type="way">
-                   |    ${if(hasKeyValue._1.length>0) "<has-kv k=\"" else ""}${hasKeyValue._1}${if(hasKeyValue._1.length>0) "\" regv=\"" else ""}${hasKeyValue._2.mkString("|")}${if(hasKeyValue._1.length>0)"\"/>" else ""}
+                   |    ${if(hasKeyValue._1.nonEmpty) "<has-kv k=\"" else ""}${hasKeyValue._1}${if(hasKeyValue._1.nonEmpty) "\" regv=\"" else ""}${hasKeyValue._2.mkString("|")}${if(hasKeyValue._1.nonEmpty)"\"/>" else ""}
                    |    <bbox-query e="$east" n="$north" s="$south" w="$west"/>
                    |  </query>
                    |  <union>
@@ -36,7 +36,10 @@ case class APIOverpass(
                    |  <print/>
            """.stripMargin
     //println(query)
-    parser.parse(new StringReader(execute(query)))
+    val raw = new StringReader(execute(query))
+    println(raw)
+    parser.parse(raw)
+    println(root)
     root
   }
 

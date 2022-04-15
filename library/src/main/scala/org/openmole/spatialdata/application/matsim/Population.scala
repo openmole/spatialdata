@@ -347,7 +347,8 @@ object Population {
         val potfiles = new File(dir).listFiles().filter(_.toString.contains(ladCode))
         if (potfiles.isEmpty) Seq.empty
         else {
-          APIExtractor.Buildings.getBuildings(mode = OSMPBFFile(potfiles.head.toString))
+          val (buildings, _) = APIExtractor.Buildings.getBuildings(mode = OSMPBFFile(potfiles.head.toString))
+          buildings
         }
       }.toSeq.flatten
 

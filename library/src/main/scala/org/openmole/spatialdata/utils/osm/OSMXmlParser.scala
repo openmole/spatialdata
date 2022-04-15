@@ -403,22 +403,11 @@ case class OSMXmlParser(
           throw new RuntimeException(pe)
       }
       else {
-        var parsed = false
-        breakable {
-          for (parsedAttribute <- parsedAttributes) {
-            if (parsedAttribute == key) {
-              parsed = true
-              break
-            }
-          }
-        }
-        if (!parsed) {
-          osmObject.setAttribute(key, value)
-        }
+        if (!parsedAttributes.contains(key)) osmObject.setAttribute(key, value)
       }
-      {
-        attributeIndex += 1; attributeIndex - 1
-      }
+
+      attributeIndex += 1
+
     }
   }
 

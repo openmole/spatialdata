@@ -6,6 +6,7 @@ import org.openmole.spatialdata.grid.real.{OSMGridGenerator, OSMGridSampling}
 import org.openmole.spatialdata.utils.osm.{APIExtractor, APIOverpass, OSMRoot, OSMXmlParser}
 import org.openmole.spatialdata.utils.osm.APIExtractor.Buildings.asPolygonSeq
 import org.openmole.spatialdata.utils.osm.APIExtractor.{OSMDirect, OSMPBFFile}
+import org.openmole.spatialdata.vector.real.OSMBuildingsGenerator
 //import org.openmole.spatialdata.utils.visualization
 //import org.openmole.spatialdata.grid.measures.GridMorphology
 
@@ -16,8 +17,19 @@ object TestOSM {
   implicit val rng: Random = new Random
 
 
+  def testOSMBuildingsGenerator(): Unit = {
+    val lon = 2.424431
+    val lat = 48.845189
+    val window = 200 // in meters
+
+    val g = OSMBuildingsGenerator(lon,lat,window, attributes = Seq("height", "id")).generatePolygons
+    //println(g)
+    println(g.polygons.map(_.getCentroid))
+    println(g.attributes) // null height: keys not retrieved at OSM object construction?
+  }
+
   def testOSMPBFFile(): Unit = {
-    val buildings = APIExtractor.Buildings.getBuildings(mode = OSMPBFFile(//"http://download.geofabrik.de/europe/andorra-latest.osm.pbf"
+    val (buildings, _) = APIExtractor.Buildings.getBuildings(mode = OSMPBFFile(//"http://download.geofabrik.de/europe/andorra-latest.osm.pbf"
         System.getenv("CS_HOME_EXT2")+"/Data/OSM/Geofabrik/andorra/andorra_buildings_20201117.osm.pbf"
      ))
     val wktwriter: WKTWriter = new WKTWriter()

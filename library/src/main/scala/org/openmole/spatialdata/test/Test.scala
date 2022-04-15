@@ -2,6 +2,8 @@ package org.openmole.spatialdata.test
 
 object Test extends App {
 
+  //System.setProperty("java.net.useSystemProxies", "true")
+
   // Spatial interaction models
   //TestSpatialInteraction.testFitSinglyConstrainedRandom
   //TestSpatialInteraction.testFlowData
@@ -29,6 +31,7 @@ object Test extends App {
   //TestNetwork.testGISNetwork()
 
   // OSM
+  TestOSM.testOSMBuildingsGenerator()
   //TestOSM.testBuildingExtractor()
   //TestOSM.testOSMGridSampling()
   //TestOSM.testOSMPBFFile()
@@ -71,7 +74,7 @@ object Test extends App {
   //TestMaths.testConvolution2D
 
   // Utils
-  TestUtils.testRasterInput()
+  //TestUtils.testRasterInput()
   //TestUtils.testGeopackageInput()
   //TestUtils.testCSVMatrix
   //TestUtils.testBinaryIO

@@ -43,21 +43,19 @@ class OSMRoot extends Serializable {
 
   def getRelation(identity: Long): Relation = relations.getOrElse(identity,null)
 
-  def remove(o: OSMObject): java.util.Set[OSMObject] = {
+  def remove(o: OSMObject): mutable.Set[OSMObject] = {
     val affectedRelations = o.accept(removeVisitor)
     affectedRelations
   }
 
   private val removeVisitor = new RemoveVisitor
 
-  class RemoveVisitor extends OSMObjectVisitor[java.util.Set[OSMObject]] with Serializable {
-    override def visit(node: Node): java.util.HashSet[OSMObject] = {
-      val affectedRelations = new java.util.HashSet[OSMObject](1024)
+  class RemoveVisitor extends OSMObjectVisitor[mutable.Set[OSMObject]] with Serializable {
+    override def visit(node: Node): mutable.HashSet[OSMObject] = {
+      val affectedRelations = new mutable.HashSet[OSMObject](1024, 0.75)
       if (node.getWaysMemberships != null) {
-        for (way <- node.getWaysMemberships) { // need to loop in case we visit this node multiple times, eg a polygon where this is start and stop
-          while ( {
-            way.nodes.contains(node)
-          }) way.nodes.remove(way.nodes.indexOf(node))
+        for (way <- node.getWaysMemberships) {
+          while (way.nodes.contains(node)) way.nodes.remove(way.nodes.indexOf(node))
           affectedRelations.add(way)
         }
       }
@@ -73,8 +71,8 @@ class OSMRoot extends Serializable {
       affectedRelations
     }
 
-    override def visit(way: Way): java.util.Set[OSMObject] = {
-      val affectedRelations = new java.util.HashSet[OSMObject](1024)
+    override def visit(way: Way): mutable.HashSet[OSMObject] = {
+      val affectedRelations = new mutable.HashSet[OSMObject](1024,0.75)
       if (way.nodes != null) {
         for (node <- way.nodes) {
           node.getWaysMemberships.remove(node.getWaysMemberships.indexOf(way))
@@ -92,8 +90,8 @@ class OSMRoot extends Serializable {
       affectedRelations
     }
 
-    override def visit(relation: Relation): java.util.Set[OSMObject] = {
-      val affectedRelations = new java.util.HashSet[OSMObject](1024)
+    override def visit(relation: Relation): mutable.HashSet[OSMObject] = {
+      val affectedRelations = new mutable.HashSet[OSMObject](1024,0.75)
       if (relation.members != null) {
         for (member <- relation.members) {
           member.getOsmObject.getRelationMemberships.remove(member.getOsmObject.getRelationMemberships.indexOf(member))
@@ -108,21 +106,10 @@ class OSMRoot extends Serializable {
     }
   }
 
-  class AddVisitor extends OSMObjectVisitor[Void] with Serializable {
-    override def visit(node: Node): Null = {
-      nodes.put(node.id, node)
-      null
-    }
-
-    override def visit(way: Way): Null = {
-      ways.put(way.id, way)
-      null
-    }
-
-    override def visit(relation: Relation): Null = {
-      relations.put(relation.id, relation)
-      null
-    }
+  class AddVisitor extends OSMObjectVisitor[Unit] with Serializable {
+    override def visit(node: Node): Unit = nodes.put(node.id, node)
+    override def visit(way: Way): Unit = ways.put(way.id, way)
+    override def visit(relation: Relation): Unit = relations.put(relation.id, relation)
   }
 
   private val addVisitor = new AddVisitor

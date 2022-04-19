@@ -2,7 +2,6 @@ package org.openmole.spatialdata.utils.osm
 
 import java.io._
 import java.text.{DateFormat, FieldPosition, ParsePosition, SimpleDateFormat}
-import java.util
 import java.util.Date
 
 import javax.xml.stream.{XMLInputFactory, XMLStreamConstants, XMLStreamException, XMLStreamReader}
@@ -31,13 +30,13 @@ case class OSMXmlParser(
     * @throws OsmXmlParserException parser exception
     */
   @throws[OsmXmlParserException]
-  final def parse(xml: String):OsmXmlParserDelta = parse(new StringReader(xml))
+  final def parse(xml: String): OsmXmlParserDelta = parse(new StringReader(xml))
 
   @throws[OsmXmlParserException]
-  def parse(xml: InputStream):OsmXmlParserDelta = try parse(new InputStreamReader(xml, "utf8"))
+  def parse(xml: InputStream): OsmXmlParserDelta = try parse(new InputStreamReader(xml, "utf8"))
   catch {
     case e: UnsupportedEncodingException =>
-      throw new OsmXmlParserException(e)
+      throw OsmXmlParserException("", e)
   }
 
   def processParsedNode(node: Node, state: State.Value): Unit = {}
@@ -52,12 +51,13 @@ case class OSMXmlParser(
     readerFactory(new InputStreamReader(xml, "utf8"))
   catch {
     case e: UnsupportedEncodingException =>
-      throw new StreamException(e)
+      throw StreamException("",e)
   }
 
   @throws[OsmXmlParserException]
   def parse(xml: Reader): OsmXmlParserDelta = {
     val started = System.currentTimeMillis
+    val sb = new mutable.StringBuilder()
     val delta = OsmXmlParserDelta()
     try {
       val xmlr:  OSMXmlParser.Stream  = readerFactory(xml)
@@ -86,7 +86,7 @@ case class OSMXmlParser(
                     //              } else if (version > currentNode.getVersion() + 1) {
                     //                throw new OsmXmlParserException("Inconsistency, too great version found during create node.");
                   }
-                  else throw new OsmXmlParserException("Inconsistency, node " + identity + " already exists.")
+                  else throw OsmXmlParserException("Inconsistency, node " + identity + " already exists.")
                 }
                 if (currentNode == null) currentNode = new Node(identity)
                 currentNode.setLatitude(xmlr.getAttributeValue(null, "lat").toDouble)
@@ -160,15 +160,15 @@ case class OSMXmlParser(
               }
               else if (state == State.modify) {
                 currentWay = root.getWay(identity)
-                if (currentWay == null) throw new OsmXmlParserException("Inconsistency, way " + identity + " does not exists.")
+                if (currentWay == null) throw OsmXmlParserException("Inconsistency, way " + identity + " does not exists.")
                 val version = Integer.valueOf(xmlr.getAttributeValue(null, "version"))
                 if (version <= currentWay.getVersion) {
-                  println("Inconsistency, old version detected during modify way.")
+                  utils.log("Inconsistency, old version detected during modify way.")
                   skipCurrentObject = true
                   break //was:continue
                 }
-                else if (version > currentWay.getVersion + 1 && !allowingMissingVersions) throw new OsmXmlParserException("Inconsistency, found too great version in new data during modify way.")
-                else if (version == currentWay.getVersion) throw new OsmXmlParserException("Inconsistency, found same version in new data during modify way.")
+                else if (version > currentWay.getVersion + 1 && !allowingMissingVersions) throw OsmXmlParserException("Inconsistency, found too great version in new data during modify way.")
+                else if (version == currentWay.getVersion) throw OsmXmlParserException("Inconsistency, found same version in new data during modify way.")
                 //                currentWay.setTags(null)
                 currentWay.setAttributes(null)
                 if (currentWay.nodes != null) {
@@ -225,13 +225,13 @@ case class OSMXmlParser(
                 if (currentRelation != null && currentRelation.isLoaded && currentRelation.getVersion != null) {
                   val version = Integer.valueOf(xmlr.getAttributeValue(null, "version"))
                   if (version <= currentRelation.getVersion) {
-                    println("Inconsistency, old version detected during create relation.")
+                    utils.log("Inconsistency, old version detected during create relation.")
                     skipCurrentObject = true
                     break //was:continue
                     //              } else if (version > currentRelation.getVersion() + 1) {
                     //                throw new OsmXmlParserException("Inconsistency, too great version found during create relation.");
                   }
-                  else throw new OsmXmlParserException("Inconsistency, relation " + identity + " already exists.")
+                  else throw OsmXmlParserException("Inconsistency, relation " + identity + " already exists.")
                 }
                 if (currentRelation == null) {
                   currentRelation = new Relation(identity)
@@ -371,14 +371,17 @@ case class OSMXmlParser(
             }
           }
         }
+        sb.append(xmlr.toString)
         eventType = xmlr.next
       }
+      sb.append(xmlr.toString)
       xmlr.close()
     } catch {
       case ioe: StreamException =>
-        throw new OsmXmlParserException(ioe)
+        throw OsmXmlParserException("", ioe)
     }
     val timespent = System.currentTimeMillis - started
+    utils.log(sb.toString())
     utils.log(s"time spent = $timespent ms")
     delta
   }
@@ -386,28 +389,20 @@ case class OSMXmlParser(
   @throws[StreamException]
   private def parseObjectAttributes(xmlr: OSMXmlParser.Stream, osmObject: OSMObject, parsedAttributes: String*): Unit = {
     var attributeIndex = 0
-    while ( {
-      attributeIndex < xmlr.getAttributeCount
-    }) {
+    while (attributeIndex < xmlr.getAttributeCount) {
       val key = xmlr.getAttributeLocalName(attributeIndex)
       val value = xmlr.getAttributeValue(attributeIndex)
-      if ("version" == key) osmObject.setVersion(Integer.valueOf(value))
-      else if ("changeset" == key) osmObject.setChangeset(value.toLong)
-      else if ("uid" == key) osmObject.setUid(value.toLong)
-      else if ("user" == key) osmObject.setUser(userIntern.intern(value))
-      else if ("visible" == key) osmObject.setVisible(value.toBoolean)
-      else if ("timestamp" == key) try {
-        osmObject.setTimestamp(timestampFormat.parse(value).getTime)
-      } catch {
-        case pe: Exception =>
-          throw new RuntimeException(pe)
+      key match {
+        case "version" => osmObject.setVersion(value.toInt)
+        case "changeset" => osmObject.setChangeset(value.toLong)
+        case "uid" => osmObject.setUid(value.toLong)
+        case "user" => osmObject.setUser(userIntern.intern(value))
+        case "visible" => osmObject.setVisible(value.toBoolean)
+        case "timestamp" => osmObject.setTimestamp(timestampFormat.parse(value).getTime) // pe: Exception => throw new RuntimeException(pe)
+        case key if !parsedAttributes.contains(key) => osmObject.setAttribute(key, value)
+        case _ =>
       }
-      else {
-        if (!parsedAttributes.contains(key)) osmObject.setAttribute(key, value)
-      }
-
       attributeIndex += 1
-
     }
   }
 
@@ -422,54 +417,9 @@ case class OSMXmlParser(
       xmlr = xmlif.createXMLStreamReader(xml)
     catch {
       case e: XMLStreamException =>
-        throw new StreamException(e)
+        throw StreamException("",e)
     }
-    new  OSMXmlParser.Stream  {
-      @throws[StreamException]
-      def getEventType: Int = xmlr.getEventType
-
-      @throws[StreamException]
-      def isEndDocument(eventType: Int): Boolean = eventType == XMLStreamConstants.END_DOCUMENT
-
-      @throws[StreamException]
-      def next: Int = try
-        xmlr.next
-      catch {
-        case e: XMLStreamException =>
-          throw new StreamException(e)
-      }
-
-      @throws[StreamException]
-      def isStartElement(eventType: Int): Boolean = eventType == XMLStreamConstants.START_ELEMENT
-
-      @throws[StreamException]
-      def isEndElement(eventType: Int): Boolean = eventType == XMLStreamConstants.END_ELEMENT
-
-      @throws[StreamException]
-      def getLocalName: String = xmlr.getLocalName
-
-      @throws[StreamException]
-      def getAttributeValue(what: String, key: String): String = xmlr.getAttributeValue(what, key)
-
-      @throws[StreamException]
-      def getAttributeCount: Int = xmlr.getAttributeCount
-
-      @throws[StreamException]
-      def getAttributeValue(index: Int): String = xmlr.getAttributeValue(index)
-
-      @throws[StreamException]
-      def getAttributeLocalName(index: Int): String = xmlr.getAttributeLocalName(index)
-
-      @throws[StreamException]
-      def close(): Unit = {
-        try
-          xmlr.close()
-        catch {
-          case e: XMLStreamException =>
-            throw new StreamException(e)
-        }
-      }
-    }
+    OSMXmlParser.Stream(xmlr)
   }
 
 
@@ -484,7 +434,7 @@ case class OSMXmlParser(
 object OSMXmlParser {
 
 
-  class HashConsing[T] extends Serializable {
+  class HashConsing[T] {
     private val map = new mutable.HashMap[T, T]()
 
     def intern(obj: T): T = {
@@ -523,76 +473,75 @@ object OSMXmlParser {
   }
 
   case class OsmXmlParserDelta(
-                            createdNodes: util.Set[Node] = new util.HashSet[Node],
-                            modifiedNodes: util.Set[Node] = new util.HashSet[Node],
-                            deletedNodes: util.Set[Node] = new util.HashSet[Node],
-                            createdWays: util.Set[Way] = new util.HashSet[Way],
-                            modifiedWays: util.Set[Way] = new util.HashSet[Way],
-                            deletedWays: util.Set[Way] = new util.HashSet[Way],
-                            createdRelations: util.Set[Relation] = new util.HashSet[Relation],
-                            modifiedRelations: util.Set[Relation] = new util.HashSet[Relation],
-                            deletedRelations: util.Set[Relation] = new util.HashSet[Relation]
-                         )
+                            createdNodes: mutable.HashSet[Node] = new mutable.HashSet[Node],
+                            modifiedNodes: mutable.HashSet[Node] = new mutable.HashSet[Node],
+                            deletedNodes: mutable.HashSet[Node] = new mutable.HashSet[Node],
+                            createdWays: mutable.HashSet[Way] = new mutable.HashSet[Way],
+                            modifiedWays: mutable.HashSet[Way] = new mutable.HashSet[Way],
+                            deletedWays: mutable.HashSet[Way] = new mutable.HashSet[Way],
+                            createdRelations: mutable.HashSet[Relation] = new mutable.HashSet[Relation],
+                            modifiedRelations: mutable.HashSet[Relation] = new mutable.HashSet[Relation],
+                            deletedRelations: mutable.HashSet[Relation] = new mutable.HashSet[Relation]
+                              )
 
   /**
     * parsing exception
     * @param s message
     * @param throwable exception
     */
-  class OsmXmlParserException(s: String, throwable: Throwable) extends Exception(s, throwable) {
-    def this(s: String) {
-      this(s, null)
+  case class OsmXmlParserException(s: String = "", throwable: Throwable = null) extends Exception(s, throwable)
+
+  case class StreamException(message: String = "", cause: Throwable = null) extends Exception(message, cause)
+
+  case class Stream(xmlr: XMLStreamReader) {
+    @throws[StreamException]
+    def getEventType: Int = xmlr.getEventType
+
+    @throws[StreamException]
+    def isEndDocument(eventType: Int): Boolean = eventType == XMLStreamConstants.END_DOCUMENT
+
+    @throws[StreamException]
+    def next: Int = try xmlr.next
+    catch {
+      case e: XMLStreamException =>
+        throw StreamException("",e)
     }
-    def this(throwable: Throwable) {
-      this("", throwable)
+
+    @throws[StreamException]
+    def isStartElement(eventType: Int): Boolean = eventType == XMLStreamConstants.START_ELEMENT
+
+    @throws[StreamException]
+    def isEndElement(eventType: Int): Boolean = eventType == XMLStreamConstants.END_ELEMENT
+
+    @throws[StreamException]
+    def getLocalName: String = xmlr.getLocalName
+
+    @throws[StreamException]
+    def getAttributeValue(what: String, key: String): String = xmlr.getAttributeValue(what, key)
+
+    @throws[StreamException]
+    def getAttributeCount: Int = xmlr.getAttributeCount
+
+    @throws[StreamException]
+    def getAttributeValue(index: Int): String = xmlr.getAttributeValue(index)
+
+    @throws[StreamException]
+    def getAttributeLocalName(index: Int): String = xmlr.getAttributeLocalName(index)
+
+    @throws[StreamException]
+    def close(): Unit = {
+      try
+        xmlr.close()
+      catch {
+        case e: XMLStreamException =>
+          throw  StreamException("", e)
+      }
     }
-  }
 
+    override def toString: String = if (isStartElement(getEventType))
+      "<"+getLocalName+(0 until getAttributeCount).map(i => getAttributeLocalName(i)+" = "+getAttributeValue(i)).mkString(" ")+"/>\n"
+      else ""
 
-
-  class StreamException(message: String, cause: Throwable) extends Exception(message, cause) {
-    def this(message: String) {
-      this(message, null)
-    }
-
-    def this(cause: Throwable) {
-      this("", cause)
-    }
-  }
-
-  abstract class Stream {
-    @throws[StreamException]
-    def getEventType: Int
-
-    @throws[StreamException]
-    def isEndDocument(eventType: Int): Boolean
-
-    @throws[StreamException]
-    def next: Int
-
-    @throws[StreamException]
-    def isStartElement(eventType: Int): Boolean
-
-    @throws[StreamException]
-    def isEndElement(eventType: Int): Boolean
-
-    @throws[StreamException]
-    def getLocalName: String
-
-    @throws[StreamException]
-    def getAttributeValue(what: String, key: String): String
-
-    @throws[StreamException]
-    def getAttributeCount: Int
-
-    @throws[StreamException]
-    def getAttributeValue(index: Int): String
-
-    @throws[StreamException]
-    def getAttributeLocalName(index: Int): String
-
-    @throws[StreamException]
-    def close(): Unit
   }
 
 

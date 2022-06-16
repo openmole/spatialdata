@@ -159,9 +159,9 @@ object Coevolution {
     val initState = MacroState(0,populationMatrix.getSubmat(0, 0, nrows = n, ncols= 1), distancesMatrices(0))
     val deltats = dates.tail.zip(dates.dropRight(1)).map{case (next,prev)=> next-prev}.toVector
 
-    val states = Iterator.iterate((Vector(initState),deltats))(step).takeWhile(_._2.nonEmpty).toVector.last._1
+    val finalState = Iterator.iterate((Vector(initState),deltats))(step).takeWhile(_._2.nonEmpty).toVector.last._1
 
-    MacroResult(populationMatrix,states)
+    MacroResult(populationMatrix,finalState)
   }
 
 

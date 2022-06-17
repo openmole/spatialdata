@@ -118,6 +118,8 @@ sealed trait Matrix {
   def rowSum: Array[Double]
   def colSum: Array[Double]
 
+  override def clone: Matrix = map(v => v)
+
 }
 
 /**

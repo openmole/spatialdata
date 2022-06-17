@@ -5,6 +5,7 @@ import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.utils.math.Matrix
 import org.openmole.spatialdata.utils.math.Matrix.MatrixImplementation
 
+import scala.annotation.tailrec
 import scala.util.Random
 
 
@@ -61,7 +62,7 @@ case class MultiscaleModel(
     * @return
     */
   def initialState(implicit rng: Random, mImpl: MatrixImplementation): MultiscaleState = {
-    val macrostate: MacroState = MacroModel.initialSyntheticState(macroNcities,macroInitialHierarchy,macroInitialMaxPop,macroRange,macroInteractionDecay)
+    val macrostate: MacroStateGen = MacroModel.initialSyntheticState(macroNcities,macroInitialHierarchy,macroInitialMaxPop,macroRange,macroInteractionDecay)
     val mesoStates: Vector[ReactionDiffusionMesoState] = macrostate.populations.flatValues.toVector.map{
       pi => {
         val initState = ReactionDiffusionMesoState.initialSyntheticState(mesoGridSize, mesoCenterDensity, math.sqrt(pi / (2 * math.Pi * mesoCenterDensity)), mesoAlpha,
@@ -72,7 +73,7 @@ case class MultiscaleModel(
       }
     }
 
-    val consistentMacroState: MacroState = MultiscaleModel.ensureConsistence(macrostate,mesoStates,"initialisation")
+    val consistentMacroState: MacroStateGen = MultiscaleModel.ensureConsistence(macrostate,mesoStates,"initialisation")
 
     assert(mesoStates.forall{_.populationGrid.flatten.sum>0},"existing null meso pop grids")
 
@@ -132,7 +133,8 @@ case class MultiscaleModel(
     * @return
     */
   def modelRun(fullTimeSeries: Boolean)(implicit rng: Random, mImpl: MatrixImplementation): MultiscaleResult = {
-    def run0(steps: Int,state: MultiscaleState, accumulator: Vector[MultiscaleState]): Vector[MultiscaleState] = steps match{
+    @tailrec
+    def run0(steps: Int, state: MultiscaleState, accumulator: Vector[MultiscaleState]): Vector[MultiscaleState] = steps match{
       case 0 => accumulator
       case s =>
         //log("step : "+s)
@@ -220,11 +222,11 @@ object MultiscaleModel {
     * @param call call
     * @param threshold threshold
     */
-  def ensureConsistence(macroState: MacroState,
+  def ensureConsistence(macroState: MacroStateGen,
                         mesoStates: Vector[MesoState],
                         call: String = "",
                         threshold: Double = 10000.0
-                       )(implicit mImpl: MatrixImplementation): MacroState = {
+                       )(implicit mImpl: MatrixImplementation): MacroStateGen = {
     val deltaPopLevels = macroState.populations.flatValues.zip(mesoStates).map{case (p,ms)=>math.abs(p - ms.populationGrid.flatten.sum)}
     /*assert(deltaPopLevels.sum/deltaPopLevels.size<threshold,call+" - incoherence between levels : "+deltaPopLevels+"\n"+macroState.populations+"\n"+
       mesoStates.map(_.populationGrid.flatten.sum)

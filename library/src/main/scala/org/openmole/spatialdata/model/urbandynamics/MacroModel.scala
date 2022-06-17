@@ -7,10 +7,11 @@ import org.openmole.spatialdata.utils.math.{DenseMatrix, Linear, Matrix, Statist
 import scala.util.Random
 
 /**
-  * A macroscopic urban dynamic model
+  * A macroscopic urban dynamic model or one component
   */
 trait MacroModel {
   def run: MacroResult
+  def nextStep(state: MacroState, populations: Matrix, distanceMatrix: Matrix): MacroState
 }
 
 
@@ -18,7 +19,7 @@ trait MacroModel {
 object MacroModel {
   implicit val doubleOrdering: Ordering[Double] = Ordering.Double.TotalOrdering
 
-  def deltaMacroStates(prev: MacroState,current: MacroState): Vector[(Double,Double,Double)] = {
+  def deltaMacroStates(prev: MacroStateGen,current: MacroStateGen): Vector[(Double,Double,Double)] = {
     val prevIndics = prev.indicators
     val currentIndics = current.indicators
     // rq : assumed positive
@@ -39,10 +40,10 @@ object MacroModel {
     * @param deltat time difference
     * @return
     */
-  def macroStep(state: MacroState,
+  def macroStep(state: MacroStateGen,
                 additiveGrowthRates: Vector[MacroGrowthRate] = Vector.empty,
                 deltat: Double = 1.0
-               ): MacroState = {
+               ): MacroStateGen = {
     val growthRates: Matrix = additiveGrowthRates.map(_.growthRate(state.populations)).reduce(Matrix.msum)
     val newpops = state.populations + (state.populations * deltat * growthRates)
     utils.log("macro Delta P = "+newpops.flatValues.zip(state.populations.flatValues).map{case (np,p)=>math.abs(np-p)}.sum)
@@ -95,8 +96,8 @@ object MacroModel {
                             pmax: Double,
                             worldSize: Double,
                             dg: Double
-                           )(implicit rng: Random, mImpl: MatrixImplementation): MacroState =
-    MacroState(
+                           )(implicit rng: Random, mImpl: MatrixImplementation): MacroStateGen =
+    MacroStateGen(
      time = 0,
      populations = Matrix(rng.shuffle(Statistics.rankSizeDistribution(n, alpha, pmax)).toArray, row = false),
      distanceMatrix = generalizedDistanceMatrix(Linear.randomDistanceMatrix(n, worldSize), Vector.fill(n)(dg))

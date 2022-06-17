@@ -3,7 +3,7 @@ package org.openmole.spatialdata.model.urbandynamics
 
 case class MultiscaleState(
                             time: Int,
-                            macroState: MacroState,
+                            macroState: MacroStateGen,
                             mesoStates: Vector[ReactionDiffusionMesoState],
                             parameters: MultiscaleState.Parameters
                           )

@@ -1,5 +1,6 @@
 package org.openmole.spatialdata.model.urbandynamics
 
+import org.openmole.spatialdata.model.urbandynamics.Coevolution.CoevolutionState
 import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.utils.io.CSV
 import org.openmole.spatialdata.utils.math.Matrix.MatrixImplementation
@@ -42,6 +43,11 @@ case class Coevolution(
 
   override def run: MacroResult = Coevolution.run(model = this)
 
+  override def nextStep(state: MacroState, populations: Matrix, distanceMatrix: Matrix): MacroState = {
+    val updatedState = Coevolution.updateState(state.asInstanceOf[CoevolutionState], populations, distanceMatrix)
+    Coevolution.nextState(this, updatedState)
+  }
+
   override def toString: String = "Coevolution model with parameters"+
     "\n\tgrowthRate = "+growthRate+"\n\tgravityWeight = "+gravityWeight+
     "\n\tgravityGamma = "+gravityGamma+"\n\tgravityDecay = "+gravityDecay+
@@ -53,6 +59,16 @@ case class Coevolution(
 
 
 object Coevolution {
+
+
+  case class CoevolutionState(
+                             time: Int,
+                             populations: Matrix,
+                             distanceMatrix: Matrix,
+                             flows: Matrix
+                             ) extends MacroState {
+    def asMacroStateGen: MacroStateGen = MacroStateGen(time, populations, distanceMatrix)
+  }
 
   // setup matrices
   /*def setup(populations: File, distances: File, feedbackDistances: File, datesFile: File) = {
@@ -106,7 +122,7 @@ object Coevolution {
       }
     }
 
-    val rawdates: Seq[String] = CSV.readCSV(datesFile,withHeader=false).values.toSeq(0)
+    val rawdates: Seq[String] = CSV.readCSV(datesFile,withHeader=false).values.toSeq.head
     val dates: Array[Double] = rawdates.map(_.toDouble).toArray
 
     Coevolution(
@@ -125,6 +141,41 @@ object Coevolution {
     )
   }
 
+  def updateState(state: CoevolutionState, populations: Matrix, distanceMatrix: Matrix): CoevolutionState = {
+    state.copy(populations = populations, distanceMatrix = distanceMatrix)
+  }
+
+
+  /**
+   * One co-evolution step
+   * @param model model
+   * @param state state
+   * @return
+   */
+  def nextState(model: Coevolution, state: CoevolutionState): CoevolutionState = {
+    val t = state.time
+    val updatedPopulationState = MacroModel.macroStep(state.asMacroStateGen,growthRates(model),model.dates(t + 1) - model.dates(t))
+    val flows = computeFlows(updatedPopulationState.populations, updatedPopulationState.distanceMatrix)
+    val updatedNetwork = updateNetwork(updatedPopulationState.distanceMatrix, flows)
+    state.copy(populations = updatedPopulationState.populations, distanceMatrix = updatedNetwork, flows = flows)
+  }
+
+  def growthRates(model: Coevolution): Vector[MacroGrowthRate] = {
+    import model._
+    val n = populationMatrix.nrows
+
+    // note: recomputed at each time step? yes as distance evolve
+    val gravityDistanceWeights = distancesMatrices(0).map{ d => Math.exp(-d / gravityDecay) }.asInstanceOf[RealMatrix]
+    val feedbackDistanceWeights: Matrix = if(feedbackWeight!=0.0) feedbackDistancesMatrix.map { d => Math.exp(-d / feedbackDecay) } else EmptyMatrix()
+
+
+    Vector(
+      Gibrat(Vector.fill(n)(growthRate)),
+      InteractionMacro(Vector.fill(n)(gravityDecay),Vector.fill(n)(gravityWeight),Vector.fill(n)(gravityGamma),gravityDistanceWeights)
+    ) ++ (if (feedbackWeight != 0.0)
+      Vector(NetworkFeedback(Vector.fill(n)(feedbackWeight),Vector.fill(n)(feedbackDecay),Vector.fill(n)(feedbackGamma),feedbackDistanceWeights)) else Vector.empty)
+  }
+
 
   /**
     * run a coevolution model
@@ -141,22 +192,16 @@ object Coevolution {
     import model._
 
     val n = populationMatrix.nrows
-    val gravityDistanceWeights = distancesMatrices(0).map{ d => Math.exp(-d / gravityDecay) }.asInstanceOf[RealMatrix]
-    val feedbackDistanceWeights: Matrix = if(feedbackWeight!=0.0) feedbackDistancesMatrix.map { d => Math.exp(-d / feedbackDecay) } else EmptyMatrix()
+    //val gravityDistanceWeights = distancesMatrices(0).map{ d => Math.exp(-d / gravityDecay) }.asInstanceOf[RealMatrix]
+    //val feedbackDistanceWeights: Matrix = if(feedbackWeight!=0.0) feedbackDistancesMatrix.map { d => Math.exp(-d / feedbackDecay) } else EmptyMatrix()
 
     utils.log("mean dist mat : " + distancesMatrices(0).mean)
     utils.log("mean feedback mat : " + feedbackDistancesMatrix.mean)
 
-    val growthRates = Vector(
-      Gibrat(Vector.fill(n)(growthRate)),
-      InteractionMacro(Vector.fill(n)(gravityDecay),Vector.fill(n)(gravityWeight),Vector.fill(n)(gravityGamma),gravityDistanceWeights)
-    ) ++ (if (feedbackWeight != 0.0)
-      Vector(NetworkFeedback(Vector.fill(n)(feedbackWeight),Vector.fill(n)(feedbackDecay),Vector.fill(n)(feedbackGamma),feedbackDistanceWeights)) else Vector.empty)
+    def step(state: (Vector[MacroStateGen],Vector[Double])): (Vector[MacroStateGen],Vector[Double]) =
+      (Vector(MacroModel.macroStep(state._1.head,growthRates(model),state._2.head))++state._1,state._2.tail)
 
-    def step(state: (Vector[MacroState],Vector[Double])): (Vector[MacroState],Vector[Double]) =
-      (Vector(MacroModel.macroStep(state._1.head,growthRates,state._2.head))++state._1,state._2.tail)
-
-    val initState = MacroState(0,populationMatrix.getSubmat(0, 0, nrows = n, ncols= 1), distancesMatrices(0))
+    val initState = MacroStateGen(0,populationMatrix.getSubmat(0, 0, nrows = n, ncols= 1), distancesMatrices(0))
     val deltats = dates.tail.zip(dates.dropRight(1)).map{case (next,prev)=> next-prev}.toVector
 
     val finalState = Iterator.iterate((Vector(initState),deltats))(step).takeWhile(_._2.nonEmpty).toVector.last._1
@@ -165,23 +210,32 @@ object Coevolution {
   }
 
 
-  /*
-    * Direct flows between cities given a distance matrix
-    */
-  /*
-  def computeFlows(populations: Populations, distances: Distances): Array[Array[Double]] = {
-    Array.empty
-  }*/
+
+  /**
+   * Direct flows between cities given a distance matrix
+   * @param populations populations
+   * @param distances distances
+   * @return
+   */
+  def computeFlows(populations: Matrix, distances: Matrix): Matrix = {
+    EmptyMatrix()
+  }
 
   /*
+  // no need -> done with macroStep
   def updatePopulations(populations: Populations,flows: Array[Array[Double]]): Populations = {
     Array.empty
   }*/
 
-  /*
-  def updateDistances(distances: Distances, flows: Array[Array[Double]]): Distances = {
-    Array.empty
-  }*/
+  /**
+   * Update virtual network (distance matrix)
+   * @param distances distances
+   * @param flows flows
+   * @return
+   */
+  def updateNetwork(distances: Matrix, flows: Matrix): Matrix = {
+    EmptyMatrix()
+  }
 
 
 

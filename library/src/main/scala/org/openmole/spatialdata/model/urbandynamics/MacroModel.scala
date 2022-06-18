@@ -10,6 +10,7 @@ import scala.util.Random
   * A macroscopic urban dynamic model or one component
   */
 trait MacroModel {
+  def finalTime: Int
   def run: MacroResult
   def nextStep(state: MacroState, populations: Matrix, distanceMatrix: Matrix): MacroState
 }

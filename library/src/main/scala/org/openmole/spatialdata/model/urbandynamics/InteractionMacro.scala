@@ -9,7 +9,7 @@ import org.openmole.spatialdata.utils.math.{DenseMatrix, Matrix}
   * @param interactionDecays city specific interaction decays (increase of accessibility for one city) rq : parameter can be used for coevolution ?
   * @param interactionWeights city specific interaction weights
   * @param interactionGammas city specific interaction gammas
-  * @param congestedFlows congested flows
+  * @param genDistanceMatrix generalised distance matrix
   */
 case class InteractionMacro(
    interactionDecays: Vector[Double],
@@ -45,13 +45,20 @@ object InteractionMacro {
                       interactionGammas: Vector[Double]): Matrix = {
     val n = prevpop.nrows
     val totalpop = prevpop.sum
-    val diagpops = DenseMatrix.diagonal(prevpop.flatValues.zip(interactionGammas).map{ case (p,g) => math.pow(p / totalpop,g)})
-    val potsgravity = diagpops %*% genDistanceMatrix %*% diagpops
-    (0 until potsgravity.nrows).foreach(i => potsgravity.setM(i,i,0.0))
+    def rescale(p: Double, g: Double): Double = math.pow(p / totalpop,g)
+    val potsgravity = gravityPotential(prevpop, genDistanceMatrix, interactionGammas,rescale)
     val meanpotgravity = potsgravity.flatValues.sum / (n * n)
     utils.log("mean pot gravity : " + meanpotgravity)
     val diagweights = DenseMatrix.diagonal(interactionWeights.toArray.map(_/ (n * meanpotgravity)))
     diagweights %*% potsgravity %*% DenseMatrix.ones(n, 1)
+  }
+
+  def gravityPotential(population: Matrix, distanceMatrix: Matrix, interactionGammas: Vector[Double], popRescaling: (Double, Double) => Double): Matrix = {
+    val pg: Array[(Double, Double)] = population.flatValues.zip(interactionGammas.toArray)
+    val diagpops = DenseMatrix.diagonal(pg.map{case (p,g) => popRescaling(p, g)})
+    val potsgravity = diagpops %*% distanceMatrix %*% diagpops
+    (0 until potsgravity.nrows).foreach(i => potsgravity.setM(i,i,0.0))
+    potsgravity
   }
 
 

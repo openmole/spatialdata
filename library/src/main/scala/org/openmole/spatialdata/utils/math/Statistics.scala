@@ -193,7 +193,7 @@ object Statistics {
     // s1 = sum_i (Prod_j (x_ij * (1 - x_ij)))
     val s1 = npoints.map{_.map{xij => xij*(1 - xij)}.product}.sum
     // s2 = sum_{i,k} {Prod_d (1 - max(X_ij, X_kj)) * min(X_ij, X_kj)}
-    val s2 = points.map{xi => xi.zip(points).map{case (xij,xk) => xk.map{xkj => (1 - math.max(xij,xkj))*math.min(xij,xkj)}.product}}.flatten.sum
+    val s2 = points.flatMap{xi => xi.zip(points).map{case (xij,xk) => xk.map{xkj => (1 - math.max(xij,xkj))*math.min(xij,xkj)}.product}}.sum
     math.sqrt(math.pow(12.0,-d) - (((2^(1 - d))/n) * s1) + ((1/n^2) * s2))
   }
 

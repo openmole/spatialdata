@@ -11,7 +11,11 @@ import org.openmole.spatialdata.utils.math._
   * Macroscopic coevolution model for systems of cities, described in
   *
   *   Raimbault, J. (2020). Indirect evidence of network effects in a system of cities. Environment and Planning B: Urban Analytics and City Science, 47(1), 138-155.
-  *   Raimbault, J. (2018). Modeling the co-evolution of cities and networks. arXiv preprint arXiv:1804.09430.
+  *   Raimbault, J. (2021). Modeling the co-evolution of cities and networks. In Handbook of Cities and Networks (pp. 166-193). Edward Elgar Publishing.
+  *
+  *   Physical network explored in
+  *    Raimbault, J. (2020). Hierarchy and co-evolution processes in urban systems. arXiv preprint arXiv:2001.11989.
+  *   is not yet implemented
   *
   * @param populationMatrix Target pop matrix; rows : cities ; cols : time
   * @param distancesMatrices Distance matrices (target in time)
@@ -24,7 +28,6 @@ import org.openmole.spatialdata.utils.math._
   * @param feedbackWeight w_N
   * @param feedbackGamma gamma_N
   * @param feedbackDecay d_N
-  * @param m matrix implementation
   */
 case class Coevolution(
                         populationMatrix: Matrix,
@@ -38,15 +41,20 @@ case class Coevolution(
                         feedbackWeight: Double,
                         feedbackGamma: Double,
                         feedbackDecay: Double,
-                        implicit val m: MatrixImplementation
+                        networkGmax: Double,
+                        networkExponent: Double,
+                        networkThresholdQuantile: Double,
+                        //implicit val m: MatrixImplementation // find a proper way to specify matrix impl?
                       ) extends MacroModel {
 
-  override def run: MacroResult = Coevolution.run(model = this)
+  override def run: MacroResultFit = Coevolution.run(model = this)
 
   override def nextStep(state: MacroState, populations: Matrix, distanceMatrix: Matrix): MacroState = {
     val updatedState = Coevolution.updateState(state.asInstanceOf[CoevolutionState], populations, distanceMatrix)
     Coevolution.nextState(this, updatedState)
   }
+
+  override def finalTime: Int = dates.length
 
   override def toString: String = "Coevolution model with parameters"+
     "\n\tgrowthRate = "+growthRate+"\n\tgravityWeight = "+gravityWeight+
@@ -81,6 +89,7 @@ object Coevolution {
 
   /**
     * Construct from real data file and parameter values
+    *  ! for fitting population only; fixed distance matrix
     *
     * @param populationsFile path for pop file
     * @param distancesFile path for distance matrix file
@@ -105,8 +114,9 @@ object Coevolution {
             gravityDecay: Double,
             feedbackWeight: Double,
             feedbackGamma: Double,
-            feedbackDecay: Double,
-           )(implicit m: MatrixImplementation = Matrix.defaultImplementation): Coevolution = {
+            feedbackDecay: Double
+           )(implicit m: MatrixImplementation = Matrix.defaultImplementation)
+  : Coevolution = {
 
     val populationMatrix: Matrix = Matrix(CSV.readMat(populationsFile))
     val distancesMatrices: Array[Matrix] = distancesFile.length match {
@@ -137,7 +147,10 @@ object Coevolution {
       feedbackWeight,
       feedbackGamma,
       feedbackDecay,
-      m
+      networkGmax = 0.0,
+      networkExponent = 1.0,
+      networkThresholdQuantile = 0.5
+      //m = m
     )
   }
 
@@ -145,6 +158,15 @@ object Coevolution {
     state.copy(populations = populations, distanceMatrix = distanceMatrix)
   }
 
+  def initialState(model: Coevolution): CoevolutionState = {
+    import model._
+    val pops = populationMatrix.getCol(0)
+    val dmat = model.distancesMatrices.head
+    val gravityDistanceWeights = dmat.map{ d => Math.exp(-d / gravityDecay) }
+    val flows = computeFlows(pops, gravityDistanceWeights, model.gravityGamma)
+
+    CoevolutionState(0, pops, dmat, flows)
+  }
 
   /**
    * One co-evolution step
@@ -153,11 +175,18 @@ object Coevolution {
    * @return
    */
   def nextState(model: Coevolution, state: CoevolutionState): CoevolutionState = {
+    utils.log(s"\n----Coevol step ${state.time}")
+    import model._
     val t = state.time
+
     val updatedPopulationState = MacroModel.macroStep(state.asMacroStateGen,growthRates(model),model.dates(t + 1) - model.dates(t))
-    val flows = computeFlows(updatedPopulationState.populations, updatedPopulationState.distanceMatrix)
-    val updatedNetwork = updateNetwork(updatedPopulationState.distanceMatrix, flows)
-    state.copy(populations = updatedPopulationState.populations, distanceMatrix = updatedNetwork, flows = flows)
+
+    // should not be recomputed either - as flows
+    val gravityDistanceWeights = updatedPopulationState.distanceMatrix.map{ d => Math.exp(-d / model.gravityDecay) }
+    val flows = computeFlows(updatedPopulationState.populations, gravityDistanceWeights, model.gravityGamma)
+
+    val updatedNetwork = updateNetwork(updatedPopulationState.distanceMatrix, flows, networkGmax, networkExponent, networkThresholdQuantile)
+    state.copy(populations = updatedPopulationState.populations, distanceMatrix = updatedNetwork, flows = flows, time = state.time + 1)
   }
 
   def growthRates(model: Coevolution): Vector[MacroGrowthRate] = {
@@ -165,7 +194,7 @@ object Coevolution {
     val n = populationMatrix.nrows
 
     // note: recomputed at each time step? yes as distance evolve
-    val gravityDistanceWeights = distancesMatrices(0).map{ d => Math.exp(-d / gravityDecay) }.asInstanceOf[RealMatrix]
+    val gravityDistanceWeights = distancesMatrices(0).map{ d => Math.exp(-d / gravityDecay) }
     val feedbackDistanceWeights: Matrix = if(feedbackWeight!=0.0) feedbackDistancesMatrix.map { d => Math.exp(-d / feedbackDecay) } else EmptyMatrix()
 
 
@@ -179,13 +208,11 @@ object Coevolution {
 
   /**
     * run a coevolution model
-    *
-    *  ! network evolution not yet implemented
-    *
+    *  // (implicit mImpl: MatrixImplementation): not needed
     * @param model model
     * @return
     */
-  def run(model: Coevolution)(implicit mImpl: MatrixImplementation): MacroResult = {
+  def run(model: Coevolution): MacroResultFit = {
 
     utils.log("Running "+model.toString)
 
@@ -206,35 +233,35 @@ object Coevolution {
 
     val finalState = Iterator.iterate((Vector(initState),deltats))(step).takeWhile(_._2.nonEmpty).toVector.last._1
 
-    MacroResult(populationMatrix,finalState)
+    MacroResultFit(populationMatrix,finalState)
   }
 
 
 
   /**
    * Direct flows between cities given a distance matrix
+    *  -> gravity flows used for growth rates
+    *  ! shouldn't recompute - ok for now, very small matrices
    * @param populations populations
    * @param distances distances
    * @return
    */
-  def computeFlows(populations: Matrix, distances: Matrix): Matrix = {
-    EmptyMatrix()
+  def computeFlows(populations: Matrix, distances: Matrix, interactionGamma: Double): Matrix = {
+    val totalpop = populations.sum
+    InteractionMacro.gravityPotential(populations, distances, Vector.fill(populations.nrows)(interactionGamma),{case (p,g) =>math.pow(p / totalpop,g) })
   }
-
-  /*
-  // no need -> done with macroStep
-  def updatePopulations(populations: Populations,flows: Array[Array[Double]]): Populations = {
-    Array.empty
-  }*/
 
   /**
    * Update virtual network (distance matrix)
+    * d_ij (t+1) = d_ij (t) * (1 + g_max * \frac{ (phi_ij/phi_0) ^ \gamma - 1 }{(phi_ij/phi_0) ^ \gamma + 1}
+    *
    * @param distances distances
    * @param flows flows
    * @return
    */
-  def updateNetwork(distances: Matrix, flows: Matrix): Matrix = {
-    EmptyMatrix()
+  def updateNetwork(distances: Matrix, flows: Matrix, gmax: Double, exponent: Double, thresholdQuantile: Double): Matrix = {
+    val threshold = quantile(flows.flatValues, thresholdQuantile)
+    distances * flows.map{phi => 1.0 + gmax*(math.pow(phi/threshold, exponent) - 1.0)/(math.pow(phi/threshold, exponent) + 1.0)}
   }
 
 

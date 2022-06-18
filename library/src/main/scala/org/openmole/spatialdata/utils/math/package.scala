@@ -1,5 +1,7 @@
 package org.openmole.spatialdata.utils
 
+import org.apache.commons.math3.stat.descriptive.rank.Percentile
+
 import scala.reflect.ClassTag
 
 package object math {
@@ -23,6 +25,8 @@ package object math {
   }
 
   def cumsum[T: ClassTag](a: Array[T])(implicit numeric: Numeric[T]): Array[T] = cumsum(a.toSeq).toArray[T]
+
+  def quantile(a: Array[Double], q: Double): Double = new Percentile().evaluate(a, q*100.0)
 
   object Implicits {
 

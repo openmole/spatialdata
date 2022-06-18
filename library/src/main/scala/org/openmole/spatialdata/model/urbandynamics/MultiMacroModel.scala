@@ -1,6 +1,7 @@
 package org.openmole.spatialdata.model.urbandynamics
 
 import org.openmole.spatialdata.model.urbandynamics.MultiMacroModel.MultiMacroState
+import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.utils.math.{EmptyMatrix, Matrix}
 
 import scala.collection.mutable.ArrayBuffer
@@ -20,6 +21,7 @@ case class MultiMacroModel(
 
   override def nextStep(state: MacroState, populations: Matrix, distanceMatrix: Matrix): MacroState = MultiMacroModel.nextStep(this, state.asInstanceOf[MultiMacroState])
 
+  override def finalTime: Int = models.head.finalTime
 
 }
 
@@ -37,9 +39,9 @@ object MultiMacroModel {
                             ) extends MacroState
 
   case class MultiMacroResult(
-                             states: Seq[Seq[MacroState]]
-                             ) {
-
+                             states: Seq[MultiMacroState]
+                             ) extends MacroResult {
+    override def simulatedPopulation: Matrix = Matrix(states.map(_.populations.flatValues).toArray.transpose)(Matrix.defaultImplementation)
   }
 
   /**
@@ -58,7 +60,13 @@ object MultiMacroModel {
    * @return
    */
   def nextStep(model: MultiMacroModel, state: MultiMacroState): MacroState = {
+
+    utils.log(s"\n\n==============\nStep ${state.time}\n==============")
+
     val previousStates = state.modelStates
+
+    val prevpop = previousStates.head.populations
+
     val nextStates = new ArrayBuffer[MacroState]
     var currentPop = previousStates.head.populations
     var currentDist = previousStates.head.distanceMatrix
@@ -68,6 +76,10 @@ object MultiMacroModel {
       currentPop = updatedState.populations
       currentDist = updatedState.distanceMatrix
     }
+
+    val finalpop = currentPop
+    utils.log(s"\nFull step delta P = ${prevpop.flatValues.zip(finalpop.flatValues).map{case (p1,p2) => math.abs(p1-p2)}.sum}")
+
     MultiMacroState(
       time = state.time + 1,
       populations = currentPop,
@@ -76,8 +88,16 @@ object MultiMacroModel {
     )
   }
 
-  def run(model: MultiMacroModel): MacroResult = {
-    MacroResult(EmptyMatrix(),EmptyMatrix())
+  def run(model: MultiMacroModel): MultiMacroResult = {
+    import model._
+    var currentState = MultiMacroState(0, initialStates.head.populations, initialStates.head.distanceMatrix, initialStates)
+    val allStates = new ArrayBuffer[MultiMacroState]
+    allStates.addOne(currentState)
+    for(t <- 1 until finalTime){
+      currentState = MultiMacroModel.nextStep(model, currentState).asInstanceOf[MultiMacroState]
+      allStates.addOne(currentState)
+    }
+    MultiMacroResult(allStates.toSeq)
   }
 
 }

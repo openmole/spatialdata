@@ -47,7 +47,7 @@ case class Innovation(
     * run for model calibration
     * @return
     */
-  override def run: MacroResult = Innovation.run(this).macroResult
+  override def run: MacroResultFit = Innovation.run(this).macroResult
 
 
   override def nextStep(state: MacroState, populations: Matrix, distanceMatrix: Matrix): MacroState = {
@@ -55,7 +55,7 @@ case class Innovation(
     Innovation.nextState(this, updatedState)
   }
 
-
+  override def finalTime: Int = dates.length
 
   override def toString: String = "Innovation model with parameters"+
     "\n\tgrowthRate = "+growthRate+"\n\tinnovationWeight = "+innovationWeight+"\n\tgravityDecay = "+gravityDecay+
@@ -120,10 +120,10 @@ object Innovation {
     * @param innovationShares shares
     */
   case class InnovationResult(
-                             macroResult: MacroResult,
-                             innovationUtilities: Seq[Double],
-                             innovationShares: Seq[Matrix],
-                             gravityPotentials: Seq[Matrix]
+                               macroResult: MacroResultFit,
+                               innovationUtilities: Seq[Double],
+                               innovationShares: Seq[Matrix],
+                               gravityPotentials: Seq[Matrix]
                              ) {
 
     /**
@@ -403,6 +403,9 @@ object Innovation {
 
 
   def nextState(model: Innovation, state: InnovationState): InnovationState = {
+
+    utils.log(s"\n----Innovation step ${state.time}")
+
     import model._
     val gravityDistanceWeights = state.distanceMatrix.map { d => Math.exp(-d / gravityDecay) }
     val innovationDistanceWeights = distanceMatrix.map { d => Math.exp(-d / innovationDecay) }
@@ -426,12 +429,16 @@ object Innovation {
             case(previousshare,citypop)=> math.pow(previousshare*citypop/totalpop,1/utility)}))(Matrix.defaultImplementation)%*%
           innovationDistanceWeights).flatValues
     }.toArray
+    //utils.log("tmp level = "+tmplevel.map(_.toSeq).toSeq)
     val cumtmp: Array[Double] = tmplevel.foldLeft(Array.fill(n)(0.0)){case (a1,a2)=>a1.zip(a2).map{case(d1,d2)=>d1+d2}}
     val deltaci: Array[Array[Double]] = tmplevel.map{_.zip(cumtmp).map{case (d1,d2)=>d1 / d2}}
+    //utils.log("deltaci = "+deltaci.map(_.toSeq).toSeq)
     val diffusedInnovs = state.innovations.zip(deltaci).map{
       case (innovmat,cityprops)=>
         val r = innovmat.clone
+        //utils.log("     innov prev: "+r.getCol(state.time).flatValues.toSeq)
         r.setMSubmat(0,state.time + 1, cityprops.map(Array(_)))
+        //utils.log("     innov diffused: "+r.getCol(state.time + 1).flatValues.toSeq)
         r
     }
     // compute macro adoption levels
@@ -460,29 +467,34 @@ object Innovation {
        ).flatValues
     //)
     //currentPopulations = res.getCol(t).flatValues
+    utils.log(s"    Delta P = ${prevpop.flatValues.zip(newPopulations).map{case (p1,p2) => math.abs(p1 - p2)}.sum}")
 
     /*
       * 3) create a new innovation if needed
       */
     val currentInnovProps: Seq[Seq[Double]] = diffusedInnovs.map(_.getCol(state.time+1).flatValues.toSeq)
     val potentialInnovation: (Boolean, Seq[Double], Seq[Seq[Double]]) = model.newInnovation(newPopulations.toSeq, state.utilities.toSeq, currentInnovProps)
-    if (potentialInnovation._1){
+    val res = if (potentialInnovation._1){
       val newutilities = state.utilities ++ potentialInnovation._2
       val newShares = potentialInnovation._3
       // update old innovations (note that remaining of potentialInnovation._3 is ignored by the zip)
       val newInnovProp = state.innovations.toArray.zip(newShares).map{
-        case (m,newprop) => val r = m.clone
+        case (m,newprop) =>
+          //utils.log("   update prop old = "+newprop)
+          val r = m.clone
           r.setMSubmat(0,state.time + 1,Array(newprop.toArray).transpose)
           r
       }
       // add new innovation matrices
       val addInnovProp = newShares.takeRight(newShares.length-newInnovProp.length).map{s =>
+        //utils.log("   update prop new = "+s.toSeq)
         val newInnovMat = DenseMatrix.zeros(n,p)
         newInnovMat.setMSubmat(0,state.time + 1,Array(s.toArray).transpose)
         newInnovMat
       }
 
       state.copy(
+        time = state.time + 1,
         populations = Matrix(newPopulations, row = false)(Matrix.defaultImplementation),
         innovations = newInnovProp.toSeq++addInnovProp,
         utilities = newutilities,
@@ -490,13 +502,15 @@ object Innovation {
       )
 
     } else state.copy(
+      time = state.time + 1,
       populations = Matrix(newPopulations, row = false)(Matrix.defaultImplementation),
       innovations = diffusedInnovs,
       gravityPotentials = potsgravity
     )
 
+    //utils.log("  next innov state = "+res.innovations.map(_.values.map(_.toSeq).toSeq).mkString("\n"))
 
-
+    res
   }
 
 
@@ -557,7 +571,7 @@ object Innovation {
     utils.log("Innovations introduced : "+innovationProportions.length)
     utils.log("Macro adoption levels : "+macroAdoptionLevels.mkString(","))
 
-    InnovationResult(MacroResult(model.populationMatrix,res),innovationUtilities.toSeq,innovationProportions.toSeq, gravityPotentials.toSeq)
+    InnovationResult(MacroResultFit(model.populationMatrix,res),innovationUtilities.toSeq,innovationProportions.toSeq, gravityPotentials.toSeq)
   }
 
 

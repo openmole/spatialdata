@@ -1,24 +1,27 @@
 package org.openmole.spatialdata.model.urbandynamics
 
 import org.openmole.spatialdata.model.urbandynamics.EconomicExchanges.{EconomicExchangesState, updateState}
+import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.utils.math.{DenseMatrix, Matrix}
 
 case class EconomicExchanges(
                             populationMatrix: Matrix,
                             distanceMatrix: Matrix,
                             dates: Array[Double],
+                            economicWeight: Double,
                             sizeEffectOnDemand: Double,
                             sizeEffectOnSupply: Double,
-                            economicMultiplier: Double,
                             gravityDecay: Double,
                             wealthToPopulationExponent: Double,
                             populationToWealthExponent: Double
                             ) extends MacroModel {
 
-  override def run: MacroResult = EconomicExchanges.run(model = this)
+  override def run: MacroResultFit = EconomicExchanges.run(model = this)
 
   override def nextStep(state: MacroState, populations: Matrix, distanceMatrix: Matrix): MacroState =
     EconomicExchanges.nextState(this, updateState(this, state.asInstanceOf[EconomicExchangesState], populations, distanceMatrix))
+
+  override def finalTime: Int = dates.length
 
 }
 
@@ -41,8 +44,8 @@ object EconomicExchanges {
     val wealths = rescaleWealth(populations.flatValues.map(populationToWealth(_, model.populationToWealthExponent)).toSeq, populations.flatValues.toSeq)
     val distanceCoefMatrix = model.distanceMatrix.map(d => math.exp(- d / model.gravityDecay))
 
-    val supplies = populations.flatValues.map(p => supply(p, economicMultiplier, sizeEffectOnSupply))
-    val demands = populations.flatValues.map(p => demand(p, economicMultiplier, sizeEffectOnDemand))
+    val supplies = populations.flatValues.map(p => supply(p, economicWeight, sizeEffectOnSupply))
+    val demands = populations.flatValues.map(p => demand(p, economicWeight, sizeEffectOnDemand))
     val interactionMatrix = interactionPotentialMatrix(supplies.toSeq, demands.toSeq, distanceCoefMatrix)
 
     EconomicExchangesState(0, populations, model.distanceMatrix, distanceCoefMatrix, wealths, interactionMatrix)
@@ -98,23 +101,34 @@ object EconomicExchanges {
   }
 
 
+  /**
+    * ! eco multiplier is inverse of original model - for it to be the same unit as innovationWeight, coevolutionWeight in multi-modeling
+    *
+    * @param population population
+    * @param previousWealth previousWealth
+    * @param updatedWealth updatedWealth
+    * @param deltaT deltaT
+    * @param wealthToPopulationExponent wealthToPopulationExponent
+    * @param economicMultiplier economicMultiplier
+    * @return
+    */
   def updatedPopulation(population: Double, previousWealth: Double, updatedWealth: Double,deltaT: Double, wealthToPopulationExponent: Double, economicMultiplier: Double): Double = {
     val wealthpopupdated = wealthToPopulation(updatedWealth, wealthToPopulationExponent)
     val wealthpop = wealthToPopulation(previousWealth, wealthToPopulationExponent)
-    val deltaPopulation = deltaT*(wealthpopupdated - wealthpop) / economicMultiplier
+    val deltaPopulation = deltaT*(wealthpopupdated - wealthpop) * economicMultiplier
     val updatedPopulation = population + deltaPopulation
     assert(updatedPopulation<1e9,s"divergent population : updatedWealth $updatedWealth wealthtopop $wealthpop wealthpopupdated $wealthpopupdated")
     if (updatedPopulation >= 0.0) updatedPopulation else 0.0
   }
 
   def supply(population: Double, economicMultiplier: Double, sizeEffectOnSupply: Double): Double = {
-    val supply = economicMultiplier * math.pow(population, sizeEffectOnSupply)
+    val supply =  math.pow(population, sizeEffectOnSupply) / economicMultiplier
     assert(!supply.isInfinite,s"Infinite supply : pop $population")
     supply
   }
 
   def demand(population: Double, economicMultiplier: Double, sizeEffectOnDemand: Double): Double = {
-    val demand = economicMultiplier * math.pow(population, sizeEffectOnDemand)
+    val demand = math.pow(population, sizeEffectOnDemand) / economicMultiplier
     assert(!demand.isInfinite,s"Infinite demand : pop $population")
     demand
   }
@@ -193,25 +207,30 @@ object EconomicExchanges {
                  model: EconomicExchanges,
                  state: EconomicExchangesState
                ): EconomicExchangesState = {
+    utils.log(s"\n----Eco step ${state.time}")
     import model._
     val prevwealth = state.wealths
-    val (wealths, interactionMatrix) = updatedWealths(state,economicMultiplier,sizeEffectOnSupply, sizeEffectOnDemand)
+    val prevpop = state.populations
+    val (wealths, interactionMatrix) = updatedWealths(state,economicWeight,sizeEffectOnSupply, sizeEffectOnDemand)
     val pops = Matrix(state.populations.flatValues.zip(prevwealth).zip(wealths).map {
-      case ((p, pw), w) => updatedPopulation(p, pw, w, model.dates(state.time + 1) - model.dates(state.time), wealthToPopulationExponent: Double, economicMultiplier: Double)
+      case ((p, pw), w) => updatedPopulation(p, pw, w, model.dates(state.time + 1) - model.dates(state.time), wealthToPopulationExponent, economicWeight)
     }, row = false)(Matrix.defaultImplementation)
+
+    utils.log(s"Delta P = ${prevpop.flatValues.zip(pops.flatValues).map{case (p1,p2) => math.abs(p1-p2)}.sum}")
+
 
     state.copy(wealths = wealths, populations = pops, time = state.time + 1, gravityPotentials=interactionMatrix)
   }
 
 
-  def run(model: EconomicExchanges): MacroResult = {
+  def run(model: EconomicExchanges): MacroResultFit = {
     import model._
 
     val s0: EconomicExchangesState = initialState(model)
 
     val states = Iterator.iterate((s0, model)){case (s,m) => (nextState(m,s),m)}.takeWhile(_._1.time <= dates.length).toVector
     val simulatedPopulation = Matrix(states.map(_._1.populations.flatValues).toArray.transpose)(Matrix.defaultImplementation)
-    MacroResult(populationMatrix, simulatedPopulation)
+    MacroResultFit(populationMatrix, simulatedPopulation)
   }
 
 }

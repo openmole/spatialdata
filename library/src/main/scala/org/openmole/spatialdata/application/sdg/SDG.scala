@@ -1,9 +1,9 @@
 package org.openmole.spatialdata.application.sdg
 
 import org.openmole.spatialdata.model.urbandynamics.Innovation.{InnovationUtilityLogNormalDistribution, InnovationUtilityNormalDistribution, mutationInnovation}
-import org.openmole.spatialdata.model.urbandynamics.{EconomicExchanges, Innovation, MultiMacroModel}
+import org.openmole.spatialdata.model.urbandynamics.{Coevolution, EconomicExchanges, Innovation, MultiMacroModel}
 import org.openmole.spatialdata.utils.math.Matrix.MatrixImplementation
-import org.openmole.spatialdata.utils.math.{DenseMatrix, Matrix, Statistics}
+import org.openmole.spatialdata.utils.math.{DenseMatrix, EmptyMatrix, Matrix, Statistics}
 import org.openmole.spatialdata.vector.measures.Spatstat
 import org.openmole.spatialdata.vector.synthetic.RandomPointsGenerator
 
@@ -39,12 +39,18 @@ object SDG {
                                 innovationEarlyAdoptersRate: Double,
                                 innovationUtilityStd: Double,
                                 innovationUtilityDistrib: String,
+                                ecoWeight: Double,
                                 ecoSizeEffectOnDemand: Double,
                                 ecoSizeEffectOnSupply: Double,
-                                ecoEconomicMultiplier: Double,
                                 ecoGravityDecay: Double,
                                 ecoWealthToPopulationExponent: Double,
-                                ecoPopulationToWealthExponent: Double
+                                ecoPopulationToWealthExponent: Double,
+                                coevolWeight: Double,
+                                coevolGamma: Double,
+                                coevolGravityDecay: Double,
+                                coevolNetworkGmax: Double,
+                                coevolNetworkExponent: Double,
+                                coevolNetworkThresholdQuantile: Double
                               )(implicit rng: Random): MultiMacroModel = {
     implicit val m: MatrixImplementation = Matrix.defaultImplementation
     rng.setSeed(seed)
@@ -53,6 +59,8 @@ object SDG {
     // similar to synthetic innovation
     val dmat = Matrix(Spatstat.euclidianDistanceMatrix(RandomPointsGenerator(syntheticCities).generatePoints.asPointSeq.toArray))
     val initialPopulations = Statistics.rankSizeDistribution(syntheticCities, syntheticHierarchy, syntheticMaxPop)
+
+    // full pop matrix needed because of the way single models are implemented (for real data) - but dropped later in MultiMacroStates
     val populationMatrix = DenseMatrix.zeros(syntheticCities,finalTime+1)
     populationMatrix.setMSubmat(0,0,Array(initialPopulations.toArray).transpose)
     val dates: Array[Double] = (0 to finalTime).toArray.map{_.toDouble}
@@ -68,13 +76,17 @@ object SDG {
 
     // eco exchanges - ! add gravitypotentials in eco state (total emission: cumulated interactions across models)
     // ! issue: not same unit for innov / eco (supply - demand gravity potentials) -> should compute something equivalent?
-    val ecoModel = EconomicExchanges(populationMatrix, dmat, dates, ecoSizeEffectOnDemand, ecoSizeEffectOnSupply, ecoEconomicMultiplier, ecoGravityDecay, ecoWealthToPopulationExponent, ecoPopulationToWealthExponent)
+    // ! marius weight? - rescale pop updates?
+    val ecoModel = EconomicExchanges(populationMatrix, dmat, dates, ecoWeight, ecoSizeEffectOnDemand, ecoSizeEffectOnSupply, ecoGravityDecay, ecoWealthToPopulationExponent, ecoPopulationToWealthExponent)
     val ecoInitialState = EconomicExchanges.initialState(ecoModel)
 
     // coevolution
+    // rq: flows also in other unit (pop rescaled) -> must compute pop-based only for comparability
+    val coevolModel = Coevolution(populationMatrix, Array(dmat), EmptyMatrix(), dates, 0.0, coevolWeight, coevolGamma, coevolGravityDecay,
+      0.0, 1.0, 1.0, coevolNetworkGmax, coevolNetworkExponent, coevolNetworkThresholdQuantile)
+    val coevolInitialState = Coevolution.initialState(coevolModel)
 
-
-    MultiMacroModel(Seq(innovModel, ecoModel), Seq(innovInitialState, ecoInitialState))
+    MultiMacroModel(Seq(innovModel, ecoModel, coevolModel), Seq(innovInitialState, ecoInitialState, coevolInitialState))
   }
 
 }

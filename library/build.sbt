@@ -9,6 +9,7 @@ lazy val commonSettings = Seq(
   resolvers ++= Seq(
     "apache" at "https://repo.maven.apache.org/maven2",
     "osgeo" at "https://repo.osgeo.org/repository/geotools-releases", // for geotools
+    "geonw" at "https://repo.osgeo.org/repository/geonetwork-releases/", // 20220618 - try for CI build to find jai_core
     "imageio" at "https://maven.geo-solutions.it", // for some geotools deps
     //"spring" at "https://repo.spring.io/plugins-release/",
     Resolver.sonatypeRepo("snapshots"),
@@ -31,7 +32,6 @@ lazy val commonSettings = Seq(
     "org.geotools" % "gt-epsg-extension" % geotoolsVersion,
     "org.geotools" % "gt-geotiff" % geotoolsVersion,
     "org.geotools" % "gt-coverage" % geotoolsVersion,
-    // geotools deps are a mess - https://docs.geotools.org/stable/userguide/library/main/index.html - needed to have jai for geotif; bugging with Coursier but not with ivy2
     "org.geotools" % "gt-opengis" % geotoolsVersion,
     "com.github.tototoshi" %% "scala-csv" % "1.3.6",
     "org.postgresql" % "postgresql" % "42.2.5",

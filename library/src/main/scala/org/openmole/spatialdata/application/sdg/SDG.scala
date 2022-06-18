@@ -1,6 +1,9 @@
 package org.openmole.spatialdata.application.sdg
 
-import org.openmole.spatialdata.model.urbandynamics.Innovation.{InnovationUtilityLogNormalDistribution, InnovationUtilityNormalDistribution, mutationInnovation}
+import org.openmole.spatialdata.model.urbandynamics.Coevolution.CoevolutionState
+import org.openmole.spatialdata.model.urbandynamics.EconomicExchanges.EconomicExchangesState
+import org.openmole.spatialdata.model.urbandynamics.Innovation.{InnovationState, InnovationUtilityLogNormalDistribution, InnovationUtilityNormalDistribution, mutationInnovation}
+import org.openmole.spatialdata.model.urbandynamics.MultiMacroModel.MultiMacroResult
 import org.openmole.spatialdata.model.urbandynamics.{Coevolution, EconomicExchanges, Innovation, MultiMacroModel}
 import org.openmole.spatialdata.utils.math.Matrix.MatrixImplementation
 import org.openmole.spatialdata.utils.math.{DenseMatrix, EmptyMatrix, Matrix, Statistics}
@@ -88,5 +91,26 @@ object SDG {
 
     MultiMacroModel(Seq(innovModel, ecoModel, coevolModel), Seq(innovInitialState, ecoInitialState, coevolInitialState))
   }
+
+
+  /**
+    * SDG 13: Climate
+    * Emission flows: cumulated across models, time and city pairs
+    * @param res res
+    * @return
+    */
+  def cumulatedFlows(res: MultiMacroResult): Double = {
+    val t = res.states.length
+    (res.submodelStates[InnovationState].map(_.asInstanceOf[InnovationState].flows).map(m => m.sum / (m.ncols*m.nrows)).sum +
+      res.submodelStates[EconomicExchangesState].map(_.asInstanceOf[EconomicExchangesState].flows).map(m => m.sum / (m.ncols*m.nrows)).sum +
+      res.submodelStates[CoevolutionState].map(_.asInstanceOf[CoevolutionState].flows).map(m => m.sum / (m.ncols*m.nrows)).sum) / t
+  }
+
+  def averageUtility(res: MultiMacroResult): Double = {
+    val innovationShares = res.submodelStates[InnovationState].last.asInstanceOf[InnovationState].innovations
+    val normPop = macroResult.simulatedPopulation%*%DenseMatrix.diagonal(macroResult.simulatedPopulation.colSum.map(1/_))
+    innovationShares.zip(innovationUtilities).map{case (m,u)=> (normPop*m*(u/m.ncols)).sum}.sum
+  }
+
 
 }

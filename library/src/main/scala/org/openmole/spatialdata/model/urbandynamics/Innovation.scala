@@ -75,7 +75,7 @@ object Innovation {
                             distanceMatrix: Matrix,
                             innovations: Seq[Matrix],
                             utilities: Seq[Double],
-                            gravityPotentials: Matrix
+                            flows: Matrix
                             ) extends MacroState
 
   /**
@@ -100,7 +100,7 @@ object Innovation {
     val gravityDistanceWeights = distanceMatrix.map { d => Math.exp(-d / gravityDecay) }
     val potsgravity = gravityPotentials(diffusedInnovs, Array(1.0), populationMatrix.getCol(0).flatValues, gravityDistanceWeights, 0)
 
-    InnovationState(time=0, populationMatrix.getCol(0), distanceMatrix, diffusedInnovs, innovationUtilities.toSeq, gravityPotentials = potsgravity)
+    InnovationState(time=0, populationMatrix.getCol(0), distanceMatrix, diffusedInnovs, innovationUtilities.toSeq, flows = potsgravity)
 
   }
 
@@ -498,14 +498,14 @@ object Innovation {
         populations = Matrix(newPopulations, row = false)(Matrix.defaultImplementation),
         innovations = newInnovProp.toSeq++addInnovProp,
         utilities = newutilities,
-        gravityPotentials = potsgravity
+        flows = potsgravity
       )
 
     } else state.copy(
       time = state.time + 1,
       populations = Matrix(newPopulations, row = false)(Matrix.defaultImplementation),
       innovations = diffusedInnovs,
-      gravityPotentials = potsgravity
+      flows = potsgravity
     )
 
     //utils.log("  next innov state = "+res.innovations.map(_.values.map(_.toSeq).toSeq).mkString("\n"))
@@ -547,7 +547,7 @@ object Innovation {
 
     val gravityPotentials: ArrayBuffer[Matrix] = new ArrayBuffer[Matrix]
 
-    var currentState: InnovationState = InnovationState(time=0, populationMatrix.getCol(0), distanceMatrix, innovationProportions.toSeq, innovationUtilities.toSeq, gravityPotentials = EmptyMatrix())
+    var currentState: InnovationState = InnovationState(time=0, populationMatrix.getCol(0), distanceMatrix, innovationProportions.toSeq, innovationUtilities.toSeq, flows = EmptyMatrix())
 
     for (t <- 1 until p) {
 
@@ -555,7 +555,7 @@ object Innovation {
 
       currentState = Innovation.nextState(model, currentState)
 
-      gravityPotentials.append(currentState.gravityPotentials)
+      gravityPotentials.append(currentState.flows)
       //innovationUtilities.appendAll()
       res.setMSubmat(0, t, currentState.populations.values)
 

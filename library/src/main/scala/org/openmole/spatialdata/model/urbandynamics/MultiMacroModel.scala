@@ -42,6 +42,9 @@ object MultiMacroModel {
                              states: Seq[MultiMacroState]
                              ) extends MacroResult {
     override def simulatedPopulation: Matrix = Matrix(states.map(_.populations.flatValues).toArray.transpose)(Matrix.defaultImplementation)
+
+    def submodelStates[T <: MacroState]: Seq[MacroState] = states.flatMap(_.modelStates.filter(_.isInstanceOf[T]))
+
   }
 
   /**

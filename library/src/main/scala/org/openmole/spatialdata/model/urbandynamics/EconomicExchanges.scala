@@ -53,7 +53,8 @@ object EconomicExchanges {
                                      distanceMatrix: Matrix,
                                      distanceCoefMatrix: Matrix,
                                      wealths: Seq[Double],
-                                     gravityPotentials: Matrix
+                                     gravityPotentials: Matrix,
+                                     flows: Matrix
                         ) extends MacroState
 
 
@@ -67,7 +68,7 @@ object EconomicExchanges {
     val demands = populations.flatValues.map(p => demand(p, economicWeight, sizeEffectOnDemand))
     val interactionMatrix = interactionPotentialMatrix(supplies.toSeq, demands.toSeq, distanceCoefMatrix)
 
-    EconomicExchangesState(0, populations, model.distanceMatrix, distanceCoefMatrix, wealths, interactionMatrix)
+    EconomicExchangesState(0, populations, model.distanceMatrix, distanceCoefMatrix, wealths, interactionMatrix, flows(populations, distanceCoefMatrix))
   }
 
   /**
@@ -79,16 +80,6 @@ object EconomicExchanges {
     val distanceCoefMatrix = distanceMatrix.map(d => math.exp(- d / model.gravityDecay))
     state.copy(populations = population.clone, distanceMatrix = distanceMatrix.clone, distanceCoefMatrix = distanceCoefMatrix)
   }
-
-  def allExcept(n: Int, i: Int): Seq[Int] = (0 until i) ++ (i + 1 until n)
-  def outNodes(n:Int, i: Int): Seq[Int] = allExcept(n, i)
-  def inNodes(n:Int, i: Int): Seq[Int] = allExcept(n, i)
-  def mapNodes(n: Int, f: (Int, Int) => Double): DenseMatrix =
-    DenseMatrix(
-      Array.tabulate(n, n) {
-        (i, j) => if (i != j) f(i, j) else 0.0
-      }
-    )(DenseMatrix.Real())
 
 
   def populationToWealth(population: Double, populationToWealthExponent: Double): Double = math.pow(population, populationToWealthExponent)
@@ -230,21 +221,48 @@ object EconomicExchanges {
     )(Matrix.defaultImplementation)
   }
 
+  /**
+    * Interaction potential matrix
+    * @param supplies supplies
+    * @param demands demands
+    * @param distanceCoefMatrix distanceCoefMatrix
+    * @return
+    */
   def interactionPotentialMatrix(supplies: Seq[Double], demands: Seq[Double], distanceCoefMatrix: Matrix): Matrix = {
     val iM1 = supplies.toArray
     val iM2 = demands.toArray
-    mapNodes(supplies.size, {
-      (i, j) => interactionPotential(iM1(i), iM2(j), distanceCoefMatrix.get(i,j))
-    })
+    val n = supplies.size
+
+    Matrix(
+      Array.tabulate(n, n) {
+        (i, j) => if (i != j) interactionPotential(iM1(i), iM2(j), distanceCoefMatrix.get(i,j)) else 0.0
+      }
+    )(Matrix.defaultImplementation)
   }
 
   def interactionPotential(mass1: Double, mass2: Double, distanceCoef: Double): Double =
     (math.abs(mass1) * math.abs(mass2))*distanceCoef
 
+  /**
+    * Simple flows for emissions
+    * @param populations populations
+    * @param distanceCoefMatrix distanceCoefMatrix
+    * @return
+    */
+  def flows(populations: Matrix, distanceCoefMatrix: Matrix): Matrix = {
+    val ptot = populations.sum
+    InteractionMacro.gravityPotential(populations, distanceCoefMatrix, Vector.fill(populations.nrows)(1.0), {case (p,_) =>p / ptot })
+  }
 
   def wealthToPopulation(wealth: Double, wealthToPopulationExponent: Double): Double = math.pow(wealth, wealthToPopulationExponent)
 
 
+  /**
+    * Next state
+    * @param model model
+    * @param state state
+    * @return
+    */
   def nextState(
                  model: EconomicExchanges,
                  state: EconomicExchangesState
@@ -263,11 +281,17 @@ object EconomicExchanges {
 
     utils.log(s"Delta P = ${prevpop.flatValues.zip(pops.flatValues).map{case (p1,p2) => math.abs(p1-p2)}.sum}")
 
+    val f = flows(pops, state.distanceCoefMatrix)
 
-    state.copy(wealths = wealths, populations = pops, time = state.time + 1, gravityPotentials=interactionMatrix)
+    state.copy(wealths = wealths, populations = pops, time = state.time + 1, gravityPotentials=interactionMatrix, flows = f)
   }
 
 
+  /**
+    * !! untested
+    * @param model model
+    * @return
+    */
   def run(model: EconomicExchanges): MacroResultFit = {
     import model._
 

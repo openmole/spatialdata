@@ -73,6 +73,7 @@ object Coevolution {
                              time: Int,
                              populations: Matrix,
                              distanceMatrix: Matrix,
+                             interactionPotentials: Matrix,
                              flows: Matrix
                              ) extends MacroState {
     def asMacroStateGen: MacroStateGen = MacroStateGen(time, populations, distanceMatrix)
@@ -163,9 +164,11 @@ object Coevolution {
     val pops = populationMatrix.getCol(0)
     val dmat = model.distancesMatrices.head
     val gravityDistanceWeights = dmat.map{ d => Math.exp(-d / gravityDecay) }
-    val flows = computeFlows(pops, gravityDistanceWeights, model.gravityGamma)
+    val totalpop = pops.sum
+    val interactionPotentials = computeFlows(pops, gravityDistanceWeights, model.gravityGamma, {case (p,g) =>math.pow(p / totalpop,g) })
+    val flows =  computeFlows(pops, gravityDistanceWeights, 1.0, {case (p,_) =>p / totalpop })
 
-    CoevolutionState(0, pops, dmat, flows)
+    CoevolutionState(0, pops, dmat, interactionPotentials, flows)
   }
 
   /**
@@ -183,13 +186,18 @@ object Coevolution {
 
     // should not be recomputed either - as flows
     val gravityDistanceWeights = updatedPopulationState.distanceMatrix.map{ d => Math.exp(-d / model.gravityDecay) }
-    val flows = computeFlows(updatedPopulationState.populations, gravityDistanceWeights, model.gravityGamma)
 
-    val updatedNetwork = updateNetwork(updatedPopulationState.distanceMatrix, flows, networkGmax, networkExponent, networkThresholdQuantile)
+    val totalpop = updatedPopulationState.populations.sum
+    val interactionPotentials = computeFlows(updatedPopulationState.populations, gravityDistanceWeights, model.gravityGamma, {case (p,g) =>math.pow(p / totalpop,g) })
+
+    val updatedNetwork = updateNetwork(updatedPopulationState.distanceMatrix, interactionPotentials, networkGmax, networkExponent, networkThresholdQuantile)
+
+    val updatedGravityDistanceWeight = updatedNetwork.map{ d => Math.exp(-d / model.gravityDecay) }
+    val flows = computeFlows(updatedPopulationState.populations, updatedGravityDistanceWeight, 1.0, {case (p,_) => p / totalpop})
 
     utils.log(s"Delta distance = ${updatedPopulationState.distanceMatrix.flatValues.zip(updatedNetwork.flatValues).map{case (d1,d2) =>math.abs(d1-d2)}.sum}")
 
-    state.copy(populations = updatedPopulationState.populations, distanceMatrix = updatedNetwork, flows = flows, time = state.time + 1)
+    state.copy(populations = updatedPopulationState.populations, distanceMatrix = updatedNetwork, interactionPotentials = interactionPotentials, flows = flows, time = state.time + 1)
   }
 
   /**
@@ -254,10 +262,8 @@ object Coevolution {
    * @param distances distances
    * @return
    */
-  def computeFlows(populations: Matrix, distances: Matrix, interactionGamma: Double): Matrix = {
-    val totalpop = populations.sum
-    InteractionMacro.gravityPotential(populations, distances, Vector.fill(populations.nrows)(interactionGamma),{case (p,g) =>math.pow(p / totalpop,g) })
-  }
+  def computeFlows(populations: Matrix, distances: Matrix, interactionGamma: Double, rescaleFunction: (Double, Double) => Double): Matrix =
+    InteractionMacro.gravityPotential(populations, distances, Vector.fill(populations.nrows)(interactionGamma),rescaleFunction)
 
   /**
    * Update virtual network (distance matrix)

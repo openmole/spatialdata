@@ -78,6 +78,32 @@ object Innovation {
                             gravityPotentials: Matrix
                             ) extends MacroState
 
+  /**
+    * "Semi-synthetic" initial state: from model pop and distance param, one single archaic techno
+    * @param model model
+    * @return
+    */
+  def initialState(model: Innovation): InnovationState = {
+
+    import model._
+
+    val innovationUtilities: ArrayBuffer[Double] = new ArrayBuffer[Double]
+    innovationUtilities.append(model.initialInnovationUtility)
+    val innovationProportions: ArrayBuffer[Matrix] = new ArrayBuffer[Matrix]
+    val archaicTechno =  DenseMatrix.zeros(populationMatrix.nrows, populationMatrix.ncols)
+    archaicTechno.setMSubmat(0, 0, Array.fill(populationMatrix.nrows)(Array(1.0)))
+    innovationProportions.append(archaicTechno)
+    val diffusedInnovs = innovationProportions.toSeq
+
+    // do not compute interaction potentials at initial state (in practice not realised?) - filter empty matrix in indic computation?
+    // -> better compute for consistency
+    val gravityDistanceWeights = distanceMatrix.map { d => Math.exp(-d / gravityDecay) }
+    val potsgravity = gravityPotentials(diffusedInnovs, Array(1.0), populationMatrix.getCol(0).flatValues, gravityDistanceWeights, 0)
+
+    InnovationState(time=0, populationMatrix.getCol(0), distanceMatrix, diffusedInnovs, innovationUtilities.toSeq, gravityPotentials = potsgravity)
+
+  }
+
   def updateState(state: InnovationState, populations: Matrix, distanceMatrix: Matrix): InnovationState = {
     state.copy(populations = populations.clone, distanceMatrix = distanceMatrix.clone)
   }
@@ -364,6 +390,17 @@ object Innovation {
   }
 
 
+  def gravityPotentials(diffusedInnovs: Seq[Matrix], macroAdoptionLevels: Array[Double], currentPopulations: Array[Double], gravityDistanceWeights: Matrix, time: Int): Matrix = {
+    val technoFactor: Array[Double] = diffusedInnovs.zip(macroAdoptionLevels).map{
+      case(m,phi)=>
+        m.getCol(time).flatValues.map{math.pow(_,phi)}
+    }.toArray.foldLeft(Array.fill(diffusedInnovs.head.nrows)(1.0)){case(a1,a2)=>a1.zip(a2).map{case(d1,d2)=> d1*d2}}
+
+    val totalpop = currentPopulations.sum
+    val diagpops = DenseMatrix.diagonal(currentPopulations)*(1 / totalpop)
+    diagpops %*% DenseMatrix.diagonal(technoFactor) %*% gravityDistanceWeights %*% diagpops
+  }
+
 
   def nextState(model: Innovation, state: InnovationState): InnovationState = {
     import model._
@@ -406,13 +443,7 @@ object Innovation {
     /*
       * 2) Update populations
       */
-    val technoFactor: Array[Double] = diffusedInnovs.zip(macroAdoptionLevels).map{
-      case(m,phi)=>
-        m.getCol(state.time + 1).flatValues.map{math.pow(_,phi)}
-    }.toArray.foldLeft(Array.fill(n)(1.0)){case(a1,a2)=>a1.zip(a2).map{case(d1,d2)=> d1*d2}}
-
-    val diagpops = DenseMatrix.diagonal(currentPopulations)*(1 / totalpop)
-    val potsgravity = diagpops %*% DenseMatrix.diagonal(technoFactor) %*% gravityDistanceWeights %*% diagpops
+    val potsgravity = gravityPotentials(diffusedInnovs, macroAdoptionLevels, currentPopulations, gravityDistanceWeights, state.time + 1)
     val meanpotgravity = potsgravity.sum / (n * n)
 
 
@@ -453,7 +484,7 @@ object Innovation {
 
       state.copy(
         populations = Matrix(newPopulations, row = false)(Matrix.defaultImplementation),
-        innovations = newInnovProp++addInnovProp,
+        innovations = newInnovProp.toSeq++addInnovProp,
         utilities = newutilities,
         gravityPotentials = potsgravity
       )

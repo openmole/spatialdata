@@ -30,15 +30,22 @@ object EconomicExchanges {
                                      populations: Matrix,
                                      distanceMatrix: Matrix,
                                      distanceCoefMatrix: Matrix,
-                                     wealths: Seq[Double]
+                                     wealths: Seq[Double],
+                                     gravityPotentials: Matrix
                         ) extends MacroState
 
 
   def initialState(model: EconomicExchanges): EconomicExchangesState = {
+    import model._
     val populations = model.populationMatrix.getCol(0)
-    val wealths = rescaleWealth(populations.flatValues.map(populationToWealth(_, model.populationToWealthExponent)), populations.flatValues)
+    val wealths = rescaleWealth(populations.flatValues.map(populationToWealth(_, model.populationToWealthExponent)).toSeq, populations.flatValues.toSeq)
     val distanceCoefMatrix = model.distanceMatrix.map(d => math.exp(- d / model.gravityDecay))
-    EconomicExchangesState(0, populations, model.distanceMatrix, distanceCoefMatrix, wealths)
+
+    val supplies = populations.flatValues.map(p => supply(p, economicMultiplier, sizeEffectOnSupply))
+    val demands = populations.flatValues.map(p => demand(p, economicMultiplier, sizeEffectOnDemand))
+    val interactionMatrix = interactionPotentialMatrix(supplies.toSeq, demands.toSeq, distanceCoefMatrix)
+
+    EconomicExchangesState(0, populations, model.distanceMatrix, distanceCoefMatrix, wealths, interactionMatrix)
   }
 
   /**
@@ -69,15 +76,25 @@ object EconomicExchanges {
     wealth.map(_ * factor)
   }
 
-  def updatedWealths(state: EconomicExchangesState, economicMultiplier: Double, sizeEffectOnSupply: Double, sizeEffectOnDemand: Double): Seq[Double] = {
+  /**
+    * Update wealths - returns new wealths and interaction matrix
+    * @param state state
+    * @param economicMultiplier economicMultiplier
+    * @param sizeEffectOnSupply sizeEffectOnSupply
+    * @param sizeEffectOnDemand sizeEffectOnDemand
+    * @return
+    */
+  def updatedWealths(state: EconomicExchangesState, economicMultiplier: Double, sizeEffectOnSupply: Double, sizeEffectOnDemand: Double): (Seq[Double], Matrix) = {
     val supplies = state.populations.flatValues.map(p => supply(p, economicMultiplier, sizeEffectOnSupply))
     val demands = state.populations.flatValues.map(p => demand(p, economicMultiplier, sizeEffectOnDemand))
+    val interactionMatrix = interactionPotentialMatrix(supplies.toSeq, demands.toSeq, state.distanceCoefMatrix)
 
-    (state.wealths zip supplies zip demands zip exchangeBalances(state.wealths, supplies, demands, state.distanceCoefMatrix)).zipWithIndex.map {
+    val w = (state.wealths zip supplies zip demands zip exchangeBalances(state.wealths, supplies.toSeq, demands.toSeq, interactionMatrix)).zipWithIndex.map {
       case ((((wealth, supply), demand), b), _) =>
         val newWealth = wealth + supply - demand + b
         if (wealth <= 0.0 || newWealth <= 0.0) 0.0 else newWealth
     }
+    (w, interactionMatrix)
   }
 
 
@@ -106,9 +123,9 @@ object EconomicExchanges {
                         wealths: Seq[Double],
                         supplies: Seq[Double],
                         demands: Seq[Double],
-                        distanceCoefMatrix: Matrix
+                        interactionMatrix: Matrix
                       ): Seq[Double] = {
-    val transacs = transactions(wealths, supplies, demands, distanceCoefMatrix)
+    val transacs = transactions(wealths, supplies, demands, interactionMatrix)
     val transacToSum = transacs.colSum
     val transacFromSum = transacs.rowSum
 
@@ -130,15 +147,14 @@ object EconomicExchanges {
                     wealths: Seq[Double],
                     supplies: Seq[Double],
                     demands: Seq[Double],
-                    distanceCoefMatrix: Matrix
+                    interactionMatrix: Matrix
                   ): DenseMatrix = {
 
-    val interactionMatrixValue = interactionPotentialMatrix(supplies, demands, distanceCoefMatrix)
-    val fromInteractionPotentialSum = interactionMatrixValue.rowSum
-    val toInteractionPotentialSum = interactionMatrixValue.colSum
+    val fromInteractionPotentialSum = interactionMatrix.rowSum
+    val toInteractionPotentialSum = interactionMatrix.colSum
 
     DenseMatrix(
-      interactionMatrixValue.values.zipWithIndex.flatMap{case (row,i) => row.zipWithIndex.map{case (v,j) => (i,j,v)}}.map {
+      interactionMatrix.values.zipWithIndex.flatMap{case (row,i) => row.zipWithIndex.map{case (v,j) => (i,j,v)}}.map {
         case (from, to, ip) =>
           if (ip > 0) {
             val fSupply = supplies(from)
@@ -179,12 +195,12 @@ object EconomicExchanges {
                ): EconomicExchangesState = {
     import model._
     val prevwealth = state.wealths
-    val wealths = updatedWealths(state,economicMultiplier,sizeEffectOnSupply, sizeEffectOnDemand)
+    val (wealths, interactionMatrix) = updatedWealths(state,economicMultiplier,sizeEffectOnSupply, sizeEffectOnDemand)
     val pops = Matrix(state.populations.flatValues.zip(prevwealth).zip(wealths).map {
       case ((p, pw), w) => updatedPopulation(p, pw, w, model.dates(state.time + 1) - model.dates(state.time), wealthToPopulationExponent: Double, economicMultiplier: Double)
     }, row = false)(Matrix.defaultImplementation)
 
-    state.copy(wealths = wealths, populations = pops, time = state.time + 1)
+    state.copy(wealths = wealths, populations = pops, time = state.time + 1, gravityPotentials=interactionMatrix)
   }
 
 

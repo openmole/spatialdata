@@ -5,8 +5,15 @@ import org.openmole.spatialdata.utils.math.{EmptyMatrix, Matrix}
 
 import scala.collection.mutable.ArrayBuffer
 
+/**
+  * A macroscopic urban dynamics model "weakly" coupling several components: population and other dimensions are evolved seuqentially for
+  *   each submodel within each time-step
+  *    Rq: which typology of model coupling? between totally weak and strong? -> classify/sr-meta anal?
+  * @param models coupled models
+  */
 case class MultiMacroModel(
-                          models: Seq[MacroModel]
+                          models: Seq[MacroModel],
+                          initialStates: Seq[MacroState]
                           ) extends MacroModel {
 
   override def run: MacroResult = MultiMacroModel.run(this)
@@ -17,7 +24,9 @@ case class MultiMacroModel(
 }
 
 
-
+/**
+  * No generic constructor? -> specific in applications (ex: coevol - innov - eco)
+  */
 object MultiMacroModel {
 
   case class MultiMacroState(
@@ -40,6 +49,10 @@ object MultiMacroModel {
    *     model updating, but in more general cases?
    *   -> remain sequential for now
    *
+    * ! is consistence across submodels ensured? - they should not share more than pop and distance
+    *  -> more commplicated for a stronger coupling
+    *  + no synthetic state?: no need? Y - in MultiMacroState
+    *
    * @param model model
    * @param state state
    * @return

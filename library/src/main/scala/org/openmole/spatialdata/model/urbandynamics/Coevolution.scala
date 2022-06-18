@@ -186,9 +186,17 @@ object Coevolution {
     val flows = computeFlows(updatedPopulationState.populations, gravityDistanceWeights, model.gravityGamma)
 
     val updatedNetwork = updateNetwork(updatedPopulationState.distanceMatrix, flows, networkGmax, networkExponent, networkThresholdQuantile)
+
+    utils.log(s"Delta distance = ${updatedPopulationState.distanceMatrix.flatValues.zip(updatedNetwork.flatValues).map{case (d1,d2) =>math.abs(d1-d2)}.sum}")
+
     state.copy(populations = updatedPopulationState.populations, distanceMatrix = updatedNetwork, flows = flows, time = state.time + 1)
   }
 
+  /**
+    * Population growth rates
+    * @param model model
+    * @return
+    */
   def growthRates(model: Coevolution): Vector[MacroGrowthRate] = {
     import model._
     val n = populationMatrix.nrows

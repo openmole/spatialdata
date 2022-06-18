@@ -4,6 +4,25 @@ import org.openmole.spatialdata.model.urbandynamics.EconomicExchanges.{EconomicE
 import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.utils.math.{DenseMatrix, Matrix}
 
+/**
+  * Economic exchanges model adapted from
+  *   Cottineau, C., Reuillon, R., Chapron, P., Rey-Coyrehourcq, S., & Pumain, D. (2015). A modular modelling framework for hypotheses testing in the simulation of urbanisation. Systems, 3(4), 348-377.
+  *
+  *  !!! in many parameter regions, the model does not seem to be valid: only negative wealth updates; or divergent population
+  *   -> depends a lot on population settings?
+  *  + in some cases converges to DW = 0, DP = 0? (25 time steps? -> limit to 20?)
+  *  + "divergence" checking removed (huge values from other models in multi-modeling)
+  *
+  * @param populationMatrix populationMatrix
+  * @param distanceMatrix distanceMatrix
+  * @param dates dates
+  * @param economicWeight economicWeight
+  * @param sizeEffectOnDemand sizeEffectOnDemand
+  * @param sizeEffectOnSupply sizeEffectOnSupply
+  * @param gravityDecay gravityDecay
+  * @param wealthToPopulationExponent wealthToPopulationExponent
+  * @param populationToWealthExponent populationToWealthExponent
+  */
 case class EconomicExchanges(
                             populationMatrix: Matrix,
                             distanceMatrix: Matrix,
@@ -90,11 +109,20 @@ object EconomicExchanges {
   def updatedWealths(state: EconomicExchangesState, economicMultiplier: Double, sizeEffectOnSupply: Double, sizeEffectOnDemand: Double): (Seq[Double], Matrix) = {
     val supplies = state.populations.flatValues.map(p => supply(p, economicMultiplier, sizeEffectOnSupply))
     val demands = state.populations.flatValues.map(p => demand(p, economicMultiplier, sizeEffectOnDemand))
+
+    //utils.log(s"    supplies = ${supplies.toSeq}")
+    //utils.log(s"    demands = ${demands.toSeq}")
+
     val interactionMatrix = interactionPotentialMatrix(supplies.toSeq, demands.toSeq, state.distanceCoefMatrix)
 
-    val w = (state.wealths zip supplies zip demands zip exchangeBalances(state.wealths, supplies.toSeq, demands.toSeq, interactionMatrix)).zipWithIndex.map {
+    val balance = exchangeBalances(state.wealths, supplies.toSeq, demands.toSeq, interactionMatrix)
+
+    //utils.log(s"    balances = $balance")
+
+    val w = (state.wealths zip supplies zip demands zip balance).zipWithIndex.map {
       case ((((wealth, supply), demand), b), _) =>
         val newWealth = wealth + supply - demand + b
+        //utils.log(s"$wealth + $supply - $demand + $b = $newWealth")
         if (wealth <= 0.0 || newWealth <= 0.0) 0.0 else newWealth
     }
     (w, interactionMatrix)
@@ -117,7 +145,7 @@ object EconomicExchanges {
     val wealthpop = wealthToPopulation(previousWealth, wealthToPopulationExponent)
     val deltaPopulation = deltaT*(wealthpopupdated - wealthpop) * economicMultiplier
     val updatedPopulation = population + deltaPopulation
-    assert(updatedPopulation<1e9,s"divergent population : updatedWealth $updatedWealth wealthtopop $wealthpop wealthpopupdated $wealthpopupdated")
+    //assert(updatedPopulation<1e9,s"divergent population : updatedPopulation $updatedPopulation ; updatedWealth $updatedWealth ; wealthtopop $wealthpop wealthpopupdated $wealthpopupdated")
     if (updatedPopulation >= 0.0) updatedPopulation else 0.0
   }
 
@@ -140,6 +168,9 @@ object EconomicExchanges {
                         interactionMatrix: Matrix
                       ): Seq[Double] = {
     val transacs = transactions(wealths, supplies, demands, interactionMatrix)
+
+    //utils.log(s"transactions:\n${transacs.values.map(_.mkString("   ")).mkString("\n")}\n")
+
     val transacToSum = transacs.colSum
     val transacFromSum = transacs.rowSum
 
@@ -157,17 +188,28 @@ object EconomicExchanges {
     }
   }
 
+  /**
+    * transactions between cities
+    *
+    *  ! changing the interaction function into an exponential makes it fail?
+    *
+    * @param wealths wealths
+    * @param supplies supplies
+    * @param demands demands
+    * @param interactionMatrix interactions
+    * @return
+    */
   def transactions(
                     wealths: Seq[Double],
                     supplies: Seq[Double],
                     demands: Seq[Double],
                     interactionMatrix: Matrix
-                  ): DenseMatrix = {
+                  ): Matrix = {
 
     val fromInteractionPotentialSum = interactionMatrix.rowSum
     val toInteractionPotentialSum = interactionMatrix.colSum
 
-    DenseMatrix(
+    Matrix(
       interactionMatrix.values.zipWithIndex.flatMap{case (row,i) => row.zipWithIndex.map{case (v,j) => (i,j,v)}}.map {
         case (from, to, ip) =>
           if (ip > 0) {
@@ -185,7 +227,7 @@ object EconomicExchanges {
             t
           } else 0.0
       }.sliding(wealths.size).toArray
-    )(DenseMatrix.Real())
+    )(Matrix.defaultImplementation)
   }
 
   def interactionPotentialMatrix(supplies: Seq[Double], demands: Seq[Double], distanceCoefMatrix: Matrix): Matrix = {
@@ -212,6 +254,9 @@ object EconomicExchanges {
     val prevwealth = state.wealths
     val prevpop = state.populations
     val (wealths, interactionMatrix) = updatedWealths(state,economicWeight,sizeEffectOnSupply, sizeEffectOnDemand)
+
+    utils.log(s"Delta W = ${prevwealth.zip(wealths).map{case (w1, w2) => math.abs(w1 - w2)}.sum}")
+
     val pops = Matrix(state.populations.flatValues.zip(prevwealth).zip(wealths).map {
       case ((p, pw), w) => updatedPopulation(p, pw, w, model.dates(state.time + 1) - model.dates(state.time), wealthToPopulationExponent, economicWeight)
     }, row = false)(Matrix.defaultImplementation)

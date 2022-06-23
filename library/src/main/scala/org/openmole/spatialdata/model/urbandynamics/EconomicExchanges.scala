@@ -142,13 +142,13 @@ object EconomicExchanges {
 
   def supply(population: Double, economicMultiplier: Double, sizeEffectOnSupply: Double): Double = {
     val supply =  math.pow(population, sizeEffectOnSupply) / economicMultiplier
-    assert(!supply.isInfinite,s"Infinite supply : pop $population")
+    //assert(!supply.isInfinite,s"Infinite supply : pop $population")
     supply
   }
 
   def demand(population: Double, economicMultiplier: Double, sizeEffectOnDemand: Double): Double = {
     val demand = math.pow(population, sizeEffectOnDemand) / economicMultiplier
-    assert(!demand.isInfinite,s"Infinite demand : pop $population")
+    //assert(!demand.isInfinite,s"Infinite demand : pop $population")
     demand
   }
 

@@ -5,15 +5,19 @@ import org.openmole.spatialdata.model.urbandynamics.EconomicExchanges.EconomicEx
 import org.openmole.spatialdata.model.urbandynamics.Innovation.{InnovationState, InnovationUtilityLogNormalDistribution, InnovationUtilityNormalDistribution, mutationInnovation}
 import org.openmole.spatialdata.model.urbandynamics.MultiMacroModel.MultiMacroResult
 import org.openmole.spatialdata.model.urbandynamics.{Coevolution, EconomicExchanges, Innovation, MultiMacroModel}
+import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.utils.math.Matrix.MatrixImplementation
-import org.openmole.spatialdata.utils.math.{DenseMatrix, EmptyMatrix, Matrix, Statistics}
+import org.openmole.spatialdata.utils.math.{DenseMatrix, EmptyMatrix, Matrix, RealMatrix, Statistics}
 import org.openmole.spatialdata.vector.measures.Spatstat
 import org.openmole.spatialdata.vector.synthetic.RandomPointsGenerator
 
 import scala.util.Random
 
+case class SDG()
+
 object SDG {
 
+  case class Result(result: MultiMacroResult)
 
   /**
     *  ! matrix implementations are not well tackled - often default impl hardcoded within models -> possible compatibility issues?
@@ -28,7 +32,7 @@ object SDG {
     *  - Q of complex interactions between submodules?: specific question for model validation
     * @return
     */
-  def syntheticMultiMacroModel(
+  def runSyntheticMultiMacroModel(
                                 syntheticCities: Int,
                                 syntheticHierarchy: Double,
                                 syntheticMaxPop: Double,
@@ -54,7 +58,7 @@ object SDG {
                                 coevolNetworkGmax: Double,
                                 coevolNetworkExponent: Double,
                                 coevolNetworkThresholdQuantile: Double
-                              )(implicit rng: Random): MultiMacroModel = {
+                              )(implicit rng: Random): Result = {
     implicit val m: MatrixImplementation = Matrix.defaultImplementation
     rng.setSeed(seed)
 
@@ -89,27 +93,77 @@ object SDG {
       0.0, 1.0, 1.0, coevolNetworkGmax, coevolNetworkExponent, coevolNetworkThresholdQuantile)
     val coevolInitialState = Coevolution.initialState(coevolModel)
 
-    MultiMacroModel(Seq(innovModel, ecoModel, coevolModel), Seq(innovInitialState, ecoInitialState, coevolInitialState))
+    val model = MultiMacroModel(Seq(innovModel, ecoModel, coevolModel), Seq(innovInitialState, ecoInitialState, coevolInitialState))
+
+    Result(model.run.asInstanceOf[MultiMacroResult])
   }
 
 
   /**
-    * SDG 13: Climate
+    * SDG 13: Climate - minimised
     * Emission flows: cumulated across models, time and city pairs
     * @param res res
     * @return
     */
-  def cumulatedFlows(res: MultiMacroResult): Double = {
-    val t = res.states.length
-    (res.submodelStates[InnovationState].map(_.asInstanceOf[InnovationState].flows).map(m => m.sum / (m.ncols*m.nrows)).sum +
-      res.submodelStates[EconomicExchangesState].map(_.asInstanceOf[EconomicExchangesState].flows).map(m => m.sum / (m.ncols*m.nrows)).sum +
-      res.submodelStates[CoevolutionState].map(_.asInstanceOf[CoevolutionState].flows).map(m => m.sum / (m.ncols*m.nrows)).sum) / t
+  def cumulatedFlows(res: Result): Double = {
+    val t = res.result.states.length
+    //utils.log(res.submodelStates[InnovationState].mkString(" ; "))
+    (res.result.submodelStates[InnovationState].map(_.asInstanceOf[InnovationState].flows).map(m => m.sum / (m.ncols*m.nrows)).sum +
+      res.result.submodelStates[EconomicExchangesState].map(_.asInstanceOf[EconomicExchangesState].flows).map(m => m.sum / (m.ncols*m.nrows)).sum +
+      res.result.submodelStates[CoevolutionState].map(_.asInstanceOf[CoevolutionState].flows).map(m => m.sum / (m.ncols*m.nrows)).sum) / t
   }
 
-  def averageUtility(res: MultiMacroResult): Double = {
-    val innovationShares = res.submodelStates[InnovationState].last.asInstanceOf[InnovationState].innovations
-    val normPop = macroResult.simulatedPopulation%*%DenseMatrix.diagonal(macroResult.simulatedPopulation.colSum.map(1/_))
+  /**
+    * SDG 8: Innovation - maximised
+    * @param res res
+    * @return
+    */
+  def averageUtility(res: Result): Double = {
+    val innovationShares = res.result.submodelStates[InnovationState].last.asInstanceOf[InnovationState].innovations
+    val innovationUtilities = res.result.submodelStates[InnovationState].last.asInstanceOf[InnovationState].utilities
+    val normPop = res.result.simulatedPopulation%*%DenseMatrix.diagonal(res.result.simulatedPopulation.colSum.map(1/_))
     innovationShares.zip(innovationUtilities).map{case (m,u)=> (normPop*m*(u/m.ncols)).sum}.sum
+  }
+
+  /**
+    * SDG 9: infrastructure: average distance between cities - minimised
+    *  (not weighted by pop - should also look at access?) - no, at least weight by O/D -> avg dist between indivs
+    * @param res res
+    * @return
+    */
+  def averageDistance(res: Result): Double = res.result.states.map{s =>
+    val ptot = s.populations.sum
+    val diagpop = DenseMatrix.diagonal(s.populations.flatValues.map( _ / ptot))
+    (diagpop %*% s.distanceMatrix %*% diagpop).sum
+  }.sum / res.result.states.length
+
+  /**
+    * SDG 10: economic inequality - minimised
+    *  Gini index given by \sum_{i,j} \abs{W_i - W_j} / 2 n*n*\bar{W}, averaged in time
+    *
+    *  ! must constraint Delta W > 0, otherwise cases where W converges to zero (negative) yield a 0 Gini -> goal 1: no poverty
+    * @param res res
+    * @return
+    */
+  def giniEconomicWealth(res: Result): Double = {
+    val ginis = res.result.submodelStates[EconomicExchangesState].map{s =>
+      val w = s.asInstanceOf[EconomicExchangesState].wealths
+      val avgw = w.sum / w.length
+      val n = w.length
+      w.flatMap(wi => w.map(wj => math.abs(wi - wj))).sum / (2*n*n*avgw)
+    }
+    ginis.sum / ginis.length
+  }
+
+  /**
+    * SDG 1: total wealth - maximised
+    *   Rq: better index should be fraction of individual incomes below a threshold
+    * @param res res
+    * @return
+    */
+  def averageWealth(res: Result): Double = {
+    val allw = res.result.submodelStates[EconomicExchangesState].flatMap(_.asInstanceOf[EconomicExchangesState].wealths)
+    allw.sum / allw.length
   }
 
 

@@ -96,6 +96,9 @@ sealed trait Matrix {
   //basic ring operations (R style for the notation)
   def %*%(m: Matrix): Matrix
 
+  //concatenation
+  def ::(m: Matrix, byColumns: Boolean = true): Matrix
+
   // scalar operations
   def +(d: Double): Matrix = map(_+d)
   def -(d: Double): Matrix = map(_-d)
@@ -216,7 +219,7 @@ case class EmptyMatrix() extends Matrix {
   override def set(i: Int, j: Int, v: Double): Matrix = this
   override def setM(i: Int, j: Int, v: Double): Unit = {}
   override def %*%(m: Matrix): Matrix = this
-  //override def %+%(m: Matrix): Matrix = this
+  override def ::(m: Matrix, byColummns: Boolean = true): Matrix = m
   override def *(m: Matrix): Matrix = this
   override def +(m: Matrix): Matrix = this
   override def -(m: Matrix): Matrix = this
@@ -379,13 +382,31 @@ case class RealMatrix(m: linear.RealMatrix) extends DenseMatrix {
     }
   }
 
-  //override def %+%(m2: Matrix): Matrix = dispatchOp{m2=>RealMatrix(m.add(m2.m))}(m2)
-
   override def %*%(m2: Matrix): Matrix = dispatchOp{m2=>RealMatrix(m.multiply(m2.m))}(m2)
   override def +(m2: Matrix): Matrix = dispatchOp{m2=>RealMatrix(m.getData.zip(m2.m.getData).map{case (row1,row2) => row1.zip(row2).map{case (v1,v2) => v1 + v2}})}(m2)
   override def -(m2: Matrix): Matrix = dispatchOp{m2=>RealMatrix(m.getData.zip(m2.m.getData).map{case (row1,row2) => row1.zip(row2).map{case (v1,v2) => v1 - v2}})}(m2)
   override def *(m2: Matrix): Matrix =  dispatchOp{m2=>RealMatrix(m.getData.zip(m2.m.getData).map{case (row1,row2) => row1.zip(row2).map{case (v1,v2) => v1 * v2}})}(m2)
   override def ^(m2: Matrix): Matrix =  dispatchOp{m2=>RealMatrix(m.getData.zip(m2.m.getData).map{case (row1,row2) => row1.zip(row2).map{case (v1,v2) => math.pow(v1,v2)}})}(m2)
+
+  /**
+    * Concatenate called by RealMMatrix yields the same
+    * @param m2 other Matrix
+    * @param byColumns by columns
+    * @return
+    */
+  override def ::(m2: Matrix, byColumns: Boolean = true): Matrix = if (byColumns) {
+    if (m.getRowDimension != m2.nrows) throw new RuntimeException(s"Incompatible row dimensions: ${m.getRowDimension} != ${m2.nrows}")
+    val res = linear.MatrixUtils.createRealMatrix(m2.nrows, this.ncols+m2.ncols)
+    res.setSubMatrix(this.values,0, 0)
+    res.setSubMatrix(m2.values, 0, this.ncols + 1)
+    res.asInstanceOf[Matrix]
+  } else {
+    if (m.getColumnDimension != m2.ncols) throw new RuntimeException(s"Incompatible columns dimensions: ${m.getColumnDimension} != ${m2.ncols}")
+    val res = linear.MatrixUtils.createRealMatrix(this.nrows + m2.nrows, this.ncols)
+    res.setSubMatrix(this.values,0, 0)
+    res.setSubMatrix(m2.values, this.nrows + 1, 0)
+    res.asInstanceOf[Matrix]
+  }
 
   override def transpose: Matrix = RealMatrix(m.transpose())
   override def determinant: Double = new LUDecomposition(m).getDeterminant
@@ -452,6 +473,13 @@ case class BreezeDenseMatrix(m: linalg.DenseMatrix[Double]) extends DenseMatrix 
   override def *(m2: Matrix): Matrix = dispatchOp{m2=>BreezeDenseMatrix(m*:*m2.m)}(m2)
   override def ^(m2: Matrix): Matrix = dispatchOp{m2=>BreezeDenseMatrix(m^:^m2.m)}(m2)
   override def transpose: Matrix = BreezeDenseMatrix(m.t)
+
+  /**
+    *  !! not implemented
+    * @param m2 m2
+    * @return
+    */
+  override def ::(m2: Matrix, byColumns: Boolean = true): Matrix = EmptyMatrix()
 
   /**
     * https://github.com/scalanlp/breeze/wiki/Linear-Algebra-Cheat-Sheet
@@ -636,6 +664,14 @@ case class SparseMatrixImpl(m: linear.OpenMapRealMatrix//,
   override def -(m2: Matrix): Matrix = dispatchOp{m2=>SparseMatrixImpl(m.getData.zip(m2.m.getData).map{case (row1,row2) => row1.zip(row2).map{case (v1,v2) => v1 - v2}})}(m2)
   override def *(m2: Matrix): Matrix = dispatchOp{m2=>SparseMatrixImpl(m.getData.zip(m2.m.getData).map{case (row1,row2) => row1.zip(row2).map{case (v1,v2) => v1 * v2}})}(m2)
   override def ^(m2: Matrix): Matrix = dispatchOp{m2=>SparseMatrixImpl(m.getData.zip(m2.m.getData).map{case (row1,row2) => row1.zip(row2).map{case (v1,v2) => math.pow(v1, v2)}})}(m2)
+
+  /**
+    *  !! not implemented
+    * @param m2 m2
+    * @return
+    */
+  override def ::(m2: Matrix, byColumns: Boolean = true): Matrix = EmptyMatrix()
+
 
   // ! transpose not implemented -> transforms into a real matrix
   // cannot go through sparse mat entries: shitty implementation
@@ -829,6 +865,14 @@ case class BreezeSparseMatrix(m: linalg.CSCMatrix[Double]) extends SparseMatrix 
   override def +(m2: Matrix): Matrix = dispatchOp {m2 => BreezeSparseMatrix(m+m2.m)}(m2)
   override def -(m2: Matrix): Matrix = dispatchOp {m2 => BreezeSparseMatrix(m-m2.m)}(m2)
   override def ^(m2: Matrix): Matrix = dispatchOp {m2 => BreezeSparseMatrix(m^:^m2.m)}(m2)
+
+  /**
+    *  !! not implemented
+    * @param m2 m2
+    * @return
+    */
+  override def ::(m2: Matrix, byColumns: Boolean = true): Matrix = EmptyMatrix()
+
 
   override def transpose: Matrix = this.copy(m = m.t)
 

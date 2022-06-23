@@ -267,7 +267,7 @@ object Coevolution {
 
   /**
    * Update virtual network (distance matrix)
-    * d_ij (t+1) = d_ij (t) * (1 + g_max * \frac{ (phi_ij/phi_0) ^ \gamma - 1 }{(phi_ij/phi_0) ^ \gamma + 1}
+    * d_ij (t+1) = d_ij (t) * (1 - g_max * \frac{ (phi_ij/phi_0) ^ \gamma - 1 }{(phi_ij/phi_0) ^ \gamma + 1}
     *
    * @param distances distances
    * @param flows flows
@@ -275,7 +275,7 @@ object Coevolution {
    */
   def updateNetwork(distances: Matrix, flows: Matrix, gmax: Double, exponent: Double, thresholdQuantile: Double): Matrix = {
     val threshold = quantile(flows.flatValues, thresholdQuantile)
-    distances * flows.map{phi => 1.0 + gmax*(math.pow(phi/threshold, exponent) - 1.0)/(math.pow(phi/threshold, exponent) + 1.0)}
+    distances * flows.map{phi => 1.0 - gmax*(math.pow(phi/threshold, exponent) - 1.0)/(math.pow(phi/threshold, exponent) + 1.0)}
   }
 
 

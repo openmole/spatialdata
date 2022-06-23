@@ -5,6 +5,7 @@ import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.utils.math.{EmptyMatrix, Matrix}
 
 import scala.collection.mutable.ArrayBuffer
+import scala.reflect.{ClassTag, classTag}
 
 /**
   * A macroscopic urban dynamics model "weakly" coupling several components: population and other dimensions are evolved seuqentially for
@@ -42,8 +43,12 @@ object MultiMacroModel {
                              states: Seq[MultiMacroState]
                              ) extends MacroResult {
     override def simulatedPopulation: Matrix = Matrix(states.map(_.populations.flatValues).toArray.transpose)(Matrix.defaultImplementation)
+    //def simulatedPopulation: Matrix = states.map(_.populations).reduce((m1, m2) => m1 :: m2)
 
-    def submodelStates[T <: MacroState]: Seq[MacroState] = states.flatMap(_.modelStates.filter(_.isInstanceOf[T]))
+
+
+    def submodelStates[T <: MacroState: ClassTag]: Seq[MacroState] = states.flatMap(_.modelStates.filter(s => classTag[T].runtimeClass.isInstance(s)))
+
 
   }
 

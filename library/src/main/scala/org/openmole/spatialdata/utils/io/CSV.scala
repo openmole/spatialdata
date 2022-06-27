@@ -65,14 +65,14 @@ object CSV {
     val res = new ArrayBuffer[Array[Double]]
     var currentline = r.readLine()
     while(currentline!=null){
-      res.append(currentline.split(sep).map{s => if(s.equals("NA")) Double.NaN else s.toDouble})
+      res.append(currentline.split(sep).map{s => if(s.equals(naformat)) Double.NaN else s.toDouble})
       currentline = r.readLine()
     }
     res.toArray
   }
 
   /**
-    * filter a dense mat as sparse from csv
+    * filter and convert a dense mat as sparse from csv
     *  for perf reasons, use directly builder for sparse breeze here => specific implementation!
     *  *spec: first line contains n,p*
     * @param file file
@@ -83,6 +83,7 @@ object CSV {
     */
   def readSparseMatFromDense(file: String,
                              filter: Double => Boolean,
+                             convert: Double => Double,
                              sep: String=",",
                              naformat: String = "NA"
                             )(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): SparseMatrix = {
@@ -99,7 +100,7 @@ object CSV {
         while (currentline != null) {
           currentline.split(sep).zipWithIndex.map { case (s, j) =>
             if (s.equals("NA")) None else {
-              if (filter(s.toDouble)) Some((i, j, s.toDouble)) else None
+              if (filter(s.toDouble)) Some((i, j, convert(s.toDouble))) else None
             }
           }.filter(_.isDefined).foreach { case Some((row, col, v)) => breezebuilder.add(row, col, v); case None => () }
           currentline = r.readLine()
@@ -114,7 +115,7 @@ object CSV {
         while (currentline != null) {
           currentline.split(sep).zipWithIndex.map { case (s, j) =>
             if (s.equals("NA")) None else {
-              if (filter(s.toDouble)) Some((i, j, s.toDouble)) else None
+              if (filter(s.toDouble)) Some((i, j, convert(s.toDouble))) else None
             }
           }.filter(_.isDefined).foreach { case Some((row, col, v)) => m.setEntry(row, col, v); case None => () }
           currentline = r.readLine()

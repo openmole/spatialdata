@@ -16,7 +16,13 @@ object QUANTMultiModeMultiClass {
                                 csvInput: Boolean = false
                     )(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): SinglyConstrainedMultiModeMultiClassSpIntModel = {
 
-    val dmats = if (csvInput) dmatFiles.map(dmatFile => CSV.readSparseMatFromDense(dmatFile, {d=> math.exp( - d / 60.0) > 0.3}))
+    val dmats = if (csvInput) dmatFiles.map(dmatFile =>
+      CSV.readSparseMatFromDense(
+        dmatFile,
+        {d=> math.exp( - d / 60.0) > 0.3},
+        {d=> math.exp( - d / 60.0)}
+      )
+    )
     else dmatFiles.map(Binary.readBinary[SparseMatrix])
     utils.log(s"sparse dmat: ${dmats.toSeq}")
 

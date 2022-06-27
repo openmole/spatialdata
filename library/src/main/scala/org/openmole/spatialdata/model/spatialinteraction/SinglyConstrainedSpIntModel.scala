@@ -7,12 +7,12 @@ import org.openmole.spatialdata.vector.SpatialField
 
 /**
   *
-  * @param observedFlows
-  * @param distances
+  * @param observedFlows observed flows
+  * @param distances distance matrix
   * @param costFunction The function on which parameter optimization is done
-  * @param originValues
-  * @param destinationValues
-  * @param predictedFlows
+  * @param originValues origin
+  * @param destinationValues destination
+  * @param predictedFlows previous predicted flows
   */
 case class SinglyConstrainedSpIntModel(
                                         observedFlows: Matrix,
@@ -29,8 +29,8 @@ case class SinglyConstrainedSpIntModel(
     * @return
     */
   override def fit(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): SpatialInteractionModel => FittedSpIntModel = {
-    s => s match {
-      case m: SinglyConstrainedSpIntModel => SinglyConstrainedSpIntModel.fitSinglyConstrainedSpIntModel(m, averageTripLength, 1.0, true, 0.01)
+    {
+      case m: SinglyConstrainedSpIntModel => SinglyConstrainedSpIntModel.fitSinglyConstrainedSpIntModel(m, averageTripLength, 1.0, originConstraint = true, 0.01)
       case _ => throw new IllegalArgumentException("Can not fit other type of models")
     }
   }
@@ -44,15 +44,15 @@ object SinglyConstrainedSpIntModel {
 
   /**
     * copy from another model, e.g. synthetic or real unfitted flows
-    * @param model
+    * @param model model
     * @return
     */
   def apply(model: SpatialInteractionModel): SinglyConstrainedSpIntModel = SinglyConstrainedSpIntModel(model.observedFlows,model.distances,model.originValues,model.destinationValues)
 
   /**
     * one possible statistic to adjust the model
-    * @param model
-    * @param phi
+    * @param model model
+    * @param phi phi
     * @return
     */
   def averageTripLength(model: SinglyConstrainedSpIntModel, phi: Matrix): Double = {
@@ -67,11 +67,11 @@ object SinglyConstrainedSpIntModel {
   }
 
   /**
-    * TODO run with sparse matrices for perf (after having benchmarked sparse mat impls)
-    * @param model Model to fir
+    *  ! run with sparse matrices for perf (after having benchmarked sparse mat impls)
+    * @param model Model to fit
     * @param objectiveFunction statistic compared between the two models
     * @param originConstraint constraints at the origin?
-    * @param convergenceThreshold
+    * @param convergenceThreshold convergence threshold
     * @return
     */
   def fitSinglyConstrainedSpIntModel(model: SinglyConstrainedSpIntModel,
@@ -82,8 +82,8 @@ object SinglyConstrainedSpIntModel {
                                     )(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): SinglyConstrainedSpIntModel = {
 
     // ! force a SparseMatrix here
-    val origin = utils.timerLog[Unit,Matrix](_ => SparseMatrix(model.originValues.values.flatten.toArray,false),(),"origin column matrix")
-    val destination = utils.timerLog[Unit,Matrix](_ => SparseMatrix(model.destinationValues.values.flatten.toArray,false),(),"destination column matrix")
+    val origin = utils.timerLog[Unit,Matrix](_ => SparseMatrix(model.originValues.values.flatten.toArray,row = false),(),"origin column matrix")
+    val destination = utils.timerLog[Unit,Matrix](_ => SparseMatrix(model.destinationValues.values.flatten.toArray,row = false),(),"destination column matrix")
     println(s"origin column mat = ${origin}")
 
     val obsObjective = utils.timerLog[Unit,Double](_ => objectiveFunction(model,model.observedFlows),(),"objective cost function")
@@ -95,7 +95,7 @@ object SinglyConstrainedSpIntModel {
 
     /**
       * State is (model including cost function, current parameter value, epsilon)
-      * @param state
+      * @param state state
       * @return
       */
     def iterateCostParam(state: (SinglyConstrainedSpIntModel,Double)):  (SinglyConstrainedSpIntModel,Double) = {
@@ -137,8 +137,8 @@ object SinglyConstrainedSpIntModel {
     *
     * @param originMasses column vector of origin masses (avoids wrapping/unwrapping in the fitting algorithm)
     * @param destinationMasses column vector of destination masses
-    * @param costMatrix
-    * @param originConstraint
+    * @param costMatrix cost matrix
+    * @param originConstraint constraint at the origin?
     * @return
     */
   def singlyConstrainedFlows(originMasses: Matrix,

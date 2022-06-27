@@ -4,10 +4,10 @@ package org.openmole.spatialdata.network
 
 /**
   * Link of a spatial network
-  * @param e1
-  * @param e2
-  * @param weight
-  * @param length
+  * @param e1 e1
+  * @param e2 e2
+  * @param weight weight
+  * @param length length
   */
 case class Link(e1: Node,e2: Node,weight: Double,length: Double, directed: Boolean) {
 
@@ -41,15 +41,21 @@ case class Link(e1: Node,e2: Node,weight: Double,length: Double, directed: Boole
 
   /**
     * Check if one x coordinate falls within the range of the link
-    * @param xx
+    * @param xx other x coordinate
     * @return
     */
   def xwithin(xx: Double): Boolean = math.abs(x - xx) <= math.abs(length / 2 * math.cos(heading))
   def ywithin(yy: Double): Boolean = math.abs(y - yy) <= math.abs(length / 2 * math.sin(heading))
 
   /**
+   * self loop test based on node id
+   * @return
+   */
+  def isSelfLoop: Boolean = e1.id == e2.id
+
+  /**
     * Compute intersection with an other link
-    * @param l2
+    * @param l2 other link
     * @return
     */
   def intersection(l2: Link): Option[Node] = {
@@ -89,8 +95,8 @@ case class Link(e1: Node,e2: Node,weight: Double,length: Double, directed: Boole
     if((!xwithin(xx))||(!l2.xwithin(xx))) None else {
       //val inter = Node(0,digits(xx,4),digits(m1 * xx + c1,4))
       val inter = Node(0,xx,m1 * xx + c1)
-      if (e1==inter||e2==inter||l2.e1==inter||l2.e2==inter) return None
-      else return Some(inter)
+      if (e1==inter||e2==inter||l2.e1==inter||l2.e2==inter) None
+      else Some(inter)
     }
   }
 
@@ -99,9 +105,9 @@ case class Link(e1: Node,e2: Node,weight: Double,length: Double, directed: Boole
 object Link {
   /**
     * Link with euclidian length
-    * @param e1
-    * @param e2
-    * @param weight
+    * @param e1 e1
+    * @param e2 e2
+    * @param weight weight
     * @return
     */
   def apply(e1: Node,e2: Node,weight: Double, directed: Boolean): Link = {
@@ -111,7 +117,7 @@ object Link {
     }
   }
 
-  def apply(e1: Node,e2: Node,weight: Double): Link = Link(e1,e2,weight,false)
+  def apply(e1: Node,e2: Node,weight: Double): Link = Link(e1,e2,weight,directed = false)
 
   def apply(e1: Node, e2: Node):Link = apply(e1,e2,1.0)
 
@@ -119,7 +125,7 @@ object Link {
 
   /**
     * Get nodes associated to a set of links
-    * @param links
+    * @param links links
     * @return
     */
   def getNodes(links: Set[Link]): Set[Node] = links.flatMap{l=>Set(l.e1,l.e2)}
@@ -128,7 +134,7 @@ object Link {
 
   /**
     * Compute intersections of a set of links
-    * @param links
+    * @param  links links
     * @return
     */
   def getIntersections(links: Set[Link]): Seq[(Link,Node)] = {

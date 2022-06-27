@@ -4,7 +4,7 @@ import org.openmole.spatialdata.vector.Point
 import org.openmole.spatialdata.utils.Implicits._
 import org.openmole.spatialdata.network.measures.NetworkMeasures.ShortestPathsNetworkMeasures
 import org.openmole.spatialdata.network.real.{GISFileNetworkGenerator, OSMNetworkGenerator}
-import org.openmole.spatialdata.network.simplification.CoarseGrainingNetworkSimplificator
+import org.openmole.spatialdata.network.simplification.{CoarseGrainingNetworkSimplificator, SimplificationAlgorithm}
 import org.openmole.spatialdata.network.synthetic.{LocalLinksNetworkGenerator, RandomNetworkGenerator, TreeMinDistGenerator}
 import org.openmole.spatialdata.network.{Link, Network, Node, ShortestPaths}
 import org.openmole.spatialdata.utils.graph.GraphAlgorithms
@@ -55,7 +55,7 @@ object TestNetwork {
     val nw = OSMNetworkGenerator(lon,lat,20000,simplifySnapping = 0.01).generateNetwork
     val (xmin,xmax,ymin,ymax) = (nw.nodes.map{_.x}.min,nw.nodes.map{_.x}.max,nw.nodes.map{_.y}.min,nw.nodes.map{_.y}.max)
     def position(n: Node): Point = ((n.x - xmin)/(xmax-xmin),(n.y - ymin)/(ymax-ymin))
-    val simplified = GraphAlgorithms.SimplificationAlgorithm.simplifyNetwork(nw)
+    val simplified = SimplificationAlgorithm.simplifyNetwork(nw)
     println("Nodes: "+nw.nodes.size+" ; Links: "+nw.links.size)
     println("Simpl Nodes: "+simplified.nodes.size+" ; Simpl Links: "+simplified.links.size)
     //visualization.staticNetworkVisualization(Seq(nw,simplified),nodePositioning = position)

@@ -22,21 +22,26 @@ object GML {
    * @param file file
    * @return
    */
-  def readGML(file: String): Network = {
+  def readGML(file: String, nodeAttributes: Seq[String]): Network = {
     val nodes = new mutable.HashMap[Int, Node]
     val links = new ArrayBuffer[Link]
     val s = Source.fromFile(file)
     var currentObject = ""
-    var currentX = 0.0; var currentY = 0.0; var currentId = 0
+    var currentX = 0.0; var currentY = 0.0; var currentId = 0; var currentAttr = new mutable.HashMap[String, AnyRef]()
     var currentSource = 0; var currentTarget = 0; var currentLength = 0.0; var currentWeight = 0.0
     var depth = 0
     s.getLines().foreach{
       raw =>
         if(raw.contains("node")) currentObject = "node"
         if(raw.contains("edge")) currentObject = "edge"
+
+        // node attributes
         if(raw.contains("x")) currentX = raw.trim.split(" ").last.toDouble
         if(raw.contains("y")) currentY = raw.trim.split(" ").last.toDouble
         if(raw.contains("id")) currentId = raw.trim.split(" ").last.toInt
+        nodeAttributes.foreach(a => if (raw.contains(a)) currentAttr.put(a, raw.trim.split(" ").last))
+
+        // edge attributes
         if(raw.contains("source")) currentSource = raw.trim.split(" ").last.toInt
         if(raw.contains("target")) currentTarget = raw.trim.split(" ").last.toInt
         if(raw.contains("weight")) currentWeight = raw.trim.split(" ").last.toDouble
@@ -46,7 +51,10 @@ object GML {
           depth = depth - 1
           if (depth == 1) {
             currentObject match {
-              case "node" => nodes.put(currentId, Node(currentId, currentX, currentY))
+              case "node" => {
+                nodes.put(currentId, Node(currentId, currentX, currentY))
+                currentAttr = new mutable.HashMap[String, AnyRef]()
+              }
               case "edge" => links.addOne(Link(nodes.getOrElse(currentSource, Node.empty), nodes.getOrElse(currentTarget, Node.empty), weight = currentWeight, length=currentLength, directed = false))
             }
           }
@@ -66,7 +74,7 @@ object GML {
     w.write("graph\n[")
 
     network.nodes.foreach{ n=>
-      w.write(s"  node\n  [\n    id ${n.id}\n    x ${n.x}\n    y ${n.y}\n  ]\n")
+      w.write(s"  node\n  [\n    id ${n.id}\n    x ${n.x}\n    y ${n.y}\n"+n.attributes.toSeq.map{case (k,v) => s"    $k $v"}.mkString("\n")+"\n  ]\n")
     }
     network.links.foreach{ l=>
       w.write(s"  edge\n  [\n    source ${l.e1.id}\n    target ${l.e2.id}\n    length ${l.length}\n    weight ${l.weight}\n  ]\n")

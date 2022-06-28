@@ -1,8 +1,7 @@
 package org.openmole.spatialdata.vector
 
 import org.locationtech.jts.geom
-import org.locationtech.jts.geom.GeometryFactory
-import org.locationtech.jts.geom.Coordinate
+import org.locationtech.jts.geom.{Coordinate, GeometryCollection, GeometryFactory}
 
 import scala.reflect.ClassTag
 
@@ -35,6 +34,15 @@ case class Points(
     * @return point seq
     */
   def asPointSeq: Seq[Point] = points.map(p => (p.getCoordinate.x,p.getCoordinate.y))
+
+  /**
+   * convert to jts GeometryCollection
+   * @return
+   */
+  def asGeometryCollection: GeometryCollection = {
+    val fact = new GeometryFactory
+    fact.createGeometryCollection(points.toArray)
+  }
 
 }
 

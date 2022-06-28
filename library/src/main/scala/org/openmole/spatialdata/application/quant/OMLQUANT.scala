@@ -30,15 +30,18 @@ object OMLQUANT extends App {
 
 
   // 1 - construct rail network
-  //Network.constructRailNetwork(osmFile, gmlFile)
-  val (points, lines) = OSMPBFFile.readPBFFile(osmFile)
-  utils.log(s"stations points: ${points.points.size} ; polylines: ${lines.lines.size}")
+  val (points, lines) = OSMPBFFile.readPBFFile(osmFileStations)
+  //utils.log(s"stations points: ${points.points.size} ; polylines: ${lines.lines.size}")
+  //utils.log(s"stations coords: [${points.points.map(_.getX).min} - ${points.points.map(_.getX).max}] x [${points.points.map(_.getY).min} - ${points.points.map(_.getY).max}]")
+  //utils.log(s"${points.points.map(p=> (p.getX, p.getY))}")
+  Network.constructRailNetwork(osmFile, osmFileStations, gmlFile)
 
   //val network = GML.readGML(gmlFile)
   //utils.log(s"Initial nw: ${network.nodes.size} stations")
 
   // 2 - shortest paths
-  //val shortestPaths = GraphAlgorithms.shortestPaths(network, from = network.nodes.toSeq, to = network.nodes.toSeq, linkWeight = _.length)
+  //val stations = network.nodes.toSeq.filter(_.attributes.contains("station"))
+  //val shortestPaths = GraphAlgorithms.shortestPaths(network, from = stations, to = stations, linkWeight = _.length)
   //val nodes = network.nodes.toSeq
   //val shortestPaths = GraphAlgorithms.shortestPaths(network, from = nodes, to = nodes, linkWeight = _.length, JohnsonJGraphT())
   //utils.log(s"Average shortest path length = ${shortestPaths.values.map(_._3).sum / shortestPaths.size}")

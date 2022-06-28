@@ -5,11 +5,13 @@ import org.openmole.spatialdata.network.simplification.WayNetworkSimplificator
 import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.utils.gis.GISNetwork
 import org.openmole.spatialdata.utils.graph.GraphAlgorithms
-import org.openmole.spatialdata.utils.io.GIS
+import org.openmole.spatialdata.utils.io.{GIS, GeoPackage}
 import org.openmole.spatialdata.utils.math.SparseMatrix
 import org.openmole.spatialdata.utils.osm.OSMPBFFile
 import org.openmole.spatialdata.utils.visualization
-import org.openmole.spatialdata.vector.{Point, Polygons}
+import org.openmole.spatialdata.vector.{Point, Points, Polygons}
+
+import scala.collection.mutable
 
 object Network {
 
@@ -37,7 +39,7 @@ object Network {
    * @param osmFile OSM file
 
    */
-  def constructRailNetwork(osmFile: String, gmlFile: String): Unit = {
+  def constructRailNetwork(osmFile: String, osmFileStations: String, gmlFile: String): Unit = {
     // construct rail network from OSM
     val (_, lines) = OSMPBFFile.readPBFFile(osmFile)
     val nw = WayNetworkSimplificator({case (l1,l2)=>l1.length+l2.length}, {case (l1,l2)=>(l1.weight*l1.length + l2.weight*l2.length)/(l1.length+l2.length)}).
@@ -46,12 +48,30 @@ object Network {
     val comps = GraphAlgorithms.connectedComponents(nw)
     val largestCompSize = comps.map(_.nodes.size).max
     val lnw = comps.filter(_.nodes.size == largestCompSize).head
+    GeoPackage.writeGeometry(Points.fromPoints(lnw.nodes.map(n => (n.x, n.y))).asGeometryCollection, "network" ,gmlFile+".gpkg")
 
-    utils.io.GML.writeGML(lnw, gmlFile)
+    // add stations
+/*    val (stations, _) = OSMPBFFile.readPBFFile(osmFileStations)
 
-    val (xmin,xmax,ymin,ymax) = (lnw.nodes.map{_.x}.min,lnw.nodes.map{_.x}.max,lnw.nodes.map{_.y}.min,lnw.nodes.map{_.y}.max)
-    def position(n: Node): Point = ((n.x - xmin)/(xmax-xmin),(n.y - ymin)/(ymax-ymin))
-    visualization.staticNetworkVisualization(Seq(lnw), nodePositioning = position)
+    val newnodes = new mutable.HashMap[Node, Node]
+    val nodes = lnw.nodes.toSeq
+    stations.points.foreach{s =>
+      val dists = nodes.map(n =>  math.sqrt(math.pow(n.x-s.getX,2)+math.pow(n.y-s.getY,2)))
+      utils.log(s"${dists}")
+      val closestNode = dists.zip(nodes).minBy(_._1)
+      utils.log(s"(${s.getX}, ${s.getY}) -> ${closestNode}")
+      newnodes.put(closestNode._2, closestNode._2.copy(attributes = Map("station" -> "true")))
+    }
+    utils.log(s"${newnodes.keys.toSeq}")
+    val finalNodes = nodes.map(n => newnodes.getOrElse(n, n))
+    val finalnw = lnw.copy(nodes = finalNodes.toSet)
+    utils.log(s"Final rail network with ${finalnw.nodes.size} nodes and ${finalnw.nodes.count(_.attributes.contains("station"))} stations")
+
+    utils.io.GML.writeGML(finalnw, gmlFile)
+*/
+    //val (xmin,xmax,ymin,ymax) = (lnw.nodes.map{_.x}.min,lnw.nodes.map{_.x}.max,lnw.nodes.map{_.y}.min,lnw.nodes.map{_.y}.max)
+    //def position(n: Node): Point = ((n.x - xmin)/(xmax-xmin),(n.y - ymin)/(ymax-ymin))
+    //visualization.staticNetworkVisualization(Seq(lnw), nodePositioning = position)
 
   }
 

@@ -52,7 +52,7 @@ object GML {
           if (depth == 1) {
             currentObject match {
               case "node" => {
-                nodes.put(currentId, Node(currentId, currentX, currentY))
+                nodes.put(currentId, Node(currentId, currentX, currentY, currentAttr.toMap))
                 currentAttr = new mutable.HashMap[String, AnyRef]()
               }
               case "edge" => links.addOne(Link(nodes.getOrElse(currentSource, Node.empty), nodes.getOrElse(currentTarget, Node.empty), weight = currentWeight, length=currentLength, directed = false))

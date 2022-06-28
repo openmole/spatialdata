@@ -38,12 +38,12 @@ object GISNetwork {
           }
       }.toSet
       val nodes = links.flatMap{l=>Set((l._1,l._2),(l._3,l._4))}
-      (state._1.tail,state._2++nodes,state._3++links,state._4++links.map(_ -> (if (weightAttribute.length>0) state._1.attributes.head.getOrElse(weightAttribute,1.0).asInstanceOf[Double] else 1.0)))
+      (state._1.tail,state._2++nodes,state._3++links,state._4++links.map(_ -> (if (weightAttribute.nonEmpty) state._1.attributes.head.getOrElse(weightAttribute,1.0).asInstanceOf[Double] else 1.0)))
     }
     // all nodes are in the links by construction
     val (_,_,alllinks,weights) = Iterator.iterate((lines,Set.empty[(Int,Int)],Set.empty[(Int,Int,Int,Int)],Map.empty[(Int,Int,Int,Int),Double]))(addLine).takeWhile(_._1.lines.nonEmpty).toSeq.last
     // correct indexation of node done in the constructor
-    Network(alllinks.map{l => Link(Node(0,xmin+l._1*snap,ymin+l._2*snap),Node(0,xmin+l._3*snap,ymin+l._4*snap),weight = weights((l._1,l._2,l._3,l._4)))})
+    Network(alllinks.map{l => Link(Node(0,xmin+l._1*snap*(xmax-xmin),ymin+l._2*snap*(ymax-ymin)),Node(0,xmin+l._3*snap*(xmax - xmin),ymin+l._4*snap*(ymax-ymin)),weight = weights((l._1,l._2,l._3,l._4)))})
   }
 
 

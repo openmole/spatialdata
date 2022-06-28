@@ -3,7 +3,7 @@ package org.openmole.spatialdata.application.quant
 import org.openmole.spatialdata.model.spatialinteraction.{SinglyConstrainedMultiModeSpIntModel, SinglyConstrainedSpIntModel}
 import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.utils.io.{Binary, CSV}
-import org.openmole.spatialdata.utils.math.SparseMatrix
+import org.openmole.spatialdata.utils.math.{EmptyMatrix, SparseMatrix}
 import org.openmole.spatialdata.vector.SpatialField
 
 object QUANTMultiMode {
@@ -32,7 +32,7 @@ object QUANTMultiMode {
     val destination = sparseFlows.map(_.colSum).reduce(asum).zipWithIndex.map{case (s,j) => ((j.toDouble,0.0),Array(s))}.toMap
     SinglyConstrainedMultiModeSpIntModel(
       sparseFlows.zip(sparseDistances).map{case (flowmat,dmat) =>
-        SinglyConstrainedSpIntModel(flowmat,dmat,origin,destination)
+        SinglyConstrainedSpIntModel(flowmat,EmptyMatrix(),dmat,origin,destination)
       }
     )
   }

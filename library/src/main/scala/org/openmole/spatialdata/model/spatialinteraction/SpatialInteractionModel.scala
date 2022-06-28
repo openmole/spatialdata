@@ -39,9 +39,9 @@ trait SpatialInteractionModel {
 
 object SpatialInteractionModel {
 
-  val empty = new SpatialInteractionModel {
-    def observedFlows = EmptyMatrix()
-    def distances = EmptyMatrix()
+  val empty: SpatialInteractionModel = new SpatialInteractionModel {
+    def observedFlows: Matrix = EmptyMatrix()
+    def distances: Matrix = EmptyMatrix()
     def originValues: SpatialField[Double] = Map.empty
     def destinationValues: SpatialField[Double] = Map.empty
     def predictedFlows: Matrix = EmptyMatrix()

@@ -344,7 +344,7 @@ case class Network(
     ))
   }
 
-
+  def node(id: Int): Node = nodes.filter(_.id == id).head
 
 
 }

@@ -90,17 +90,19 @@ object GraphAlgorithms {
       (for {
         i <- from
         j <- to
-      } yield ((i,j),if(i==j) {(Seq(i),Seq.empty[Link],0.0)}
-      else {
-        val path = algorithm(g).getPath(i.id,j.id)
-        if(path == null) {(Seq.empty[Node],Seq.empty[Link],Double.PositiveInfinity)} else {
-          (path.getVertexList.asScala.map {
-            nodeMap(_)
-          },
-            path.getEdgeList.asScala.map { e => linkMap((g.getEdgeSource(e), g.getEdgeTarget(e))) },
-            path.getWeight)
-        }
-      })).toMap.asInstanceOf[ShortestPaths]
+      } yield (
+        (i,j),
+          if(i==j) {(Seq(i),Seq.empty[Link],0.0)}
+          else {
+            val path = algorithm(g).getPath(i.id,j.id)
+            if(path == null) {(Seq.empty[Node],Seq.empty[Link],Double.PositiveInfinity)} else {
+              (path.getVertexList.asScala.map {nodeMap(_)},
+              path.getEdgeList.asScala.map { e => linkMap((g.getEdgeSource(e), g.getEdgeTarget(e))) },
+              path.getWeight)
+            }
+          }
+        )
+        ).toMap.asInstanceOf[ShortestPaths]
     }
 
 
@@ -300,6 +302,8 @@ object GraphAlgorithms {
       *
       *  ! remove the mutable and the while
       *
+     *   ! issue: stackoverflow with some networks
+     *
       * @param network netwokr
       * @return
       */

@@ -6,8 +6,7 @@ import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.utils.math.SparseMatrix.SparseMatrixImplementation
 import org.openmole.spatialdata.vector.SpatialField
 import org.openmole.spatialdata.utils.io.CSV
-import org.openmole.spatialdata.utils.math.{DenseMatrix, Matrix, SparseMatrix}
-
+import org.openmole.spatialdata.utils.math.{DenseMatrix, EmptyMatrix, Matrix, SparseMatrix}
 
 import scala.util.Random
 
@@ -16,7 +15,7 @@ object TestSpatialInteraction {
   /**
     * test time perf with random matrices
     */
-  def testFitSinglyConstrainedRandom: Unit = {
+  def testFitSinglyConstrainedRandom(): Unit = {
 
     implicit val rng: Random = new Random
     implicit val spMatImpl: SparseMatrixImplementation = SparseMatrix.SparseBreeze()
@@ -31,7 +30,7 @@ object TestSpatialInteraction {
     val originfield: SpatialField[Double]=origin.zipWithIndex.map{case (s,i) => ((i.toDouble,0.0),Array(s))}.toMap
     val destinationfield: SpatialField[Double]=destination.zipWithIndex.map{case (s,i) => ((i.toDouble,0.0),Array(s))}.toMap
     utils.log(s"total flows = ${flows.sum}")
-    val model = SinglyConstrainedSpIntModel(flows,dmat,originfield,destinationfield)
+    val model = SinglyConstrainedSpIntModel(flows,EmptyMatrix(),dmat,originfield,destinationfield)
     val _ = model.fitted
   }
 

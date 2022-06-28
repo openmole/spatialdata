@@ -3,7 +3,7 @@ package org.openmole.spatialdata.application.quant
 import org.openmole.spatialdata.model.spatialinteraction.SinglyConstrainedSpIntModel
 import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.utils.io.CSV
-import org.openmole.spatialdata.utils.math.SparseMatrix
+import org.openmole.spatialdata.utils.math.{EmptyMatrix, SparseMatrix}
 import org.openmole.spatialdata.vector.SpatialField
 
 
@@ -47,12 +47,12 @@ object QUANTOneMode {
     *  ! in the end should do a filtering on OiDjcij for sparse Matrices?
     *
     * @param sparseFlows sparse flows matrix
-    * @param sparseDistances distance matrix
+    * @param sparseDistanceWeights distance weights matrix (exp - d_ij / d_0)
     * @return
     */
   def QUANTOneMode(
                     sparseFlows: SparseMatrix,
-                    sparseDistances: SparseMatrix
+                    sparseDistanceWeights: SparseMatrix
                   )(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): SinglyConstrainedSpIntModel = {
     // note: at this stage, no need of coordinates and spatial fields, just O/D values indeed
     //println(s"flowmat: ${flowmat.nrows}x${flowmat.ncols}")
@@ -62,7 +62,7 @@ object QUANTOneMode {
     //println(origin)
     val destination = sparseFlows.colSum.zipWithIndex.map{case (s,j) => ((j.toDouble,0.0),Array(s))}.toMap
 
-    SinglyConstrainedSpIntModel(sparseFlows,sparseDistances,origin,destination)
+    SinglyConstrainedSpIntModel(sparseFlows, EmptyMatrix(),sparseDistanceWeights,origin,destination)
   }
 
 

@@ -17,9 +17,10 @@ import org.openmole.spatialdata.vector.SpatialField
 case class SinglyConstrainedSpIntModel(
                                         observedFlows: Matrix,
                                         distances: Matrix,
+                                        distanceWeights: Matrix,
                                         originValues: SpatialField[Double],
                                         destinationValues: SpatialField[Double],
-                                        costFunction: (Double,Double)=> Double = {case (d,d0) => math.exp(-d / d0)},
+                                        //costFunction: (Double,Double)=> Double = {case (d,d0) => math.exp(-d / d0)},
                                         fittedParam: Double = 1.0,
                                         predictedFlows: Matrix = EmptyMatrix()
                                       ) extends FittedSpIntModel {
@@ -47,7 +48,7 @@ object SinglyConstrainedSpIntModel {
     * @param model model
     * @return
     */
-  def apply(model: SpatialInteractionModel): SinglyConstrainedSpIntModel = SinglyConstrainedSpIntModel(model.observedFlows,model.distances,model.originValues,model.destinationValues)
+  def apply(model: SpatialInteractionModel): SinglyConstrainedSpIntModel = SinglyConstrainedSpIntModel(model.observedFlows,model.distances, EmptyMatrix(),model.originValues,model.destinationValues)
 
   /**
     * one possible statistic to adjust the model
@@ -70,6 +71,7 @@ object SinglyConstrainedSpIntModel {
     *  ! run with sparse matrices for perf (after having benchmarked sparse mat impls)
     * @param model Model to fit
     * @param objectiveFunction statistic compared between the two models
+   *  @param initialValue should be set to value used for the sparse distance weights
     * @param originConstraint constraints at the origin?
     * @param convergenceThreshold convergence threshold
     * @return
@@ -89,24 +91,26 @@ object SinglyConstrainedSpIntModel {
     val obsObjective = utils.timerLog[Unit,Double](_ => objectiveFunction(model,model.observedFlows),(),"objective cost function")
     utils.log(s"observed stat = $obsObjective")
 
-    val initialFlows = utils.timerLog[Matrix](singlyConstrainedFlows(origin,destination,model.distances.map(model.costFunction(_,initialValue)),originConstraint),"initial flows")
+    // use distanceWeights instead of distance and costFunction
+    //val initialFlows = utils.timerLog[Matrix](singlyConstrainedFlows(origin,destination,model.distances.map(model.costFunction(_,initialValue)),originConstraint),"initial flows")
+    val initialFlows = utils.timerLog[Matrix](singlyConstrainedFlows(origin,destination,model.distanceWeights,originConstraint),"initial flows")
 
     val initialModel = model.copy(predictedFlows=initialFlows, fittedParam = initialValue)
 
-    /**
-      * State is (model including cost function, current parameter value, epsilon)
-      * @param state state
-      * @return
-      */
-    def iterateCostParam(state: (SinglyConstrainedSpIntModel,Double)):  (SinglyConstrainedSpIntModel,Double) = {
+
+    //State is (model including cost function, current parameter value, epsilon)
+    def iterateCostParam(state: (Double,SinglyConstrainedSpIntModel,Double)):  (Double,SinglyConstrainedSpIntModel,Double) = {
       val t = System.currentTimeMillis()
-      val model = state._1
+      val model = state._2
+      val prevfittedparam = state._1
       val fitparameter = model.fittedParam
 
       utils.log(s"parameter = $fitparameter")
 
-      val currentCostMatrix = utils.timerLog[Unit,Matrix](_ => model.distances.map(model.costFunction(_,fitparameter)),(),"current cost matrix")
+      //val currentCostMatrix = utils.timerLog[Unit,Matrix](_ => model.distances.map(model.costFunction(_,fitparameter)),(),"current cost matrix")
       //val currentCostMatrix = model.distances.map{d => math.exp(-d / fitparameter)}
+      // specific case of exponential weights allows updating directly the distanceWeight matrix
+      val currentCostMatrix = model.distanceWeights.map(d => math.pow(d, prevfittedparam/fitparameter))
 
       //utils.log(s"avg cost = ${currentCostMatrix.mean}")
 
@@ -126,11 +130,11 @@ object SinglyConstrainedSpIntModel {
       //utils.log(s"avg pred travel distance = $predObjective")
       val error = math.abs(predObjective - obsObjective)/obsObjective
       utils.log(s"fit singly constr: error = $error ; iteration in ${System.currentTimeMillis()-t}")
-      (newmodel,error)
+      (fitparameter, newmodel, error)
     }
 
-    val res = Iterator.iterate((initialModel,Double.MaxValue.toDouble))(iterateCostParam).takeWhile(_._2>convergenceThreshold).toSeq.last
-    res._1
+    val res = Iterator.iterate((initialValue, initialModel,Double.MaxValue.toDouble))(iterateCostParam).takeWhile(_._3>convergenceThreshold).toSeq.last
+    res._2
   }
 
   /**

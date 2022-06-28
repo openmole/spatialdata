@@ -71,6 +71,8 @@ case class Node(
 object Node {
   def apply(id: Int,x: Double,y: Double): Node = Node(id,(x,y))
 
+  def apply(id: Int, x: Double, y: Double, a: Attributes): Node = Node(id, (x,y), a)
+
   def apply(p: Point): Node = Node(0,p)
 
   val empty: Node = Node(-1,0.0,0.0)

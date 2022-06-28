@@ -64,14 +64,18 @@ object GeoPackage {
    * @param featureName feature name
    * @param file file
    */
-  def writeGeometry(geometry: GeometryCollection, featureName: String, file: String): Unit = {
+  def writeGeometry(geometry: GeometryCollection, featureName: String, file: String, stringAttributes: Map[String, Seq[AnyRef]]): Unit = {
+    new File(file).delete()
     val geopkg: org.geotools.geopkg.GeoPackage  = new org.geotools.geopkg.GeoPackage(new File(file))
     geopkg.init()
     val featureentry: FeatureEntry = new FeatureEntry; featureentry.setTableName(featureName)
-    val featureType: SimpleFeatureType = DataUtilities.createType("Points", "the_geom:Point:srid=4326,name:String,number:Integer")
+    val featureType: SimpleFeatureType = DataUtilities.createType(featureName, "the_geom:Point:srid=4326,"+stringAttributes.keys.map(_+":String").mkString(","))
     val featureBuilder: SimpleFeatureBuilder = new SimpleFeatureBuilder(featureType)
     val features = new java.util.LinkedList[SimpleFeature]
-    (0 until geometry.getNumPoints).foreach{i => featureBuilder.add(geometry.getGeometryN(i)); features.add( featureBuilder.buildFeature(null))}
+    (0 until geometry.getNumPoints).foreach{i =>
+      featureBuilder.add(geometry.getGeometryN(i))
+      stringAttributes.keys.foreach(a => featureBuilder.add(stringAttributes(a)(i)))
+      features.add(featureBuilder.buildFeature(null))}
     val collection: SimpleFeatureCollection = new ListFeatureCollection(featureType, features)
     geopkg.add(featureentry, collection)
     geopkg.close()

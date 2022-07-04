@@ -42,7 +42,8 @@ lazy val commonSettings = Seq(
     "org.scalanlp" %% "breeze" % "1.0",
     "com.github.fommil.netlib" % "all" % "1.1.2", // impl for breeze
     "de.ruedigermoeller" % "fst" % "2.57",
-    "org.openstreetmap.pbf" % "osmpbf" % "1.4.0"//,
+    "org.openstreetmap.pbf" % "osmpbf" % "1.4.0",
+    "javax.media" % "jai-core" % "1.1.3" from "https://repo.osgeo.org/repository/release/javax/media/jai_core/1.1.3/jai_core-1.1.3.jar" //20220704 test direct jar
     //"javax.media.jai" % "com.springsource.javax.media.jai.core" % "1.1.3"
   ),
   cancelable in Global := true,

@@ -7,9 +7,9 @@ lazy val commonSettings = Seq(
   scalaVersion := "2.13.1",
   organization := "org.openmole.library",
   resolvers ++= Seq(
+    "geonw" at "https://repo.osgeo.org/repository/geonetwork-releases/", // 20220618 - try for CI build to find jai_core; 20220704: why does CI not try other resolvers? test order change
     "apache" at "https://repo.maven.apache.org/maven2",
     "osgeo" at "https://repo.osgeo.org/repository/geotools-releases", // for geotools
-    "geonw" at "https://repo.osgeo.org/repository/geonetwork-releases/", // 20220618 - try for CI build to find jai_core
     "imageio" at "https://maven.geo-solutions.it", // for some geotools deps
     //"spring" at "https://repo.spring.io/plugins-release/",
     Resolver.sonatypeRepo("snapshots"),

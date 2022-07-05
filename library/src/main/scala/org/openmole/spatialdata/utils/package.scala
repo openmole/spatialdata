@@ -30,9 +30,9 @@ package object utils {
     * @param fun function
     */
   def withTimer(fun: Unit=> Unit): Unit= {
-    val start = System.currentTimeMillis()
+    val start = System.currentTimeMillis().toDouble
     fun(())
-    println("time : "+(System.currentTimeMillis()-start)+" ms")
+    println("time : "+(System.currentTimeMillis().toDouble-start)+" ms")
   }
 
   /**
@@ -44,9 +44,9 @@ package object utils {
     */
   def withTimer[A,B](fun: A => B): A => (B,Double) = {
     a =>
-    val start = System.currentTimeMillis()
+    val start = System.currentTimeMillis().toDouble
     val res = fun(a)
-    (res,System.currentTimeMillis()-start)
+    (res,System.currentTimeMillis().toDouble-start)
   }
 
   def withTimer[A](a: A): (A,Double) = withTimer[Unit,A](_ => a)(())

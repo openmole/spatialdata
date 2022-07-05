@@ -384,7 +384,7 @@ object Innovation {
     * @return
     */
   def selectCityHierarchically(currentPopulations: Seq[Double], newInnovationHierarchy: Double)(implicit rng: Random): Int = {
-    val r = rng.nextDouble
+    val r = rng.nextDouble()
     val ptot = currentPopulations.map{math.pow(_,newInnovationHierarchy)}.sum
     Seq(Seq(0,currentPopulations.map{math.pow(_,newInnovationHierarchy)/ptot}.scanLeft(0.0)(_+_).indexWhere(_>r)).max,currentPopulations.length-1).min
   }

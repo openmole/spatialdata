@@ -59,7 +59,7 @@ object QUANT {
   def loadQUANTFlows(files: Array[String], csvInput: Boolean = false): Array[SparseMatrix] = {
     val flowmats = if (csvInput) files.map(sparseFlowsFile => CSV.readSparseMat(sparseFlowsFile))
     else files.map(Binary.readBinary[SparseMatrix])
-    utils.log(s"sparse QUANT flowmats: ${flowmats.toSeq.map(m => m.nrows+"x"+m.ncols)}")
+    utils.log(s"sparse QUANT flowmats: ${flowmats.toSeq.map(m => s"${m.nrows}x${m.ncols}")}")
     flowmats
   }
 
@@ -71,7 +71,7 @@ object QUANT {
         {d => math.exp( - d / 60.0)}
       ))
     else files.map(Binary.readBinary[SparseMatrix])
-    utils.log(s"sparse QUANT dmats: ${dmats.toSeq.map(m => m.nrows+"x"+m.ncols)}")
+    utils.log(s"sparse QUANT dmats: ${dmats.toSeq.map(m => s"${m.nrows}x${m.ncols}")}")
     dmats
   }
 

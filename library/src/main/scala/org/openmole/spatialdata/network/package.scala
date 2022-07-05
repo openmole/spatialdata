@@ -44,10 +44,12 @@ package object network {
     * @return
     */
   def networkToGrid(network: Network,footPrintResolution: Double = 1.0,linkwidth: Double = 1.0): RasterLayerData[Double] = {
-    val xmin = network.nodes.map{_.x}.min;val xmax = network.nodes.map{_.x}.max
-    val ymin = network.nodes.map{_.y}.min;val ymax = network.nodes.map{_.y}.max
-    def xcor(x: Double): Int = math.max(xmin.toDouble,math.min(xmax.toDouble,math.round(x))).toInt
-    def ycor(y: Double): Int = math.max(ymin.toDouble,math.min(ymax.toDouble,math.round(y))).toInt
+    val xmin = network.nodes.map{_.x}.min
+    val xmax = network.nodes.map{_.x}.max
+    val ymin = network.nodes.map{_.y}.min
+    val ymax = network.nodes.map{_.y}.max
+    def xcor(x: Double): Int = math.max(xmin,math.min(xmax,math.round(x).toDouble)).toInt
+    def ycor(y: Double): Int = math.max(ymin,math.min(ymax,math.round(y))).toInt
     val res: Array[Array[Double]] = (BigDecimal(xmin) to xmax by 1.0).toArray.map{ _ => (BigDecimal(ymin) to ymax by 1.0).toArray.map{ _ =>0.0}}
     network.links.toSeq.filter{_.weight>0.0}.foreach{ l =>
       val i1 = l.e1.x - xmin;val j1 = l.e1.y - ymin

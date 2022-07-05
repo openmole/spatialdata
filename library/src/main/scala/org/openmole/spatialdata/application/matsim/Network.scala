@@ -22,7 +22,7 @@ object Network {
     * FUA names as arguments - for testing purpose, Manchester, London are on 4 OSRoads tile, Exeter also but smaller in terms of data
     *
     *   Exeter test command (Exeter tiles: SS,ST,SX,SY)
-    *     run --network --FUAName=Exeter --FUAFile=$CS_HOME/Data/JRC_EC/GHS/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0_WGS84.gpkg --TilesFile=$CS_HOME/UrbanDynamics/Models/Matsim/Network/data/OSOpenRoadsTiles.shp --datadir=$CS_HOME/UrbanDynamics/Data/OrdnanceSurvey/OSOpenRoads --output=$CS_HOME/UrbanDynamics/Data/OrdnanceSurvey/OSOpenRoads/Exeter_Roads.xml
+    *     run --network --FUAName=Exeter --FUAFile=CS_HOME/Data/JRC_EC/GHS/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0_WGS84.gpkg --TilesFile=CS_HOME/UrbanDynamics/Models/Matsim/Network/data/OSOpenRoadsTiles.shp --datadir=CS_HOME/UrbanDynamics/Data/OrdnanceSurvey/OSOpenRoads --output=CS_HOME/UrbanDynamics/Data/OrdnanceSurvey/OSOpenRoads/Exeter_Roads.xml
     *
     *   Taunton test
     *     runMain org.openmole.spatialdata.application.matsim.RunMatsim --network --FUAName="Taunton" --FUAFile=/Users/juste/ComplexSystems/Data/JRC_EC/GHS/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0/GHS_FUA_UCDB2015_GLOBE_R2019A_54009_1K_V1_0_WGS84.gpkg --TilesFile=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/Network/data/OSOpenRoadsTiles.shp --datadir=/Users/juste/ComplexSystems/UrbanDynamics/Data/OrdnanceSurvey/OSOpenRoads --output=/Users/juste/ComplexSystems/UrbanDynamics/Models/Matsim/test/Network

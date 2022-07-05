@@ -8,6 +8,7 @@ import org.openmole.spatialdata.grid.measures.GridMorphology
 import org.openmole.spatialdata.grid.{GridGenerator, RasterLayerData}
 
 import scala.util.Random
+import scala.annotation.nowarn
 
 
 /**
@@ -105,7 +106,7 @@ object CorrelatedPercolationGridGenerator {
     def cumcount(s: (IndexedSeq[Array[Double]],Double)): (IndexedSeq[Array[Double]],Double) = {
       if (s._1.nonEmpty) (s._1.tail, s._2+s._1.head.length.toDouble / n) else s
     }
-    val cdf = Iterator.iterate((sortedeta.map(_._2), 0.0.toDouble))(cumcount).takeWhile(_._1.nonEmpty).toSeq.map(_._2).zip(sortedeta.map(_._1))
+    val cdf = Iterator.iterate((sortedeta.map(_._2), 0.0))(cumcount).takeWhile(_._1.nonEmpty).toSeq.map(_._2).zip(sortedeta.map(_._1))
     //println(cdf.length+" / "+sortedeta.size)
     //println(cdf)
     def theta(p: Double): Double = {
@@ -155,7 +156,7 @@ object CorrelatedPercolationGridGenerator {
     * @param rng rng
     * @return
     */
-  def correlatedField(gridSize: Int, correlationRange: Double)(implicit rng: Random): Array[Array[Double]] = {
+  @nowarn def correlatedField(gridSize: Int, correlationRange: Double)(implicit rng: Random): Array[Array[Double]] = {
     // generate random field
     val randomField = Array.fill(gridSize,gridSize)(rng.nextGaussian())
 
@@ -164,7 +165,8 @@ object CorrelatedPercolationGridGenerator {
     val cflength = math.pow(2.0, math.ceil(math.log(gridSize) / math.log(2.0))).toInt
     //println(cflength)
     val cf = randomField.map(r => TransformUtils.createComplexArray(Array(r.padTo(cflength, 0.0), Array.fill(cflength)(0.0)))).
-      padTo(cflength.toInt,TransformUtils.createComplexArray(Array(Array.fill(cflength)(0.0),Array.fill(cflength)(0.0))))
+      padTo(cflength,TransformUtils.createComplexArray(Array(Array.fill(cflength)(0.0),Array.fill(cflength)(0.0))))
+    // mdfft deprecated: no replacement?
     val transformedField: Array[Array[Complex]] = tr.mdfft(cf, TransformType.FORWARD).asInstanceOf[Array[Array[Complex]]]
 
     // compute spectral density

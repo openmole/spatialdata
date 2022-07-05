@@ -57,7 +57,7 @@ object OSMPBFFile {
       )
     }
 
-    protected override def parseRelations(rels: java.util.List[Relation]): Unit  = {
+    override def parseRelations(rels: java.util.List[Relation]): Unit  = {
       //rels.asScala.map{r: Relation => r.getKeysList} // do nothing
     }
 
@@ -66,7 +66,7 @@ object OSMPBFFile {
       *  -> parse keyval array with delimiter '0'
       * @param denseNodes dense nodes
       */
-    protected override def parseDense(denseNodes: DenseNodes): Unit = {
+    override def parseDense(denseNodes: DenseNodes): Unit = {
       var (id,lat,lon): (Long,Long,Long) = (0L,0L,0L)
       (0 until denseNodes.getIdCount).foreach{i =>
         id += denseNodes.getId(i)
@@ -76,7 +76,7 @@ object OSMPBFFile {
       }
     }
 
-    protected override def parseNodes(ndes: java.util.List[Node]): Unit = {
+    override def parseNodes(ndes: java.util.List[Node]): Unit = {
       ndes.asScala.foreach{
         n =>
           val attrs: Map[String,String] = (0 until n.getKeysCount).map(i => (getStringById(n.getKeys(i)),getStringById(n.getVals(i)))).toMap
@@ -84,7 +84,7 @@ object OSMPBFFile {
       }
     }
 
-    protected override def parseWays(wys: java.util.List[Way]): Unit = {
+    override def parseWays(wys: java.util.List[Way]): Unit = {
       wys.asScala.foreach { w =>
         val attrs: Map[String, String] = (0 until w.getKeysCount).map(i => (getStringById(w.getKeys(i)), getStringById(w.getVals(i)))).toMap
         val nodesids: Seq[Long] = utils.math.cumsum(w.getRefsList.asScala.toSeq.map(_.asInstanceOf[Long]))(Numeric.LongIsIntegral)
@@ -92,11 +92,11 @@ object OSMPBFFile {
       }
     }
 
-    protected override def parse(header: HeaderBlock): Unit = {
+    override def parse(header: HeaderBlock): Unit = {
       utils.log("Reading osm pbf")
     }
 
-    protected override def complete(): Unit = {
+    override def complete(): Unit = {
       utils.log("Finished parsing osm pbf - read "+nodes.size+" nodes and "+ways.size+" ways")
     }
 

@@ -158,7 +158,7 @@ object Population {
           hs.map { household =>
             //val homeloc = LayerSampling.sampleEnvelope(homeoa, 1).head
             // val homeloc =  LayerSampling.PolygonSampler(homeoa, 0.001).sample // issue with the polygon sampler
-            household.copy(homeLocation = (xmin + rng.nextDouble * (xmax - xmin), ymin + rng.nextDouble * (ymax - ymin)))
+            household.copy(homeLocation = (xmin + rng.nextDouble() * (xmax - xmin), ymin + rng.nextDouble() * (ymax - ymin)))
           }
         }
       }.reduce(utils.concat[Household])

@@ -28,6 +28,6 @@ object RandomPointsGenerator {
   def randomPoints(generator: RandomPointsGenerator)(implicit rng: Random): Vector[Point] =
     //Array.fill(generator.npoints){(math.digits(generator.xmin + (generator.xmax - generator.xmin)*rng.nextDouble,4),
     //  math.digits(generator.ymin + (generator.ymax - generator.ymin)*rng.nextDouble,4))}
-    Vector.fill(generator.npoints){(generator.xmin + (generator.xmax - generator.xmin)*rng.nextDouble,
-      generator.ymin + (generator.ymax - generator.ymin)*rng.nextDouble)}
+    Vector.fill(generator.npoints){(generator.xmin + (generator.xmax - generator.xmin)*rng.nextDouble(),
+      generator.ymin + (generator.ymax - generator.ymin)*rng.nextDouble())}
 }

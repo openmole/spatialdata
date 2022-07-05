@@ -26,11 +26,11 @@ lazy val commonSettings = Seq(
     "org.apache.commons" % "commons-rng-simple" % "1.3",
     "net.sourceforge.jdistlib" % "jdistlib" % "0.4.5",
     "com.github.pathikrit" %% "better-files" % "3.8.0",
-    "org.locationtech.jts" % "jts" % "1.16.1" pomOnly(),
-    "org.geotools" % "gt-shapefile" % geotoolsVersion , //exclude("com.vividsolutions", "jts-core"), //exclude("javax.media", "jai_core")
-    "org.geotools" % "gt-geopkg" % geotoolsVersion, // to read GeoPackage files (112k only)
+    //"org.locationtech.jts" % "jts" % "1.16.1" pomOnly(),
+    "org.geotools" % "gt-shapefile" % geotoolsVersion ,
+    "org.geotools" % "gt-geopkg" % geotoolsVersion,
     "org.geotools" % "gt-referencing" % geotoolsVersion,
-    "org.geotools" % "gt-epsg-hsql" % geotoolsVersion, // explicitly load for CRS decoding - enough? EPSG:54009 not found
+    "org.geotools" % "gt-epsg-hsql" % geotoolsVersion,
     "org.geotools" % "gt-epsg-extension" % geotoolsVersion,
     "org.geotools" % "gt-geotiff" % geotoolsVersion,
     "org.geotools" % "gt-coverage" % geotoolsVersion,
@@ -42,11 +42,10 @@ lazy val commonSettings = Seq(
     "org.apache.httpcomponents" % "httpclient" % "4.3.5",
     "commons-io" % "commons-io" % "2.3",
     "org.scalanlp" %% "breeze" % "1.0",
-    "com.github.fommil.netlib" % "all" % "1.1.2", // impl for breeze
+    "com.github.fommil.netlib" % "all" % "1.1.2",
     "de.ruedigermoeller" % "fst" % "2.57",
     "org.openstreetmap.pbf" % "osmpbf" % "1.4.0",
-    "javax.media" % "jai-core" % "1.1.3" from "https://repo.osgeo.org/repository/release/javax/media/jai_core/1.1.3/jai_core-1.1.3.jar" //20220704 test direct jar
-    //"javax.media.jai" % "com.springsource.javax.media.jai.core" % "1.1.3"
+    "javax.media" % "jai-core" % "1.1.3" from "https://repo.osgeo.org/repository/release/javax/media/jai_core/1.1.3/jai_core-1.1.3.jar"
   ),
   cancelable in Global := true,
   scalacOptions in ThisBuild ++= Seq("-unchecked", "-deprecation","-feature")
@@ -102,45 +101,13 @@ lazy val test = project.in(file("test")) dependsOn spatialdata settings(
   * OSGI bundle
   */
 enablePlugins(SbtOsgi)
-//lazy val bundle = taskKey[Unit]("OSGI bundle")
-//bundle := {
-  OsgiKeys.exportPackage := Seq("org.openmole.spatialdata.application.*;-split-package:=merge-first")
-  OsgiKeys.importPackage := Seq("*;resolution:=optional;-split-package:=merge-first")
-  //OsgiKeys.privatePackage := Seq("!scala.*,!java.*,!monocle.*,!META-INF.*.RSA,!META-INF.*.SF,!META-INF.*.DSA,META-INF.services.*,META-INF.*,*")
-OsgiKeys.privatePackage := Seq("!scala.*,!java.*,!monocle.*,!algebra.*,*")
-OsgiKeys.requireCapability := """osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))""""
-//  (OsgiKeys.bundle in spatialdata).value
-//}
 
-
-
-/**
-  * Assemble as a unique jar
-  *  https://github.com/sbt/sbt-assembly#publishing-not-recommended
-  */
-//lazy val assemble = taskKey[Unit]("assemble")
-lazy val assemblyMainClass = "org.openmole.spatialdata.test.Test"
-//assemble := {
-  assemblyMergeStrategy in assembly := {
-    case PathList("META-INF", _@_*) => MergeStrategy.discard
-    case _ => MergeStrategy.last
-  }
-
-  // ! scalaVersion not set: absurd file name; run assemble: no config (other key in sbt-assembly?)
-  //assemblyJarName in assembly := "spatialdata-assembly_" + scalaVersion + ".jar"
-  assemblyJarName in assembly := "spatialdata-assembly_2.13.jar"
-
-  artifact in(Compile, assembly) := {
-    val art = (artifact in(Compile, assembly)).value
-    art.withClassifier(Some("assembly"))
-  }
-
-  addArtifact(artifact in(Compile, assembly), assembly)
-
-  mainClass in (Compile, packageBin) := Some(assemblyMainClass)
-
-//  (assembly in spatialdata).value
-//}
+OsgiKeys.exportPackage := Seq("org.openmole.spatialdata.application.*;-split-package:=merge-first")
+OsgiKeys.importPackage := Seq("*;resolution:=optional")
+OsgiKeys.privatePackage := Seq("!java.*,!scala.*,*")
+OsgiKeys.requireCapability := """osgi.ee; osgi.ee="JavaSE";version:List="1.8,1.9""""
+// include geotools jars to have service files for factories
+OsgiKeys.embeddedJars := (Compile / Keys.externalDependencyClasspath).value map (_.data) filter (f=> f.getName startsWith "gt-")
 
 
 lazy val runtest = taskKey[Unit]("run test main class")

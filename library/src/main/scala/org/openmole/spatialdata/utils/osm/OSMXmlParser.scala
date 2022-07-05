@@ -194,7 +194,7 @@ case class OSMXmlParser(
                   skipCurrentObject = true
                   break //was:continue
                 }
-                else if (version > wayToRemove.getVersion + 1 && !allowingMissingVersions) throw new OsmXmlParserException("Inconsistency, too great way version found during delete way.")
+                else if (version > wayToRemove.getVersion + 1 && !allowingMissingVersions) throw OsmXmlParserException("Inconsistency, too great way version found during delete way.")
                 root.remove(wayToRemove)
                 delta.deletedWays.add(wayToRemove)
               }
@@ -242,7 +242,7 @@ case class OSMXmlParser(
               }
               else if (state == State.modify) {
                 currentRelation = root.getRelation(identity)
-                if (currentRelation == null) throw new OsmXmlParserException("Inconsistency, relation " + identity + " does not exists.")
+                if (currentRelation == null) throw OsmXmlParserException("Inconsistency, relation " + identity + " does not exists.")
                 val version = Integer.valueOf(xmlr.getAttributeValue(null, "version"))
                 if (version < currentRelation.getVersion) {
                   utils.log("Inconsistency, old version detected during modify relation.")
@@ -250,7 +250,7 @@ case class OSMXmlParser(
                   break //was:continue
                 }
                 else if (version > currentRelation.getVersion + 1 && !allowingMissingVersions) throw new OsmXmlParserException("Inconsistency, too great version found during modify relation.")
-                else if (version == currentRelation.getVersion) throw new OsmXmlParserException("Inconsistency, same version found during modify relation.")
+                else if (version == currentRelation.getVersion) throw OsmXmlParserException("Inconsistency, same version found during modify relation.")
                 if (currentRelation.members != null) {
 
                   for (member <- currentRelation.members) {
@@ -270,19 +270,19 @@ case class OSMXmlParser(
                 if (relationToRemove == null) {
                   utils.log("Inconsistency, relation \" + identity + \" does not exist.")
                   skipCurrentObject = true
-                  break //was:continue
+                  break()
                 }
                 val version = Integer.valueOf(xmlr.getAttributeValue(null, "version"))
                 if (version < relationToRemove.getVersion) {
                   utils.log("Inconsistency, old version detected during delete relation.")
                   skipCurrentObject = true
-                  break //was:continue
+                  break()
                 }
                 else if (version > relationToRemove.getVersion + 1 && !allowingMissingVersions) throw new OsmXmlParserException("Inconsistency, too great version found during delete relation.")
                 if (relationToRemove.members != null) {
                   for (member <- relationToRemove.members) {
-                    member.getOsmObject.getRelationMemberships.remove(member.getOsmObject.getRelationMemberships.indexOf(member))
-                    if (member.getOsmObject.getRelationMemberships.isEmpty) member.getOsmObject.setRelationMemberships(null)
+                    member.getOsmObject().getRelationMemberships().remove(member.getOsmObject.getRelationMemberships.indexOf(member))
+                    if (member.getOsmObject().getRelationMemberships().isEmpty) member.getOsmObject.setRelationMemberships(null)
                   }
                   relationToRemove.members = new mutable.ArrayBuffer[RelationMembership]
                 }
@@ -330,8 +330,8 @@ case class OSMXmlParser(
                 //throw new OsmXmlParserException("Lexical error, delete relation should not contain <member> elements.");
               }
             }
-            else if ("tag" == xmlr.getLocalName) { // tag of any object type
-              if (skipCurrentObject) break //was:continue
+            else if ("tag" == xmlr.getLocalName){ // tag of any object type
+              if (skipCurrentObject) break()
               if ((state == State.none) || (state == State.create) || (state == State.modify)) {
                 val key = tagKeyIntern.intern(xmlr.getAttributeValue(null, "k"))
                 val value = tagValueIntern.intern(xmlr.getAttributeValue(null, "v"))

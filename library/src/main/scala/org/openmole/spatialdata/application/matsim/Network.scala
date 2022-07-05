@@ -29,9 +29,9 @@ object Network {
     *
     *   Test London: SP,SU,TL,TQ
     *
-    *   Test several (small multi-FUAs areas): Taunton,Weston-super-Mare;Exeter,Torquay ... --output=$CS_HOME/UrbanDynamics/Data/OrdnanceSurvey/OSOpenRoads/Exeter_Roads.xml
+    *   Test several (small multi-FUAs areas): Taunton,Weston-super-Mare;Exeter,Torquay ... --output=CS_HOME/UrbanDynamics/Data/OrdnanceSurvey/OSOpenRoads/Exeter_Roads.xml
     *
-    * @param args arguments; usage: --network --FUAName="$NAME1,$NAME2,...,$NAMEN;...,...;..." --FUAFile=$PATH --TilesFile=$PATHTILES --datadir=$DATADIR --output=$OUTPUT
+    * @param args arguments; usage: --network --FUAName="NAME1,NAME2,...,NAME_N;...,...;..." --FUAFile=PATH --TilesFile=PATHTILES --datadir=DATADIR --output=OUTPUT
     */
   def runNetworkProcessing(args: Array[String]): Unit = {
 

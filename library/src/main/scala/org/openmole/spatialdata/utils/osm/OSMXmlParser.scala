@@ -27,7 +27,6 @@ case class OSMXmlParser(
     *
     * @param xml xml string
     * @return
-    * @throws OsmXmlParserException parser exception
     */
   @throws[OsmXmlParserException]
   final def parse(xml: String): OsmXmlParserDelta = parse(new StringReader(xml))
@@ -185,13 +184,13 @@ case class OSMXmlParser(
               else if (state == State.delete) {
                 val wayToRemove = root.getWay(identity)
                 if (wayToRemove == null) {
-                  println("Inconsistency, way \" + identity + \" does not exists.")
+                  utils.log("Inconsistency, way \" + identity + \" does not exists.")
                   skipCurrentObject = true
                   break //was:continue
                 }
                 val version = Integer.valueOf(xmlr.getAttributeValue(null, "version"))
                 if (version < wayToRemove.getVersion) {
-                  println("Inconsistency, old version detected during delete way.")
+                  utils.log("Inconsistency, old version detected during delete way.")
                   skipCurrentObject = true
                   break //was:continue
                 }

@@ -21,5 +21,5 @@ jobs:
             cd library
             sbt clean
             sbt "show fullResolvers"
-            sbt -Dhttps.protocols=TLSv1,TLSv1.1,TLSv1.2 compile
+            sbt -Dhttps.protocols=TLSv1,TLSv1.1,TLSv1.2 compile # bug jdk 11 https://stackoverflow.com/questions/52574050/javax-net-ssl-sslexception-no-psk-available-unable-to-resume
             sbt -J-Xmx4G "project test; testOnly org.openmole.spatialdata.scalatest.TestSuite"

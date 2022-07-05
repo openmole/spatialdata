@@ -19,8 +19,7 @@ jobs:
     - name: Run tests
       run: |
             cd library
-            export SBT_OPTS="-XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=2G -Xmx4G"
             sbt clean
             sbt "show fullResolvers"
             sbt compile
-            sbt "project test; testOnly org.openmole.spatialdata.scalatest.TestSuite"
+            sbt -J-Xmx4G "project test; testOnly org.openmole.spatialdata.scalatest.TestSuite"

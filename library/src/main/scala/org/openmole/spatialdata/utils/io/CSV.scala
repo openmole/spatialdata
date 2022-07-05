@@ -27,7 +27,8 @@ object CSV {
       override val delimiter: Char = sep.charAt(0)
       override val quoteChar: Char = '"'
     }
-    val (header,content): (Seq[String], Seq[Map[String, String]]) = if (withHeader) CSVReader.open(file)(readerFormat).allWithOrderedHeaders()
+    val (header,content): (Seq[String], Seq[Map[String, String]]) =
+      if (withHeader) CSVReader.open(file)(readerFormat).allWithOrderedHeaders()
     else {
       val raw = CSVReader.open(file)(readerFormat).all()
       val h = raw.head.indices.map("V"+_)
@@ -47,7 +48,7 @@ object CSV {
 
   def readCSVraw(filename: String, sep: String = ",", header: Boolean = true):Array[Array[String]] = {
     val s = Source.fromFile(filename)
-    val lines = if (header) s.getLines.toArray else s.getLines.toArray.tail
+    val lines = if (header) s.getLines().toArray else s.getLines().toArray.tail
     val res = lines.map(_.split(sep))
     s.close()
     res

@@ -38,7 +38,7 @@ class JTSGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
     val lines = new mutable.ArrayBuffer[mutable.ArrayBuffer[Coordinate]](relation.members.size)
     for (member <- relation.members) {
       if (!"outer".equalsIgnoreCase(member.getRole)) throw new RuntimeException
-      val way = member.getOsmObject.asInstanceOf[Way]
+      val way = member.getOsmObject().asInstanceOf[Way]
       val line = new mutable.ArrayBuffer[Coordinate](way.nodes.size)
       for (node <- way.nodes) {
         line.append(new Coordinate(node.getX, node.getY))
@@ -50,26 +50,23 @@ class JTSGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
     sorted.append(lines.remove(0))
     var iterations = 0
     while (lines.nonEmpty) {
-      if ( {
-        iterations += 1; iterations - 1
-      } >= maxIterations) throw new RuntimeException("Eternal loop")
+      iterations += 1
+      if ( (iterations - 1) >= maxIterations) throw new RuntimeException("Eternal loop")
       val lineIterator = lines.iterator
-      while ( {
-        lineIterator.hasNext
-      }) {
-        val line = lineIterator.next
+      while (lineIterator.hasNext) {
+        val line = lineIterator.next()
         val loop = new Breaks
         loop.breakable {
           for (testLine <- sorted.toSeq) {
             if (testLine(testLine.size - 1) == line(0)) {
               sorted.append(line)
               lines.remove(lines.indexOf(line)) // ! check if compatible with the iterator
-              loop.break
+              loop.break()
             }
             else if (testLine(testLine.size - 1) == line(line.size - 1)) {
               sorted.append(line.reverse)
               lines.remove(lines.indexOf(line))
-              loop.break
+              loop.break()
             }
           }
         }
@@ -104,16 +101,16 @@ class JTSGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
     var firstNode: Node = null
     for (membership <- relation.members) {
       Breaks.breakable {
-        if (!"outer".equalsIgnoreCase(membership.getRole)) Breaks.break//! continue is not supported
+        if (!"outer".equalsIgnoreCase(membership.getRole)) Breaks.break()
         // ! inner as holes!
         if (firstNode == null) {
-          firstNode = membership.getOsmObject.accept(new OSMObjectVisitor[Node]() {
+          firstNode = membership.getOsmObject().accept(new OSMObjectVisitor[Node]() {
             override def visit(node: Node): Node = node
             override def visit(way: Way): Node = way.nodes(0)
             override def visit(relation: Relation): Node = relation.accept(this)
           })
         }
-        val nextNodes = membership.getOsmObject.accept(new NodesCollector)
+        val nextNodes = membership.getOsmObject().accept(new NodesCollector)
         if (nodes.isEmpty) nodes.addAll(nextNodes)
         else {
           val previousNode = nodes(nodes.size - 1)
@@ -191,7 +188,7 @@ class JTSGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
     override def visit(relation: Relation): mutable.ArrayBuffer[Node] = {
       val lines = new mutable.ArrayBuffer[mutable.ArrayBuffer[Node]]
       for (membership <- relation.members) {
-        lines.append(membership.getOsmObject.accept(new NodesCollector))
+        lines.append(membership.getOsmObject().accept(new NodesCollector))
       }
       lines.sortInPlaceWith(compareLines)
       var nodesCount = 0

@@ -82,7 +82,7 @@ object APIExtractor {
           implicit val connection: Connection = PostgisConnection.initPostgis(database ="buildings",port = port)
           val polygons = PostgisConnection.bboxRequest(west,south,east,north,"ways")
           utils.log("retrieved via postgresql " + east + " n=" + north + " s=" + south + "w=" + west+" : "+polygons.size+" buildings")
-          PostgisConnection.closeConnection
+          PostgisConnection.closeConnection()
           (polygons, Seq.fill(polygons.length)(Attributes.empty))
 
         case Mongo(port) =>

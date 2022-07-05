@@ -111,7 +111,7 @@ object OSMObject {
   class Node(id: Long) extends OSMObject(id) with Serializable {
     def accept[R](visitor: OSMObjectVisitor[R]): R = visitor.visit(this)
 
-    def this(id: Long, latitude: Double, longitude: Double, tags: String*) {
+    def this(id: Long, latitude: Double, longitude: Double, tags: String*) = {
       this(id)
       this.latitude = latitude
       this.longitude = longitude
@@ -240,10 +240,10 @@ object OSMObject {
   }
 
   class NotLoadedException(detailMessage: String, throwable: Throwable) extends java.lang.RuntimeException(detailMessage, throwable) {
-    def this(o: OSMObject) {
+    def this(o: OSMObject) = {
       this(o.getClass.getSimpleName + "#id " + o.id + " is not loaded!", null)
     }
-    def this(detailMessage: String) {
+    def this(detailMessage: String) =  {
       this(detailMessage, null)
     }
   }

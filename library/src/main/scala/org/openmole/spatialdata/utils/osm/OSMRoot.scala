@@ -60,8 +60,8 @@ class OSMRoot extends Serializable {
         }
       }
       node.setWaysMemberships(null)
-      if (node.getRelationMemberships != null) {
-        for (member <- node.getRelationMemberships) {
+      if (node.getRelationMemberships() != null) {
+        for (member <- node.getRelationMemberships()) {
           member.getRelation.members.remove(member.getRelation.members.indexOf(member))
           affectedRelations.add(member.getRelation)
         }
@@ -80,8 +80,8 @@ class OSMRoot extends Serializable {
         }
         way.nodes = null
       }
-      if (way.getRelationMemberships != null) {
-        for (member <- way.getRelationMemberships) {
+      if (way.getRelationMemberships() != null) {
+        for (member <- way.getRelationMemberships()) {
           member.getRelation.members.remove(member.getRelation.members.indexOf(member))
           affectedRelations.add(member.getRelation)
         }
@@ -94,10 +94,10 @@ class OSMRoot extends Serializable {
       val affectedRelations = new mutable.HashSet[OSMObject](1024,0.75)
       if (relation.members != null) {
         for (member <- relation.members) {
-          member.getOsmObject.getRelationMemberships.remove(member.getOsmObject.getRelationMemberships.indexOf(member))
-          if (member.getOsmObject.getRelationMemberships.isEmpty) {
-            member.getOsmObject.setRelationMemberships(null)
-            affectedRelations.add(member.getOsmObject)
+          member.getOsmObject().getRelationMemberships().remove(member.getOsmObject().getRelationMemberships().indexOf(member))
+          if (member.getOsmObject().getRelationMemberships().isEmpty) {
+            member.getOsmObject().setRelationMemberships(null)
+            affectedRelations.add(member.getOsmObject())
           }
         }
         relation.members = null

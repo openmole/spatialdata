@@ -116,7 +116,7 @@ class APIConnection(userServerURL: String = APIConnection.defaultServerURL, val 
   def getNode(id: Long): Node = {
     val root = new OSMRoot
     val delta = getNode(root, id)
-    delta.createdNodes.iterator.next
+    delta.createdNodes.iterator.next()
   }
 
   @throws[Exception]
@@ -134,7 +134,7 @@ class APIConnection(userServerURL: String = APIConnection.defaultServerURL, val 
   def getWay(id: Long): Way = {
     val root = new OSMRoot
     val delta = getWay(root, id)
-    delta.createdWays.iterator.next
+    delta.createdWays.iterator.next()
   }
 
   @throws[Exception]
@@ -152,7 +152,7 @@ class APIConnection(userServerURL: String = APIConnection.defaultServerURL, val 
   def getRelation(id: Long): Relation = {
     val root = new OSMRoot
     val delta = getRelation(root, id)
-    delta.createdRelations.iterator.next
+    delta.createdRelations.iterator.next()
   }
 
   @throws[Exception]

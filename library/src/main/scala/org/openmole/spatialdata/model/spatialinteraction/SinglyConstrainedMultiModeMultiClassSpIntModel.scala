@@ -42,6 +42,8 @@ case class SinglyConstrainedMultiModeMultiClassSpIntModel (
     */
   override def distances: Matrix = modesDistances.reduce(Matrix.msum).map(_ / modesDistances.length)
 
+  override def distanceWeights: Matrix = modesDistances.reduce(Matrix.msum).map(_ / modesDistances.length)
+
   override def predictedFlows: Matrix = segmentPredictedFlows.map(_.reduce(Matrix.msum)).reduce(Matrix.msum)
 
   /**

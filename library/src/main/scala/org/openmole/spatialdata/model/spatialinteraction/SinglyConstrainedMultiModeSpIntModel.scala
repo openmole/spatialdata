@@ -1,11 +1,21 @@
 package org.openmole.spatialdata.model.spatialinteraction
 
-import org.openmole.spatialdata.model.spatialinteraction.SinglyConstrainedSpIntModel.averageTripLength
 import org.openmole.spatialdata.utils
-import org.openmole.spatialdata.utils.math.{EmptyMatrix, Matrix, SparseMatrix}
+import org.openmole.spatialdata.utils.math.{Matrix, SparseMatrix}
 import org.openmole.spatialdata.vector.SpatialField
 
-case class SinglyConstrainedMultiModeSpIntModel (
+/**
+ *  ! does not use sparse distanceWeights (see single mode)
+ *
+ * @param modesObservedFlows modesObservedFlows
+ * @param modesDistances modesDistances
+ * @param originValues originValues
+ * @param destinationValues destinationValues
+ * @param fittedParams fittedParams
+ * @param costFunction costFunction
+ * @param modesPredictedFlows modesPredictedFlows
+ */
+case class SinglyConstrainedMultiModeSpIntModel(
                                              modesObservedFlows: Array[Matrix],
                                              modesDistances: Array[Matrix],
                                              originValues: SpatialField[Double],
@@ -31,6 +41,8 @@ case class SinglyConstrainedMultiModeSpIntModel (
     */
   override def distances: Matrix = modesDistances.reduce(Matrix.msum).map(_ / modesDistances.length)
 
+  override def distanceWeights: Matrix = modesDistances.zip(fittedParams).map{case (dmat,d0) => dmat.map(d => costFunction(d,d0))}.reduce(Matrix.msum).map(_ / modesDistances.length)
+
   override def predictedFlows: Matrix = modesPredictedFlows.reduce(Matrix.msum)
 
   /**
@@ -42,9 +54,8 @@ case class SinglyConstrainedMultiModeSpIntModel (
       case m: SinglyConstrainedMultiModeSpIntModel =>
         SinglyConstrainedMultiModeSpIntModel.fitSinglyConstrainedMultiModeSpIntModel(m,
           m.fittedParams,
-          SinglyConstrainedMultiModeSpIntModel.averageTripLength,
-          true,
-          0.01)
+          SinglyConstrainedMultiModeSpIntModel.averageTripLength
+        )
       case _ => throw new IllegalArgumentException("Can not fit other type of models")
     }
   }
@@ -57,8 +68,8 @@ object SinglyConstrainedMultiModeSpIntModel {
 
 
   /**
-    * FIXME ad hoc constructor: assumes that the combines sp int models have the same O/D values, take the first
-    * @param models
+    * ! ad hoc constructor: assumes that the combines sp int models have the same O/D values, take the first
+    * @param models models
     * @return
     */
   def apply(models: Array[SpatialInteractionModel]): SinglyConstrainedMultiModeSpIntModel =
@@ -74,8 +85,8 @@ object SinglyConstrainedMultiModeSpIntModel {
 
   /**
     * average trip length for each mode
-    * @param model
-    * @param phi
+    * @param model model
+    * @param flowMatrices flowMatrices
     * @return
     */
   def averageTripLength(model: SinglyConstrainedMultiModeSpIntModel, flowMatrices: Array[Matrix]): Array[Double] = {
@@ -86,11 +97,11 @@ object SinglyConstrainedMultiModeSpIntModel {
   }
 
   /**
-    * TODO run with sparse matrices for perf (after having benchmarked sparse mat impls)
+    *  ! run with sparse matrices for perf (after having benchmarked sparse mat impls)
     * @param model Model to fir
     * @param objectiveFunction statistic compared between the two models
     * @param originConstraint constraints at the origin?
-    * @param convergenceThreshold
+    * @param convergenceThreshold convergenceThreshold
     * @return
     */
   def fitSinglyConstrainedMultiModeSpIntModel(model: SinglyConstrainedMultiModeSpIntModel,
@@ -103,9 +114,9 @@ object SinglyConstrainedMultiModeSpIntModel {
     utils.log("Fitting multi mode singly constrained spatial interaction model")
 
     // ! force a SparseMatrix here
-    val origin = utils.timerLog[Unit,Matrix](_ => SparseMatrix(model.originValues.values.flatten.toArray,false),(),"origin column matrix")
-    val destination = utils.timerLog[Unit,Matrix](_ => SparseMatrix(model.destinationValues.values.flatten.toArray,false),(),"destination column matrix")
-    println(s"origin column mat = ${origin}")
+    val origin = utils.timerLog[Unit,Matrix](_ => SparseMatrix(model.originValues.values.flatten.toArray,row = false),(),"origin column matrix")
+    val destination = utils.timerLog[Unit,Matrix](_ => SparseMatrix(model.destinationValues.values.flatten.toArray,row = false),(),"destination column matrix")
+    println(s"origin column mat = $origin")
 
     val obsObjective = utils.timerLog[Unit,Array[Double]](_ => objectiveFunction(model,model.modesObservedFlows),(),"objective cost function")
     utils.log(s"observed stat = ${obsObjective.toSeq}")
@@ -119,12 +130,8 @@ object SinglyConstrainedMultiModeSpIntModel {
 
     val initialModel = model.copy(modesPredictedFlows=initialFlows, fittedParams = initialValues)
 
-    /**
-      * State is (model including cost function, current parameter value, epsilon)
-      *  epsilon is max of epsilon for each mode
-      * @param state
-      * @return
-      */
+    // State is (model including cost function, current parameter value, epsilon)
+    // epsilon is max of epsilon for each mode
     def iterateCostParam(state: (SinglyConstrainedMultiModeSpIntModel,Double)):  (SinglyConstrainedMultiModeSpIntModel,Double) = {
       val t = System.currentTimeMillis()
       val model = state._1
@@ -155,10 +162,10 @@ object SinglyConstrainedMultiModeSpIntModel {
     *
     * Do a separate function than the single mode for readibility of usage in single mode
     *
-    * @param originMasses
-    * @param destinationMasses
-    * @param costMatrix
-    * @param originConstraint
+    * @param originMasses originMasses
+    * @param destinationMasses destinationMasses
+    * @param costMatrices costMatrix
+    * @param originConstraint originConstraint
     * @return
     */
   def singlyConstrainedMultiModeFlows(originMasses: Matrix,

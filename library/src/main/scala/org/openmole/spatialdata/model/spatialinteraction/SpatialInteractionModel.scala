@@ -23,8 +23,10 @@ import org.openmole.spatialdata.vector.SpatialField
 trait SpatialInteractionModel {
 
   def observedFlows: Matrix
-  // FIXME this is not the most generic representation: cf MultiMode version
+  // ! this is not the most generic representation: cf MultiMode version: multiple matrices
   def distances: Matrix
+  // dual representation depending on implementation: either store distances, or distance weights (in the case of sparsing in particular)
+  def distanceWeights: Matrix
   def originValues: SpatialField[Double]
   def destinationValues: SpatialField[Double]
   def predictedFlows: Matrix
@@ -40,11 +42,12 @@ trait SpatialInteractionModel {
 object SpatialInteractionModel {
 
   val empty: SpatialInteractionModel = new SpatialInteractionModel {
-    def observedFlows: Matrix = EmptyMatrix()
-    def distances: Matrix = EmptyMatrix()
-    def originValues: SpatialField[Double] = Map.empty
-    def destinationValues: SpatialField[Double] = Map.empty
-    def predictedFlows: Matrix = EmptyMatrix()
+    override def observedFlows: Matrix = EmptyMatrix()
+    override def distances: Matrix = EmptyMatrix()
+    override def distanceWeights: Matrix = EmptyMatrix()
+    override def originValues: SpatialField[Double] = Map.empty
+    override def destinationValues: SpatialField[Double] = Map.empty
+    override def predictedFlows: Matrix = EmptyMatrix()
   }
   //implicit class asFunctionDecorator(m: SpatialInteractionModel){
   //   def asFunction: Matrix => SpatialField => SpatialField => Matrix => Matrix = ???

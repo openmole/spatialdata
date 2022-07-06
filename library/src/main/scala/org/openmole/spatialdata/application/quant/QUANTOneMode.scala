@@ -44,7 +44,7 @@ object QUANTOneMode {
   /**
     * from processed files
     *
-    *  ! in the end should do a filtering on OiDjcij for sparse Matrices?
+    *  ! in the end should do a filtering on OiDjcij for sparse Matrices instead of separately observed flows/distance weights
     *
     * @param sparseFlows sparse flows matrix
     * @param sparseDistanceWeights distance weights matrix (exp - d_ij / d_0)
@@ -62,7 +62,12 @@ object QUANTOneMode {
     //println(origin)
     val destination = sparseFlows.colSum.zipWithIndex.map{case (s,j) => ((j.toDouble,0.0),Array(s))}.toMap
 
-    SinglyConstrainedSpIntModel(sparseFlows, EmptyMatrix(),sparseDistanceWeights,origin,destination)
+    SinglyConstrainedSpIntModel(
+      observedFlows = sparseFlows,
+      distanceWeightsMatrix = Some(sparseDistanceWeights),
+      originValues = origin,
+      destinationValues = destination
+    )
   }
 
 

@@ -30,7 +30,12 @@ object TestSpatialInteraction {
     val originfield: SpatialField[Double]=origin.zipWithIndex.map{case (s,i) => ((i.toDouble,0.0),Array(s))}.toMap
     val destinationfield: SpatialField[Double]=destination.zipWithIndex.map{case (s,i) => ((i.toDouble,0.0),Array(s))}.toMap
     utils.log(s"total flows = ${flows.sum}")
-    val model = SinglyConstrainedSpIntModel(flows,EmptyMatrix(),dmat,originfield,destinationfield)
+    val model = SinglyConstrainedSpIntModel(
+      observedFlows = flows,
+      distanceWeightsMatrix = Some(dmat),
+      originValues = originfield,
+      destinationValues = destinationfield
+    )
     val _ = model.fitted
   }
 

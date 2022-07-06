@@ -10,6 +10,12 @@ case class SpatialInteractionData(
                                    destinationValues: SpatialField[Double]
                                  ) extends SpatialInteractionModel {
 
-  def predictedFlows: Matrix = EmptyMatrix()
+  override def predictedFlows: Matrix = EmptyMatrix()
+
+  /**
+   * distance weights are not data
+   * @return
+   */
+  override def distanceWeights: Matrix = EmptyMatrix()
 
 }

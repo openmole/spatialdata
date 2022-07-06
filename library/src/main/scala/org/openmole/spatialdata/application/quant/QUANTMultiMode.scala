@@ -2,8 +2,7 @@ package org.openmole.spatialdata.application.quant
 
 import org.openmole.spatialdata.model.spatialinteraction.{SinglyConstrainedMultiModeSpIntModel, SinglyConstrainedSpIntModel}
 import org.openmole.spatialdata.utils
-import org.openmole.spatialdata.utils.io.{Binary, CSV}
-import org.openmole.spatialdata.utils.math.{EmptyMatrix, SparseMatrix}
+import org.openmole.spatialdata.utils.math.SparseMatrix
 import org.openmole.spatialdata.vector.SpatialField
 
 object QUANTMultiMode {
@@ -15,12 +14,12 @@ object QUANTMultiMode {
     *  ! in the end should do a filtering on OiDjcij when sparsing the matrix
     *
     * @param sparseFlows sparse flow matrices
-    * @param sparseDistances sparse distance matrices
+    * @param sparseDistanceWeights sparse distance matrices
     *
     * @return
     */
   def QUANTMultiMode(sparseFlows: Array[SparseMatrix],
-                     sparseDistances: Array[SparseMatrix]
+                     sparseDistanceWeights: Array[SparseMatrix]
                     )(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): SinglyConstrainedMultiModeSpIntModel = {
 
     // needs to sum all modes
@@ -31,8 +30,13 @@ object QUANTMultiMode {
     val origin: SpatialField[Double]=originVals.zipWithIndex.map{case (s,i) => ((i.toDouble,0.0),Array(s))}.toMap
     val destination = sparseFlows.map(_.colSum).reduce(asum).zipWithIndex.map{case (s,j) => ((j.toDouble,0.0),Array(s))}.toMap
     SinglyConstrainedMultiModeSpIntModel(
-      sparseFlows.zip(sparseDistances).map{case (flowmat,dmat) =>
-        SinglyConstrainedSpIntModel(flowmat,EmptyMatrix(),dmat,origin,destination)
+      sparseFlows.zip(sparseDistanceWeights).map{case (flowmat,wmat) =>
+        SinglyConstrainedSpIntModel(
+          observedFlows = flowmat,
+          distanceWeightsMatrix = Some(wmat),
+          originValues = origin,
+          destinationValues = destination
+        )
       }
     )
   }

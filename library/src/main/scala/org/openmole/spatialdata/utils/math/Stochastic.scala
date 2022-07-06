@@ -4,6 +4,7 @@ import scala.util.Random
 import org.apache.commons.rng.sampling.ListSampler
 import org.apache.commons.rng.simple.RandomSource
 
+import scala.annotation.tailrec
 import scala.jdk.CollectionConverters._
 
 object Stochastic {
@@ -46,7 +47,8 @@ object Stochastic {
 
     override def draw: Double = {
       val el = math.exp(-1.0*lambda)
-      def prec(p: Double,k: Int): Int = p match {
+      @tailrec
+      def prec(p: Double, k: Int): Int = p match {
         case pp if pp > el => prec(pp*rng.nextDouble(),k+1)
         case _ => k - 1
       }
@@ -64,13 +66,10 @@ object Stochastic {
     * @return
     */
   def sampleOneBy[T](sampled: Iterable[T], probability: T => Double)(implicit rng: Random): T = {
-    def f(s: (Iterable[T],T,Double,Double)): (Iterable[T], T, Double, Double) = {//s._1.size match{
-    //case 0 => (s._1,)
-    // case _ =>
-     // println(s._3 + probability (s._1.head));println(s._3+" ; "+s._4)
+    def f(s: (Iterable[T],T,Double,Double)): (Iterable[T], T, Double, Double) = {
         (s._1.tail, s._1.head, s._3 + probability (s._1.head), s._4)
     }
-    f(Iterator.iterate((sampled,sampled.head,0.0.toDouble,rng.nextDouble()))(f).takeWhile(s => s._3 < s._4&&s._1.nonEmpty).toSeq.last)._2
+    f(Iterator.iterate((sampled,sampled.head,0.0,rng.nextDouble()))(f).takeWhile(s => s._3 < s._4&&s._1.nonEmpty).toSeq.last)._2
   }
 
   def sampleWithReplacementBy[T](sampled: Iterable[T], probability: T => Double, samples: Int)(implicit rng: Random): Vector[T] =
@@ -109,7 +108,11 @@ object Stochastic {
 
   def sampleWithoutReplacement[T](sampled: Iterable[T], samples: Int)(implicit rng: Random): Vector[T] = {
     if (samples<=0) Vector.empty else
-    ListSampler.sample(RandomSource.create(RandomSource.MT, rng.nextLong()), sampled.toList.asJava, samples).asScala.toVector
+    ListSampler.sample(
+      RandomSource.MT.create(rng.nextLong().asInstanceOf[AnyRef]),
+      sampled.toList.asJava,
+      samples
+    ).asScala.toVector
   }
 
   //sampleWithoutReplacementBy[T](sampled,_ => 1.0 / sampled.size.toDouble, samples)

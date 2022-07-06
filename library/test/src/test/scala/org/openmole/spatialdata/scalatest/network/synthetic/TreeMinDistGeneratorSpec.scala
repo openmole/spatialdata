@@ -7,7 +7,7 @@ import scala.util.Random
 
 class TreeMinDistGeneratorSpec extends AnyFlatSpec {
 
-  implicit val rng = new Random
+  implicit val rng: Random = new Random
 
   "A TreeMinDist network" should "be planar" in {
     (0 to 10).foreach { _ =>

@@ -62,11 +62,11 @@ case class PolycentricGridGravityFlowsGenerator(
     def dmat(pi: Seq[Point], pj: Seq[Point]): Matrix = {
       val rawdmat = Spatstat.euclidianDistanceMatrix(pi.toArray,pj.toArray)
       mImpl match {
-        case Matrix.Sparse(sImpl) => SparseMatrix(rawdmat.zipWithIndex.map{
+        case Matrix.Sparse(sImpl) => SparseMatrix(rawdmat.zipWithIndex.flatMap{
           case (row,i) => row.zipWithIndex.map{
             case (d,j) => if (d<3*originRadius) Some((i,j,d)) else None
           }
-        }.flatten.filter(_.isDefined).map{_.get},rawdmat.length,rawdmat(0).length)(sImpl)
+        }.filter(_.isDefined).map{_.get},rawdmat.length,rawdmat(0).length)(sImpl)
         case Matrix.Dense(dImpl) => DenseMatrix(rawdmat)(dImpl)
         case Matrix.Empty() => EmptyMatrix()
       }

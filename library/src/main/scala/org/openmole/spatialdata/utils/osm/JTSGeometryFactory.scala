@@ -130,16 +130,10 @@ class JTSGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
         if (nodes(nodes.size - 1) == firstNode) {
           val coordinates = new Array[Coordinate](nodes.size + 1)
           var i = 0
-          while ( {
-            i < nodes.size
-          }) {
+          while (i < nodes.size) {
             val node = nodes(i)
             coordinates(i) = new Coordinate(node.getX, node.getY)
-
-            {
-              i += 1
-              i - 1
-            }
+            i += 1
           }
           coordinates(coordinates.length - 1) = coordinates(0)
           linearRings.add(new LinearRing(new CoordinateArraySequence(coordinates), geometryFactory))
@@ -150,14 +144,9 @@ class JTSGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
     }
     val polygons = new Array[Polygon](linearRings.size)
     var i = 0
-    while ( {
-      i < linearRings.size
-    }) {
+    while (i < linearRings.size) {
       polygons(i) = new Polygon(linearRings.get(i), null, geometryFactory)
-
-      {
-        i += 1; i - 1
-      }
+      i += 1
     }
     geometryFactory.createMultiPolygon(polygons)
   }

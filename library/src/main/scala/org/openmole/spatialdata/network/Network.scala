@@ -292,7 +292,7 @@ case class Network(
     //  note: for performance should not recompute components at each step
     def connectClosestComponents(state: (Network,Int)): (Network,Int) = {
       val components = GraphAlgorithms.connectedComponents(state._1, method = ConnectedComponentsJGraphT())
-      utils.log("Remaining components: "+components.size)
+      //utils.log("Remaining components: "+components.size)
       if(components.size==1) (state._1,1)
       else {
         val (n1min, n2min, _) = (for {
@@ -303,7 +303,7 @@ case class Network(
         (state._1.addLinks(Set(Link(n1min, n2min))),components.size)
       }
     }
-    Iterator.iterate((this,-1.toInt))(connectClosestComponents).takeWhile(_._2!=1).toSeq.last._1
+    Iterator.iterate((this,-1))(connectClosestComponents).takeWhile(_._2!=1).toSeq.last._1
   }
 
   /**
@@ -340,7 +340,7 @@ case class Network(
     val nseq = nodes.toSeq
     (nseq,Points.fromPoints(
       nseq.map(_.position),
-      nseq.map{n => Map("id".toString -> n.id.asInstanceOf[AnyRef])}
+      nseq.map{n => Map("id" -> n.id.asInstanceOf[AnyRef])}
     ))
   }
 

@@ -7,7 +7,7 @@ object Test extends App {
   // Spatial interaction models
   //TestSpatialInteraction.testFitSinglyConstrainedRandom
   //TestSpatialInteraction.testFlowData
-  //TestSpatialInteraction.testFitSinglyConstrainedSyntheticFlows
+  TestSpatialInteraction.testFitSinglyConstrainedSyntheticFlows()
   //TestSpatialInteraction.testSyntheticFlows
 
   // Matrices
@@ -31,7 +31,7 @@ object Test extends App {
   //TestNetwork.testGISNetwork()
 
   // OSM
-  TestOSM.testOSMBuildingsGenerator()
+  //TestOSM.testOSMBuildingsGenerator()
   //TestOSM.testBuildingExtractor()
   //TestOSM.testOSMGridSampling()
   //TestOSM.testOSMPBFFile()

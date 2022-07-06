@@ -6,20 +6,14 @@ val geotoolsVersion = "23.0"
 lazy val commonSettings = Seq(
   scalaVersion := "2.13.8",
   organization := "org.openmole.library",
-  // trick to remove maven central (added again: change order for jai to be found)
+  // trick to remove maven central (added again: change order for jai to be found in the continuous integration (sbt tries first resolver only in CI) since mavenCentral jai is broken (pom but no jar)
   externalResolvers := Resolver.combineDefaultResolvers(resolvers.value.toVector, mavenCentral = false),
   resolvers ++= Seq(
     "osgeo" at "https://repo.osgeo.org/repository/release/",
     "geosolutions" at "https://maven.geo-solutions.it/",
     "geotoolkit" at "https://maven.geotoolkit.org/",
-    //"Boundless" at "https://repo.boundlessgeo.com/main"
-    //"geonw" at "https://repo.osgeo.org/repository/geonetwork-releases/", // 20220618 - try for CI build to find jai_core; 20220704: why does CI not try other resolvers? test order change
-    //"apache" at "https://repo.maven.apache.org/maven2",
-    //Resolver.sonatypeRepo("snapshots"),
-    //Resolver.sonatypeRepo("staging"),
     Resolver.mavenCentral
   ),
-  useCoursier := false, // needed to have jai_core, otherwise empty in Coursier
   libraryDependencies ++= Seq(
     "org.apache.commons" % "commons-math3" % "3.6.1",
     "org.apache.commons" % "commons-lang3" % "3.1",
@@ -27,7 +21,6 @@ lazy val commonSettings = Seq(
     "org.apache.commons" % "commons-rng-simple" % "1.3",
     "net.sourceforge.jdistlib" % "jdistlib" % "0.4.5",
     "com.github.pathikrit" %% "better-files" % "3.8.0",
-    //"org.locationtech.jts" % "jts" % "1.16.1" pomOnly(),
     "org.geotools" % "gt-shapefile" % geotoolsVersion ,
     "org.geotools" % "gt-geopkg" % geotoolsVersion,
     "org.geotools" % "gt-referencing" % geotoolsVersion,

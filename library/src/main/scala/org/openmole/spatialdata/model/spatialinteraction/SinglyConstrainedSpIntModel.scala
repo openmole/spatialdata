@@ -155,6 +155,8 @@ object SinglyConstrainedSpIntModel {
     val origin = SparseMatrix.diagonal(originMasses.flatValues)
     val destination = SparseMatrix.diagonal(destinationMasses.flatValues)
 
+    utils.log(s"origin: ${origin.nrows}x${origin.ncols}; normalisation: ${normalization.nrows}x${normalization.ncols}")
+
     val omat = if (originConstraint) origin %*% normalization else origin
     val dmat = if (originConstraint) destination else destination %*% normalization
 

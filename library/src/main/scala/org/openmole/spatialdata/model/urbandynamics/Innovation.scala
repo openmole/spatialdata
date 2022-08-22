@@ -17,9 +17,11 @@ import scala.util.Random
   *
   * Generalization of the Favaro-Pumain model for urban systems dynamics based on the diffusion of innovation
   *
-  *   Favaro, J. M., & Pumain, D. (2011). Gibrat Revisited: An Urban Growth Model Incorporating Spatial Interaction and Innovation Cycles. Geographical Analysis, 43(3), 261-286.
-  *   Raimbault, J. (2020). A model of urban evolution based on innovation diffusion. Artifical Life 2020 Proceedings.
-  *
+  *  Base model: Favaro, J. M., & Pumain, D. (2011). Gibrat Revisited: An Urban Growth Model Incorporating Spatial Interaction and Innovation Cycles. Geographical Analysis, 43(3), 261-286.
+  *  Urban evolution model: Raimbault, J. (2020). A model of urban evolution based on innovation diffusion. Artifical Life 2020 Proceedings.
+  *  Application to trade-offs between SDGs: Raimbault, J., & Pumain, D. (2022). Trade-offs between sustainable development goals in systems of cities. Journal of Urban Management.
+ *
+  * Rq: correct equation implemented here for population migration is Eq 7 in (Favaro & Pumain, 2011); typo in (Raimbault, 2020) Eq. 2 and (Raimbault and Pumain, 2022) Eq. 3: the product of adoption rates should be outside the exponential parenthesis
   *
   * @param populationMatrix        Real population matrix
   * @param distanceMatrix          Distance matrix
@@ -389,7 +391,16 @@ object Innovation {
     Seq(Seq(0,currentPopulations.map{math.pow(_,newInnovationHierarchy)/ptot}.scanLeft(0.0)(_+_).indexWhere(_>r)).max,currentPopulations.length-1).min
   }
 
-
+  /**
+   * Spatial interaction potential for population migration
+   *
+   * @param diffusedInnovs innovation matrices
+   * @param macroAdoptionLevels innovation macroscopic adoption levels
+   * @param currentPopulations population
+   * @param gravityDistanceWeights gravity weight
+   * @param time time
+   * @return
+   */
   def gravityPotentials(diffusedInnovs: Seq[Matrix], macroAdoptionLevels: Array[Double], currentPopulations: Array[Double], gravityDistanceWeights: Matrix, time: Int): Matrix = {
     val technoFactor: Array[Double] = diffusedInnovs.zip(macroAdoptionLevels).map{
       case(m,phi)=>

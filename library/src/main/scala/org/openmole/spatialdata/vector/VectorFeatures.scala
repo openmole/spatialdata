@@ -7,3 +7,5 @@ package org.openmole.spatialdata.vector
 trait VectorFeatures {
 
 }
+
+trait VectorFeature

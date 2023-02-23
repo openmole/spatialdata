@@ -6,7 +6,7 @@ import org.locationtech.jts.geom.GeometryFactory
 case class Polygons(
                    polygons: Seq[geom.Polygon],
                    attributes: Seq[Attributes] = Seq.empty
-                   ) {
+                   ) extends VectorFeatures {
 
   implicit val ordering: Ordering[Double] = Ordering.Double.TotalOrdering
 

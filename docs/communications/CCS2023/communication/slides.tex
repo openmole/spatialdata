@@ -96,7 +96,7 @@ Typology of \textbf{validation methods for simulation models} from a systematic 
 	   \item prediction
 	   \item sensitivity analysis
 	   \item uncertainty
-	   \item multiple methods
+	   \item multiple/mixed methods
 	   \item benchmark
 	   \item calibration
 	   \item optimisation
@@ -108,15 +108,15 @@ Typology of \textbf{validation methods for simulation models} from a systematic 
 	   \item Pattern Oriented Modelling
 	   \item participatory
 	   \item exploration
-	   \item mixed
 	   \item surrogate
 \end{itemize}
 	\end{column}
 \end{columns}
 
-\medskip
+\bigskip
+\bigskip
 
-Methods, standards and definitions strongly depend on disciplines and model functions \cite{raimbault2019validation}
+$\rightarrow$ \textit{Methods, standards and definitions strongly depend on disciplines and model functions \cite{raimbault2019validation}}
 
 }
 
@@ -128,9 +128,21 @@ Methods, standards and definitions strongly depend on disciplines and model func
 \justify
 
 $\rightarrow$ Spatio-temporal non-stationarity and non-ergodicity \cite{raimbault2019urban}
+
+\medskip
+
 $\rightarrow$ Fuzzy and noisy data \cite{olteanu2015knowledge}
+
+\medskip
+
 $\rightarrow$ Genericity/specificity of patterns and processes \cite{raimbault2020empowering}
+
+\medskip
+
 $\rightarrow$ Modifiable Areal Unit Problem \cite{wong2004modifiable}
+
+\medskip
+
 $\rightarrow$ Multiscalar systems \cite{raimbault2021strong}
 
 % Wong, D. (2009). The modifiable areal unit problem (MAUP). The SAGE handbook of spatial analysis, 105, 23.
@@ -162,11 +174,22 @@ $\rightarrow$ Multiscalar systems \cite{raimbault2021strong}
 
 \medskip
 
-$\implies$ \textit{\textbf{Construction of a generic library for spatial sensitivity analysis, including the generation of synthetic data, perturbation of real data and indicators}}
+$\implies$ \textit{\textbf{Construction of a generic methodology for spatial sensitivity analysis, including the generation of synthetic data, perturbation of real data and indicators}}
 
 
 % This contribution proposes to summarise different ongo- ing streams of research extending and developing this new crucial component of the validation of socio-spatial simulation models.
 
+
+\medskip
+
+\footnotesize
+ 
+Raimbault, J., Cottineau, C., Le Texier, M., Le Nechet, F., \& Reuillon, R. (2019). Space Matters: Extending Sensitivity Analysis to Initial Spatial Conditions in Geosimulation Models. Journal of Artificial Societies and Social Simulation, 22(4). \nocite{raimbault2019space}
+
+\medskip
+ 
+Raimbault, J., Perret, J., \& Reuillon, R. (2020). A scala library for spatial sensitivity analysis. GISRUK. \nocite{raimbault2020scala}
+ 
  
 }
 
@@ -193,19 +216,25 @@ $\rightarrow$ at different scales: microscopic (buildings), mesoscopic (populati
 
 \textit{At the microscopic scale (district): generating building layouts}
 
+\medskip
+
+\begin{itemize}
+	\item systematic comparison of simple processual generators for building configurations
+	\item introduction of morphological indicators
+	\item calibration on sampled layouts from OpenStreetMap
+\end{itemize}
+
+\bigskip
+
 \nocite{raimbault2019generating}
 
 \medskip
 
+\footnotesize
+
 Raimbault, J., \& Perret, J. (2019, July). Generating urban morphologies at large scales. In Artificial Life Conference Proceedings (pp. 179-186). MIT Press.
 
 \medskip
-
-\begin{itemize}
-	\item systematic comparison of simple processual generators
-	\item introduction of morphological indicators
-	\item calibration on sampled layouts from OpenStreetMap
-\end{itemize}
 
 }
 
@@ -263,6 +292,10 @@ Raimbault, J. (2019). An urban morphogenesis model capturing interactions betwee
 
 $\rightarrow$ \textit{Cities-network co-evolution model explored on synthetic systems of cities} \nocite{raimbault2021modeling}
 
+\bigskip
+
+\footnotesize
+
 Raimbault, J. (2021). Modeling the co-evolution of cities and networks. In Handbook of Cities and Networks (pp. 166-193). E. Elgar.
 
 
@@ -272,21 +305,25 @@ Raimbault, J. (2021). Modeling the co-evolution of cities and networks. In Handb
 
 
 
-\sframe{Method flowchart}{
+\sframe{Spatial sensitivity analysis}{
 
-\textit{General workflow to test the spatial sensitivity of simulation models}
+\textit{Generic workflow to test the spatial sensitivity of simulation models}
 
-\bigskip
+\medskip
+
+\begin{center}
+\includegraphics[width=0.9\textwidth]{../../gisruk2020/communication/figures/spatialsens_spacemattersworkflow.png}
+\end{center}
+
+\medskip
+
+$\rightarrow$ Application on the Schelling and Sugarscape models, showing important effects of the spatial configuration
+
+\medskip
 
 \footnotesize
 
 Raimbault, J., Cottineau, C., Le Texier, M., Le Nechet, F., \& Reuillon, R. (2019). Space Matters: Extending Sensitivity Analysis to Initial Spatial Conditions in Geosimulation Models. Journal of Artificial Societies and Social Simulation, 22(4).
-
-\bigskip
-
-\centering
-
-\includegraphics[width=\textwidth]{../../gisruk2020/communication/figures/spatialsens_spacemattersworkflow.png}
 
 }
 
@@ -344,10 +381,50 @@ $\rightarrow$ integration into the OpenMOLE model exploration open source softwa
 
 % First, the generator approach for synthetic urban config- urations was further explored. At the mesoscopic scale of an urban area, a benchmark of generative models for pop- ulation distribution was achieved, including models not in- vestigated before such as a gravity-based model [4] and a correlated percolation model [3]. Examples of generated configurations are shown in Fig. 1. A diversity-search al- gorithm provides the feasible morphological space for each model, showing the complementarity of the different generative processes to cover different regions of urban forms.
 
-\sframe{}{
+\sframe{Benchmarking population generators}{
+
+\textit{Which complementarity of different urban form generators at the mesoscopic scale (population distribution)?}
+
+
+\begin{columns}
+	\begin{column}{0.5\linewidth}
+		\begin{center}
+		\includegraphics[width=\textwidth]{../../../../../UrbanGrowth/Docs/Papers/MesoBenchmark/arxiv/v1/Fig3.png}
+		\end{center}
+	\end{column}
+	
+	\begin{column}{0.5\linewidth}
+		
+	Comparison of kernel mixture, reaction-diffusion \cite{raimbault2018calibration}, gravity-based model \cite{li2021singularity} and correlated percolation \cite{makse1998modeling}
+
+	\bigskip
+
+	\footnotesize
+
+	Raimbault, J. (2020). A comparison of simple models for urban morphogenesis. arXiv preprint arXiv:2008.13277. \nocite{raimbault2020comparison}
+
+	\end{column}
+	
+\end{columns}
+
+
+
 
 }
 
+\sframe{Complementary feasible space of generators}{
+
+\begin{center}
+	\includegraphics[width=0.65\textwidth]{../../../../../UrbanGrowth/Docs/Papers/MesoBenchmark/arxiv/v1/Fig4.png}
+\end{center}
+
+\medskip
+
+\footnotesize
+
+\textit{A diversity-search algorithm \cite{cherel2015beyond} provides feasible morphological spaces of the urban morphogenesis models, showing complementarity.}
+
+}
 
 
 
@@ -361,33 +438,58 @@ $\rightarrow$ integration into the OpenMOLE model exploration open source softwa
 \sframe{Real data perturbation}{
 
 
-\medskip
 
 $\rightarrow$ \textit{How does noise in real data impacts the result ?}
 
 
-\medskip
-
 \begin{itemize}
 	\item Impact of missing elements
 	\item Impact of imprecise coordinates or topology
-	\item Optimal matching between spatial datasets
+	\item Matching between spatial datasets to mitigate noise
 \end{itemize}
 
-
-\bigskip
-
-$\rightarrow$ \textit{How does perturbation of real data allows to explore scenario}
 
 \medskip
 
-\textbf{Examples:}
+$\rightarrow$ \textit{How does perturbation of real data allows to explore scenarios}
 
-\begin{itemize}
-   \item simulating urban projects by modifying population of areas with a given spatial correlation structure %Forcity example
-	\item simulating network disruptions or new transportation lines
-\end{itemize}
+%\medskip
+%\begin{itemize}
+%   \item simulating urban projects by modifying population of areas with a given spatial correlation structure %Forcity example
+%	\item simulating network disruptions or new transportation lines
+%\end{itemize}
 
+\medskip
+
+$\implies$ spatial sensitivity analysis based on noise propagation between perturbed real input data and simulation models
+
+\bigskip
+
+\textbf{Issue: } ``spatial noise'' is specific to each type of spatial structure and does not follow standard distributions (for example road networks or building polygons)
+
+
+\medskip
+
+$\rightarrow$ \textbf{how to define small variations in the morphological space?}
+
+
+}
+
+\sframe{Example of spatial noise: BDTopo}{
+
+\begin{center}
+	\includegraphics[width=0.62\linewidth]{figures/subdense_map.png}
+	\includegraphics[width=0.15\linewidth]{figures/subdense_legend.png}
+\end{center}
+
+\footnotesize
+\justify
+
+Map of Strasbourg building evolution (2012-2022) using IGN BDTopo: change in data specifications leads to split polygons, apparitions of artefacts, perturbations of polygons boundaries
+
+\medskip
+
+(see Subdense project: \url{https://github.com/subdense})
 
 }
 
@@ -398,7 +500,24 @@ $\rightarrow$ \textit{How does perturbation of real data allows to explore scena
 
 % Third, the open issue of indicators to quantify the variability due to space is being tackled by introducing variance- based indicators following the classical approach by [6]. For a correct statistical estimation of such indicators, the sampling of the morphological space must have a high discrepancy, what is not ensured by simply sampling the parameter space of synthetic generators. An approach based on diversity search for these generators is being tested and compared to a parameter sampling, in the case of population distribution generators and the Schelling model.
 
-\sframe{}{
+\sframe{Towards variance-based indicators}{
+
+\justify
+
+\textbf{Global Sensitivity Analysis} methods \cite{saltelli2008global} introduce interpretable indicators based on conditional variances, with a robust theoretical statistical background, and are widely established for simulation models
+
+\bigskip
+
+$\rightarrow$ \textit{How to compute such indicators with spatial configuration as a parameter?}
+
+\medskip
+
+$\rightarrow$ \textit{For the estimation to be correct, the full space must be sampled with a high discrepancy (using high-dimensional sequences for standard parameters).}
+
+\medskip 
+
+$\rightarrow$ \textit{Use diversity search to sample the feasible space of generators, compare with meta-parameter sampling; current application to the Schelling model to compare with the ad-hoc indicators of spatial sensitivity analysis based on distance between phase diagrams.}
+
 
 }
 
@@ -408,9 +527,37 @@ $\rightarrow$ \textit{How does perturbation of real data allows to explore scena
 
 % Finally, the link with other fields in which model sensitiv- ity analysis and validation is much widely developed com- pared to computational social science, is investigated from a theoretical point of view. In environmental science, similar frameworks have been proposed such as the perturbation of spatial datasets described in [7].
 
-\sframe{}{
+\sframe{Interdisciplinary systematic review}{
 
-\cite{koo2020position}
+\begin{columns}
+	\begin{column}{0.65\linewidth}
+		\begin{center}
+		\includegraphics[width=\textwidth]{../../../../../SimulationModels/Models/GeosimValidQuantEp/data/core_screen.png}	
+		\end{center}
+	\end{column}
+	\begin{column}{0.4\linewidth}
+	
+		\justify
+		\footnotesize
+	
+		Systematic literature review and mapping of validation methods for simulation methods \cite{raimbault2023validation}
+		
+		\medskip
+		
+		$\rightarrow$ link with similar approaches in other disciplines such as environmental science dealing with e.g. spatial uncertainty \cite{koo2020position}
+		
+		\medskip
+		
+		$\rightarrow$ link with approaches focusing more on uncertainty due to processes? (see presentation yesterday by C. De Bezenac)
+		
+	\end{column}
+\end{columns}
+
+
+
+
+
+
 
 }
 
@@ -418,11 +565,10 @@ $\rightarrow$ \textit{How does perturbation of real data allows to explore scena
 
 
 
+\sframe{Discussion: more open questions}{
 
+% These complementary research axis contribute to a more robust validation process for socio-spatial simulation mod- els.
 
-
-
-%\section{Discussion}
 
 %\subsection{Indicators}
 %\sframe{Spatial statistics}{
@@ -436,24 +582,11 @@ $\rightarrow$ \textit{How does perturbation of real data allows to explore scena
 %}
 
 
-\sframe{Discussion}{
-
-% These complementary research axis contribute to a more robust validation process for socio-spatial simulation mod- els.
-
-
-% morphogensis : interdisc ?
-
-% suggest: ecology (habitat / spatial niches ?) ; topography ; ?
-
-\textit{Developments}
-
-\medskip
-
 \begin{itemize}
-	\item more spatial network generative models \cite{raimbault2018multi}, correlated synthetic data \cite{raimbault2019second}
+	\item network generative models \cite{raimbault2018multi}, correlated synthetic data \cite{raimbault2019second}
 	\item domain models: LUTI, urban dynamics
-	\item other disciplines, ecology, geosciences \cite{mogheir2004characterizing}?
-	\item interaction with data driven disciplines ? (planning, architecture, spatio-temporal datamining)
+	\item other disciplines: ecology \cite{koo2020position}, geosciences \cite{mogheir2004characterizing}?
+	\item link with data driven disciplines ? (planning, architecture, spatio-temporal datamining)
 	\item genericity of some models? (reaction-diffusion)
 	\item synthetic data generation methods (synthetic populations)
 	\item synthetic data at the core of applied statistics methodology (less in spatial statistics?)
@@ -472,15 +605,16 @@ $\rightarrow$ \textit{How does perturbation of real data allows to explore scena
 
 \justify
 
-$\rightarrow$ \textbf{Space matters: } relevance of spatially-explicit models and spatial sensitivity analysis.
+$\rightarrow$ \textbf{Space matters: } relevance of spatially-explicit models and spatial sensitivity analysis for social simulation.
 
 \medskip
 
-$\rightarrow$ \textbf{Synthetic data: } first experimental samplings included in OpenMOLE, soon more to come.
+$\rightarrow$ \textbf{Generic methodology: } generators included in OpenMOLE, and current and future developments of the \texttt{spatialdata} library will be continuously integrated.
 
 \medskip
 
-$\rightarrow$ \textbf{Disciplinary context: } strong contingency on included models.
+$\rightarrow$ \textbf{Disciplinary context: } need interdisciplinary feedback and more methods and models transfers.
+
 
 \bigskip
 \bigskip
@@ -489,7 +623,7 @@ $\rightarrow$ \textbf{Disciplinary context: } strong contingency on included mod
 
 \medskip
 
-\textit{Open issues at } \url{https://github.com/openmole/spatialdata/issues}
+\textit{Use OpenMOLE } \url{https://openmole.org}
 
  
 

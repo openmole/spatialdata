@@ -1,6 +1,6 @@
 # This is the list of spatialdata's significant contributors.
-#
-# This does not necessarily list everyone who has contributed code, especially since many employees of one corporation may be contributing.
-# To see the full list of contributors, see the revision history in source control.
-Juste Raimbault
-Julien Perret
+This does not necessarily list everyone who has contributed code, especially since many employees of one corporation may be contributing.
+To see the full list of contributors, see the revision history in source control.
+
+- Juste Raimbault
+- Julien Perret

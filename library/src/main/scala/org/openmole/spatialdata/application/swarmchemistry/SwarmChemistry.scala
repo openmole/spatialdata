@@ -1,5 +1,9 @@
 package org.openmole.spatialdata.application.swarmchemistry
 
+import org.openmole.spatialdata.application.swarmchemistry.SwarmChemistry.CompetitionFunction
+import org.openmole.spatialdata.grid.synthetic.ExpMixtureGridGenerator
+import org.openmole.spatialdata.utils.math.Statistics
+
 import java.util.StringTokenizer
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
@@ -7,14 +11,15 @@ import scala.util.control.Breaks._
 
 case class SwarmChemistry(
                            mutationRateAtTransmission: Double = 0.1,
-                           mutationRateAtNormalTime: Double = 0.001,
+                           mutationRateAtNormalTime: Double = 0.05,
                            populationChangeMagnitude: Double = 0.8,
                            duplicationOrDeletionRatePerParameterSets: Double = 0.1,
                            randomAdditionRatePerRecipe: Double = 0.1,
                            pointMutationRatePerParameter: Double = 0.1,
                            pointMutationMagnitude: Double = 0.5,
                            majorityInteractionRadius: Double = 30.0,
-                           numberOfIndividualsMax: Int = 10000,
+                           recipeTransmissionRadius: Double = 10.0,
+                           numberOfIndividualsMax: Int = 100,
                            neighborhoodRadiusMax: Double = 300.0,
                            normalSpeedMax: Double = 20.0,
                            maxSpeedMax: Double = 40.0,
@@ -27,8 +32,15 @@ case class SwarmChemistry(
                            worldHeight: Double = 5000.0,
                            worldXBound: Double = 150.0,
                            worldYBound: Double = 150.0,
+                           spaceRasterWidth: Int = 500,
+                           spaceRasterHeight: Int = 500,
                            initMaxSpeed: Double = 10.0,
-                           endtime: Int = 30000
+                           endtime: Int = 10000,
+                           competitionTypes: Seq[CompetitionFunction] = Seq(SwarmChemistry.Faster(), SwarmChemistry.Slower(), SwarmChemistry.Behind(), SwarmChemistry.Majority(), SwarmChemistry.MajorityRelative()),
+                           zipfNCenters: Int = 10,
+                           zipfMaxKernelRadius: Int = 50,
+                           zipfCentersPopulationScaling: Double = 1.0,
+                           zipfInsideThreshold: Double = 0.5
                          ) {
 
 
@@ -38,14 +50,41 @@ case class SwarmChemistry(
 
 object SwarmChemistry {
 
-  def runSwarmChemistry()(implicit model: SwarmChemistry, rng: Random): Unit = {
-    // initialise
+  def runSwarmChemistry(initMode: String, spatialGenerator: String)(implicit model: SwarmChemistry, rng: Random): Unit = {
+    import model._
+    // initialise swarm
+    initialisePopulation(initMode)
+    // initialise space
+    Space.initialiseSpace(spatialGenerator)
+
+    println(s"Initialised: pop: ${swarmInBirthOrder.length} ; indicators: $indicators; world: ${spatialCompetition.head.head}")
+
+    // run
+    for(t <- 0 until endtime) {
+      if(t%1000==0) println(s" === t = $t ; indicators = $indicators ; avg pos = (${swarmInBirthOrder.map(_.x).sum/swarmInBirthOrder.size.toDouble}, ${swarmInBirthOrder.map(_.y).sum/swarmInBirthOrder.size.toDouble})")
+      simulateSwarmBehavior
+      updateStates
+    }
   }
 
+  /**
+   * c1 c2 c3 avg and sd
+   * @return
+   */
+  def indicators: (Double, Double, Double, Double, Double, Double) = (
+    swarmInBirthOrder.map(_.genome.c1).sum / swarmInBirthOrder.length.toDouble,
+    Statistics.std(swarmInBirthOrder.map(_.genome.c1)),
+    swarmInBirthOrder.map(_.genome.c2).sum / swarmInBirthOrder.length.toDouble,
+    Statistics.std(swarmInBirthOrder.map(_.genome.c2)),
+    swarmInBirthOrder.map(_.genome.c3).sum / swarmInBirthOrder.length.toDouble,
+    Statistics.std(swarmInBirthOrder.map(_.genome.c3))
+  )
+
   // mutable state of the simulation
-  var swarmInBirthOrder: Seq[SwarmIndividual] = Seq.empty
-  var swarmInXOrder: Seq[SwarmIndividual] = Seq.empty
-  var swarmInYOrder: Seq[SwarmIndividual] = Seq.empty
+  var swarmInBirthOrder: Array[SwarmIndividual] = Array.empty
+  var swarmInXOrder: Array[SwarmIndividual] = Array.empty
+  var swarmInYOrder: Array[SwarmIndividual] = Array.empty
+  var spatialCompetition: Array[Array[CompetitionFunction]] = Array.empty
 
   trait CompetitionFunction
   case class Faster() extends CompetitionFunction
@@ -54,50 +93,49 @@ object SwarmChemistry {
   case class Majority() extends CompetitionFunction
   case class MajorityRelative() extends CompetitionFunction
 
+  def getCompetitionFunction(x: Double, y: Double)(implicit model: SwarmChemistry): CompetitionFunction = {
+    val W = spatialCompetition(0).length.toDouble; val H = spatialCompetition.length.toDouble
+    val i = ((x + model.worldWidth/2)*W/model.worldWidth).toInt
+    val j = ((y + model.worldHeight/2)*H/model.worldHeight).toInt
+    val ii: Int = math.min(math.max(i,0),W-1).toInt
+    val jj: Int = math.min(math.max(j,0),H-1).toInt
+    spatialCompetition(ii)(jj)
+  }
 
-  def updateStates()(implicit model: SwarmChemistry): Unit = {
-    var tempSwarm: SwarmIndividual = null
-    var tempSwarm2: SwarmIndividual = null
-    val numberOfSwarm = swarmInBirthOrder.size
-    var j=0
+  def initialisePopulation(initMode: String)(implicit model: SwarmChemistry, rng: Random): Unit = {
 
-    for (i <- 0 until numberOfSwarm){SwarmIndividual.move(swarmInBirthOrder(i))}
+    val fixedParams = SwarmParameters(10, 0, 0, 0, 0, 0, 0, 1) // FIXME hardcoded
 
-    val xorder = new ArrayBuffer[SwarmIndividual];xorder.addAll(swarmInXOrder)
-    val yorder = new ArrayBuffer[SwarmIndividual];yorder.addAll(swarmInYOrder)
+    val population = initMode match {
+      // random pop with fixed majority
+      case s: String if s.startsWith("random") =>
+        val n = s.split(":")(1).toInt
 
-    // Sorting swarmInXOrder and swarmInYOrder using insertion sorting algorithm
-    for (i <- 1 until numberOfSwarm) {
-      tempSwarm = xorder(i)
-      j = i
-      breakable{ while (j > 0) {
-        tempSwarm2 = xorder(j - 1)
-        if (tempSwarm2.x > tempSwarm.x) {
-          xorder(j) = tempSwarm2
-          j = j-1
+        Seq.fill(n)(SwarmIndividual())++
+          Seq.fill(model.numberOfIndividualsMax - n){
+            SwarmIndividual((rng.nextDouble()-0.5)*model.worldWidth, (rng.nextDouble()-0.5)*model.worldHeight, 0.0, 0.0, fixedParams)
+          }
+      // recipe
+      case r =>
+        val recipe = Recipe(r)
+        val tempPop = Recipe.createPopulation(recipe)
+        tempPop++Seq.fill(model.numberOfIndividualsMax - tempPop.size){
+          SwarmIndividual((rng.nextDouble()-0.5)*model.worldWidth, (rng.nextDouble()-0.5)*model.worldHeight, 0.0, 0.0, fixedParams)
         }
-        else break
-      }}
-      xorder(j) = tempSwarm
-
-      tempSwarm = yorder(i)
-      j = i
-      breakable{while (j > 0) {
-        tempSwarm2 = yorder(j - 1)
-        if (tempSwarm2.y > tempSwarm.y) {
-          yorder(j) = tempSwarm2
-          j = j - 1
-        }
-        else break;
-      }}
-      yorder(j)  = tempSwarm
     }
 
-    swarmInXOrder = xorder.toSeq
-    swarmInYOrder = yorder.toSeq
+    swarmInBirthOrder = population.toArray
+
+    updateStates
+  }
+
+  def updateStates(implicit model: SwarmChemistry): Unit = {
+    swarmInBirthOrder.foreach(SwarmIndividual.move(_))
+
+    swarmInXOrder = swarmInBirthOrder.sortBy(_.x)
+    swarmInYOrder = swarmInBirthOrder.sortBy(_.y)
 
     resetRanksInSwarm()
-
   }
 
   def resetRanksInSwarm(): Unit = {
@@ -113,7 +151,7 @@ object SwarmChemistry {
 
     val ytoremove = new ArrayBuffer[SwarmIndividual]
     for (i <- swarmInYOrder.indices) {
-      tempSwarm = swarmInYOrder(i);
+      tempSwarm = swarmInYOrder(i)
       if (tempSwarm.rankInYOrder != -1) tempSwarm.rankInYOrder = i
       else ytoremove.addOne(tempSwarm)
     }
@@ -121,7 +159,13 @@ object SwarmChemistry {
   }
 
 
-  def simulateSwarmBehavior(competitionFunction: CompetitionFunction)(implicit model: SwarmChemistry, rng: Random): Unit = {
+  /**
+   * (competitionFunction: CompetitionFunction) -> not as main arg, but dependant on space
+   *
+   * @param model model
+   * @param rng rng
+   */
+  def simulateSwarmBehavior(implicit model: SwarmChemistry, rng: Random): Unit = {
 
     import model._
 
@@ -156,29 +200,33 @@ object SwarmChemistry {
       var tempRSquared: Double = 0.0
       var nearest: SwarmIndividual = null
 
-      neighbors = neighborsOf(tempSwarm, 10)
+      neighbors = neighborsOf(tempSwarm, model.recipeTransmissionRadius)
       n = neighbors.size
       for (j <- 0 until n) {
         tempSwarm2 = neighbors(j)
         if (tempSwarm2.recipe != null) {
           tempRSquared = (tempX - tempSwarm2.x) * (tempX - tempSwarm2.x) + (tempY - tempSwarm2.y) * (tempY - tempSwarm2.y)
           if (tempRSquared < minRSquared) {
-            minRSquared = tempRSquared; nearest = tempSwarm2;
+            minRSquared = tempRSquared; nearest = tempSwarm2
           }
         }
       }
 
+      //println(nearest)
       if (nearest != null) {
         if (tempSwarm.recipe != nearest.recipe) {
-          if (tempSwarm.recipe == null || losing(tempSwarm, nearest, competitionFunction)) {
+          //println("diff recipe")
+          if (tempSwarm.recipe == null || losing(tempSwarm, nearest)) {
             if (rng.nextDouble() < mutationRateAtTransmission) tempSwarm.copy(recipe = Recipe.mutate(nearest.recipe))
             else tempSwarm = tempSwarm.copy(recipe = nearest.recipe)
-            tempSwarm = tempSwarm.copy(genome = Recipe.randomlyPickParameters(tempSwarm.recipe))
+            val newgenome = Recipe.randomlyPickParameters(tempSwarm.recipe)
+            //println(s"transmission : delta c_i = ${newgenome - tempSwarm.genome}")
+            tempSwarm = tempSwarm.copy(genome = newgenome)
           }
         }
       }
 
-      neighbors = neighborsOf(tempSwarm, param.neighborhoodRadius);
+      neighbors = neighborsOf(tempSwarm, param.neighborhoodRadius)
 
       n = neighbors.size
 
@@ -192,7 +240,7 @@ object SwarmChemistry {
         localDY = 0.0
         for (j <- 0 until n) {
           tempSwarm2 = neighbors(j)
-          localCenterX += tempSwarm2.x; localCenterY += tempSwarm2.y; localDX += tempSwarm2.dx; localDY += tempSwarm2.dy;
+          localCenterX += tempSwarm2.x; localCenterY += tempSwarm2.y; localDX += tempSwarm2.dx; localDY += tempSwarm2.dy
         }
 
         localCenterX /= n.toDouble
@@ -208,35 +256,30 @@ object SwarmChemistry {
           }
         }
 
-        tempAx = 0.0;
-        tempAy = 0.0;
-
-        tempAx += (localCenterX - tempX) * param.c1
-        tempAy += (localCenterY - tempY) * param.c1
-
-        tempAx += (localDX - tempSwarm.dx) * param.c2
-        tempAy += (localDY - tempSwarm.dy) * param.c2
+        tempAx = 0.0; tempAy = 0.0
+        tempAx += (localCenterX - tempX) * param.c1; tempAy += (localCenterY - tempY) * param.c1
+        tempAx += (localDX - tempSwarm.dx) * param.c2; tempAy += (localDY - tempSwarm.dy) * param.c2
 
         for (j <- 0 until n) {
           tempSwarm2 = neighbors(j)
           tempX2 = tempSwarm2.x
           tempY2 = tempSwarm2.y
-          d = (tempX - tempX2) * (tempX - tempX2) + (tempY - tempY2) * (tempY - tempY2);
+          d = (tempX - tempX2) * (tempX - tempX2) + (tempY - tempY2) * (tempY - tempY2)
           if (d == 0) d = 0.001
-          tempAx += (tempX - tempX2) / d * param.c3;
-          tempAy += (tempY - tempY2) / d * param.c3;
+          tempAx += (tempX - tempX2) / d * param.c3
+          tempAy += (tempY - tempY2) / d * param.c3
         }
 
-        if (rng.nextDouble < param.c4) {
-          tempAx += (rng.nextDouble - 0.5) * initMaxSpeed
-          tempAy += (rng.nextDouble - 0.5) * initMaxSpeed
+        if (rng.nextDouble() < param.c4) {
+          tempAx += (rng.nextDouble() - 0.5) * initMaxSpeed
+          tempAy += (rng.nextDouble() - 0.5) * initMaxSpeed
         }
       }
 
       SwarmIndividual.accelerate(tempSwarm, tempAx, tempAy, param.maxSpeed)
 
       tempDX = tempSwarm.dx2; tempDY = tempSwarm.dy2
-      d = math.sqrt(tempDX * tempDX + tempDY * tempDY);
+      d = math.sqrt(tempDX * tempDX + tempDY * tempDY)
       if (d == 0) d = 0.001
       SwarmIndividual.accelerate(tempSwarm, tempDX * (param.normalSpeed - d) / d * param.c5,
         tempDY * (param.normalSpeed - d) / d * param.c5,
@@ -244,16 +287,26 @@ object SwarmChemistry {
 
       if (rng.nextDouble() < mutationRateAtNormalTime)
         if (tempSwarm.recipe != null) tempSwarm = tempSwarm.copy(recipe = Recipe.mutate(tempSwarm.recipe))
+
+      swarmInBirthOrder(i) = tempSwarm
     }
   }
 
 
-  def losing(defender: SwarmIndividual, attacker: SwarmIndividual, compfunc: CompetitionFunction)(implicit model: SwarmChemistry, rng: Random): Boolean = {
+  /**
+   * compfunc: CompetitionFunction -> determined by position of agents -> average
+   * @param defender defender
+   * @param attacker attacker
+   * @param model model
+   * @param rng rng
+   * @return
+   */
+  def losing(defender: SwarmIndividual, attacker: SwarmIndividual)(implicit model: SwarmChemistry, rng: Random): Boolean = {
 
-    compfunc match {
+    getCompetitionFunction((defender.x+attacker.x)/2, (defender.y+attacker.y)/2) match {
       case _: Faster => if (defender.dx * defender.dx + defender.dy * defender.dy > attacker.dx * attacker.dx + attacker.dy * attacker.dy) false else true
       case _: Slower => if (defender.dx * defender.dx + defender.dy * defender.dy < attacker.dx * attacker.dx + attacker.dy * attacker.dy) false else true
-      case _: Behind => {
+      case _: Behind =>
         val angle = 0.75 * Math.PI
         val threshold = Math.cos (angle)
         val ax = attacker.x - defender.x
@@ -261,8 +314,8 @@ object SwarmChemistry {
         val bx = defender.dx
         val by = defender.dy
         if ((ax * bx + ay * by) > threshold * math.sqrt (ax * ax + ay * ay) * math.sqrt (bx * bx + by * by) ) false else true
-      }
-      case _: Majority => {
+
+      case _: Majority =>
         val interactionRadius = model.majorityInteractionRadius
         val defNeighbors = neighborsOf(defender, interactionRadius)
         val attNeighbors = neighborsOf(attacker, interactionRadius)
@@ -275,8 +328,8 @@ object SwarmChemistry {
           if (attNeighbors(j).recipe == attacker.recipe) attNumber =attNumber + 1
         }
         if (defNumber < attNumber) true else false
-      }
-      case _: MajorityRelative => {
+
+      case _: MajorityRelative =>
         val defNeighbors = neighborsOf(defender, math.max (model.majorityInteractionRadius, defender.genome.neighborhoodRadius))
         val attNeighbors = neighborsOf(attacker, math.max (model.majorityInteractionRadius, attacker.genome.neighborhoodRadius))
         var defNumber = 0.0
@@ -290,7 +343,7 @@ object SwarmChemistry {
           if (attNeighbors.size > 0.0) attNumber /= attNeighbors.size
         }
         if (defNumber < attNumber) true else false
-      }
+
       // cases to add : "majority-stochastic" ; "majority-relative-stochastic" ; "recipe-length" ; "majority-and-recipe-length" ; "recipe-length-then-majority"
       case _ => false
     }
@@ -299,9 +352,9 @@ object SwarmChemistry {
 
   def neighborsOf(tempSwarm: SwarmIndividual, radius: Double): Seq[SwarmIndividual] = {
     val ngbs = new ArrayBuffer[SwarmIndividual]
-    var tempX = tempSwarm.x
-    var tempY = tempSwarm.y
-    val neighborhoodRadiusSquared = radius * radius;
+    val tempX = tempSwarm.x
+    val tempY = tempSwarm.y
+    val neighborhoodRadiusSquared = radius * radius
 
     var tempSwarm2: SwarmIndividual = null
 
@@ -316,22 +369,24 @@ object SwarmChemistry {
     var minRankInYOrder = tempSwarm.rankInYOrder
     var maxRankInYOrder = tempSwarm.rankInYOrder
 
+    //println(swarmInXOrder)
+
     breakable {for (j <- tempSwarm.rankInXOrder - 1 to 0 by -1) {
       if (swarmInXOrder(j).x >= minX) minRankInXOrder = j
-      else break
+      else break()
     }}
 
     breakable {for  (j <- tempSwarm.rankInXOrder + 1 until numberOfSwarm) {
       if (swarmInXOrder(j).x <= maxX) maxRankInXOrder = j
-      else break;
+      else break()
     }}
     breakable {for (j <- tempSwarm.rankInYOrder - 1 to 0 by -1) {
-      if (swarmInYOrder(j).y >= minY) minRankInYOrder = j;
-      else break;
+      if (swarmInYOrder(j).y >= minY) minRankInYOrder = j
+      else break()
     }}
     breakable {for (j <- tempSwarm.rankInYOrder + 1 until numberOfSwarm) {
-      if (swarmInYOrder(j).y <= maxY) maxRankInYOrder = j;
-      else break;
+      if (swarmInYOrder(j).y <= maxY) maxRankInYOrder = j
+      else break()
     }}
 
     if (maxRankInXOrder - minRankInXOrder < maxRankInYOrder - minRankInYOrder) {
@@ -340,7 +395,7 @@ object SwarmChemistry {
         if (tempSwarm != tempSwarm2)
           if (tempSwarm2.rankInYOrder >= minRankInYOrder && tempSwarm2.rankInYOrder <= maxRankInYOrder) {
             if ((tempSwarm2.x - tempSwarm.x) * (tempSwarm2.x - tempSwarm.x) +
-              (tempSwarm2.y - tempSwarm.y) * (tempSwarm2.y - tempSwarm.y) < neighborhoodRadiusSquared) ngbs.addOne(tempSwarm2);
+              (tempSwarm2.y - tempSwarm.y) * (tempSwarm2.y - tempSwarm.y) < neighborhoodRadiusSquared) ngbs.addOne(tempSwarm2)
           }
       }
     }
@@ -349,7 +404,7 @@ object SwarmChemistry {
         tempSwarm2 = swarmInYOrder(j)
         if (tempSwarm != tempSwarm2)
           if (tempSwarm2.rankInXOrder >= minRankInXOrder && tempSwarm2.rankInXOrder <= maxRankInXOrder) {
-            if ((tempSwarm2.x - tempSwarm.x) * (tempSwarm2.x - tempSwarm.x) + (tempSwarm2.y - tempSwarm.y) * (tempSwarm2.y - tempSwarm.y) < neighborhoodRadiusSquared) ngbs.addOne(tempSwarm2);
+            if ((tempSwarm2.x - tempSwarm.x) * (tempSwarm2.x - tempSwarm.x) + (tempSwarm2.y - tempSwarm.y) * (tempSwarm2.y - tempSwarm.y) < neighborhoodRadiusSquared) ngbs.addOne(tempSwarm2)
           }
       }
     }
@@ -367,7 +422,9 @@ object SwarmChemistry {
                               c3: Double,
                               c4: Double,
                               c5: Double
-                            )
+                            ) {
+    def -(other: SwarmParameters): Double = math.abs(c1 - other.c1) + math.abs(c2 - other.c2)+ math.abs(c3 - other.c3)  //math.abs(neighborhoodRadius - other.neighborhoodRadius)+math.abs(normalSpeed - other.normalSpeed)+ math.abs(maxSpeed - other.maxSpeed)
+  }
 
   object SwarmParameters {
     def apply()(implicit model: SwarmChemistry, rng: Random): SwarmParameters = {
@@ -505,12 +562,11 @@ object SwarmChemistry {
     def apply(parameters: Iterable[SwarmParameters], popCounts: Iterable[Int]): Recipe = Recipe(parameters.toSeq, popCounts.toSeq, recipeText(parameters.toSeq, popCounts.toSeq))
 
     def recipeText(parameters: Seq[SwarmParameters], popCounts: Seq[Int]): String = {
-      def shorten(d: Double) = (d * 100.0).round / 100.0
+      def shorten(d: Double): String = ((d * 100.0).round / 100.0).toString
 
       parameters.zip(popCounts).map{
         case (p, n) =>
-          n.toString+ " * (" + shorten(p.neighborhoodRadius) + ", "+shorten(p.normalSpeed) + ", "+shorten(p.maxSpeed) + ", "
-          +shorten(p.c1) + ", "+shorten(p.c2) + ", "+shorten(p.c3) + ", "+shorten(p.c4) + ", "+shorten(p.c5)+")"
+          n.toString+ " * (" + shorten(p.neighborhoodRadius) + ", "+shorten(p.normalSpeed) + ", "+shorten(p.maxSpeed) + ", "+shorten(p.c1) + ", "+shorten(p.c2) + ", "+shorten(p.c3) + ", "+shorten(p.c4) + ", "+shorten(p.c5)+")"
       }.mkString("\n")
     }
 
@@ -527,18 +583,17 @@ object SwarmChemistry {
 
     def createPopulation(recipe: Recipe)(implicit model: SwarmChemistry, rng: Random): Seq[SwarmIndividual] = {
       import model._
-      val pop = new ArrayBuffer[SwarmIndividual]
-      recipe.parameters.zip(recipe.popCounts).map {
+      recipe.parameters.zip(recipe.popCounts).flatMap {
         case (p, n) =>
           Seq.fill(n)(SwarmIndividual.apply((rng.nextDouble()-0.5)*worldWidth, (rng.nextDouble()-0.5)*worldHeight, (rng.nextDouble()-0.5)*initMaxSpeed, (rng.nextDouble()-0.5)*initMaxSpeed, p, recipe))
-      }.toSeq.flatten
+      }
     }
 
     def randomlyPickParameters(recipe: Recipe)(implicit rng: Random): SwarmParameters = {
-      var totalPopulation = recipe.popCounts.sum
+      val totalPopulation = recipe.popCounts.sum
       val numberOfIngredients = recipe.parameters.size
 
-      val r = math.floor(rng.nextDouble * totalPopulation).toInt
+      val r = (rng.nextDouble() * totalPopulation).toInt
 
       var j = 0
       for (i <- 0 until numberOfIngredients) {
@@ -549,34 +604,37 @@ object SwarmChemistry {
     }
 
     def mutate(mutating: Recipe)(implicit model: SwarmChemistry, rng: Random): Recipe = {
+      //println(s"mutating recipe $mutating")
       //var tempRecipe = mutating.copy(recipeText = recipeText(mutating))
       val parameters = new ArrayBuffer[SwarmParameters]; parameters.addAll(mutating.parameters)
       val popCounts = new ArrayBuffer[Int]; popCounts.addAll(mutating.popCounts)
-      var numberOfIngredients: Int = parameters.size;
+      var numberOfIngredients: Int = parameters.size
 
       var j = 0
       while (j<numberOfIngredients){
+        if (j < parameters.length) { // FIXME dirty fix
+          if (rng.nextDouble() < model.duplicationOrDeletionRatePerParameterSets) {
+            if (rng.nextDouble() < .5) { // Duplication
 
-        if (rng.nextDouble < model.duplicationOrDeletionRatePerParameterSets) {
-          if (rng.nextDouble < .5) { // Duplication
-            parameters(j+1) = parameters(j)
-            popCounts(j+1) = popCounts(j)
-            numberOfIngredients = numberOfIngredients + 1
-            j = j + 1
-          }
-          else { // Deletion
-            if (numberOfIngredients > 1) {
-              parameters.remove(j)
-              popCounts.remove(j);
-              numberOfIngredients = numberOfIngredients - 1
-              j = j -1
+              if (j + 1 >= parameters.length) parameters.addOne(parameters(j)) else parameters(j + 1) = parameters(j)
+              if (j + 1 >= popCounts.length) popCounts.addOne(popCounts(j)) else popCounts(j + 1) = popCounts(j)
+              numberOfIngredients = numberOfIngredients + 1
+              j = j + 1
+            }
+            else { // Deletion
+              if (numberOfIngredients > 1) {
+                parameters.remove(j)
+                popCounts.remove(j)
+                numberOfIngredients = numberOfIngredients - 1
+                j = j - 1
+              }
             }
           }
         }
         j = j + 1
       }
 
-      if (rng.nextDouble < model.randomAdditionRatePerRecipe) { // Addition
+      if (rng.nextDouble() < model.randomAdditionRatePerRecipe) { // Addition
         parameters.addOne(SwarmParameters.apply())
         popCounts.addOne((rng.nextDouble() * model.numberOfIndividualsMax * 0.5).toInt + 1)
       }
@@ -606,13 +664,25 @@ object SwarmChemistry {
   }
 
   object SwarmIndividual {
-    def apply()(implicit model: SwarmChemistry, rng: Random): SwarmIndividual = SwarmIndividual(SwarmParameters.apply())
+    /**
+     * random individual
+     * @param  model model
+     * @param rng rng
+     * @return
+     */
+    def apply()(implicit model: SwarmChemistry, rng: Random): SwarmIndividual = {
+      val randomParams = SwarmParameters.apply()
+      val x = (rng.nextDouble()-0.5)*model.worldWidth
+      val y = (rng.nextDouble()-0.5)*model.worldHeight
+      SwarmIndividual(x,y,0.0,0.0, randomParams)
+    }
     def apply(x: Double, y: Double, dx: Double, dy: Double, g: SwarmParameters): SwarmIndividual = {
-      val indiv = SwarmIndividual(g); indiv.x = x; indiv.y = y; indiv.dx = dx; indiv.dy = dy; indiv.dx2 = dx; indiv.dy2 = dy;
-      indiv
+      val indiv = SwarmIndividual(g); indiv.x = x; indiv.y = y; indiv.dx = dx; indiv.dy = dy; indiv.dx2 = dx; indiv.dy2 = dy
+      val recipe = Recipe(Seq(indiv))
+      indiv.copy(recipe = recipe)
     }
     def apply(x: Double, y: Double, dx: Double, dy: Double, g: SwarmParameters, r: Recipe): SwarmIndividual = {
-      val indiv = SwarmIndividual(g, r); indiv.x = x; indiv.y = y; indiv.dx = dx; indiv.dy = dy; indiv.dx2 = dx; indiv.dy2 = dy;
+      val indiv = SwarmIndividual(g, r); indiv.x = x; indiv.y = y; indiv.dx = dx; indiv.dy = dy; indiv.dx2 = dx; indiv.dy2 = dy
       indiv
     }
 
@@ -644,7 +714,50 @@ object SwarmChemistry {
   }
 
 
+  object Space {
 
+
+    /**
+     * random among global list of compet types; for later: compare different types of compet
+     * @param mode mode
+     * @param model model
+     * @param rng rng
+     */
+    def initialiseSpace(mode: String)(implicit model: SwarmChemistry, rng: Random): Unit = {
+      spatialCompetition = mode match {
+        case "random" => Array.fill(model.spaceRasterWidth,model.spaceRasterHeight){rng.shuffle(model.competitionTypes).head}
+        case "uniform" =>
+          val compet = rng.shuffle(model.competitionTypes).head
+          Array.fill(model.spaceRasterWidth,model.spaceRasterHeight)(compet)
+
+        case "split" => // simple split
+          val xsplit = (rng.nextDouble()-0.5)*model.worldWidth*0.8
+          val ysplit = (rng.nextDouble()-0.5)*model.worldHeight*0.8
+          val quadrants = Seq.fill(4){rng.shuffle(model.competitionTypes).head}
+          Array.tabulate(model.spaceRasterWidth,model.spaceRasterHeight){case (i,j) =>
+            val x = (i.toDouble/model.spaceRasterWidth.toDouble - 0.5)*model.worldWidth
+            val y = (j.toDouble/model.spaceRasterHeight.toDouble - 0.5)*model.worldHeight
+            if (x < xsplit && y < ysplit) quadrants.head
+            if (x < xsplit && y > ysplit) quadrants(1)
+            if (x > xsplit && y < ysplit) quadrants(2)
+            if (x > xsplit && y > ysplit) quadrants(3)
+            quadrants.head
+          }
+
+        case "zipf" => // hierarchical structure
+          val kernelSizes = (1 to model.zipfNCenters).map(i => model.zipfMaxKernelRadius/math.pow(i, model.zipfCentersPopulationScaling))
+          val pr: Array[Array[Double]] =
+            ExpMixtureGridGenerator(Right((model.spaceRasterWidth, model.spaceRasterHeight)),
+              model.zipfNCenters, 1.0, kernelSizes).generateGrid
+          val m = pr.flatten.max(Ordering.Double.TotalOrdering)
+          val prnorm = pr.map(_.map(_/m))
+          val io = (rng.shuffle(model.competitionTypes).head, rng.shuffle(model.competitionTypes).head)
+          Array.tabulate(model.spaceRasterWidth,model.spaceRasterHeight) { case (i, j) =>
+            if (prnorm(i)(j)> model.zipfInsideThreshold) io._1 else io._2
+          }
+      }
+    }
+  }
 
 
 

@@ -1,5 +1,6 @@
 package org.openmole.spatialdata.scalatest.utils.graph
 
+import org.openmole.spatialdata.network.ShortestPaths.|-|
 import org.openmole.spatialdata.network.{Network, ShortestPaths}
 import org.openmole.spatialdata.network.synthetic.{RandomNetworkGenerator, TreeMinDistGenerator}
 import org.openmole.spatialdata.utils.graph.GraphAlgorithms._
@@ -24,7 +25,7 @@ class GraphAlgorithmsSpec extends AnyFlatSpec {
       val nodes = nw.nodes.toSeq
       val (sp2, _) = withTimer[Network, ShortestPaths](nw => shortestPaths(nw, nodes, nodes , { l => l.length }, DijkstraJGraphT()))(nw)
       val (sp3, _) = withTimer[Network, ShortestPaths](nw => shortestPaths(nw, nodes, nodes, { l => l.length }, FloydWarshallJGraphT()))(nw)
-      assert((sp3 |-| sp2) < 1e-5)
+      assert(|-|(sp3,sp2) < 1e-5)
     }
   }
 

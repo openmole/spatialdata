@@ -10,7 +10,7 @@ import scala.util.Random
 
 class BlocksGridGeneratorSpec extends AnyFlatSpec  {
 
-    implicit val rng = new Random
+    implicit val rng: Random = new Random
 
   //FIXME check the components function for grids
   /*

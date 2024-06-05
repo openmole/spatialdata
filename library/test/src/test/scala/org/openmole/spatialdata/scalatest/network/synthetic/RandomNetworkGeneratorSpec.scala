@@ -9,7 +9,7 @@ import scala.util.Random
 
 class RandomNetworkGeneratorSpec extends AnyFlatSpec {
 
-  implicit val rng = new Random
+  implicit val rng: Random = new Random
 
   "An empty random network" should "be the empty network" in {
     val emptyRandomNetworkGenerator = new RandomNetworkGenerator(0,0)

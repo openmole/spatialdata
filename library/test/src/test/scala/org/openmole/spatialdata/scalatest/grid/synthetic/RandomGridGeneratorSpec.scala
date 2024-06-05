@@ -8,7 +8,7 @@ import scala.util.Random
 
 class RandomGridGeneratorSpec extends AnyFlatSpec  {
 
-  implicit val rng = new Random
+  implicit val rng: Random = new Random
 
   "A random grid" should "be a probability density" in {
     val randomGridGenerator = new RandomGridGenerator(50,totalPopulation = 1.0)

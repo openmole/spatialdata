@@ -1,18 +1,24 @@
-package org.openmole.spatialdata.application.sdg
+package org.openmole.spatialdata.application.multimodelmacro
 
 import org.openmole.spatialdata.model.urbandynamics.Coevolution.CoevolutionState
 import org.openmole.spatialdata.model.urbandynamics.EconomicExchanges.EconomicExchangesState
 import org.openmole.spatialdata.model.urbandynamics.Innovation.{InnovationState, InnovationUtilityLogNormalDistribution, InnovationUtilityNormalDistribution, mutationInnovation}
 import org.openmole.spatialdata.model.urbandynamics.MultiMacroModel.MultiMacroResult
 import org.openmole.spatialdata.model.urbandynamics.{Coevolution, EconomicExchanges, Innovation, MultiMacroModel}
-import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.utils.math.Matrix.MatrixImplementation
-import org.openmole.spatialdata.utils.math.{DenseMatrix, EmptyMatrix, Matrix, RealMatrix, Statistics}
+import org.openmole.spatialdata.utils.math.{DenseMatrix, EmptyMatrix, Matrix, Statistics}
 import org.openmole.spatialdata.vector.measures.Spatstat
 import org.openmole.spatialdata.vector.synthetic.RandomPointsGenerator
 
 import scala.util.Random
 
+/**
+  *
+  *  Multi-modeling macro urban dynamics to explore trade-offs between Sustainable Development Goals
+  *
+  * Raimbault and Pumain, 2022. Multi-modeling urban systems dynamics to explore sustainability trade-offs. French Regional Conference on Complex Systems, Paris, June 2022.
+  *
+  */
 case class SDG()
 
 object SDG {
@@ -32,7 +38,7 @@ object SDG {
     *  - Q of complex interactions between submodules?: specific question for model validation
     * @return
     */
-  def runSyntheticMultiMacroModel(
+  def runSyntheticMultiModelMacro(
                                 syntheticCities: Int,
                                 syntheticHierarchy: Double,
                                 syntheticMaxPop: Double,

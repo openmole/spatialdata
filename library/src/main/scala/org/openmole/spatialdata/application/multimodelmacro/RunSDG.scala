@@ -1,4 +1,4 @@
-package org.openmole.spatialdata.application.sdg
+package org.openmole.spatialdata.application.multimodelmacro
 
 import org.openmole.spatialdata.model.urbandynamics.MultiMacroModel.MultiMacroResult
 import org.openmole.spatialdata.utils
@@ -12,7 +12,7 @@ object RunSDG extends App {
 
   implicit val rng: Random = new Random
 
-  val result = SDG.runSyntheticMultiMacroModel(
+  val result = SDG.runSyntheticMultiModelMacro(
     syntheticCities = 30,
     syntheticHierarchy = 1.0,
     syntheticMaxPop =  100000.0,

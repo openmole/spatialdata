@@ -17,7 +17,7 @@ case class NodesLinksAdditionGenerator(
 
   override def generateNetwork(implicit rng: Random): Network = {
     Iterator.iterate(initialNetwork.generateNetwork){
-      n: Network =>
+      (n: Network) =>
         linksAdditionHeuristics.foldLeft(
           nodesAdditionHeuristics.foldLeft(n){case (nn,fun) => nn.addNodes(fun(nn))}
         ){

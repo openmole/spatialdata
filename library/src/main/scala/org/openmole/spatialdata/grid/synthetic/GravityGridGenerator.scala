@@ -59,7 +59,7 @@ object GravityGridGenerator {
     initialcoords.foreach{case (i0,j0) => res(i0)(j0) = res(i0)(j0) + 1.0}
 
     val gDistances: Array[Array[Double]] = GridMorphology.distanceMatrix(2 * height - 1,2 * width - 1).map {
-      row: Array[Double] => row.map{d: Double => if (d == 0.0) 0.0 else math.pow(d, -gravity)}
+      (row: Array[Double]) => row.map{(d: Double) => if (d == 0.0) 0.0 else math.pow(d, -gravity)}
     }
     val probadenom: Array[Double] = Convolution.convolution2D(Array.fill(height,width)(1.0),gDistances).flatten
 

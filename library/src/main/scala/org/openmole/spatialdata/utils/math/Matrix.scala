@@ -266,7 +266,7 @@ object DenseMatrix {
   def apply(a: Array[Array[Double]])(implicit dmImpl: DenseMatrixImplementation): DenseMatrix = dmImpl match {
     case _: Real => RealMatrix(a)
     case _: DenseBreeze => BreezeDenseMatrix(a)
-    case _ => RealMatrix(a)
+    //case _ => RealMatrix(a)
   }
 
   /**
@@ -376,7 +376,7 @@ case class RealMatrix(m: linear.RealMatrix) extends DenseMatrix {
   override def values: Array[Array[Double]] = m.getData
 
   def dispatchOp(op: RealMatrix => RealMatrix): Matrix => Matrix = {
-    m2: Matrix => m2 match {
+    (m2: Matrix) => m2 match {
       case m2: RealMatrix => op(m2)
       case _ => throw new UnsupportedOperationException("Matrix implementations combination not supported")
     }
@@ -460,7 +460,7 @@ case class BreezeDenseMatrix(m: linalg.DenseMatrix[Double]) extends DenseMatrix 
   override def map(f: Double => Double): Matrix = BreezeDenseMatrix(m.map(f))
 
   def dispatchOp(op: BreezeDenseMatrix => BreezeDenseMatrix): Matrix => Matrix = {
-    m2: Matrix => m2 match {
+    (m2: Matrix) => m2 match {
       case m2: BreezeDenseMatrix => op(m2)
       case _ => throw new UnsupportedOperationException("Matrix implementations combination not supported")
     }
@@ -515,7 +515,7 @@ object SparseMatrix{
   def apply(a: Array[Array[Double]])(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): SparseMatrix = spMatImpl match {
     case _: SparseCommons => SparseMatrixImpl(a)
     case _: SparseBreeze => BreezeSparseMatrix(a)
-    case _ => SparseMatrixImpl(a)
+    //case _ => SparseMatrixImpl(a)
   }
 
   def apply(entries: Array[(Int,Int,Double)],
@@ -524,7 +524,7 @@ object SparseMatrix{
            )(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): SparseMatrix = spMatImpl match {
     case _: SparseCommons => SparseMatrixImpl(entries,n,p)
     case _: SparseBreeze => BreezeSparseMatrix(entries,n,p)
-    case _ => SparseMatrixImpl(entries,n,p)
+    //case _ => SparseMatrixImpl(entries,n,p)
   }
 
   /**
@@ -543,7 +543,7 @@ object SparseMatrix{
   def apply(m: DenseMatrix)(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): SparseMatrix =  spMatImpl match {
     case _: SparseCommons => SparseMatrixImpl(m)
     case _: SparseBreeze => BreezeSparseMatrix(m)
-    case _ => SparseMatrixImpl(m)
+    //case _ => SparseMatrixImpl(m)
   }
 
 
@@ -646,7 +646,7 @@ case class SparseMatrixImpl(m: linear.OpenMapRealMatrix//,
 
 
   def dispatchOp(op: SparseMatrixImpl => SparseMatrixImpl): Matrix => Matrix = {
-    m2: Matrix => m2 match {
+    (m2: Matrix) => m2 match {
       case m2: SparseMatrixImpl => op(m2)
       case _ => throw new UnsupportedOperationException("Matrix implementations combination not supported")
     }
@@ -824,7 +824,7 @@ case class BreezeSparseMatrix(m: linalg.CSCMatrix[Double]) extends SparseMatrix 
 
 
   def dispatchOp(op: BreezeSparseMatrix => BreezeSparseMatrix): Matrix => Matrix = {
-    m2: Matrix => m2 match {
+    (m2: Matrix) => m2 match {
       case m2: BreezeSparseMatrix => op(m2)
       case _ => throw new UnsupportedOperationException("Matrix implementations combination not supported")
     }

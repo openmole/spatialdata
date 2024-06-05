@@ -148,10 +148,10 @@ class OSMXmlWriter @throws[IOException]
     if (relation.members != null) {
       for (membership <- relation.members) {
         xml.write("\t\t<member type='")
-        xml.write(membership.getOsmObject().accept(getOsmObjectTypeName))
+        xml.write(membership.getOsmObject.accept(getOsmObjectTypeName))
         xml.write("'")
         xml.write(" ref='")
-        xml.write(String.valueOf(membership.getOsmObject().id))
+        xml.write(String.valueOf(membership.getOsmObject.id))
         xml.write("'")
         xml.write(" role='")
         xml.write(membership.getRole)
@@ -188,21 +188,21 @@ class OSMXmlWriter @throws[IOException]
         xml.write("'")
       case None =>
     }
-    Option(osmObject.getUser()) match {
+    Option(osmObject.getUser) match {
       case Some(user) =>
         xml.write(" user='")
         xml.write(String.valueOf(user))
         xml.write("'")
       case None =>
     }
-    Option(osmObject.getVersion()) match {
+    Option(osmObject.getVersion) match {
       case Some(v) =>
         xml.write(" version='")
         xml.write(String.valueOf(v))
         xml.write("'")
       case None =>
     }
-    Option(osmObject.getChangeset()) match {
+    Option(osmObject.getChangeset) match {
       case Some(changeSet) =>
         xml.write(" changeset='")
         xml.write(String.valueOf(changeSet))

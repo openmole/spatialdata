@@ -38,7 +38,7 @@ object CoarseGrainingNetworkSimplificator {
     * @param connectorWeight function giving the weight of connector links (centroid to closest node): typically, walking or driving speed
     * @return the simplified network and average path length within each polygon
     */
-  def coarseGrainNetwork(network: Network, layer: Polygons, connectorWeight: Double => Double = {d: Double => d}): (Network, Seq[Double]) = {
+  def coarseGrainNetwork(network: Network, layer: Polygons, connectorWeight: Double => Double = {(d: Double) => d}): (Network, Seq[Double]) = {
 
     val (nodes,nodepoints) = network.nodesAsPoints
     val pointNodeMap: Map[geom.Point,Node] = nodepoints.points.zip(nodes).toMap
@@ -92,7 +92,7 @@ object CoarseGrainingNetworkSimplificator {
     // main step of the algo: for each subnetwork, compute internal average travel time to centroid, and travel time to centroid of each neighbor
     // avg travel time between nodes makes sense in case of a dense nw: should be able to add an other layer of O/D point
     // (typically center of population raster, weighted by population)
-    val polyLinks: Seq[(geom.Polygon,Double, Seq[(geom.Polygon, Double)])] = polygonSubNetworks.map{e: (geom.Polygon,(Network,Network,Node)) =>
+    val polyLinks: Seq[(geom.Polygon,Double, Seq[(geom.Polygon, Double)])] = polygonSubNetworks.map{(e: (geom.Polygon,(Network,Network,Node))) =>
       val (p,(nneigh,nwithin,c)) = e
       // average dist to centroid: connector time added at this step
       //println(s"internal shortest paths: destination $c")

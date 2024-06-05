@@ -2,11 +2,10 @@ package org.openmole.spatialdata.utils.io
 
 
 import java.io.File
-
 import org.geotools.coverage.grid.{GridCoordinates2D, GridCoverage2D}
 import org.geotools.coverage.grid.io.{AbstractGridFormat, GridFormatFinder, OverviewPolicy}
 import org.geotools.gce.geotiff.GeoTiffReader
-import org.opengis.parameter.ParameterValue
+import org.opengis.parameter.{GeneralParameterValue, ParameterValue}
 import org.openmole.spatialdata.grid.RasterLayerData
 import org.openmole.spatialdata.utils
 
@@ -40,7 +39,9 @@ object Raster {
     val useJaiRead = AbstractGridFormat.USE_JAI_IMAGEREAD.createValue
     useJaiRead.setValue(true)
 
-    reader.read(Array(policy,gridsize,useJaiRead))
+    val params: Array[GeneralParameterValue] = Array(policy,gridsize,useJaiRead)
+
+    reader.read(params)
   }
 
 

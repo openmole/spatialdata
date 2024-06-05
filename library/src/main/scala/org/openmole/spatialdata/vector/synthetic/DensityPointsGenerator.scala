@@ -28,7 +28,7 @@ object DensityPointsGenerator {
   }
 
   def densityPoints(generator: DensityPointsGenerator)(implicit rng: Random): Vector[Point] = {
-    val flatGrid: Array[(Int, Int, Double)] = generator.densityGrid.zipWithIndex.flatMap { c: (Array[Double], Int) => c._1.zipWithIndex.map { case (r, j) => (c._2, j, r) } }
+    val flatGrid: Array[(Int, Int, Double)] = generator.densityGrid.zipWithIndex.flatMap { (c: (Array[Double], Int)) => c._1.zipWithIndex.map { case (r, j) => (c._2, j, r) } }
     Stochastic.sampleWithReplacementBy[(Int, Int, Double)](
       flatGrid,
       _._3,

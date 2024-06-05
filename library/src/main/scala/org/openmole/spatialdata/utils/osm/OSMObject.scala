@@ -21,21 +21,34 @@ abstract case class OSMObject(
   private var loaded = false
 
 
-  @BeanProperty
   var attributes: mutable.Map[String, String] = _
-  @BeanProperty
-  var version:Integer = _
-  @BeanProperty
+  def setAttributes(map: mutable.Map[String, String]): Unit = {this.attributes = map}
+  def getAttributes: mutable.Map[String, String] = attributes
+
+  var version: Integer = _
+  def setVersion(v: Integer): Unit = {this.version = v}
+  def getVersion: Integer = version
+
   var changeset = 0L
+  def setChangeset(l: Long): Unit = {this.changeset = l}
+  def getChangeset: Long = changeset
+
   private var uid = 0L
-  @BeanProperty
-  var user:String = _
-  @BeanProperty
+
+  var user: String = _
+  def setUser(u: String): Unit = {this.user = u}
+  def getUser: String = user
+
   var visible = false
+  def setVisible(b: Boolean): Unit = {this.visible = b}
+  def getVisible: Boolean = visible
+
   private var timestamp = 0L
   private var tags: mutable.Map[String, String] = _
-  @BeanProperty
+
   var relationMemberships: mutable.ArrayBuffer[OSMObject.RelationMembership] = _
+  def setRelationMemberships(m: mutable.ArrayBuffer[OSMObject.RelationMembership]): Unit = {this.relationMemberships = m}
+  def getRelationMemberships: mutable.ArrayBuffer[OSMObject.RelationMembership] = relationMemberships
 
   def addRelationMembership(member: OSMObject.RelationMembership): Unit = {
     if (relationMemberships == null) relationMemberships = new ArrayBuffer[OSMObject.RelationMembership](5)
@@ -215,24 +228,19 @@ object OSMObject {
   class RelationMembership extends Serializable {
     private var relation: Relation = _
 
-    @BeanProperty
     var osmObject: OSMObject = _
+    def setOsmObject(o: OSMObject): Unit = {this.osmObject = o}
+    def getOsmObject: OSMObject = this.osmObject
     /**
       * todo intern in domain!
       */
     private var role: String = _
 
     def getRelation: Relation = relation
-
-    def setRelation(relation: Relation): Unit = {
-      this.relation = relation
-    }
+    def setRelation(relation: Relation): Unit = {this.relation = relation}
 
     def getRole: String = role
-
-    def setRole(role: String): Unit = {
-      this.role = role
-    }
+    def setRole(role: String): Unit = {this.role = role}
 
     override def toString: String = "RelationMembership{" + "role='" + role + '\'' + ", relation.id=" + (if (relation != null) relation.id
     else "null") + ", object.id=" + (if (osmObject != null) osmObject.id

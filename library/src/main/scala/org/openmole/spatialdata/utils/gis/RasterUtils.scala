@@ -54,7 +54,7 @@ object RasterUtils {
 
     Points(
       xx.toSeq.zip(yy.toSeq).map{case (x,y) => factory.createPoint(new Coordinate(x,y))},
-      v.toSeq.map{d: Double => Map(attrPrefix+band.toString -> d).asInstanceOf[Attributes]}
+      v.toSeq.map{(d: Double) => Map(attrPrefix+band.toString -> d).asInstanceOf[Attributes]}
     )
   }
 

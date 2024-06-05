@@ -1,6 +1,5 @@
 package org.openmole.spatialdata.application.urbanmorphology
 
-import better.files.File
 import org.openmole.spatialdata.grid.real.OSMGridGenerator
 import org.openmole.spatialdata.utils.io.PNG
 
@@ -136,7 +135,7 @@ object RunGenerator {
       12174 5.289788 52.06052 ; 24.373365 44.43003 ; 11.874241 43.46805 ; 25.254261 54.67903 ; 17.111480 40.58929
       ->  11.874241 43.46805
     */
-    PNG.write(OSMGridGenerator(11.874241,43.46805,500,50).generateGrid(new Random(0)), File("data") / "res" / "examples"/ "closest4_real.png")
+    PNG.write(OSMGridGenerator(11.874241,43.46805,500,50).generateGrid(new Random(0)), new java.io.File("data/res/examples/closest4_real.png"))
 
 
 

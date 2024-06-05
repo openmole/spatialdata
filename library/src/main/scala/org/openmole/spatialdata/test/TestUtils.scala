@@ -65,7 +65,7 @@ object TestUtils {
 
     val sampled = Seq(0.01,0.1,0.09,0.8)
     println(Stochastic.sampleWithReplacementBy[Double](sampled,d => d, samples).
-      groupBy(d=>d).map{g: (Double,Vector[Double]) => (g._1,g._2.length.toDouble/samples.toDouble)})
+      groupBy(d=>d).map{(g: (Double,Vector[Double])) => (g._1,g._2.length.toDouble/samples.toDouble)})
 
   }
 

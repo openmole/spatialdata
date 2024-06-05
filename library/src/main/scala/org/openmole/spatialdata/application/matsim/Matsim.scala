@@ -61,7 +61,7 @@ object Matsim {
     val toprocess: Seq[Seq[String]] = if (fuanames.head.head=="GBR") {allfuas.filter(_._2.getOrElse("Cntry_ISO", "").asInstanceOf[String].equals("GBR")).map(f => Seq(f._2.getOrElse("eFUA_name", "").asInstanceOf[String]))} else fuanames
     // name field for FUAs assumed as eFUA_name (JRC file) - add this as an option?
     // hardcoded for UK (anyway done with file structure)
-    toprocess.map { area: Seq[String] =>
+    toprocess.map { (area: Seq[String]) =>
       println("    Constructing covering geometry for composing FUAs: "+area)
       val fuas = allfuas.filter(f => area.contains(f._2.getOrElse("eFUA_name", "").asInstanceOf[String]) && f._2.getOrElse("Cntry_ISO", "").asInstanceOf[String].equals("GBR"))
       //val fuas = Polygons.fromGeometries(fuasgeoms,fuasattrs) // this fails as FUAs are multipolygons

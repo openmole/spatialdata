@@ -27,12 +27,13 @@ object CSV {
       override val delimiter: Char = sep.charAt(0)
       override val quoteChar: Char = '"'
     }
-    val (header,content): (Seq[String], Seq[Map[String, String]]) =
+    val (header,content): (Seq[String], Seq[Map[String, String]]) = {
       if (withHeader) CSVReader.open(file)(readerFormat).allWithOrderedHeaders()
-    else {
-      val raw = CSVReader.open(file)(readerFormat).all()
-      val h = raw.head.indices.map("V"+_)
-      (h,raw.map{row => row.zip(h).toMap})
+      else {
+        val raw = CSVReader.open(file)(readerFormat).all()
+        val h = raw.head.indices.map("V"+_)
+        (h,raw.map{row => row.zip(h).toMap})
+      }
     }
     header.map(s => (s,content.map{_(s)})).toMap
   }

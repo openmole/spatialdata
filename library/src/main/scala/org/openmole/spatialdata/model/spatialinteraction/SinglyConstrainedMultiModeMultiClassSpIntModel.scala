@@ -51,7 +51,7 @@ case class SinglyConstrainedMultiModeMultiClassSpIntModel (
     * @return
     */
   override def fit(implicit spMatImpl: SparseMatrix.SparseMatrixImplementation): SpatialInteractionModel => FittedSpIntModel = {
-    s: SpatialInteractionModel => s match {
+    (s: SpatialInteractionModel) => s match {
       case m: SinglyConstrainedMultiModeSpIntModel =>
         SinglyConstrainedMultiModeSpIntModel.fitSinglyConstrainedMultiModeSpIntModel(m,
           m.fittedParams,

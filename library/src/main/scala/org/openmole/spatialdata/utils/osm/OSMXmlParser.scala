@@ -77,9 +77,9 @@ case class OSMXmlParser(
               val identity = xmlr.getAttributeValue(null, "id").toLong
               if ((state == State.none) || (state == State.create)) {
                 currentNode = root.getNode(identity)
-                if (currentNode != null && currentNode.isLoaded && currentNode.getVersion() != null) {
+                if (currentNode != null && currentNode.isLoaded && currentNode.getVersion != null) {
                   val version = Integer.valueOf(xmlr.getAttributeValue(null, "version"))
-                  if (version <= currentNode.getVersion()) {
+                  if (version <= currentNode.getVersion) {
                     skipCurrentObject = true
                     break()
                   }
@@ -98,13 +98,13 @@ case class OSMXmlParser(
                 currentNode = root.getNode(identity)
                 if (currentNode == null) throw OsmXmlParserException("Inconsistency, node " + identity + " does not exists.")
                 val version = Integer.valueOf(xmlr.getAttributeValue(null, "version"))
-                if (version <= currentNode.getVersion()) {
+                if (version <= currentNode.getVersion) {
                   utils.log("Inconsistency, old version detected during modify node.")
                   skipCurrentObject = true
                   break()
                 }
-                else if (version > currentNode.getVersion() + 1 && !allowingMissingVersions) throw OsmXmlParserException("Inconsistency, version " + version + " too great to modify node " + currentNode.id + " with version " + currentNode.getVersion())
-                else if (version == currentNode.getVersion()) throw OsmXmlParserException("Inconsistency, found same version in new data during modify node.")
+                else if (version > currentNode.getVersion + 1 && !allowingMissingVersions) throw OsmXmlParserException("Inconsistency, version " + version + " too great to modify node " + currentNode.id + " with version " + currentNode.getVersion)
+                else if (version == currentNode.getVersion) throw OsmXmlParserException("Inconsistency, found same version in new data during modify node.")
                 currentNode.setTags(null)
                 currentNode.setAttributes(null)
                 currentNode.setLatitude(xmlr.getAttributeValue(null, "lat").toDouble)
@@ -122,12 +122,12 @@ case class OSMXmlParser(
                   break()
                 }
                 val version = Integer.valueOf(xmlr.getAttributeValue(null, "version"))
-                if (version < nodeToRemove.getVersion()) {
+                if (version < nodeToRemove.getVersion) {
                   utils.log("Inconsistency, old version detected during delete node.")
                   skipCurrentObject = true
                   break()
                 }
-                else if (version > nodeToRemove.getVersion() + 1 && !allowingMissingVersions) throw OsmXmlParserException("Inconsistency, too great version found during delete node.")
+                else if (version > nodeToRemove.getVersion + 1 && !allowingMissingVersions) throw OsmXmlParserException("Inconsistency, too great version found during delete node.")
                 root.remove(nodeToRemove)
                 delta.deletedNodes.add(nodeToRemove)
               }
@@ -136,9 +136,9 @@ case class OSMXmlParser(
               val identity = xmlr.getAttributeValue(null, "id").toLong
               if ((state == State.none) || (state == State.create)) {
                 currentWay = root.getWay(identity)
-                if (currentWay != null && currentWay.isLoaded && currentWay.getVersion() != null) {
+                if (currentWay != null && currentWay.isLoaded && currentWay.getVersion != null) {
                   val version = Integer.valueOf(xmlr.getAttributeValue(null, "version"))
-                  if (version <= currentWay.getVersion()) {
+                  if (version <= currentWay.getVersion) {
                     utils.log("Inconsistency, old version detected during create way.")
                     skipCurrentObject = true
                     break()
@@ -157,13 +157,13 @@ case class OSMXmlParser(
                 currentWay = root.getWay(identity)
                 if (currentWay == null) throw OsmXmlParserException("Inconsistency, way " + identity + " does not exists.")
                 val version = Integer.valueOf(xmlr.getAttributeValue(null, "version"))
-                if (version <= currentWay.getVersion()) {
+                if (version <= currentWay.getVersion) {
                   utils.log("Inconsistency, old version detected during modify way.")
                   skipCurrentObject = true
                   break()
                 }
-                else if (version > currentWay.getVersion() + 1 && !allowingMissingVersions) throw OsmXmlParserException("Inconsistency, found too great version in new data during modify way.")
-                else if (version == currentWay.getVersion()) throw OsmXmlParserException("Inconsistency, found same version in new data during modify way.")
+                else if (version > currentWay.getVersion + 1 && !allowingMissingVersions) throw OsmXmlParserException("Inconsistency, found too great version in new data during modify way.")
+                else if (version == currentWay.getVersion) throw OsmXmlParserException("Inconsistency, found same version in new data during modify way.")
                 currentWay.setAttributes(null)
                 if (currentWay.nodes != null) {
                   for (node <- currentWay.nodes) {
@@ -184,12 +184,12 @@ case class OSMXmlParser(
                   break()
                 }
                 val version = Integer.valueOf(xmlr.getAttributeValue(null, "version"))
-                if (version < wayToRemove.getVersion()) {
+                if (version < wayToRemove.getVersion) {
                   utils.log("Inconsistency, old version detected during delete way.")
                   skipCurrentObject = true
                   break()
                 }
-                else if (version > wayToRemove.getVersion() + 1 && !allowingMissingVersions) throw OsmXmlParserException("Inconsistency, too great way version found during delete way.")
+                else if (version > wayToRemove.getVersion + 1 && !allowingMissingVersions) throw OsmXmlParserException("Inconsistency, too great way version found during delete way.")
                 root.remove(wayToRemove)
                 delta.deletedWays.add(wayToRemove)
               }
@@ -215,9 +215,9 @@ case class OSMXmlParser(
               val identity = xmlr.getAttributeValue(null, "id").toLong
               if ((state == State.none) || (state == State.create)) {
                 currentRelation = root.getRelation(identity)
-                if (currentRelation != null && currentRelation.isLoaded && currentRelation.getVersion() != null) {
+                if (currentRelation != null && currentRelation.isLoaded && currentRelation.getVersion != null) {
                   val version = Integer.valueOf(xmlr.getAttributeValue(null, "version"))
-                  if (version <= currentRelation.getVersion()) {
+                  if (version <= currentRelation.getVersion) {
                     utils.log("Inconsistency, old version detected during create relation.")
                     skipCurrentObject = true
                     break()
@@ -236,18 +236,18 @@ case class OSMXmlParser(
                 currentRelation = root.getRelation(identity)
                 if (currentRelation == null) throw OsmXmlParserException("Inconsistency, relation " + identity + " does not exists.")
                 val version = xmlr.getAttributeValue(null, "version").toInt
-                if (version < currentRelation.getVersion()) {
+                if (version < currentRelation.getVersion) {
                   utils.log("Inconsistency, old version detected during modify relation.")
                   skipCurrentObject = true
                   break()
                 }
-                else if (version > currentRelation.getVersion() + 1 && !allowingMissingVersions) throw OsmXmlParserException("Inconsistency, too great version found during modify relation.")
-                else if (version == currentRelation.getVersion()) throw OsmXmlParserException("Inconsistency, same version found during modify relation.")
+                else if (version > currentRelation.getVersion + 1 && !allowingMissingVersions) throw OsmXmlParserException("Inconsistency, too great version found during modify relation.")
+                else if (version == currentRelation.getVersion) throw OsmXmlParserException("Inconsistency, same version found during modify relation.")
                 if (currentRelation.members != null) {
 
                   for (member <- currentRelation.members) {
-                    member.getOsmObject().getRelationMemberships().remove(member.getOsmObject().getRelationMemberships().indexOf(member))
-                    if (member.getOsmObject().getRelationMemberships().isEmpty) member.getOsmObject().setRelationMemberships(null)
+                    member.getOsmObject.getRelationMemberships.remove(member.getOsmObject.getRelationMemberships.indexOf(member))
+                    if (member.getOsmObject.getRelationMemberships.isEmpty) member.getOsmObject.setRelationMemberships(null)
                   }
                   currentRelation.members = new mutable.ArrayBuffer[RelationMembership]
                 }
@@ -265,16 +265,16 @@ case class OSMXmlParser(
                   break()
                 }
                 val version = xmlr.getAttributeValue(null, "version").toInt
-                if (version < relationToRemove.getVersion()) {
+                if (version < relationToRemove.getVersion) {
                   utils.log("Inconsistency, old version detected during delete relation.")
                   skipCurrentObject = true
                   break()
                 }
-                else if (version > relationToRemove.getVersion() + 1 && !allowingMissingVersions) throw OsmXmlParserException("Inconsistency, too great version found during delete relation.")
+                else if (version > relationToRemove.getVersion + 1 && !allowingMissingVersions) throw OsmXmlParserException("Inconsistency, too great version found during delete relation.")
                 if (relationToRemove.members != null) {
                   for (member <- relationToRemove.members) {
-                    member.getOsmObject().getRelationMemberships().remove(member.getOsmObject().getRelationMemberships().indexOf(member))
-                    if (member.getOsmObject().getRelationMemberships().isEmpty) member.getOsmObject().setRelationMemberships(null)
+                    member.getOsmObject.getRelationMemberships.remove(member.getOsmObject.getRelationMemberships.indexOf(member))
+                    if (member.getOsmObject.getRelationMemberships.isEmpty) member.getOsmObject.setRelationMemberships(null)
                   }
                   relationToRemove.members = new mutable.ArrayBuffer[RelationMembership]
                 }
@@ -315,7 +315,7 @@ case class OSMXmlParser(
                   member.setOsmObject(relation)
                 }
                 else throw new RuntimeException("Unsupported relation member type: " + `type`)
-                member.getOsmObject().addRelationMembership(member)
+                member.getOsmObject.addRelationMembership(member)
                 currentRelation.addMember(member)
               }
               else if (state == State.delete) {

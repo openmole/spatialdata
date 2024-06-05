@@ -57,8 +57,9 @@ object GeometryUtils {
     * @return
     */
   def convexHullCentroid(pi: Array[Point]): Point = {
-    val convexHullCentroid = convexHullPoints(pi).getCentroid
-     (convexHullCentroid.getX,convexHullCentroid.getY)
+    val c: org.locationtech.jts.geom.Point = convexHullPoints(pi).getCentroid
+    val res: Point = (c.getX,c.getY)
+    res
   }
 
   /**

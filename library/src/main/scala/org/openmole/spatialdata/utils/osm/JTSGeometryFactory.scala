@@ -38,7 +38,7 @@ class JTSGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
     val lines = new mutable.ArrayBuffer[mutable.ArrayBuffer[Coordinate]](relation.members.size)
     for (member <- relation.members) {
       if (!"outer".equalsIgnoreCase(member.getRole)) throw new RuntimeException
-      val way = member.getOsmObject().asInstanceOf[Way]
+      val way = member.getOsmObject.asInstanceOf[Way]
       val line = new mutable.ArrayBuffer[Coordinate](way.nodes.size)
       for (node <- way.nodes) {
         line.append(new Coordinate(node.getX, node.getY))
@@ -104,13 +104,13 @@ class JTSGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
         if (!"outer".equalsIgnoreCase(membership.getRole)) Breaks.break()
         // ! inner as holes!
         if (firstNode == null) {
-          firstNode = membership.getOsmObject().accept(new OSMObjectVisitor[Node]() {
+          firstNode = membership.getOsmObject.accept(new OSMObjectVisitor[Node]() {
             override def visit(node: Node): Node = node
             override def visit(way: Way): Node = way.nodes(0)
             override def visit(relation: Relation): Node = relation.accept(this)
           })
         }
-        val nextNodes = membership.getOsmObject().accept(new NodesCollector)
+        val nextNodes = membership.getOsmObject.accept(new NodesCollector)
         if (nodes.isEmpty) nodes.addAll(nextNodes)
         else {
           val previousNode = nodes(nodes.size - 1)
@@ -158,7 +158,7 @@ class JTSGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
     else 0
   }*/
 
-  private def coordinateEquals(n1: Node, n2: Node) = n1.getLatitude == n2.getLatitude && n1.getLongitude == n2.getLongitude
+  private def coordinateEquals(n1: Node, n2: Node): Boolean = n1.getLatitude == n2.getLatitude && n1.getLongitude == n2.getLongitude
 
   private def compareLines(l1: mutable.ArrayBuffer[Node], l2: mutable.ArrayBuffer[Node]): Boolean =
     if (coordinateEquals(l1(0), l2(l2.size - 1))) true
@@ -177,7 +177,7 @@ class JTSGeometryFactory(var geometryFactory: GeometryFactory = new GeometryFact
     override def visit(relation: Relation): mutable.ArrayBuffer[Node] = {
       val lines = new mutable.ArrayBuffer[mutable.ArrayBuffer[Node]]
       for (membership <- relation.members) {
-        lines.append(membership.getOsmObject().accept(new NodesCollector))
+        lines.append(membership.getOsmObject.accept(new NodesCollector))
       }
       lines.sortInPlaceWith(compareLines)
       var nodesCount = 0

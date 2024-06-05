@@ -4,7 +4,7 @@ import sbt.enablePlugins
 val geotoolsVersion = "27.0"
 
 lazy val commonSettings = Seq(
-  scalaVersion := "2.13.8",
+  scalaVersion := "3.3.0",
   organization := "org.openmole.library",
   // trick to remove maven central (added again: change order for jai to be found in the continuous integration (sbt tries first resolver only in CI) since mavenCentral jai is broken (pom but no jar)
   externalResolvers := Resolver.combineDefaultResolvers(resolvers.value.toVector, mavenCentral = false),
@@ -20,7 +20,7 @@ lazy val commonSettings = Seq(
     "org.apache.commons" % "commons-rng-sampling" % "1.4",
     "org.apache.commons" % "commons-rng-simple" % "1.4",
     "net.sourceforge.jdistlib" % "jdistlib" % "0.4.5",
-    "com.github.pathikrit" %% "better-files" % "3.9.1",
+    //"com.github.pathikrit" %% "better-files" % "3.9.1",
     "org.geotools" % "gt-shapefile" % geotoolsVersion ,
     "org.geotools" % "gt-geopkg" % geotoolsVersion,
     "org.geotools" % "gt-referencing" % geotoolsVersion,

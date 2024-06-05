@@ -436,7 +436,7 @@ object MultiscaleMicro {
     )
 
     MultiscaleMicro.Result(
-      Seq(s0)++Iterator.iterate(s0){s: State => step(model,s)}.take(steps).toSeq
+      Seq(s0)++Iterator.iterate(s0){(s: State) => step(model,s)}.take(steps).toSeq
     )
   }
 

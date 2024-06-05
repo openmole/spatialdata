@@ -72,7 +72,7 @@ object RunWeakCoupling //extends App
       seed <- seeds
     } yield (occ,nodes,links,seed,mode)).zipWithIndex.map{case (p,i) => (p._1,p._2,p._3,p._4,p._5,i)}
 
-    val res: Array[Array[Any]] = (for {
+    val res: Array[Array[String]] = (for {
       p <- params
       occ = p._1
       nodes = p._2
@@ -80,7 +80,7 @@ object RunWeakCoupling //extends App
       seed = p._4
       mode = p._5
       id = p._6
-    } yield run(occ,nodes,links,seed,mode)++Array(occ,nodes,links,mode,seed,id)).toArray
+    } yield (run(occ,nodes,links,seed,mode)++Array(occ,nodes,links,mode,seed,id)).map{_.toString}).toArray
 
     CSV.writeCSV(res,"data/coupled/nullmodel.csv",";",Array("moran","distanceMean","entropy","slope","rsquared",
       "meanBetweenness","meanPathLength","meanEfficiency","diameter","nodes","totalLength","components","occupation","nodes",

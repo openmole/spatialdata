@@ -279,11 +279,11 @@ object GridMorphology {
     */
   def fractalDimension(matrix: Array[Array[Double]]): (Double,Double) = {
     val maxkernelsize = math.floor(math.min(matrix.length,matrix(0).length) / 4) - 1
-    val _ = (1 to maxkernelsize.toInt by 1).map{k: Int =>
+    val _ = (1 to maxkernelsize.toInt by 1).map{(k: Int) =>
       val convol: Array[Array[Double]] = Convolution.convolution2D(matrix,Array.fill(2*k+1){Array.fill(2*k+1)(1.0)})
       val counts = convol.map(_.zipWithIndex).zipWithIndex.flatMap{
         //  this is terrible - find why scala2.13 consider full pattern matching not with return type but Any
-        rowind: (Array[(Double,Int)],Int) => rowind._1.map{case (d,j) => var res = 0.0; if (rowind._2%(2*k+1)==k&&j%(2*k+1)==k) {if(d > 0.0) res = 1.0}; res}
+        (rowind: (Array[(Double,Int)],Int)) => rowind._1.map{case (d,j) => var res = 0.0; if (rowind._2%(2*k+1)==k&&j%(2*k+1)==k) {if(d > 0.0) res = 1.0}; res}
       }.sum
       (2*k+1,counts)
     }

@@ -127,7 +127,7 @@ object TorPoolManager {
  	 * @param portpath
  	 * @param lockfile
  	 */
- 	def changePortFromFile(portpath: String,lockfile: String): String = {
+	def changePortFromFile(portpath: String,lockfile: String): String = {
  		//String newPort = "9050";
  		var newPort = ""
 
@@ -152,7 +152,7 @@ object TorPoolManager {
  	/**
  	 *
  	 */
- 	def changePort(newport: String): Unit = {
+	def changePort(newport: String): Unit = {
  		// set the new port
  		System.setProperty("socksProxyPort",newport);
  		currentPort = Integer.parseInt(newport);
@@ -224,9 +224,9 @@ object TorPoolManager {
 			w.close()
 			// unlock the dir
 			lock.delete();
-		}catch{
+		} catch{
 		  case e: Throwable => e.printStackTrace()
-	  }
+		}
 		res
 	}
 

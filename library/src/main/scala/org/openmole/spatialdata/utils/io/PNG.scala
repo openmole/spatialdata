@@ -1,6 +1,6 @@
 package org.openmole.spatialdata.utils.io
 
-import better.files.File
+import java.io.File
 import org.openmole.spatialdata.grid.RasterLayerData
 import javax.imageio.ImageIO
 import java.io.IOException
@@ -19,7 +19,7 @@ object PNG {
     } yield (zi._2, zj._2, zj._1)
     values.foreach{case (i,j,v) => raster.setPixel(i,j,Array(v))}
     try
-      ImageIO.write(image, "png", file.toJava)
+      ImageIO.write(image, "png", file)
     catch {
       case e: IOException =>
         throw new RuntimeException(e)

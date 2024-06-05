@@ -44,7 +44,7 @@ object PercolationNetworkGenerator {
     var iteration = 0
     while(bordConnected<bordPoints&&iteration<maxIterations){
       nw = nw.percolate(percolationProba,linkFilter={
-        l: Link => l.weight==0.0&&(
+        (l: Link) => l.weight==0.0&&(
           (((l.e1.x!=xmin)&&(l.e2.x!=xmin))||((l.e1.x==xmin)&&(l.e2.x!=xmin))||((l.e2.x==xmin)&&(l.e1.x!=xmin)))&&
             (((l.e1.x!=xmax)&&(l.e2.x!=xmax))||((l.e1.x==xmax)&&(l.e2.x!=xmax))||((l.e2.x==xmax)&&(l.e1.x!=xmax)))&&
             (((l.e1.y!=ymin)&&(l.e2.y!=ymin))||((l.e1.y==ymin)&&(l.e2.y!=ymin))||((l.e2.y==ymin)&&(l.e1.y!=ymin)))&&

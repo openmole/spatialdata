@@ -68,7 +68,7 @@ package object visualization {
     // note: not efficient at all to recompute for each node
     val (xcoords,ycoords) = networks.flatMap(_.nodes.toSeq.map(_.position)).unzip
     val (minx,maxx,miny,maxy) = (xcoords.min,xcoords.max,ycoords.min,ycoords.max)
-    n: Node => ((n.position._1 - minx) / (maxx - minx),(n.position._2 - miny) / (maxy - miny))
+    (n: Node) => ((n.position._1 - minx) / (maxx - minx),(n.position._2 - miny) / (maxy - miny))
   }
 
   //def normalizedPositionPolygon(networks: Seq[Network] = Seq.empty, polygons: Seq[Polygons] = Seq.empty): Polygon => Polygon
@@ -83,10 +83,10 @@ package object visualization {
 
   def normalization(r: Array[Array[Double]]): Array[Array[Double]] = {
     val (mi,ma) = (r.flatten.min,r.flatten.max)
-    r.map{_.map{d: Double => (d - mi) / (ma - mi)}}
+    r.map{_.map{(d: Double) => (d - mi) / (ma - mi)}}
   }
 
-  def normalizationLog: Array[Array[Double]] => Array[Array[Double]] = {r: Array[Array[Double]] =>visualization.normalization(r.map{_.map{d => if(d<=0.0) 0.0 else scala.math.log10(d)}})}
+  def normalizationLog: Array[Array[Double]] => Array[Array[Double]] = {(r: Array[Array[Double]]) =>visualization.normalization(r.map{_.map{d => if(d<=0.0) 0.0 else scala.math.log10(d)}})}
 
   def staticRasterVisualization(raster: RasterLayerData[Double]//,
                                 //projection: RasterLayerData[Double] => RasterLayerData[Double] = normalization

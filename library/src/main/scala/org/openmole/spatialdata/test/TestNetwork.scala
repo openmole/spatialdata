@@ -119,7 +119,7 @@ object TestNetwork {
       //val (sp1,t1) = withTimer[Network,ShortestPaths](nw => shortestPaths(nw,nodes,{l => l.length},ScalaGraph()))(nw)
       val (sp2,t2) = withTimer[Network,ShortestPaths](nw => shortestPaths(nw,nodes, nodes,{l => l.length},DijkstraJGraphT()))(nw)
       val (_,t3) = withTimer[Network,ShortestPaths](nw => shortestPaths(nw,nodes, nodes,{l => l.length},FloydWarshallJGraphT()))(nw)
-      (sp2 |-| sp2,0.0,t2,t3,nodes.size.toDouble)
+      (ShortestPaths.|-|(sp2,sp2) ,0.0,t2,t3,nodes.size.toDouble)
       //(0.0,0.0,0.0,0.0,0.0)
     }
 

@@ -1,6 +1,6 @@
 package org.openmole.spatialdata.test
 
-import better.files.File
+import java.io.File
 import org.openmole.spatialdata.grid.Implicits._
 import org.openmole.spatialdata.grid.RasterLayerData
 import org.openmole.spatialdata.grid.measures.GridMorphology
@@ -25,9 +25,9 @@ object TestIndicators {
       val maxval = grid.flatten.max(Ordering.Double.TotalOrdering)
       val ngrid = grid.map{_.map{d => if(d / maxval > 0.6) 1.0 else 0.0}}
 
-    PNG.write(ngrid.asInstanceOf[RasterLayerData[Double]], File("data") / "test/grid.png")
-    PNG.write(GridMorphology.erosion(ngrid.asInstanceOf[RasterLayerData[Double]]), File("data") / "test/gridFFT.png")
-    PNG.write(GridMorphology.erosion(ngrid.asInstanceOf[RasterLayerData[Double]],Convolution.convolution2dDirect), File("data") / "test/gridDirect.png")
+    PNG.write(ngrid.asInstanceOf[RasterLayerData[Double]], new File("data/test/grid.png"))
+    PNG.write(GridMorphology.erosion(ngrid.asInstanceOf[RasterLayerData[Double]]), new File("data/test/gridFFT.png"))
+    PNG.write(GridMorphology.erosion(ngrid.asInstanceOf[RasterLayerData[Double]],Convolution.convolution2dDirect), new File("data/test/gridDirect.png"))
     //  fix the fft convolution -> ok?
     /*
       time(_=>println("fft erosion steps = "+Morphology.fullErosionSteps(ngrid)))

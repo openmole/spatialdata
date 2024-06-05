@@ -94,7 +94,7 @@ object Network {
     // why are coordinates translated? issue with shp vs geopkg?
     val mask: Option[Either[geom.Geometry,String]] = Some(Left(area))
     val reproject: Option[Lines => Lines] = if(sourceCRS.contains("EPSG")) Some({
-      lines: Lines =>
+      (lines: Lines) =>
         val reproj = lines.transform(sourceCRS,targetCRS)
         //utils.log("Before tr: "+reproj.lines.take(2).map(_.toString).mkString("\n"))
         val trlines: Lines = Lines(reproj.lines.map(GeometryUtils.transpose(_).asInstanceOf[geom.LineString]),lines.attributes)

@@ -1,7 +1,8 @@
 package org.openmole.spatialdata.application.urbanmorphology
 
-import better.files.File
+import java.io.File
 import com.github.tototoshi.csv.CSVReader
+import com.github.tototoshi.csv.defaultCSVFormat
 import org.openmole.spatialdata.grid.measures.GridMorphology
 import org.openmole.spatialdata.grid.real.OSMGridGenerator
 import org.openmole.spatialdata.utils.io.PNG
@@ -18,7 +19,7 @@ object BuildClusterImages extends App {
                              worldWidth: Int = 500,
                              mode: OSMAPIMode = OSMOverpass
                             )(implicit rng: Random): Unit = {
-    val reader = CSVReader.open(file.toJava)
+    val reader = CSVReader.open(file)
     val valuesWithDistance = reader.allWithHeaders().map {
       line => {
         val lon = line("lon").toDouble
@@ -35,20 +36,20 @@ object BuildClusterImages extends App {
     clusters.foreach {
       case (cluster, _) =>
         val values = valuesWithDistance.filter(_._4 == cluster).sortBy(_._5)(Ordering.Double.TotalOrdering).take(10)
-        val directory = outputDir / cluster.toString
-        directory.createDirectories()
+        val directory = new File(outputDir.getAbsolutePath+"/"+cluster.toString)
+        directory.mkdirs()
         values.foreach{
           case (lon, lat, width, _, distanceToCluster) =>
           val grid = OSMGridGenerator(lon,lat,worldWidth,width,mode).generateGrid
-          PNG.write(grid, directory / s"osm_${lon}_${lat}_$distanceToCluster.png")
+          PNG.write(grid, new File(directory.getAbsolutePath+s"/osm_${lon}_${lat}_$distanceToCluster.png"))
         }
     }
     reader.close()
   }
   def buildClusterImagesGenerators(file: File, outputDir: File, clusters: Map[Int, (Double, Double)], rotationFile: File, normFile: File)(implicit rng: Random): Unit =  {
-    val reader = CSVReader.open(file.toJava)
-    val rotation = Source.fromFile(rotationFile.toJava).getLines().toArray.map{_.split(",").map{_.toDouble}}
-    val normalization = Source.fromFile(normFile.toJava).getLines().toArray.map{_.split(",").map{_.toDouble}}
+    val reader = CSVReader.open(file)
+    val rotation = Source.fromFile(rotationFile).getLines().toArray.map{_.split(",").map{_.toDouble}}
+    val normalization = Source.fromFile(normFile).getLines().toArray.map{_.split(",").map{_.toDouble}}
     def projection(morphology: GridMorphology): Array[Double] = GridMorphology.rotation(rotation,normalization)(morphology)
     val valuesWithDistance = reader.toStreamWithHeaders.map {
       line => {
@@ -90,13 +91,13 @@ object BuildClusterImages extends App {
     clusters.foreach {
       case (cluster, _) =>
         val values = valuesWithDistance.filter(_._1 == cluster).sortBy(_._2)(Ordering.Double.TotalOrdering).take(10)
-        val directory = outputDir / cluster.toString
-        directory.createDirectories()
+        val directory = new File(outputDir.getAbsolutePath+"/"+cluster.toString)
+        directory.mkdirs()
         values.foreach{
           case (_, distanceToCluster, _, _, size, replication, generator, randomDensity, blocksNumber, blocksMinSize, blocksMaxSize, expMixtureCenters, expMixtureRadius, expMixtureThreshold, percolationBordPoints, percolationLinkWidth, percolationProba) =>
             rng.setSeed(replication)
             val grid = GridGeneratorLauncher(generator, size, randomDensity, expMixtureCenters, expMixtureRadius, expMixtureThreshold, blocksNumber, blocksMinSize, blocksMaxSize, percolationProba, percolationBordPoints, percolationLinkWidth).getGrid
-            PNG.write(grid, directory / s"${generator}_$distanceToCluster.png")
+            PNG.write(grid, new File(directory.getAbsolutePath+s"/${generator}_$distanceToCluster.png"))
         }
     }
     reader.close()
@@ -109,5 +110,5 @@ object BuildClusterImages extends App {
     (4, (-0.773530217615314, -0.294339386091329))).toMap
 
   //  buildClusterImagesReal(File("UrbanForm") / "realpoints.csv", File("UrbanForm") / "osm", clusters)
-  buildClusterImagesGenerators(File("UrbanForm") / "20190311_181654_LHS_GRID.csv", File("UrbanForm") / "generators", clusters, File("openmole") / "setup" / "pca.csv", File("openmole") / "setup" / "norm.csv")
+  buildClusterImagesGenerators(new File("UrbanForm/20190311_181654_LHS_GRID.csv"), new File("UrbanForm/generators"), clusters, new File("openmole/setup/pca.csv"), new File("openmole/setup/norm.csv"))
 }

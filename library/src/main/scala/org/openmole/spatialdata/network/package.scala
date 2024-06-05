@@ -16,12 +16,14 @@ package object network {
 
   type ShortestPath = (Seq[Node],Seq[Link],Double)
   type ShortestPaths = Map[(Node,Node), (Seq[Node],Seq[Link],Double)]
-
-  implicit class ShortestPathsDecorator(sp1: ShortestPaths){
-    def |-|(sp2: ShortestPaths): Double =
-      sp1.filter(c => (!c._2._3.isNaN)&(!c._2._3.isInfinity)).keySet.intersect(sp2.filter(c => (!c._2._3.isNaN)&(!c._2._3.isInfinity)).keySet).
-        map{k => math.abs(sp1(k)._3 - sp2(k)._3)}.sum // path sets are assumed to be between same nodes
+  object ShortestPaths {
+    def |-|(sp1: ShortestPaths, sp2: ShortestPaths): Double =
+      sp1.filter(c => (!c._2._3.isNaN) & (!c._2._3.isInfinity)).keySet.intersect(sp2.filter(c => (!c._2._3.isNaN) & (!c._2._3.isInfinity)).keySet).
+        map { k => math.abs(sp1(k)._3 - sp2(k)._3) }.sum // path sets are assumed to be between same nodes
   }
+
+  // decorators do not work anymore in scala3
+  //implicit class ShortestPathsDecorator(sp1: ShortestPaths){}
 
 
   /*

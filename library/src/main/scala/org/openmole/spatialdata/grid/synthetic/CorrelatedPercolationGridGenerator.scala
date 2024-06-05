@@ -82,7 +82,7 @@ object CorrelatedPercolationGridGenerator {
 
     if (binary) bin
     else {
-      bin.zip(prnorm).map{rows: (Array[Double],Array[Double]) =>
+      bin.zip(prnorm).map{(rows: (Array[Double],Array[Double])) =>
         rows._1.zip(rows._2).map(d=> d._1*d._2*maxPopulation)
       }
     }
@@ -115,7 +115,7 @@ object CorrelatedPercolationGridGenerator {
     }
     val thetas = densityProbas.map(_.map(theta))
     def hside(th: Double, eta: Double): Double = if (th >= eta) 1.0 else 0.0
-    thetas.zip(field).map{rows: (Array[Double],Array[Double]) =>
+    thetas.zip(field).map{(rows: (Array[Double],Array[Double])) =>
       rows._1.zip(rows._2).map(d=> hside(d._1,d._2))
     }
   }
@@ -132,8 +132,8 @@ object CorrelatedPercolationGridGenerator {
                   field: Array[Array[Double]]
                  ): Array[Array[Double]] = {
     GridMorphology.distanceMatrix(gridSize, gridSize).map(_.map(r => math.exp(-densityGradient*r))).zip(field).map{
-       rows: (Array[Double],Array[Double]) => rows._1.zip(rows._2).map{
-         d: (Double,Double) =>
+      (rows: (Array[Double],Array[Double])) => rows._1.zip(rows._2).map{
+        (d: (Double,Double)) =>
           d._2 match {
             case ff if ff > d._1 => 1.0
             case _ => 0.0

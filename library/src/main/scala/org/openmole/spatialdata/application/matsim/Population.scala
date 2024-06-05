@@ -105,8 +105,8 @@ object Population {
       val pop = loadSyntheticPopulation(area, localAuthorities, parseArg(args, "SPENSERDirs").split(","), sampling = sampling)
 
       val locator: SpenserSynthPop => SpenserSynthPop = parseArg(args, "popMode") match {
-        case "uniform" => p: SpenserSynthPop => HomeLocation.uniformHomeLocationPopulation(p, oas)
-        case "detailed" => p: SpenserSynthPop => {
+        case "uniform" => (p: SpenserSynthPop) => HomeLocation.uniformHomeLocationPopulation(p, oas)
+        case "detailed" => (p: SpenserSynthPop) => {
           val buildings = loadOSMPBFBuildings(p.LADs, parseArg(args, "OSMBuildingsDirs").split(","), oas)
           HomeLocation.detailedHomeLocationPopulation(p, buildings, oas)
         }
@@ -114,14 +114,14 @@ object Population {
       }
 
       val jobLocator: SpenserSynthPop => SpenserSynthPop = parseArg(args, "jobMode") match {
-        case "random" => p: SpenserSynthPop => JobLocation.randomJobLocationPopulation(p, area)
-        case "sample" => p: SpenserSynthPop => JobLocation.empiricalSamplingJobLocationPopulation(p, parseArg(args, "QUANTDataDir"), area, msoas, oas)
-        case "gravity" => p: SpenserSynthPop => JobLocation.gravityJobLocationPopulation(p, parseArg(args, "QUANTDataDir"), area, msoas, oas)
+        case "random" => (p: SpenserSynthPop) => JobLocation.randomJobLocationPopulation(p, area)
+        case "sample" => (p: SpenserSynthPop) => JobLocation.empiricalSamplingJobLocationPopulation(p, parseArg(args, "QUANTDataDir"), area, msoas, oas)
+        case "gravity" => (p: SpenserSynthPop) => JobLocation.gravityJobLocationPopulation(p, parseArg(args, "QUANTDataDir"), area, msoas, oas)
         case _ => throw new IllegalArgumentException("Available job modes: --jobMode={random|sample|gravity}")
       }
 
       val planComposer: SpenserSynthPop => SpenserSynthPop = parseArg(args, "planMode") match {
-        case "default" => p: SpenserSynthPop => PlanComposition.randomPlansPopulation(p)
+        case "default" => (p: SpenserSynthPop) => PlanComposition.randomPlansPopulation(p)
         case _ => throw new IllegalArgumentException("Available plan modes: --planMode={default}")
       }
 

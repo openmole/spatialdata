@@ -5,7 +5,7 @@ import org.openmole.spatialdata
 import org.openmole.spatialdata.utils.math.Stochastic
 
 import scala.util.Random
-import collection.JavaConverters._
+import scala.jdk.CollectionConverters
 
 package object utils {
 
@@ -70,7 +70,7 @@ package object utils {
 
   /**
     * log if debug
-    * @param msg
+    * @param msg debug message
     */
   def log(msg: String): Unit = if(spatialdata.DEBUG||spatialdata.APPLICATION) println(msg)
 

@@ -10,6 +10,7 @@ import java.io.FileReader
 import java.io.FileWriter
 import java.io.InputStreamReader
 import java.net.URL
+import java.net.URI
 import java.util.LinkedList
 
 import scala.collection.mutable.ArrayBuffer;
@@ -18,16 +19,13 @@ import scala.collection.mutable.ArrayBuffer;
 /**
  * Manager communicating with the external TorPool app, via .tor_tmp files (TorPool must be run within same directory for now)
  *
+ * TODO : Concurrent access from diverse apps to a single pool? -> using mongo -> get latest code (used in BiblioData)
+ *
+ *
  * @author Raimbault Juste <br/> <a href="mailto:juste.raimbault@polytechnique.edu">juste.raimbault@polytechnique.edu</a>
  *
  */
 object TorPoolManager {
-
-	/**
-	 * TODO : Concurrent access from diverse apps to a single pool ?
-	 * Difficult as would need listener on this side...
-	 *
-	 */
 
 	/**
 	 * the port currently used.
@@ -47,7 +45,7 @@ object TorPoolManager {
 		// check if pool is running.
 		//checkRunningPool();
 
-		if(hasRunningPool()) {
+		if(hasRunningPool) {
 
 			System.setProperty("socksProxyHost", "127.0.0.1")
 
@@ -70,17 +68,17 @@ object TorPoolManager {
 	/**
 	 * Send a stop signal to the whole pool -> needed ? Yes to avoid having tasks going on running on server e.g.
 	 */
-	def closePool() = {}
+	def closePool = {}
 
 
 	def checkRunningPool(): Unit = {
 		if(!new File(".tor_tmp/ports").exists()){throw new Exception("NO RUNNING TOR POOL !"); }
 	}
 
-	def hasRunningPool(): Boolean = {
+	def hasRunningPool: Boolean = {
 		if (new File(".tor_tmp").exists()){
-			return(new File(".tor_tmp/ports").exists());
-		}else{return(false);}
+			new File(".tor_tmp/ports").exists()
+		} else false
 	}
 
 
@@ -89,7 +87,7 @@ object TorPoolManager {
 	 * Switch the current port to the oldest living TorThread.
 	 *   - Reads communication file -
 	 */
-	 def switchPort(portexclusivity: Boolean)= {
+	 def switchPort(portexclusivity: Boolean): Unit = {
  		try{
  			//send kill signal via kill file
  			// if current port is set
@@ -122,10 +120,10 @@ object TorPoolManager {
 
  	/**
  	 *
- 	 * FIXME not checked
+ 	 * !!! not checked
  	 *
- 	 * @param portpath
- 	 * @param lockfile
+ 	 * @param portpath port path
+ 	 * @param lockfile lock file
  	 */
 	def changePortFromFile(portpath: String,lockfile: String): String = {
  		//String newPort = "9050";
@@ -173,8 +171,8 @@ object TorPoolManager {
 	/**
 	 *
 	 *
-	 * @param portpath
-	 * @param lockfile
+	 * @param portpath port path
+	 * @param lockfile lock file
 	 * @return
 	 */
 	def readLineWithLock(portpath: String,lockfile: String): String = {
@@ -284,12 +282,12 @@ object TorPoolManager {
 
 	def showIP(): Unit = {
 		try{
-		val r = new BufferedReader(new InputStreamReader(new URL("http://ipecho.net/plain").openConnection().getInputStream()));
+		val r = new BufferedReader(new InputStreamReader(new URI("http://ipecho.net/plain").toURL.openConnection().getInputStream()));
 		var currentLine=r.readLine();
 		while(currentLine!= null){
 			//Log.stdout(currentLine);
 			currentLine=r.readLine();}
-		}catch{
+		} catch{
 			case e: Throwable => e.printStackTrace()
 		}
 	}

@@ -10,6 +10,7 @@ import org.openmole.spatialdata.utils.osm.APIExtractor.{OSMAPIMode, OSMOverpass}
 
 import scala.io.Source
 import scala.util.Random
+import scala.util.Using
 
 object BuildClusterImages extends App {
   def sqDistance(p1: (Double, Double), p2: (Double, Double)) = Math.pow(p1._1 - p2._1, 2) + Math.pow(p1._2 - p2._2, 2)
@@ -48,10 +49,10 @@ object BuildClusterImages extends App {
   }
   def buildClusterImagesGenerators(file: File, outputDir: File, clusters: Map[Int, (Double, Double)], rotationFile: File, normFile: File)(implicit rng: Random): Unit =  {
     val reader = CSVReader.open(file)
-    val rotation = Source.fromFile(rotationFile).getLines().toArray.map{_.split(",").map{_.toDouble}}
-    val normalization = Source.fromFile(normFile).getLines().toArray.map{_.split(",").map{_.toDouble}}
+    val rotation: Array[Array[Double]] = Using(Source.fromFile(rotationFile)){source => source.getLines().toArray.map{_.split(",").map{_.toDouble}}}.get
+    val normalization: Array[Array[Double]] = Using(Source.fromFile(normFile)){source => source.getLines().toArray.map{_.split(",").map{_.toDouble}}}.get
     def projection(morphology: GridMorphology): Array[Double] = GridMorphology.rotation(rotation,normalization)(morphology)
-    val valuesWithDistance = reader.toStreamWithHeaders.map {
+    val valuesWithDistance = reader.iteratorWithHeaders.map {
       line => {
         val height = line("height").toDouble
         val width = line("width").toDouble
@@ -87,7 +88,7 @@ object BuildClusterImages extends App {
         println(s"distance to cluster $cluster = $distanceToCluster")
         (cluster, distanceToCluster, width, height, size, replication, generator, randomDensity, blocksNumber, blocksMinSize, blocksMaxSize, expMixtureCenters, expMixtureRadius, expMixtureThreshold, percolationBordPoints, percolationLinkWidth, percolationProba)
       }
-    }
+    }.toSeq
     clusters.foreach {
       case (cluster, _) =>
         val values = valuesWithDistance.filter(_._1 == cluster).sortBy(_._2)(Ordering.Double.TotalOrdering).take(10)

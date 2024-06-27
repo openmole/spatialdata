@@ -4,7 +4,7 @@ import sbt.enablePlugins
 val geotoolsVersion = "27.0"
 
 lazy val commonSettings = Seq(
-  scalaVersion := "3.3.0",
+  scalaVersion := "3.3.1",
   organization := "org.openmole.library",
   // trick to remove maven central (added again: change order for jai to be found in the continuous integration (sbt tries first resolver only in CI) since mavenCentral jai is broken (pom but no jar)
   externalResolvers := Resolver.combineDefaultResolvers(resolvers.value.toVector, mavenCentral = false),

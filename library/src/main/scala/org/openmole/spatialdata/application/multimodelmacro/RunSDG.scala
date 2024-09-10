@@ -6,7 +6,7 @@ import org.openmole.spatialdata.utils
 import scala.util.Random
 
 /**
-  * Weight parameters not really commparable? order of magnitude of delta P seems to be 10 in "default" setting
+  * Weight parameters not really comparable? order of magnitude of delta P seems to be 10 in "default" setting
   */
 object RunSDG extends App {
 

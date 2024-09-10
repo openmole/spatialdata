@@ -18,6 +18,8 @@ import scala.util.Random
   *
   * Raimbault and Pumain, 2022. Multi-modeling urban systems dynamics to explore sustainability trade-offs. French Regional Conference on Complex Systems, Paris, June 2022.
   *
+  * Raimbault and Pumain, 2024.  Simulation models for systems of cities and sustainable development goals. Conference on Complex Systems, Exeter, September 2024.
+  *
   */
 case class SDG()
 
@@ -38,7 +40,7 @@ object SDG {
     *  - Q of complex interactions between submodules?: specific question for model validation
     * @return
     */
-  def runSyntheticMultiModelMacro(
+  def setupSyntheticMultiModelMacro(
                                 syntheticCities: Int,
                                 syntheticHierarchy: Double,
                                 syntheticMaxPop: Double,
@@ -64,7 +66,7 @@ object SDG {
                                 coevolNetworkGmax: Double,
                                 coevolNetworkExponent: Double,
                                 coevolNetworkThresholdQuantile: Double
-                              )(implicit rng: Random): Result = {
+                              )(implicit rng: Random): MultiMacroModel = {
     implicit val m: MatrixImplementation = Matrix.defaultImplementation
     rng.setSeed(seed)
 
@@ -99,10 +101,10 @@ object SDG {
       0.0, 1.0, 1.0, coevolNetworkGmax, coevolNetworkExponent, coevolNetworkThresholdQuantile)
     val coevolInitialState = Coevolution.initialState(coevolModel)
 
-    val model = MultiMacroModel(Seq(innovModel, ecoModel, coevolModel), Seq(innovInitialState, ecoInitialState, coevolInitialState))
-
-    Result(model.run.asInstanceOf[MultiMacroResult])
+    MultiMacroModel(Seq(innovModel, ecoModel, coevolModel), Seq(innovInitialState, ecoInitialState, coevolInitialState))
   }
+
+  def runSyntheticMultiModelMacro(model: MultiMacroModel)(implicit rng: Random): Result = Result(model.run.asInstanceOf[MultiMacroResult])
 
 
   /**

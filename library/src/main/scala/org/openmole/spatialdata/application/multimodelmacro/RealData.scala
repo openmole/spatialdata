@@ -34,33 +34,9 @@ object RealData {
     }
   }
 
-  def runRealDataMultiModelMacro(
-                                   populationsFile: String,
-                                   distancesFile: String,
-                                   datesFile: String,
-                                   finalTime: Int,
-                                   seed: Long,
-                                   innovationWeight: Double,
-                                   innovationGravityDecay: Double,
-                                   innovationInnovationDecay: Double,
-                                   innovationMutationRate: Double,
-                                   innovationNewInnovationHierarchy: Double,
-                                   innovationEarlyAdoptersRate: Double,
-                                   innovationUtilityStd: Double,
-                                   innovationUtilityDistrib: String,
-                                   ecoWeight: Double,
-                                   ecoSizeEffectOnDemand: Double,
-                                   ecoSizeEffectOnSupply: Double,
-                                   ecoGravityDecay: Double,
-                                   ecoWealthToPopulationExponent: Double,
-                                   ecoPopulationToWealthExponent: Double,
-                                   coevolWeight: Double,
-                                   coevolGamma: Double,
-                                   coevolGravityDecay: Double,
-                                   coevolNetworkGmax: Double,
-                                   coevolNetworkExponent: Double,
-                                   coevolNetworkThresholdQuantile: Double
-                                 )(implicit rng: Random): Result = {
+  def setupRealData(populationsFile: String,
+                    distancesFile: String,
+                    datesFile: String):  (Matrix, Matrix, Array[Double]) = {
     implicit val m: MatrixImplementation = Matrix.defaultImplementation
     rng.setSeed(seed)
 
@@ -73,24 +49,7 @@ object RealData {
     val rawdates: Seq[String] = CSV.readCSV(datesFile, withHeader = false).values.toSeq.head
     val dates: Array[Double] = rawdates.map(_.toDouble).toArray
 
-    val distrib = innovationUtilityDistrib match {case "normal" => Innovation.InnovationUtilityNormalDistribution(); case "log-normal" => Innovation.InnovationUtilityLogNormalDistribution()}
-    val innovModel = Innovation(populationMatrix, distancesMatrix, dates, rng, 0.0, innovationWeight, innovationGravityDecay, innovationInnovationDecay,
-      Innovation.mutationInnovation(_, _, _, innovationMutationRate, innovationNewInnovationHierarchy, innovationEarlyAdoptersRate, innovationUtilityStd, distrib),
-      1.0
-    )
-    val innovInitialState = Innovation.initialState(innovModel)
-
-    val ecoModel = EconomicExchanges(populationMatrix, distancesMatrix, dates, ecoWeight, ecoSizeEffectOnDemand, ecoSizeEffectOnSupply, ecoGravityDecay, ecoWealthToPopulationExponent, ecoPopulationToWealthExponent)
-    val ecoInitialState = EconomicExchanges.initialState(ecoModel)
-
-    val coevolModel = Coevolution(populationMatrix, Array(distancesMatrix), EmptyMatrix(), dates, 0.0, coevolWeight, coevolGamma, coevolGravityDecay,
-      0.0, 1.0, 1.0, coevolNetworkGmax, coevolNetworkExponent, coevolNetworkThresholdQuantile)
-    val coevolInitialState = Coevolution.initialState(coevolModel)
-
-    val model = MultiMacroModel(Seq(innovModel, ecoModel, coevolModel), Seq(innovInitialState, ecoInitialState, coevolInitialState))
-
-    Result(model.run.asInstanceOf[MultiMacroResult])
+    (populationMatrix, distancesMatrix, dates)
   }
-
 
 }

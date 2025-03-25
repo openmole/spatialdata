@@ -40,33 +40,13 @@ object SDG {
     *  - Q of complex interactions between submodules?: specific question for model validation
     * @return
     */
-  def setupSyntheticMultiModelMacro(
-                                syntheticCities: Int,
-                                syntheticHierarchy: Double,
-                                syntheticMaxPop: Double,
-                                finalTime: Int,
-                                seed: Long,
-                                innovationWeight: Double,
-                                innovationGravityDecay: Double,
-                                innovationInnovationDecay: Double,
-                                innovationMutationRate: Double,
-                                innovationNewInnovationHierarchy: Double,
-                                innovationEarlyAdoptersRate: Double,
-                                innovationUtilityStd: Double,
-                                innovationUtilityDistrib: String,
-                                ecoWeight: Double,
-                                ecoSizeEffectOnDemand: Double,
-                                ecoSizeEffectOnSupply: Double,
-                                ecoGravityDecay: Double,
-                                ecoWealthToPopulationExponent: Double,
-                                ecoPopulationToWealthExponent: Double,
-                                coevolWeight: Double,
-                                coevolGamma: Double,
-                                coevolGravityDecay: Double,
-                                coevolNetworkGmax: Double,
-                                coevolNetworkExponent: Double,
-                                coevolNetworkThresholdQuantile: Double
-                              )(implicit rng: Random): MultiMacroModel = {
+  def setupSynthetic(
+                      syntheticCities: Int,
+                      syntheticHierarchy: Double,
+                      syntheticMaxPop: Double,
+                      finalTime: Int,
+                      seed: Long
+                              )(implicit rng: Random): (Matrix, Matrix, Array[Double]) = {
     implicit val m: MatrixImplementation = Matrix.defaultImplementation
     rng.setSeed(seed)
 
@@ -79,6 +59,36 @@ object SDG {
     val populationMatrix = DenseMatrix.zeros(syntheticCities,finalTime+1)
     populationMatrix.setMSubmat(0,0,Array(initialPopulations.toArray).transpose)
     val dates: Array[Double] = (0 to finalTime).toArray.map{_.toDouble}
+
+    (populationMatrix, dmat, dates)
+  }
+  
+  def setupMultiModelMacro(population: Matrix,
+                           distances: Matrix,
+                           dates: Array[Double],
+                           finalTime: Int,
+                           seed: Long,
+                           innovationWeight: Double,
+                           innovationGravityDecay: Double,
+                           innovationInnovationDecay: Double,
+                           innovationMutationRate: Double,
+                           innovationNewInnovationHierarchy: Double,
+                           innovationEarlyAdoptersRate: Double,
+                           innovationUtilityStd: Double,
+                           innovationUtilityDistrib: String,
+                           ecoWeight: Double,
+                           ecoSizeEffectOnDemand: Double,
+                           ecoSizeEffectOnSupply: Double,
+                           ecoGravityDecay: Double,
+                           ecoWealthToPopulationExponent: Double,
+                           ecoPopulationToWealthExponent: Double,
+                           coevolWeight: Double,
+                           coevolGamma: Double,
+                           coevolGravityDecay: Double,
+                           coevolNetworkGmax: Double,
+                           coevolNetworkExponent: Double,
+                           coevolNetworkThresholdQuantile: Double
+                          )(implicit rng: Random): MultiMacroModel = {
 
     // note: constructor are a mess: legacy vs mutation model, no proper for mutation
     // initial innov utility is 1
@@ -104,7 +114,7 @@ object SDG {
     MultiMacroModel(Seq(innovModel, ecoModel, coevolModel), Seq(innovInitialState, ecoInitialState, coevolInitialState))
   }
 
-  def runSyntheticMultiModelMacro(model: MultiMacroModel)(implicit rng: Random): Result = Result(model.run.asInstanceOf[MultiMacroResult])
+  def runMultiModelMacro(model: MultiMacroModel)(implicit rng: Random): Result = Result(model.run.asInstanceOf[MultiMacroResult])
 
 
   /**

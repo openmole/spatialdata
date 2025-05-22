@@ -22,7 +22,7 @@ object RunSDG extends App {
 
   // real data setup
   val initialState = RealData.setupRealData(
-
+    "","","" //TODO
   )
 
   val result = SDG.runMultiModelMacro(
@@ -55,7 +55,7 @@ object RunSDG extends App {
 
   utils.log(s"Indicators: Emissions = ${SDG.cumulatedFlows(result)}; Innovation = ${- SDG.averageUtility(result)}; Infrastructure = ${SDG.averageDistance(result)}; Eco inequality = ${SDG.giniEconomicWealth(result)}; Wealth = ${SDG.averageWealth(result)}")
 
-  val realresult: RealData.Result = RealData.Result(result)
+  val realresult: RealData.Result = RealData.Result(result.asInstanceOf[MultiMacroResult])
 
   utils.log(s"Fit on populations : logmse =  ${realresult.logmse} ; mselog = ${realresult.mselog}")
 

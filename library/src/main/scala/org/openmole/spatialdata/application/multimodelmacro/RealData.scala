@@ -38,7 +38,6 @@ object RealData {
                     distancesFile: String,
                     datesFile: String):  (Matrix, Matrix, Array[Double]) = {
     implicit val m: MatrixImplementation = Matrix.defaultImplementation
-    rng.setSeed(seed)
 
     // load populations, dates, distance matrix
     val populationMatrix: Matrix = Matrix(CSV.readMat(populationsFile))

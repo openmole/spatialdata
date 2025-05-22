@@ -112,7 +112,16 @@ object MultiscaleMicro {
       * @param positioning positioning function
       * @return
       */
-    def addBuildings(currentState: State, numberToAdd: Int, buildingWidth: Double, buildingHeight: Int, shareHousing: Double, streetBuffer: Double, positioning: State => (Double, Double), patchSize: Double, lambdaDensity: Double)(implicit rng: Random): State = {
+    def addBuildings(currentState: State,
+                     numberToAdd: Int,
+                     buildingWidth: Double,
+                     buildingHeight: Int,
+                     shareHousing: Double,
+                     streetBuffer: Double,
+                     positioning: State => (Double, Double),
+                     patchSize: Double,
+                     lambdaDensity: Double
+                    )(implicit rng: Random): State = {
 
       val (xmin,xmax,ymin,ymax) = bbox(currentState)
       val (x, y) = positioning(currentState)
@@ -231,7 +240,7 @@ object MultiscaleMicro {
     def initialGrid(initialNetwork: TransportationNetwork, patchSize: Double, lambdaDensity: Double): Grid = {
       val nodesidseq = initialNetwork.network.nodes.map(_.id).toSeq
       // each node is the center of a patch
-      val (distToStationsMap, distToCentresMap) = distances(initialNetwork)
+      val (distToStationsMap, distToCentresMap) = TransportationNetwork.distances(initialNetwork)
       val coordsMap = initialNetwork.network.nodes.map(n => (n.id,n.position)).toMap
       val empty = emptyGrid(nodesidseq, coordsMap, distToStationsMap, distToCentresMap, patchSize)
       aggregateBuildingsToGrid(empty, Polygons.empty, lambdaDensity)
@@ -257,18 +266,7 @@ object MultiscaleMicro {
       )
     }
 
-    /**
-      * compute distance from nodes to stations and centres
-      *  indices are not needed as nw nodes are fixed
-      * @param nw network
-      * @return maps Node id => distance for stations and centres
-      */
-    def distances(nw: TransportationNetwork): (Map[Int,Double],Map[Int,Double]) = {
-      val nodesseq = nw.network.nodes.toSeq
-      val distToStationsMap: Map[Int,Double] = nw.network.shortestPathTo(nodesseq,nw.stations).toSeq.groupMap(_._1._1)(_._2._3).map{case (n,dists) => (n.id, dists.min)}
-      val distToCentresMap: Map[Int,Double] = nw.network.shortestPathTo(nodesseq,nw.centres).toSeq.groupMap(_._1._1)(_._2._3).map{case (n,dists) => (n.id, dists.min)}
-      (distToStationsMap, distToCentresMap)
-    }
+
 
     /**
       * recompute counts and densities in grid cells given buildings
@@ -324,6 +322,24 @@ object MultiscaleMicro {
     }
 
 
+    def updateDensityVariables(model: MultiscaleMicro, state: State): State = {
+      state.copy(
+        grid = aggregateBuildingsToGrid(state.grid, state.buildings, model.lambdaDensity)
+      )
+    }
+
+    /**
+     * Recompute distance and density variables
+     * @param model model
+     * @param state state
+     * @return
+     */
+    def updateVariables(model: MultiscaleMicro, state: State): State = {
+      val updatedNetworkDistances = TransportationNetwork.updateNetworkDistances(state)
+      updateDensityVariables(model, updatedNetworkDistances)
+    }
+
+
   }
 
   /**
@@ -370,6 +386,48 @@ object MultiscaleMicro {
       utils.log(s"Network nodes coordinates in [${nw.nodes.map(_.position._1).min}, ${nw.nodes.map(_.position._1).max}] x [${nw.nodes.map(_.position._2).min}, ${nw.nodes.map(_.position._2).max}]")
       TransportationNetwork(nw, centres, initialTrLinks.toSeq, centres)
     }
+
+
+    /**
+     * compute distance from nodes to stations and centres
+     *  indices are not needed as nw nodes are fixed
+     * @param nw network
+     * @return maps Node id => distance for stations and centres
+     */
+    def distances(nw: TransportationNetwork): (Map[Int,Double],Map[Int,Double]) = {
+      val nodesseq = nw.network.nodes.toSeq
+      val distToStationsMap: Map[Int,Double] = nw.network.shortestPathTo(nodesseq,nw.stations).toSeq.groupMap(_._1._1)(_._2._3).map{case (n,dists) => (n.id, dists.min)}
+      val distToCentresMap: Map[Int,Double] = nw.network.shortestPathTo(nodesseq,nw.centres).toSeq.groupMap(_._1._1)(_._2._3).map{case (n,dists) => (n.id, dists.min)}
+      (distToStationsMap, distToCentresMap)
+    }
+
+    /**
+     * Recompute network distances
+     * @param state state with updated network but not distances
+     * @return
+     */
+    def updateNetworkDistances(state: State): State = {
+      val nodesidseq = state.network.network.nodes.map(_.id).toSeq
+      val (distToStationsMap, distToCentresMap) = distances(state.network)
+      val updatedGrid = state.grid.copy(
+        patchDistancesToNetwork = nodesidseq.map(distToStationsMap(_)),
+        patchDistancesToCentre = nodesidseq.map(distToCentresMap(_))
+      )
+      state.copy(grid=updatedGrid)
+    }
+
+    /**
+     * Add long distance links to the network
+     * @param model model
+     * @param state state
+     * @return
+     */
+    def evolveNetwork(model:MultiscaleMicro, state: State): State = {
+      // TODO
+      state
+    }
+
+
   }
 
 
@@ -397,6 +455,21 @@ object MultiscaleMicro {
     //sealed trait DeveloperAgentsSetupMode
     //case object DeveloperAgentsUniformSetup extends DeveloperAgentsSetupMode
     //case object DeveloperAgentsHeterogenousSetup extends DeveloperAgentsSetupMode
+
+
+    /**
+     * Core function simulating microscopic dynamics of developers
+     *  -> compute utilities
+     *  -> compute a positioning function for addBuildings
+     * @param model model
+     * @param state state
+     * @return
+     */
+    def developerAgentsProjects(model: MultiscaleMicro, state: State): State = {
+
+      state
+    }
+
   }
 
   case class Result(
@@ -411,8 +484,15 @@ object MultiscaleMicro {
     * @param state state
     * @return
     */
-  def step(model: MultiscaleMicro, state: State): State = {
-    state
+  def step(model: MultiscaleMicro, state: State)(implicit rng: Random): State = {
+    def oneStepBuildings(state: State): State = DeveloperAgent.developerAgentsProjects(model, state)
+      //state.copy(
+      //buildings = State.addBuildings(// behavior of developer agents -> discrete choices
+      //)(rng))
+    val withNewBuildings = Iterator.iterate(state)(oneStepBuildings).take(model.mesoStepInterval).toList.last
+    val withUpdatedDensities = Grid.updateDensityVariables(model, withNewBuildings)
+    val withUpdatedNetwork = TransportationNetwork.evolveNetwork(model, withUpdatedDensities)
+    Grid.updateVariables(model, withUpdatedNetwork) // in practice last step
   }
 
   /**

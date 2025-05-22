@@ -93,7 +93,7 @@ object SDG {
     // note: constructor are a mess: legacy vs mutation model, no proper for mutation
     // initial innov utility is 1
     val distrib = innovationUtilityDistrib match {case "normal" => InnovationUtilityNormalDistribution(); case "log-normal" => InnovationUtilityLogNormalDistribution()}
-    val innovModel = Innovation(populationMatrix,dmat,dates,rng,0.0,innovationWeight,innovationGravityDecay,innovationInnovationDecay,
+    val innovModel = Innovation(population,distances,dates,rng,0.0,innovationWeight,innovationGravityDecay,innovationInnovationDecay,
       mutationInnovation(_,_,_, innovationMutationRate, innovationNewInnovationHierarchy, innovationEarlyAdoptersRate, innovationUtilityStd, distrib),
       1.0
     )
@@ -102,12 +102,12 @@ object SDG {
     // eco exchanges - ! add gravitypotentials in eco state (total emission: cumulated interactions across models)
     // ! issue: not same unit for innov / eco (supply - demand gravity potentials) -> should compute something equivalent?
     // ! marius weight? - rescale pop updates?
-    val ecoModel = EconomicExchanges(populationMatrix, dmat, dates, ecoWeight, ecoSizeEffectOnDemand, ecoSizeEffectOnSupply, ecoGravityDecay, ecoWealthToPopulationExponent, ecoPopulationToWealthExponent)
+    val ecoModel = EconomicExchanges(population, distances, dates, ecoWeight, ecoSizeEffectOnDemand, ecoSizeEffectOnSupply, ecoGravityDecay, ecoWealthToPopulationExponent, ecoPopulationToWealthExponent)
     val ecoInitialState = EconomicExchanges.initialState(ecoModel)
 
     // coevolution
     // rq: flows also in other unit (pop rescaled) -> must compute pop-based only for comparability
-    val coevolModel = Coevolution(populationMatrix, Array(dmat), EmptyMatrix(), dates, 0.0, coevolWeight, coevolGamma, coevolGravityDecay,
+    val coevolModel = Coevolution(population, Array(distances), EmptyMatrix(), dates, 0.0, coevolWeight, coevolGamma, coevolGravityDecay,
       0.0, 1.0, 1.0, coevolNetworkGmax, coevolNetworkExponent, coevolNetworkThresholdQuantile)
     val coevolInitialState = Coevolution.initialState(coevolModel)
 

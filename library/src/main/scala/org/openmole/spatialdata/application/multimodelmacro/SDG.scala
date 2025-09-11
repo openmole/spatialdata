@@ -66,7 +66,6 @@ object SDG {
   def setupMultiModelMacro(population: Matrix,
                            distances: Matrix,
                            dates: Array[Double],
-                           finalTime: Int,
                            seed: Long,
                            innovationWeight: Double,
                            innovationGravityDecay: Double,
@@ -90,6 +89,8 @@ object SDG {
                            coevolNetworkExponent: Double,
                            coevolNetworkThresholdQuantile: Double
                           )(implicit rng: Random): MultiMacroModel = {
+
+    rng.setSeed(seed)
 
     // note: constructor are a mess: legacy vs mutation model, no proper for mutation
     // initial innov utility is 1

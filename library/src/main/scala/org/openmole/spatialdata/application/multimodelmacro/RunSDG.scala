@@ -31,7 +31,6 @@ object RunSDG extends App {
   val result: SDG.Result = SDG.runMultiModelMacro(
     SDG.setupMultiModelMacro(
       initialState._1, initialState._2, initialState._3,
-      finalTime = initialState._3.length,
       seed = rng.nextInt(),
       innovationWeight = 1e-2, // 0.005
       innovationGravityDecay = 1000.0,//0.5,

@@ -6,7 +6,7 @@ import org.openmole.spatialdata.utils.math.Matrix
 
 trait MacroState {
   def time: Int
-  def populations: Matrix
+  def populations: Seq[Double]
   def distanceMatrix: Matrix
 }
 
@@ -20,7 +20,7 @@ trait MacroState {
  */
 case class MacroStateGen(
   time: Int,
-  populations: Matrix,
+  populations: Seq[Double],
   distanceMatrix: Matrix
 ) extends MacroState {
 
@@ -29,7 +29,7 @@ case class MacroStateGen(
     * @return
     */
   def indicators: (Vector[Double],Vector[Double],Vector[Double]) = {
-    val pop = populations.flatValues.toVector
+    val pop = populations.toVector
     val dmat = distanceMatrix
     val ptot = populations.sum
     (pop,dmat.values.map(r => r.sum/r.length).toVector,dmat.values.map(r=> r.zip(pop).map{case (e,p)=> e*p/ptot}.sum / r.length).toVector)

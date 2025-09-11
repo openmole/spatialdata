@@ -1,6 +1,6 @@
 package org.openmole.spatialdata.model.urbandynamics
 
-import org.openmole.spatialdata.model.urbandynamics.MultiMacroModel.MultiMacroState
+import org.openmole.spatialdata.model.urbandynamics.MultiMacroModel.{MultiMacroResult, MultiMacroState}
 import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.utils.math.{EmptyMatrix, Matrix}
 
@@ -14,13 +14,14 @@ import scala.reflect.{ClassTag, classTag}
   * @param models coupled models
   */
 case class MultiMacroModel(
+                          realPopulations: Matrix,
                           models: Seq[MacroModel],
                           initialStates: Seq[MacroState]
-                          ) extends MacroModel {
+                          ) extends MacroModel with RealDataModel {
 
-  override def run: MacroResult = MultiMacroModel.run(this)
+  override def run: MultiMacroResult = MultiMacroModel.run(this)
 
-  override def nextStep(state: MacroState, populations: Matrix, distanceMatrix: Matrix): MacroState = MultiMacroModel.nextStep(this, state.asInstanceOf[MultiMacroState])
+  override def nextStep(state: MacroState, populations: Seq[Double], distanceMatrix: Matrix): MacroState = MultiMacroModel.nextStep(this, state.asInstanceOf[MultiMacroState])
 
   override def finalTime: Int = models.head.finalTime
 
@@ -34,15 +35,16 @@ object MultiMacroModel {
 
   case class MultiMacroState(
                             time: Int,
-                            populations: Matrix,
+                            populations: Seq[Double],
                             distanceMatrix: Matrix,
                             modelStates: Seq[MacroState]
                             ) extends MacroState
 
   case class MultiMacroResult(
+                             realPopulations: Matrix,
                              states: Seq[MultiMacroState]
                              ) extends MacroResult {
-    override def simulatedPopulation: Matrix = Matrix(states.map(_.populations.flatValues).toArray.transpose)(Matrix.defaultImplementation)
+    override def simulatedPopulation: Matrix = Matrix(states.map(_.populations.toArray).toArray)(Matrix.defaultImplementation).transpose
     //def simulatedPopulation: Matrix = states.map(_.populations).reduce((m1, m2) => m1 :: m2)
 
 
@@ -86,7 +88,7 @@ object MultiMacroModel {
     }
 
     val finalpop = currentPop
-    utils.log(s"\nFull step delta P = ${prevpop.flatValues.zip(finalpop.flatValues).map{case (p1,p2) => math.abs(p1-p2)}.sum}")
+    utils.log(s"\nFull step delta P = ${prevpop.zip(finalpop).map{case (p1,p2) => math.abs(p1-p2)}.sum}")
 
     MultiMacroState(
       time = state.time + 1,
@@ -105,7 +107,7 @@ object MultiMacroModel {
       currentState = MultiMacroModel.nextStep(model, currentState).asInstanceOf[MultiMacroState]
       allStates.addOne(currentState)
     }
-    MultiMacroResult(allStates.toSeq)
+    MultiMacroResult(model.realPopulations,allStates.toSeq)
   }
 
 }

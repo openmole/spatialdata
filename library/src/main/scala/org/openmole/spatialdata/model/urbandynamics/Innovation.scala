@@ -52,7 +52,7 @@ case class Innovation(
   override def run: MacroResultFit = Innovation.run(this).macroResult
 
 
-  override def nextStep(state: MacroState, populations: Matrix, distanceMatrix: Matrix): MacroState = {
+  override def nextStep(state: MacroState, populations: Seq[Double], distanceMatrix: Matrix): MacroState = {
     val updatedState = Innovation.updateState(state.asInstanceOf[InnovationState], populations, distanceMatrix)
     Innovation.nextState(this, updatedState)
   }
@@ -73,7 +73,7 @@ object Innovation {
 
   case class InnovationState(
                             time: Int,
-                            populations: Matrix,
+                            populations: Seq[Double],
                             distanceMatrix: Matrix,
                             innovations: Seq[Matrix],
                             utilities: Seq[Double],
@@ -102,12 +102,12 @@ object Innovation {
     val gravityDistanceWeights = distanceMatrix.map { d => Math.exp(-d / gravityDecay) }
     val potsgravity = gravityPotentials(diffusedInnovs, Array(1.0), populationMatrix.getCol(0).flatValues, gravityDistanceWeights, 0)
 
-    InnovationState(time=0, populationMatrix.getCol(0), distanceMatrix, diffusedInnovs, innovationUtilities.toSeq, flows = potsgravity)
+    InnovationState(time=0, populationMatrix.getCol(0).flatValues.toSeq, distanceMatrix, diffusedInnovs, innovationUtilities.toSeq, flows = potsgravity)
 
   }
 
-  def updateState(state: InnovationState, populations: Matrix, distanceMatrix: Matrix): InnovationState = {
-    state.copy(populations = populations.clone, distanceMatrix = distanceMatrix.clone)
+  def updateState(state: InnovationState, populations: Seq[Double], distanceMatrix: Matrix): InnovationState = {
+    state.copy(populations = populations, distanceMatrix = distanceMatrix.clone)
   }
 
 
@@ -421,14 +421,14 @@ object Innovation {
     val gravityDistanceWeights = state.distanceMatrix.map { d => Math.exp(-d / gravityDecay) }
     val innovationDistanceWeights = distanceMatrix.map { d => Math.exp(-d / innovationDecay) }
 
-    val n = populationMatrix.nrows
+    val n = state.populations.size
     val p = populationMatrix.ncols
 
     val delta_t = dates(state.time + 1) - dates(state.time)
 
     val totalpop = state.populations.sum
 
-    val currentPopulations = state.populations.flatValues
+    val currentPopulations = state.populations
 
     /*
       * 1) diffuse innovations
@@ -461,14 +461,14 @@ object Innovation {
     /*
       * 2) Update populations
       */
-    val potsgravity = gravityPotentials(diffusedInnovs, macroAdoptionLevels, currentPopulations, gravityDistanceWeights, state.time + 1)
+    val potsgravity = gravityPotentials(diffusedInnovs, macroAdoptionLevels, currentPopulations.toArray, gravityDistanceWeights, state.time + 1)
     val meanpotgravity = potsgravity.sum / (n * n)
 
 
-    val prevpop = Matrix(currentPopulations.map(Array(_)))(Matrix.defaultImplementation)
+    val prevpopMatrix = Matrix(currentPopulations.toArray.map(Array(_)))(Matrix.defaultImplementation)
     //res.setMSubmat(0, t,
-     val newPopulations = (prevpop +
-        (prevpop *
+     val newPopulations = (prevpopMatrix +
+        (prevpopMatrix *
           (
             ((potsgravity %*% DenseMatrix.ones(n,1) * (innovationWeight / (n * meanpotgravity)))
               + DenseMatrix.constant(n, 1, growthRate)
@@ -478,7 +478,7 @@ object Innovation {
        ).flatValues
     //)
     //currentPopulations = res.getCol(t).flatValues
-    utils.log(s"    Delta P = ${prevpop.flatValues.zip(newPopulations).map{case (p1,p2) => math.abs(p1 - p2)}.sum}")
+    utils.log(s"    Delta P = ${currentPopulations.zip(newPopulations).map{case (p1,p2) => math.abs(p1 - p2)}.sum}")
 
     /*
       * 3) create a new innovation if needed
@@ -506,7 +506,7 @@ object Innovation {
 
       state.copy(
         time = state.time + 1,
-        populations = Matrix(newPopulations, row = false)(Matrix.defaultImplementation),
+        populations = newPopulations.toSeq,
         innovations = newInnovProp.toSeq++addInnovProp,
         utilities = newutilities,
         flows = potsgravity
@@ -514,7 +514,7 @@ object Innovation {
 
     } else state.copy(
       time = state.time + 1,
-      populations = Matrix(newPopulations, row = false)(Matrix.defaultImplementation),
+      populations = newPopulations.toSeq,
       innovations = diffusedInnovs,
       flows = potsgravity
     )
@@ -558,7 +558,7 @@ object Innovation {
 
     val gravityPotentials: ArrayBuffer[Matrix] = new ArrayBuffer[Matrix]
 
-    var currentState: InnovationState = InnovationState(time=0, populationMatrix.getCol(0), distanceMatrix, innovationProportions.toSeq, innovationUtilities.toSeq, flows = EmptyMatrix())
+    var currentState: InnovationState = InnovationState(time=0, populationMatrix.getCol(0).flatValues.toSeq, distanceMatrix, innovationProportions.toSeq, innovationUtilities.toSeq, flows = EmptyMatrix())
 
     for (t <- 1 until p) {
 
@@ -568,11 +568,11 @@ object Innovation {
 
       gravityPotentials.append(currentState.flows)
       //innovationUtilities.appendAll()
-      res.setMSubmat(0, t, currentState.populations.values)
+      res.setMSubmat(0, t, currentState.populations.map(Array(_)).toArray)
 
     }
 
-    val currentPopulations = currentState.populations.flatValues
+    val currentPopulations = currentState.populations
     val totalpop = currentPopulations.sum
     val macroAdoptionLevels: Array[Double] = currentState.innovations.map{
       _.getCol(p-1).flatValues.zip(currentPopulations).map{case(w,d)=>w*d}.sum

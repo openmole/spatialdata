@@ -4,7 +4,7 @@ import org.openmole.spatialdata.model.urbandynamics.Coevolution.CoevolutionState
 import org.openmole.spatialdata.model.urbandynamics.EconomicExchanges.EconomicExchangesState
 import org.openmole.spatialdata.model.urbandynamics.Innovation.{InnovationState, InnovationUtilityLogNormalDistribution, InnovationUtilityNormalDistribution, mutationInnovation}
 import org.openmole.spatialdata.model.urbandynamics.MultiMacroModel.MultiMacroResult
-import org.openmole.spatialdata.model.urbandynamics.{Coevolution, EconomicExchanges, Innovation, MultiMacroModel}
+import org.openmole.spatialdata.model.urbandynamics.{Coevolution, EconomicExchanges, Innovation, MacroResult, MultiMacroModel}
 import org.openmole.spatialdata.utils.math.Matrix.MatrixImplementation
 import org.openmole.spatialdata.utils.math.{DenseMatrix, EmptyMatrix, Matrix, Statistics}
 import org.openmole.spatialdata.vector.measures.Spatstat
@@ -77,6 +77,7 @@ object SDG {
                            innovationUtilityStd: Double,
                            innovationUtilityDistrib: String,
                            ecoWeight: Double,
+                           ecoMultiplier: Double,
                            ecoSizeEffectOnDemand: Double,
                            ecoSizeEffectOnSupply: Double,
                            ecoGravityDecay: Double,
@@ -102,7 +103,7 @@ object SDG {
     // eco exchanges - ! add gravitypotentials in eco state (total emission: cumulated interactions across models)
     // ! issue: not same unit for innov / eco (supply - demand gravity potentials) -> should compute something equivalent?
     // ! marius weight? - rescale pop updates?
-    val ecoModel = EconomicExchanges(population, distances, dates, ecoWeight, ecoSizeEffectOnDemand, ecoSizeEffectOnSupply, ecoGravityDecay, ecoWealthToPopulationExponent, ecoPopulationToWealthExponent)
+    val ecoModel = EconomicExchanges(population, distances, dates, ecoWeight, ecoMultiplier, ecoSizeEffectOnDemand, ecoSizeEffectOnSupply, ecoGravityDecay, ecoWealthToPopulationExponent, ecoPopulationToWealthExponent)
     val ecoInitialState = EconomicExchanges.initialState(ecoModel)
 
     // coevolution
@@ -111,10 +112,10 @@ object SDG {
       0.0, 1.0, 1.0, coevolNetworkGmax, coevolNetworkExponent, coevolNetworkThresholdQuantile)
     val coevolInitialState = Coevolution.initialState(coevolModel)
 
-    MultiMacroModel(Seq(innovModel, ecoModel, coevolModel), Seq(innovInitialState, ecoInitialState, coevolInitialState))
+    MultiMacroModel(population.clone,Seq(innovModel, ecoModel, coevolModel), Seq(innovInitialState, ecoInitialState, coevolInitialState))
   }
 
-  def runMultiModelMacro(model: MultiMacroModel)(implicit rng: Random): Result = Result(model.run.asInstanceOf[MultiMacroResult])
+  def runMultiModelMacro(model: MultiMacroModel)(implicit rng: Random): Result = Result(model.run)
 
 
   /**
@@ -151,7 +152,7 @@ object SDG {
     */
   def averageDistance(res: Result): Double = res.result.states.map{s =>
     val ptot = s.populations.sum
-    val diagpop = DenseMatrix.diagonal(s.populations.flatValues.map( _ / ptot))
+    val diagpop = DenseMatrix.diagonal(s.populations.map( _ / ptot).toArray)
     (diagpop %*% s.distanceMatrix %*% diagpop).sum
   }.sum / res.result.states.length
 

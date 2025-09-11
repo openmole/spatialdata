@@ -30,9 +30,9 @@ object CSV {
     val (header,content): (Seq[String], Seq[Map[String, String]]) = {
       if (withHeader) CSVReader.open(file)(readerFormat).allWithOrderedHeaders()
       else {
-        val raw = CSVReader.open(file)(readerFormat).all()
-        val h = raw.head.indices.map("V"+_)
-        (h,raw.map{row => row.zip(h).toMap})
+        val raw: Seq[Seq[String]] = CSVReader.open(file)(readerFormat).all()
+        val h: Seq[String] = raw.head.indices.map("V"+_)
+        (h,raw.map{row => h.zip(row).toMap })
       }
     }
     header.map(s => (s,content.map{_(s)})).toMap

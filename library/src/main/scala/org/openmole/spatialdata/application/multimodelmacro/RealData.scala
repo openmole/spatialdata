@@ -1,7 +1,8 @@
 package org.openmole.spatialdata.application.multimodelmacro
 
 import org.openmole.spatialdata.model.urbandynamics.{Coevolution, EconomicExchanges, Innovation, MacroResultFit, MultiMacroModel}
-import org.openmole.spatialdata.model.urbandynamics.MultiMacroModel.MultiMacroResult
+import org.openmole.spatialdata.model.urbandynamics.MultiMacroModel.{MultiMacroResult, MultiMacroState}
+import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.utils.io.CSV
 import org.openmole.spatialdata.utils.math.{DenseMatrix, EmptyMatrix, Matrix, Statistics}
 import org.openmole.spatialdata.utils.math.Matrix.MatrixImplementation
@@ -21,14 +22,15 @@ object RealData {
                      result: MultiMacroResult,
                      fit: MacroResultFit
                    ){
-    def logmse: Double = 0.0
-    def mselog: Double = 0.0
+    def logmse: Double = fit.logmse
+    def mselog: Double = fit.mselog
   }
 
   object Result {
     def apply(result: MultiMacroResult): Result = {
-      val targetPop = result.states.head.populations
-      val simulatedStates = result.states.toVector
+      val targetPop = result.realPopulations
+      val simulatedStates: Vector[MultiMacroState] = result.states.toVector
+      utils.log(s"Computing real fit: total target pops ${targetPop.colSum.toSeq}; simulated pops: ${simulatedStates.map(_.populations.sum)}")
       val fit = MacroResultFit(targetPop, simulatedStates)
       Result(result, fit)
     }
@@ -47,6 +49,8 @@ object RealData {
     }
     val rawdates: Seq[String] = CSV.readCSV(datesFile, withHeader = false).values.toSeq.head
     val dates: Array[Double] = rawdates.map(_.toDouble).toArray
+
+    utils.log(s"Real data setup : total populations ${populationMatrix.colSum.toSeq} ; average distance ${distancesMatrix.flatValues.sum/(distancesMatrix.nrows*distancesMatrix.nrows)}")
 
     (populationMatrix, distancesMatrix, dates)
   }

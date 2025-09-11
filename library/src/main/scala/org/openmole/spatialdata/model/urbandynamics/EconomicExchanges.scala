@@ -2,7 +2,7 @@ package org.openmole.spatialdata.model.urbandynamics
 
 import org.openmole.spatialdata.model.urbandynamics.EconomicExchanges.{EconomicExchangesState, updateState}
 import org.openmole.spatialdata.utils
-import org.openmole.spatialdata.utils.math.{DenseMatrix, Matrix}
+import org.openmole.spatialdata.utils.math.{DenseMatrix, Matrix, RealMatrix}
 
 /**
   * Economic exchanges model adapted from
@@ -28,6 +28,7 @@ case class EconomicExchanges(
                             distanceMatrix: Matrix,
                             dates: Array[Double],
                             economicWeight: Double,
+                            economicMultiplier: Double,
                             sizeEffectOnDemand: Double,
                             sizeEffectOnSupply: Double,
                             gravityDecay: Double,
@@ -37,7 +38,7 @@ case class EconomicExchanges(
 
   override def run: MacroResultFit = EconomicExchanges.run(model = this)
 
-  override def nextStep(state: MacroState, populations: Matrix, distanceMatrix: Matrix): MacroState =
+  override def nextStep(state: MacroState, populations: Seq[Double], distanceMatrix: Matrix): MacroState =
     EconomicExchanges.nextState(this, updateState(this, state.asInstanceOf[EconomicExchangesState], populations, distanceMatrix))
 
   override def finalTime: Int = dates.length
@@ -49,7 +50,7 @@ object EconomicExchanges {
 
   case class EconomicExchangesState(
                                      time: Int,
-                                     populations: Matrix,
+                                     populations: Seq[Double],
                                      distanceMatrix: Matrix,
                                      distanceCoefMatrix: Matrix,
                                      wealths: Seq[Double],
@@ -60,15 +61,15 @@ object EconomicExchanges {
 
   def initialState(model: EconomicExchanges): EconomicExchangesState = {
     import model._
-    val populations = model.populationMatrix.getCol(0)
-    val wealths = rescaleWealth(populations.flatValues.map(populationToWealth(_, model.populationToWealthExponent)).toSeq, populations.flatValues.toSeq)
+    val populations = model.populationMatrix.getCol(0).flatValues
+    val wealths = rescaleWealth(populations.map(populationToWealth(_, model.populationToWealthExponent)).toSeq, populations.toSeq)
     val distanceCoefMatrix = model.distanceMatrix.map(d => math.exp(- d / model.gravityDecay))
 
-    val supplies = populations.flatValues.map(p => supply(p, economicWeight, sizeEffectOnSupply))
-    val demands = populations.flatValues.map(p => demand(p, economicWeight, sizeEffectOnDemand))
+    val supplies = populations.map(p => supply(p, economicWeight, sizeEffectOnSupply))
+    val demands = populations.map(p => demand(p, economicWeight, sizeEffectOnDemand))
     val interactionMatrix = interactionPotentialMatrix(supplies.toSeq, demands.toSeq, distanceCoefMatrix)
 
-    EconomicExchangesState(0, populations, model.distanceMatrix, distanceCoefMatrix, wealths, interactionMatrix, flows(populations, distanceCoefMatrix))
+    EconomicExchangesState(0, populations.toSeq, model.distanceMatrix, distanceCoefMatrix, wealths, interactionMatrix, flows(populations, distanceCoefMatrix))
   }
 
   /**
@@ -76,9 +77,9 @@ object EconomicExchanges {
    * @param state state
    * @param population population
    */
-  def updateState(model: EconomicExchanges, state: EconomicExchangesState, population: Matrix, distanceMatrix: Matrix): EconomicExchangesState = {
+  def updateState(model: EconomicExchanges, state: EconomicExchangesState, population: Seq[Double], distanceMatrix: Matrix): EconomicExchangesState = {
     val distanceCoefMatrix = distanceMatrix.map(d => math.exp(- d / model.gravityDecay))
-    state.copy(populations = population.clone, distanceMatrix = distanceMatrix.clone, distanceCoefMatrix = distanceCoefMatrix)
+    state.copy(populations = population, distanceMatrix = distanceMatrix.clone, distanceCoefMatrix = distanceCoefMatrix)
   }
 
 
@@ -98,8 +99,8 @@ object EconomicExchanges {
     * @return
     */
   def updatedWealths(state: EconomicExchangesState, economicMultiplier: Double, sizeEffectOnSupply: Double, sizeEffectOnDemand: Double): (Seq[Double], Matrix) = {
-    val supplies = state.populations.flatValues.map(p => supply(p, economicMultiplier, sizeEffectOnSupply))
-    val demands = state.populations.flatValues.map(p => demand(p, economicMultiplier, sizeEffectOnDemand))
+    val supplies = state.populations.map(p => supply(p, economicMultiplier, sizeEffectOnSupply))
+    val demands = state.populations.map(p => demand(p, economicMultiplier, sizeEffectOnDemand))
 
     //utils.log(s"    supplies = ${supplies.toSeq}")
     //utils.log(s"    demands = ${demands.toSeq}")
@@ -131,10 +132,10 @@ object EconomicExchanges {
     * @param economicMultiplier economicMultiplier
     * @return
     */
-  def updatedPopulation(population: Double, previousWealth: Double, updatedWealth: Double,deltaT: Double, wealthToPopulationExponent: Double, economicMultiplier: Double): Double = {
+  def updatedPopulation(population: Double, previousWealth: Double, updatedWealth: Double,deltaT: Double, wealthToPopulationExponent: Double, economicMultiplier: Double, economicWeight: Double): Double = {
     val wealthpopupdated = wealthToPopulation(updatedWealth, wealthToPopulationExponent)
     val wealthpop = wealthToPopulation(previousWealth, wealthToPopulationExponent)
-    val deltaPopulation = deltaT*(wealthpopupdated - wealthpop) * economicMultiplier
+    val deltaPopulation = deltaT*(wealthpopupdated - wealthpop) * economicMultiplier * economicWeight
     val updatedPopulation = population + deltaPopulation
     //assert(updatedPopulation<1e9,s"divergent population : updatedPopulation $updatedPopulation ; updatedWealth $updatedWealth ; wealthtopop $wealthpop wealthpopupdated $wealthpopupdated")
     if (updatedPopulation >= 0.0) updatedPopulation else 0.0
@@ -249,9 +250,9 @@ object EconomicExchanges {
     * @param distanceCoefMatrix distanceCoefMatrix
     * @return
     */
-  def flows(populations: Matrix, distanceCoefMatrix: Matrix): Matrix = {
+  def flows(populations: Seq[Double], distanceCoefMatrix: Matrix): Matrix = {
     val ptot = populations.sum
-    InteractionMacro.gravityPotential(populations, distanceCoefMatrix, Vector.fill(populations.nrows)(1.0), {case (p,_) =>p / ptot })
+    InteractionMacro.gravityPotential(RealMatrix(populations.toArray,row=false), distanceCoefMatrix, Vector.fill(populations.size)(1.0), {case (p,_) =>p / ptot })
   }
 
   def wealthToPopulation(wealth: Double, wealthToPopulationExponent: Double): Double = math.pow(wealth, wealthToPopulationExponent)
@@ -271,15 +272,15 @@ object EconomicExchanges {
     import model._
     val prevwealth = state.wealths
     val prevpop = state.populations
-    val (wealths, interactionMatrix) = updatedWealths(state,economicWeight,sizeEffectOnSupply, sizeEffectOnDemand)
+    val (wealths, interactionMatrix) = updatedWealths(state,economicMultiplier,sizeEffectOnSupply, sizeEffectOnDemand)
 
     utils.log(s"Delta W = ${prevwealth.zip(wealths).map{case (w1, w2) => math.abs(w1 - w2)}.sum}")
 
-    val pops = Matrix(state.populations.flatValues.zip(prevwealth).zip(wealths).map {
-      case ((p, pw), w) => updatedPopulation(p, pw, w, model.dates(state.time + 1) - model.dates(state.time), wealthToPopulationExponent, economicWeight)
-    }, row = false)(Matrix.defaultImplementation)
+    val pops = state.populations.zip(prevwealth).zip(wealths).map {
+      case ((p, pw), w) => updatedPopulation(p, pw, w, model.dates(state.time + 1) - model.dates(state.time), wealthToPopulationExponent, economicMultiplier, economicWeight)
+    }
 
-    utils.log(s"Delta P = ${prevpop.flatValues.zip(pops.flatValues).map{case (p1,p2) => math.abs(p1-p2)}.sum}")
+    utils.log(s"Delta P = ${prevpop.zip(pops).map{case (p1,p2) => math.abs(p1-p2)}.sum}")
 
     val f = flows(pops, state.distanceCoefMatrix)
 
@@ -298,7 +299,7 @@ object EconomicExchanges {
     val s0: EconomicExchangesState = initialState(model)
 
     val states = Iterator.iterate((s0, model)){case (s,m) => (nextState(m,s),m)}.takeWhile(_._1.time <= dates.length).toVector
-    val simulatedPopulation = Matrix(states.map(_._1.populations.flatValues).toArray.transpose)(Matrix.defaultImplementation)
+    val simulatedPopulation = Matrix(states.map(_._1.populations.toArray).toArray)(Matrix.defaultImplementation).transpose
     MacroResultFit(populationMatrix, simulatedPopulation)
   }
 

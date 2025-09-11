@@ -12,42 +12,46 @@ object RunSDG extends App {
 
   implicit val rng: Random = new Random
 
-  // synthetic setup
-  /*val initialState = SDG.setupSynthetic(syntheticCities = 30,
-    syntheticHierarchy = 1.0,
-    syntheticMaxPop =  100000.0,
-    finalTime = 20
-  )
-  */
+  val synthetic = false
 
-  // real data setup
-  val initialState = RealData.setupRealData(
-    "","","" //TODO
-  )
+  val initialState =
+    if(synthetic) {
+      // synthetic setup
+      SDG.setupSynthetic(syntheticCities = 30,
+        syntheticHierarchy = 1.0,
+        syntheticMaxPop = 100000.0,
+        finalTime = 20, // limit to avoid huge values: 50 -> up to larger than 1e9 !
+        seed = 42L
+      )
+    }else {
+      // real data setup
+      RealData.setupRealData("data/urbansystems/EU_pops.csv", "data/urbansystems/EU_dist.csv", "data/urbansystems/EU_dates.csv")
+    }
 
-  val result = SDG.runMultiModelMacro(
+  val result: SDG.Result = SDG.runMultiModelMacro(
     SDG.setupMultiModelMacro(
       initialState._1, initialState._2, initialState._3,
-      finalTime = 20, // limit to avoid huge values: 50 -> up to larger than 1e9 !
+      finalTime = initialState._3.length,
       seed = rng.nextInt(),
-      innovationWeight = 0.005,
-      innovationGravityDecay = 1.0,//0.5,
-      innovationInnovationDecay = 0.3,
+      innovationWeight = 1e-2, // 0.005
+      innovationGravityDecay = 1000.0,//0.5,
+      innovationInnovationDecay = 1000.0,
       innovationMutationRate = 0.2,
       innovationNewInnovationHierarchy = 0.5,
       innovationEarlyAdoptersRate = 0.2,
       innovationUtilityStd = 1.0,
       innovationUtilityDistrib = "log-normal",
-      ecoWeight = 0.05,
+      ecoWeight = 1e-2,
+      ecoMultiplier = 2.0,
       ecoSizeEffectOnDemand = 0.1,
       ecoSizeEffectOnSupply = 0.2,
-      ecoGravityDecay = 0.1,//0.5,
-      ecoWealthToPopulationExponent = 1.5,
-      ecoPopulationToWealthExponent = 1.5,
-      coevolWeight = 0.005,
+      ecoGravityDecay = 1000.0,//0.5,
+      ecoWealthToPopulationExponent = 1.0,
+      ecoPopulationToWealthExponent = 1.0,
+      coevolWeight = 1e-2,
       coevolGamma = 1.0,
-      coevolGravityDecay = 0.5,
-      coevolNetworkGmax = 0.05,
+      coevolGravityDecay = 1000.0,
+      coevolNetworkGmax = 0.0001,
       coevolNetworkExponent = 1.0,
       coevolNetworkThresholdQuantile = 0.5
     )
@@ -55,8 +59,8 @@ object RunSDG extends App {
 
   utils.log(s"Indicators: Emissions = ${SDG.cumulatedFlows(result)}; Innovation = ${- SDG.averageUtility(result)}; Infrastructure = ${SDG.averageDistance(result)}; Eco inequality = ${SDG.giniEconomicWealth(result)}; Wealth = ${SDG.averageWealth(result)}")
 
-  val realresult: RealData.Result = RealData.Result(result.asInstanceOf[MultiMacroResult])
+  val realresult: RealData.Result = RealData.Result.apply(result.result)
 
-  utils.log(s"Fit on populations : logmse =  ${realresult.logmse} ; mselog = ${realresult.mselog}")
+  utils.log(s"Fit on populations (real setup): logmse =  ${realresult.logmse} ; mselog = ${realresult.mselog}")
 
 }

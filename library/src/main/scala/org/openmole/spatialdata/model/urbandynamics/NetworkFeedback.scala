@@ -18,17 +18,17 @@ case class NetworkFeedback(
                             feedbackGammas: Vector[Double],
                             feedbackDistanceWeights: Matrix
                           ) extends MacroGrowthRate {
-  override def growthRate: Matrix => Matrix = m => NetworkFeedback.networkFeedbackGrowthRates(m,feedbackWeights,feedbackGammas,feedbackDistanceWeights)
+  override def growthRate: Seq[Double] => Matrix = m => NetworkFeedback.networkFeedbackGrowthRates(m,feedbackWeights,feedbackGammas,feedbackDistanceWeights)
 }
 
 
 object NetworkFeedback {
 
-  def networkFeedbackGrowthRates(prevpop: Matrix,feedbackWeights: Vector[Double],feedbackGammas: Vector[Double], feedbackDistanceWeights: Matrix): Matrix = {
-    implicit val mImpl: MatrixImplementation = Matrix.getImplementation(prevpop)
-    val n = prevpop.nrows
+  def networkFeedbackGrowthRates(prevpop: Seq[Double],feedbackWeights: Vector[Double],feedbackGammas: Vector[Double], feedbackDistanceWeights: Matrix): Matrix = {
+    implicit val mImpl: MatrixImplementation = Matrix.defaultImplementation
+    val n = prevpop.size
     val totalpop = prevpop.sum
-    val diagpops =  DenseMatrix.diagonal(prevpop.flatValues.zip(feedbackGammas).map{ case (p,g) => math.pow(p / totalpop,g)})
+    val diagpops =  DenseMatrix.diagonal(prevpop.toArray.zip(feedbackGammas).map{ case (p,g) => math.pow(p / totalpop,g)})
     val diagpopsFeedback: Matrix = diagpops %*% DenseMatrix.ones(n,n) %*% diagpops
     val potsfeedback: RealMatrix = (feedbackDistanceWeights %*% flattenPot(diagpopsFeedback)).asInstanceOf[RealMatrix]
     potsfeedback.setDiagM(0.0)

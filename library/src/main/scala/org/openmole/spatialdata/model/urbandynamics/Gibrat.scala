@@ -8,5 +8,5 @@ import org.openmole.spatialdata.utils.math.Matrix
 case class Gibrat(
                    gibratGrowthRates: Vector[Double]
                  ) extends MacroGrowthRate {
-  override def growthRate: Matrix => Matrix = m =>  Matrix(gibratGrowthRates.toArray,row=false)(Matrix.getImplementation(m))
+  override def growthRate: Seq[Double] => Matrix = m =>  Matrix(gibratGrowthRates.toArray,row=false)(Matrix.defaultImplementation)
 }

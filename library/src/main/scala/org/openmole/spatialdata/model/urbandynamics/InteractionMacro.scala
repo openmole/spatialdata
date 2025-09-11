@@ -1,7 +1,7 @@
 package org.openmole.spatialdata.model.urbandynamics
 
 import org.openmole.spatialdata.utils
-import org.openmole.spatialdata.utils.math.{DenseMatrix, Matrix}
+import org.openmole.spatialdata.utils.math.{DenseMatrix, Matrix, RealMatrix}
 
 
 
@@ -17,7 +17,7 @@ case class InteractionMacro(
    interactionGammas: Vector[Double],
    genDistanceMatrix: Matrix
 ) extends MacroGrowthRate {
-  override def growthRate: Matrix => Matrix = {
+  override def growthRate: Seq[Double] => Matrix = {
     m =>
       InteractionMacro.interactionGrowthRates(m,genDistanceMatrix,interactionWeights,interactionGammas)
   }
@@ -39,14 +39,14 @@ object InteractionMacro {
     * @param interactionGammas gammas of interactions
     * @return next populations as a column vector
     */
-  def interactionGrowthRates(prevpop: Matrix,
+  def interactionGrowthRates(prevpop: Seq[Double],
                       genDistanceMatrix: Matrix,
                       interactionWeights: Vector[Double],
                       interactionGammas: Vector[Double]): Matrix = {
-    val n = prevpop.nrows
+    val n = prevpop.size
     val totalpop = prevpop.sum
     def rescale(p: Double, g: Double): Double = math.pow(p / totalpop,g)
-    val potsgravity = gravityPotential(prevpop, genDistanceMatrix, interactionGammas,rescale)
+    val potsgravity = gravityPotential(RealMatrix(prevpop.toArray,row=false), genDistanceMatrix, interactionGammas,rescale)
     val meanpotgravity = potsgravity.flatValues.sum / (n * n)
     utils.log("mean pot gravity : " + meanpotgravity)
     val diagweights = DenseMatrix.diagonal(interactionWeights.toArray.map(_/ (n * meanpotgravity)))

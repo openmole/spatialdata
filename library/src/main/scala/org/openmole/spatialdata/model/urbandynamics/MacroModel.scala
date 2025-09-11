@@ -2,7 +2,7 @@ package org.openmole.spatialdata.model.urbandynamics
 
 import org.openmole.spatialdata.utils
 import org.openmole.spatialdata.utils.math.Matrix.MatrixImplementation
-import org.openmole.spatialdata.utils.math.{DenseMatrix, Linear, Matrix, Statistics}
+import org.openmole.spatialdata.utils.math.{DenseMatrix, Linear, Matrix, RealMatrix, Statistics}
 
 import scala.util.Random
 
@@ -12,7 +12,7 @@ import scala.util.Random
 trait MacroModel {
   def finalTime: Int
   def run: MacroResult
-  def nextStep(state: MacroState, populations: Matrix, distanceMatrix: Matrix): MacroState
+  def nextStep(state: MacroState, populations: Seq[Double], distanceMatrix: Matrix): MacroState
 }
 
 
@@ -46,9 +46,10 @@ object MacroModel {
                 deltat: Double = 1.0
                ): MacroStateGen = {
     val growthRates: Matrix = additiveGrowthRates.map(_.growthRate(state.populations)).reduce(Matrix.msum)
-    val newpops = state.populations + (state.populations * deltat * growthRates)
-    utils.log("macro Delta P = "+newpops.flatValues.zip(state.populations.flatValues).map{case (np,p)=>math.abs(np-p)}.sum)
-    state.copy(time= state.time + 1, populations = newpops)
+    val popMat = RealMatrix(state.populations.toArray,row=false)
+    val newpops: Matrix = popMat + (popMat * deltat * growthRates)
+    utils.log("macro Delta P = "+newpops.flatValues.zip(state.populations).map{case (np,p)=>math.abs(np-p)}.sum)
+    state.copy(time= state.time + 1, populations = newpops.flatValues.toSeq)
   }
 
 
@@ -100,7 +101,7 @@ object MacroModel {
                            )(implicit rng: Random, mImpl: MatrixImplementation): MacroStateGen =
     MacroStateGen(
      time = 0,
-     populations = Matrix(rng.shuffle(Statistics.rankSizeDistribution(n, alpha, pmax)).toArray, row = false),
+     populations = rng.shuffle(Statistics.rankSizeDistribution(n, alpha, pmax)),
      distanceMatrix = generalizedDistanceMatrix(Linear.randomDistanceMatrix(n, worldSize), Vector.fill(n)(dg))
     )
 

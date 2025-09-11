@@ -63,7 +63,7 @@ case class MultiscaleModel(
     */
   def initialState(implicit rng: Random, mImpl: MatrixImplementation): MultiscaleState = {
     val macrostate: MacroStateGen = MacroModel.initialSyntheticState(macroNcities,macroInitialHierarchy,macroInitialMaxPop,macroRange,macroInteractionDecay)
-    val mesoStates: Vector[ReactionDiffusionMesoState] = macrostate.populations.flatValues.toVector.map{
+    val mesoStates: Vector[ReactionDiffusionMesoState] = macrostate.populations.toVector.map{
       pi => {
         val initState = ReactionDiffusionMesoState.initialSyntheticState(mesoGridSize, mesoCenterDensity, math.sqrt(pi / (2 * math.Pi * mesoCenterDensity)), mesoAlpha,
           mesoBeta, mesoNdiff, 0.0, mesoTimeSteps)
@@ -227,13 +227,13 @@ object MultiscaleModel {
                         call: String = "",
                         threshold: Double = 10000.0
                        )(implicit mImpl: MatrixImplementation): MacroStateGen = {
-    val deltaPopLevels = macroState.populations.flatValues.zip(mesoStates).map{case (p,ms)=>math.abs(p - ms.populationGrid.flatten.sum)}
+    val deltaPopLevels = macroState.populations.zip(mesoStates).map{case (p,ms)=>math.abs(p - ms.populationGrid.flatten.sum)}
     /*assert(deltaPopLevels.sum/deltaPopLevels.size<threshold,call+" - incoherence between levels : "+deltaPopLevels+"\n"+macroState.populations+"\n"+
       mesoStates.map(_.populationGrid.flatten.sum)
     )*/
     utils.log("total consistence adj = "+deltaPopLevels.map(math.abs).sum)
     macroState.copy(
-      populations = Matrix(mesoStates.map(_.populationGrid.flatten.sum).toArray,row=false)
+      populations = mesoStates.map(_.populationGrid.flatten.sum)
     )
   }
 

@@ -2,6 +2,7 @@ package org.openmole.spatialdata.application.multimodelmacro
 
 import org.openmole.spatialdata.model.urbandynamics.MultiMacroModel.MultiMacroResult
 import org.openmole.spatialdata.utils
+import org.openmole.spatialdata.utils.math.Statistics
 
 import scala.util.Random
 
@@ -12,21 +13,18 @@ object RunSDG extends App {
 
   implicit val rng: Random = new Random
 
-  val synthetic = false
+  val mode = "projection" // "synthetic", "real"
 
-  val initialState =
-    if(synthetic) {
-      // synthetic setup
-      SDG.setupSynthetic(syntheticCities = 30,
-        syntheticHierarchy = 1.0,
-        syntheticMaxPop = 100000.0,
-        finalTime = 20, // limit to avoid huge values: 50 -> up to larger than 1e9 !
-        seed = 42L
-      )
-    }else {
-      // real data setup
-      RealData.setupRealData("data/urbansystems/EU_pops.csv", "data/urbansystems/EU_dist.csv", "data/urbansystems/EU_dates.csv")
-    }
+  val initialState = mode match {
+    case "synthetic" => SDG.setupSynthetic(syntheticCities = 30,
+      syntheticHierarchy = 1.0,
+      syntheticMaxPop = 100000.0,
+      finalTime = 20, // limit to avoid huge values: 50 -> up to larger than 1e9 !
+      seed = 42L
+    )
+    case "real" => RealData.setupRealDataPastTrajectories("data/urbansystems/EU_pops.csv", "data/urbansystems/EU_dist.csv", "data/urbansystems/EU_dates.csv")
+    case "projection" => RealData.setupRealDataFutureTrajectories("data/urbansystems/EU_pops.csv", "data/urbansystems/EU_dist.csv",3)
+  }
 
   val result: SDG.Result = SDG.runMultiModelMacro(
     SDG.setupMultiModelMacro(
@@ -60,6 +58,11 @@ object RunSDG extends App {
 
   val realresult: RealData.Result = RealData.Result.apply(result.result)
 
-  utils.log(s"Fit on populations (real setup): logmse =  ${realresult.logmse} ; mselog = ${realresult.mselog}")
+  if(mode=="real") utils.log(s"Fit on populations (real setup): logmse =  ${realresult.logmse} ; mselog = ${realresult.mselog}")
+  if(mode=="projection") {
+    val n = result.result.simulatedPopulation.nrows
+    utils.log(s"Average logpop traj: ${result.result.simulatedPopulation.values.transpose.map{col => col.map(math.log).sum/n}.toSeq}")
+    utils.log(s"Std logpop traj: ${result.result.simulatedPopulation.values.transpose.map{col => Statistics.std(col.map(math.log))}.toSeq}")
+  }
 
 }

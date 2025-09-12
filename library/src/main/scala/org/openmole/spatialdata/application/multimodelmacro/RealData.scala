@@ -13,6 +13,8 @@ import scala.util.Random
 
 /**
   * Run the model on real data (calibration, PSE)
+ *
+ * TODO question: should be in application, or with the model?
   */
 case class RealData()
 
@@ -36,7 +38,14 @@ object RealData {
     }
   }
 
-  def setupRealData(populationsFile: String,
+  /**
+   *
+   * @param populationsFile populations file
+   * @param distancesFile distance matrix file
+   * @param datesFile dates of observations
+   * @return
+   */
+  def setupRealDataPastTrajectories(populationsFile: String,
                     distancesFile: String,
                     datesFile: String):  (Matrix, Matrix, Array[Double]) = {
     implicit val m: MatrixImplementation = Matrix.defaultImplementation
@@ -52,6 +61,23 @@ object RealData {
 
     utils.log(s"Real data setup : total populations ${populationMatrix.colSum.toSeq} ; average distance ${distancesMatrix.flatValues.sum/(distancesMatrix.nrows*distancesMatrix.nrows)}")
 
+    (populationMatrix, distancesMatrix, dates)
+  }
+
+  def setupRealDataFutureTrajectories(populationsFile: String,
+                                      distancesFile: String,
+                                      finalTime: Int
+                                     ):  (Matrix, Matrix, Array[Double]) = {
+    implicit val m: MatrixImplementation = Matrix.defaultImplementation
+    val pastPopulationMatrix: Matrix = Matrix(CSV.readMat(populationsFile))
+    val distancesMatrix: Matrix = distancesFile.length match {
+      case n if n > 0 => Matrix(CSV.readMat(distancesFile))
+      case _ => DenseMatrix.zeros(pastPopulationMatrix.nrows, pastPopulationMatrix.ncols)
+    }
+    val latestPopulations = pastPopulationMatrix.getCol(pastPopulationMatrix.ncols-1).flatValues
+    val populationMatrix = DenseMatrix.zeros(pastPopulationMatrix.nrows,finalTime+1)
+    populationMatrix.setMSubmat(0,0,Array(latestPopulations).transpose)
+    val dates: Array[Double] = (0 to finalTime).toArray.map{_.toDouble}
     (populationMatrix, distancesMatrix, dates)
   }
 
